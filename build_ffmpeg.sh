@@ -15,7 +15,7 @@ echo "var can be: INSTALL_DIR, NDK_ROOT, MAEMO5_SYSROOT, MAEMO6_SYSROOT"
 
 echo "msys2: change target_os detect in configure: mingw32)=>mingw*|msys*)"
 echo "       pacman -Sy --needed diffutils pkg-config"
-
+echo 'export PATH=$PATH:$MINGW_BIN:$PWD # make.exe in mingw_builds can not deal with windows driver dir. use msys2 make instead' 
 echo "Author: wbsecg1@gmail.com 2013-2015"
 
 # TODO: PLATFORM=xxx TARGET=ooo TOOLCHAIN=ttt ./build_ffmpeg.sh
