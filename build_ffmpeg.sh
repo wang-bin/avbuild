@@ -83,6 +83,7 @@ enable_opt dxva2
 enable_opt vaapi
 enable_opt vdpau
 enable_opt vda
+enable_opt videotoolbox
 
 # clock_gettime in librt instead of glibc>=2.17
 grep "LIBRT" $FFSRC/configure &>/dev/null && {
@@ -171,11 +172,11 @@ setup_android_env() {
   ANDROID_SYSROOT="$ANDROID_TOOLCHAIN_DIR/sysroot" #"$NDK_ROOT/platforms/android-14/arch-arm"
 # --enable-libstagefright-h264
   ANDROIDOPT="--enable-cross-compile --cross-prefix=$CROSS_PREFIX --sysroot=$ANDROID_SYSROOT --target-os=android --arch=${FFARCH}"
-  test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-19 --toolchain=${ANDROID_TOOLCHAIN_PREFIX}-4.6 --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
+  test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-9 --toolchain=${ANDROID_TOOLCHAIN_PREFIX}-4.8 --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
   export PATH=$ANDROID_TOOLCHAIN_DIR/bin:$PATH
   rm -rf $ANDROID_SYSROOT/usr/include/{libsw*,libav*}
   rm -rf $ANDROID_SYSROOT/usr/lib/{libsw*,libav*}
-  MISC_OPT=--disable-avdevice
+  #MISC_OPT=--disable-avdevice
   PLATFORM_OPT="$ANDROIDOPT"
   EXTRA_CFLAGS="$ANDROID_CFLAGS $ANDROID_CLFAGS_ARMV7"
   INSTALL_DIR=sdk-android-$ANDROID_ARCH
@@ -187,7 +188,7 @@ setup_ios_env() {
 # https://github.com/yixia/FFmpeg-Vitamio/blob/vitamio/build_ios.sh
   PLATFORM_OPT='--enable-cross-compile --arch=arm --target-os=darwin --cc="clang -arch armv7" --sysroot=$(xcrun --sdk iphoneos --show-sdk-path) --cpu=cortex-a8 --enable-pic'
   LIB_OPT="--enable-static"
-  MISC_OPT=--disable-avdevice
+  MISC_OPT=$MISC_OPT --disable-avdevice
   INSTALL_DIR=sdk-ios
 }
 
@@ -195,7 +196,7 @@ setup_ios_simulator_env() {
 #iphoneos iphonesimulator i386
   PLATFORM_OPT='--enable-cross-compile --arch=i386 --cpu=i386 --target-os=darwin --cc="clang -arch i386" --sysroot=$(xcrun --sdk iphonesimulator --show-sdk-path) --enable-pic'
   LIB_OPT="--enable-static"
-  MISC_OPT=--disable-avdevice
+  MISC_OPT=$MISC_OPT --disable-avdevice
   INSTALL_DIR=sdk-ios-i386
 }
 
@@ -212,7 +213,7 @@ setup_maemo5_env() {
     MAEMO_OPT="--host-cc=$HOSTCC --cross-prefix=arm-none-linux-gnueabi- --enable-cross-compile --target-os=linux --arch=armv7-a --sysroot=$MAEMO5_SYSROOT"
   fi
   PLATFORM_OPT="$MAEMO_OPT"
-  MISC_OPT=--disable-avdevice
+  MISC_OPT=$MISC_OPT --disable-avdevice
   INSTALL_DIR=sdk-maemo5
 }
 setup_maemo6_env() {
@@ -228,7 +229,7 @@ setup_maemo6_env() {
     MAEMO_OPT="--host-cc=$HOSTCC --cross-prefix=arm-none-linux-gnueabi- --enable-cross-compile --target-os=linux --arch=armv7-a --sysroot=$MAEMO6_SYSROOT"
   fi
   PLATFORM_OPT="$MAEMO_OPT"
-  MISC_OPT=--disable-avdevice
+  MISC_OPT=$MISC_OPT --disable-avdevice
   INSTALL_DIR=sdk-maemo6
 }
 
@@ -251,13 +252,14 @@ elif target_is x86; then
 elseTOOLCHAIN_OPT
   if host_is Sailfish; then
     echo "Build in Sailfish SDK"
-    MISC_OPT=--disable-avdevice
+    MISC_OPT=$MISC_OPT --disable-avdevice
     INSTALL_DIR=sdk-sailfish
   elif host_is Linux; then
     test -n "$vaapi_opt" && PLATFORM_OPT="$PLATFORM_OPT $vaapi_opt"
     test -n "$vdpau_opt" && PLATFORM_OPT="$PLATFORM_OPT $vdpau_opt"
   elif host_is Darwin; then
     test -n "$vda_opt" && PLATFORM_OPT="$PLATFORM_OPT $vda_opt"
+    test -n "$videotoolbox_opt" && PLATFORM_OPT="$PLATFORM_OPT $videotoolbox_opt"
     EXTRA_CFLAGS=-mmacosx-version-min=10.6
   fi
 fi
@@ -273,7 +275,7 @@ fi
 test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
 echo $LIB_OPT
 is_libav || MISC_OPT="$MISC_OPT --disable-postproc"
-CONFIGURE="configure --extra-version=QtAV $LIB_OPT --enable-pic --enable-runtime-cpudetect $MISC_OPT $PLATFORM_OPT $TOOLCHAIN_OPT"
+CONFIGURE="configure --extra-version=QtAV $LIB_OPT --enable-pic --enable-runtime-cpudetect $USER_OPT $MISC_OPT $PLATFORM_OPT $TOOLCHAIN_OPT"
 CONFIGURE=`echo $CONFIGURE |tr -s ' '`
 # http://ffmpeg.org/platform.html
 # static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
