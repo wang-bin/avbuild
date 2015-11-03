@@ -6,7 +6,7 @@ echo "This is part of QtAV project. Get the latest script from https://github.co
 # Put this script in ffmpeg source dir. Make sure your build environment is correct. Then run "./build_ffmpeg.sh"
 # To build ffmpeg for android, run "./build_ffmpeg android". default is armv7-a.
 
-PLATFORMS="ios|android|maemo5|maemo6|vc|x86"
+PLATFORMS="ios|android|maemo5|maemo6|vc|x86|winpc|winphone"
 echo "Put this script in ffmpeg source dir. Make sure your build environment is correct."
 echo 'Or put this script in other place and set PATH to include ffmpeg source dir, e.g. "export PATH=~/ffmpeg:$PATH"'
 echo "usage: ./build_ffmpeg.sh [${PLATFORMS}]"
@@ -124,6 +124,49 @@ setup_vc_env() {
     # TODO: use a wrapper function to deal with the parameters passed to armasm
     PLATFORM_OPT="--extra-cflags=\"-D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE -D_M_ARM -DWINAPI_FAMILY=WINAPI_FAMILY_APP\" --extra-ldflags=\"-MACHINE:ARM\" $PLATFORM_OPT --enable-cross-compile --arch=arm --cpu=armv7 --target-os=win32 --as=armasm --disable-yasm --disable-inline-asm"
   fi
+}
+
+setup_winrt_env() {
+  MISC_OPT="$MISC_OPT --disable-programs --disable-encoders --disable-muxers --disable-avdevice"
+  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --toolchain=msvc --enable-cross-compile --target-os=win32"
+  CL_INFO=`cl 2>&1 |grep -i Microsoft`
+  CL_VER=`echo $CL_INFO |sed 's,.* \([0-9]*\)\.[0-9]*\..*,\1,g'`
+  INSTALL_DIR=winrt
+
+  echo "cl version: $CL_VER"
+  local winver="0x0A00"
+  test $CL_VER -lt 19 && winver="0x0603"
+  local family="WINAPI_FAMILY_PC_APP"
+  local cflags="-MD"
+  local ldflags="-APPCONTAINER"
+  local arch=x86_64 #used by configure --arch
+  if [ -n "`echo $CL_INFO |grep -i arm`" ]; then
+    cflags="$cflags -D__ARM_PCS_VFP"
+    ldflags="$ldflags -MACHINE:ARM"
+    arch="arm"
+    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --as=armasm --cpu=armv7 --enable-thumb"
+  elif [ -n "`echo $CL_INFO |grep -i x64`" ]; then
+    arch=x86_64
+  else
+    arch=x86
+  fi
+  if target_is winphone; then
+  # export dirs (lib, include)
+    family="WINAPI_FAMILY_PHONE_APP"
+    INSTALL_DIR=winphone
+    # phone ldflags only for win8.1?
+    ldflags="$ldflags -subsystem:console -opt:ref WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib -NODEFAULTLIB:kernel32.lib -NODEFAULTLIB:ole32.lib"
+  else
+    family="WINAPI_FAMILY_PC_APP" #WINAPI_FAMILY_APP for win10?
+  fi
+  if [ "$winver" == "0x0603" ]; then
+    INSTALL_DIR="${INSTALL_DIR}81${arch}"
+  else
+    INSTALL_DIR="${INSTALL_DIR}10${arch}"
+    ldflags="$ldflags WindowsApp.lib"
+  fi
+  cflags="$cflags -DWINAPI_FAMILY=$family -D_WIN32_WINNT=$winver"
+  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --arch=$arch --extra-cflags=\"$cflags\" --extra-ldflags=\"$ldflags\""
 }
 
 setup_mingw_env() {
@@ -249,7 +292,7 @@ elif target_is x86; then
     ARCH_FLAGS=-m32
     INSTALL_DIR=sdk-x86
   fi
-elseTOOLCHAIN_OPT
+else
   if host_is Sailfish; then
     echo "Build in Sailfish SDK"
     MISC_OPT=$MISC_OPT --disable-avdevice
@@ -266,6 +309,10 @@ fi
 
 if target_is vc; then
   setup_vc_env
+elif target_is winpc; then
+  setup_winrt_env
+elif target_is winphone; then
+  setup_winrt_env
 else
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-cflags=\"$ARCH_FLAGS -O3 $CLANG_CFLAGS $EXTRA_CFLAGS\""
   setup_mingw_env
