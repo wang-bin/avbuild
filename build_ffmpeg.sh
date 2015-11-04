@@ -6,7 +6,7 @@ echo "This is part of QtAV project. Get the latest script from https://github.co
 # Put this script in ffmpeg source dir. Make sure your build environment is correct. Then run "./build_ffmpeg.sh"
 # To build ffmpeg for android, run "./build_ffmpeg android". default is armv7-a.
 
-PLATFORMS="ios|android|maemo5|maemo6|vc|x86|winpc|winphone"
+PLATFORMS="ios|android|maemo5|maemo6|vc|x86|winstore|winpc|winphone"
 echo "Put this script in ffmpeg source dir. Make sure your build environment is correct."
 echo 'Or put this script in other place and set PATH to include ffmpeg source dir, e.g. "export PATH=~/ffmpeg:$PATH"'
 echo "usage: ./build_ffmpeg.sh [${PLATFORMS}]"
@@ -36,9 +36,10 @@ fi
 : ${LIB_OPT:="--enable-shared --disable-static"}
 : ${MISC_OPT="--enable-hwaccels"}#--enable-gpl --enable-version3
 
-FFSRC=$PWD
-[ -f configure ] && {
-  export PATH=$FFSRC:$PATH
+: ${FFSRC:=$PWD/ffmpeg}
+echo FFSRC=$FFSRC
+[ -f $FFSRC/configure ] && {
+  export PATH=$PATH:$FFSRC
 } || {
   which configure &>/dev/null || {
     echo 'ffmpeg configure script can not be found in "$PATH"'
@@ -127,6 +128,7 @@ setup_vc_env() {
 }
 
 setup_winrt_env() {
+#http://fate.libav.org/arm-msvc-14-wp
   MISC_OPT="$MISC_OPT --disable-programs --disable-encoders --disable-muxers --disable-avdevice"
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --toolchain=msvc --enable-cross-compile --target-os=win32"
   CL_INFO=`cl 2>&1 |grep -i Microsoft`
@@ -141,6 +143,8 @@ setup_winrt_env() {
   local ldflags="-APPCONTAINER"
   local arch=x86_64 #used by configure --arch
   if [ -n "`echo $CL_INFO |grep -i arm`" ]; then
+    echo "you may have to ignore -fPIC in armasm_flags()"
+    echo "you may have to put mingw gcc in your path because cpp is required by gas-preprocessor+armasm"
     cflags="$cflags -D__ARM_PCS_VFP"
     ldflags="$ldflags -MACHINE:ARM"
     arch="arm"
@@ -150,7 +154,10 @@ setup_winrt_env() {
   else
     arch=x86
   fi
-  if target_is winphone; then
+  local winphone=N
+  target_is winstore && test "x$WIN_PHONE" != "x" && winphone=Y
+  target_is winphone && winphone=Y
+  if [ "$winphone" == "Y" ]; then
   # export dirs (lib, include)
     family="WINAPI_FAMILY_PHONE_APP"
     INSTALL_DIR=winphone
@@ -312,6 +319,8 @@ if target_is vc; then
 elif target_is winpc; then
   setup_winrt_env
 elif target_is winphone; then
+  setup_winrt_env
+elif target_is winstore; then
   setup_winrt_env
 else
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-cflags=\"$ARCH_FLAGS -O3 $CLANG_CFLAGS $EXTRA_CFLAGS\""
