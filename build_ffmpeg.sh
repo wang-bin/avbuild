@@ -138,7 +138,7 @@ setup_winrt_env() {
   echo "cl version: $CL_VER"
   local winver="0x0A00"
   test $CL_VER -lt 19 && winver="0x0603"
-  local family="WINAPI_FAMILY_PC_APP"
+  local family="WINAPI_FAMILY_APP"
   local cflags="-MD"
   local ldflags="-APPCONTAINER"
   local arch=x86_64 #used by configure --arch
@@ -174,6 +174,7 @@ setup_winrt_env() {
   fi
   cflags="$cflags -DWINAPI_FAMILY=$family -D_WIN32_WINNT=$winver"
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --arch=$arch --extra-cflags=\"$cflags\" --extra-ldflags=\"$ldflags\""
+  echo "INSTALL_DIR=$INSTALL_DIR"
 }
 
 setup_mingw_env() {

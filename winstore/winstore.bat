@@ -14,30 +14,35 @@ if "%ARCH%" == "x64" (
 )
 set WIN_VER=8.1
 set WIN_PHONE=%3
-call "%VS120COMNTOOLS%\..\..\VC\vcvarsall.bat" %ARG%
+
+if /i %1 == win10 (
+  set WIN_VER=10
+  set ARG=%ARG% store
+)
+call "%VCDIR%\..\..\VC\vcvarsall.bat" %ARG%
 
 @if "%WIN_VER%" == "8.1" goto SetEnv81
 @if "%WIN_VER%" == "10" goto SetEnv10
 
 :SetEnv81
-@if "%WIN_PHONE%" == "phone" goto SetEnvPhone81
-@SET LIB=%VSINSTALLDIR%VC\lib\store\%ARCH2%;%VSINSTALLDIR%VC\atlmfc\lib\%ARCH2%;%WindowsSdkDir%lib\winv6.3\um\%ARCH%;;
-@SET LIBPATH=%WindowsSdkDir%References\CommonConfiguration\Neutral;;%VSINSTALLDIR%VC\atlmfc\lib\%ARCH2%;%VSINSTALLDIR%VC\lib\%ARCH2%;
-@SET INCLUDE=%VSINSTALLDIR%VC\include;%VSINSTALLDIR%VC\atlmfc\include;%WindowsSdkDir%Include\um;%WindowsSdkDir%Include\shared;%WindowsSdkDir%Include\winrt;
-@goto end
+if "%WIN_PHONE%" == "phone" goto SetEnvPhone81
+SET LIB=%VSINSTALLDIR%VC\lib\store\%ARCH2%;%WindowsSdkDir%lib\winv6.3\um\%ARCH%;;
+SET LIBPATH=%WindowsSdkDir%References\CommonConfiguration\Neutral;%VSINSTALLDIR%VC\lib\%ARCH2%;
+SET INCLUDE=%VSINSTALLDIR%VC\include;%WindowsSdkDir%Include\um;%WindowsSdkDir%Include\shared;%WindowsSdkDir%Include\winrt;
+goto end
 
 :SetEnvPhone81
-@SET WindowsPhoneKitDir=%WindowsSdkDir%..\..\Windows Phone Kits\8.1
-@SET LIB=%VSINSTALLDIR%VC\lib\store\%ARCH2%;%VSINSTALLDIR%VC\atlmfc\lib;%WindowsPhoneKitDir%\lib\%ARCH%;;
-@SET LIBPATH=%VSINSTALLDIR%VC\atlmfc\lib\%ARCH2%;%VSINSTALLDIR%VC\lib\%ARCH2%
-@SET INCLUDE=%VSINSTALLDIR%VC\INCLUDE;%VSINSTALLDIR%VC\ATLMFC\INCLUDE;%WindowsPhoneKitDir%\Include;%WindowsPhoneKitDir%\Include\abi;%WindowsPhoneKitDir%\Include\mincore;%WindowsPhoneKitDir%\Include\minwin;%WindowsPhoneKitDir%\Include\wrl;
-@goto end
+SET WindowsPhoneKitDir=%WindowsSdkDir%..\..\Windows Phone Kits\8.1
+SET LIB=%VSINSTALLDIR%VC\lib\store\%ARCH2%;%WindowsPhoneKitDir%\lib\%ARCH%;;
+SET LIBPATH=%VSINSTALLDIR%VC\lib\%ARCH2%
+SET INCLUDE=%VSINSTALLDIR%VC\INCLUDE;%WindowsPhoneKitDir%\Include;%WindowsPhoneKitDir%\Include\abi;%WindowsPhoneKitDir%\Include\mincore;%WindowsPhoneKitDir%\Include\minwin;%WindowsPhoneKitDir%\Include\wrl;
+goto end
 
 :SetEnv10
-@SET LIB=%VSINSTALLDIR%VC\lib\store;%VSINSTALLDIR%VC\atlmfc\lib;%UniversalCRTSdkDir%lib\%UCRTVersion%\ucrt\%ARCH%;;%UniversalCRTSdkDir%lib\%UCRTVersion%\um\%ARCH%;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6\lib\um\%ARCH%;;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6\Lib\um\%ARCH%
-@SET LIBPATH=%VSINSTALLDIR%VC\atlmfc\lib\%ARCH2%;%VSINSTALLDIR%VC\lib\%ARCH2%;
-@SET INCLUDE=%VSINSTALLDIR%VC\include;%VSINSTALLDIR%VC\atlmfc\include;%UniversalCRTSdkDir%Include\%UCRTVersion%\ucrt;%UniversalCRTSdkDir%Include\%UCRTVersion%\um;%UniversalCRTSdkDir%Include\%UCRTVersion%\shared;%UniversalCRTSdkDir%Include\%UCRTVersion%\winrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6\Include\um;
-@goto end
+SET LIB=%VSINSTALLDIR%VC\lib\store\%ARCH2%;%UniversalCRTSdkDir%lib\%UCRTVersion%\ucrt\%ARCH%;;%UniversalCRTSdkDir%lib\%UCRTVersion%\um\%ARCH%;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6\lib\um\%ARCH%;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6\Lib\um\%ARCH%
+SET LIBPATH=%VSINSTALLDIR%VC\lib\%ARCH2%;
+SET INCLUDE=%VSINSTALLDIR%VC\include;%UniversalCRTSdkDir%Include\%UCRTVersion%\ucrt;%UniversalCRTSdkDir%Include\%UCRTVersion%\um;%UniversalCRTSdkDir%Include\%UCRTVersion%\shared;%UniversalCRTSdkDir%Include\%UCRTVersion%\winrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6\Include\um;
+goto end
 
 :end
 @echo INCLUDE=%INCLUDE%
