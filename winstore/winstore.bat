@@ -48,8 +48,10 @@ goto end
 @echo INCLUDE=%INCLUDE%
 @echo LIB=%LIB%
 @echo LIBPATH=%LIBPATH%
-@echo "Now you can run:"
-@echo "cd dir/of/build_ffmpeg"
-@echo "export PATH=$PATH:ffmpeg_source_dir"
-@echo "./build_ffmpeg.sh winstore"
+@echo -------------------------------------------------------------------------------
+@echo -----Build environment is ready: Windows Store %WIN_VER% %WIN_PHONE% %ARCH2%-----
+@echo Now you can run:
+@echo cd dir/of/build_ffmpeg
+@echo export FFSRC=/path/to/ffmpeg
+@echo ./build_ffmpeg.sh winstore
 call ..\msys2.bat
