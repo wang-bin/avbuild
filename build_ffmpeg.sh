@@ -30,7 +30,7 @@ fi
 
 : ${INSTALL_DIR:=sdk}
 # set NDK_ROOT if compile for android
-: ${NDK_ROOT:="/devel/android/android-ndk-r8e"}
+: ${NDK_ROOT:="/devel/android/android-ndk-r10e"}
 : ${MAEMO5_SYSROOT:=/opt/QtSDK/Maemo/4.6.2/sysroots/fremantle-arm-sysroot-20.2010.36-2-slim}
 : ${MAEMO6_SYSROOT:=/opt/QtSDK/Madde/sysroots/harmattan_sysroot_10.2011.34-1_slim}
 : ${LIB_OPT:="--enable-shared --disable-static"}
@@ -203,27 +203,30 @@ setup_wince_env() {
 }
 
 setup_android_env() {
-  ANDROID_ARCH=$1
+  local ANDROID_ARCH=$1
   test -n "$ANDROID_ARCH" || ANDROID_ARCH=arm
-  ANDROID_TOOLCHAIN_PREFIX="arm-linux-androideabi"
-  CROSS_PREFIX=arm-linux-androideabi-
-  FFARCH=$ANDROID_ARCH
-  if [ "$ANDROID_ARCH" = "x86" ]; then
-    #ANDROID_ARCH="i686"
+  local ANDROID_TOOLCHAIN_PREFIX="${ANDROID_ARCH}-linux-android"
+  local CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
+  local FFARCH=$ANDROID_ARCH
+  local PLATFORM=android-9 #ensure do not use log2f in libm
+  if [ "$ANDROID_ARCH" = "x86" -o "$ANDROID_ARCH" = "i686" ]; then
     ANDROID_TOOLCHAIN_PREFIX="x86"
     CROSS_PREFIX=i686-linux-android-
-  elif [ "$ANDROID_ARCH" = "mipsel" ]; then
-    ANDROID_TOOLCHAIN_PREFIX="mipsel-linux-android"
-    CROSS_PREFIX=mipsel-linux-android-
-  else
+  elif [ "$ANDROID_ARCH" = "arm" ]; then
+    ANDROID_TOOLCHAIN_PREFIX="${ANDROID_ARCH}-linux-androideabi"
+    CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
     FFARCH=armv7-a
+  elif [ "$ANDROID_ARCH" = "aarch64" ]; then
+    PLATFORM=android-21
   fi
-  ANDROID_TOOLCHAIN_DIR="/tmp/ndk-toolchain-${ANDROID_ARCH}" #$NDK_ROOT/toolchains/arm-linux-androideabi-4.7/prebuilt/linux-x86_64/bin
+  local TOOLCHAIN=${ANDROID_TOOLCHAIN_PREFIX}-4.9
+  [ -d $NDK_ROOT/toolchains/${TOOLCHAIN} ] || TOOLCHAIN=${ANDROID_TOOLCHAIN_PREFIX}-4.8
+  local ANDROID_TOOLCHAIN_DIR="/tmp/ndk-$TOOLCHAIN"
   echo "ANDROID_TOOLCHAIN_DIR=${ANDROID_TOOLCHAIN_DIR}"
-  ANDROID_SYSROOT="$ANDROID_TOOLCHAIN_DIR/sysroot" #"$NDK_ROOT/platforms/android-14/arch-arm"
+  local ANDROID_SYSROOT="$ANDROID_TOOLCHAIN_DIR/sysroot"
 # --enable-libstagefright-h264
   ANDROIDOPT="--enable-cross-compile --cross-prefix=$CROSS_PREFIX --sysroot=$ANDROID_SYSROOT --target-os=android --arch=${FFARCH}"
-  test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-9 --toolchain=${ANDROID_TOOLCHAIN_PREFIX}-4.8 --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
+  test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=$PLATFORM --toolchain=$TOOLCHAIN --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
   export PATH=$ANDROID_TOOLCHAIN_DIR/bin:$PATH
   rm -rf $ANDROID_SYSROOT/usr/include/{libsw*,libav*}
   rm -rf $ANDROID_SYSROOT/usr/lib/{libsw*,libav*}
