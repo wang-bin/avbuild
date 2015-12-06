@@ -212,10 +212,25 @@ setup_android_env() {
   if [ "$ANDROID_ARCH" = "x86" -o "$ANDROID_ARCH" = "i686" ]; then
     ANDROID_TOOLCHAIN_PREFIX="x86"
     CROSS_PREFIX=i686-linux-android-
-  elif [ "$ANDROID_ARCH" = "arm" ]; then
-    ANDROID_TOOLCHAIN_PREFIX="${ANDROID_ARCH}-linux-androideabi"
+  elif [ ! "${ANDROID_ARCH/arm/}" = "arm" ]; then
+    ANDROID_TOOLCHAIN_PREFIX="arm-linux-androideabi"
     CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
-    FFARCH=armv7-a
+    FFARCH=arm
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -ffast-math -fstrict-aliasing -Werror=strict-aliasing -Wa,--noexecstack"
+    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-thumb"
+    if [ ! "${ANDROID_ARCH/armv5/}" = "$ANDROID_ARCH" ]; then
+      echo "armv5"
+      #EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv5te -mtune=arm9tdmi -msoft-float"
+    elif [ ! "${ANDROID_ARCH/neon/}" = "$ANDROID_ARCH" ]; then
+      echo "neon"
+      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-neon" #--cpu=cortex-a8
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mfpu=neon -mfloat-abi=softfp -mvectorize-with-neon-quad"
+      #EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--fix-cortex-a8"
+    else
+      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-neon"
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp"
+      #EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--fix-cortex-a8"
+    fi
   elif [ "$ANDROID_ARCH" = "aarch64" ]; then
     PLATFORM=android-21
   fi
@@ -232,7 +247,6 @@ setup_android_env() {
   rm -rf $ANDROID_SYSROOT/usr/lib/{libsw*,libav*}
   #MISC_OPT=--disable-avdevice
   PLATFORM_OPT="$ANDROIDOPT"
-  EXTRA_CFLAGS="$ANDROID_CFLAGS $ANDROID_CLFAGS_ARMV7"
   INSTALL_DIR=sdk-android-$ANDROID_ARCH
   # more flags see: https://github.com/yixia/FFmpeg-Vitamio/blob/vitamio/build_android.sh
 }
@@ -300,7 +314,8 @@ elif target_is maemo6; then
 elif target_is x86; then
   if [ "`uname -m`" = "x86_64" ]; then
     #TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=$(tolower $(uname -s)) --arch=x86"
-    ARCH_FLAGS=-m32
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -m32"
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -m32"
     INSTALL_DIR=sdk-x86
   fi
 else
@@ -327,15 +342,16 @@ elif target_is winphone; then
 elif target_is winstore; then
   setup_winrt_env
 else
-  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-cflags=\"$ARCH_FLAGS -O3 $CLANG_CFLAGS $EXTRA_CFLAGS\""
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -O3"
   setup_mingw_env
   # wrong! detect target!=host
-  test -n "$ARCH_FLAGS" && host_is Linux && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"-m32\""
 fi
+test -n "$EXTRA_CFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-cflags=\"$EXTRA_CFLAGS\""
+test -n "$EXTRA_LDFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"$EXTRA_LDFLAGS\""
 test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
 echo $LIB_OPT
 is_libav || MISC_OPT="$MISC_OPT --disable-postproc"
-CONFIGURE="configure --extra-version=QtAV $LIB_OPT --enable-pic --enable-runtime-cpudetect $USER_OPT $MISC_OPT $PLATFORM_OPT $TOOLCHAIN_OPT"
+CONFIGURE="configure --extra-version=QtAV --disable-debug $LIB_OPT --enable-pic --enable-runtime-cpudetect $USER_OPT $MISC_OPT $PLATFORM_OPT $TOOLCHAIN_OPT"
 CONFIGURE=`echo $CONFIGURE |tr -s ' '`
 # http://ffmpeg.org/platform.html
 # static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
