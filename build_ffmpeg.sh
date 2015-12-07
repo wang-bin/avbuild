@@ -139,16 +139,21 @@ setup_winrt_env() {
   local winver="0x0A00"
   test $CL_VER -lt 19 && winver="0x0603"
   local family="WINAPI_FAMILY_APP"
-  local cflags="-MD"
-  local ldflags="-APPCONTAINER"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -MD"
+  EXTRA_LDFLAGS="-APPCONTAINER"
   local arch=x86_64 #used by configure --arch
   if [ -n "`echo $CL_INFO |grep -i arm`" ]; then
     echo "you may have to ignore -fPIC in armasm_flags()"
-    echo "you may have to put mingw gcc in your path because cpp is required by gas-preprocessor+armasm"
-    cflags="$cflags -D__ARM_PCS_VFP"
-    ldflags="$ldflags -MACHINE:ARM"
+    which cpp &>/dev/null || echo "cpp is required by gas-preprocessor but it is missing. make sure (mingw) gcc is in your PATH"
+    #gas-preprocessor.pl change open(INPUT, "-|", @preprocess_c_cmd) || die "Error running preprocessor"; to open(INPUT, "@preprocess_c_cmd|") || die "Error running preprocessor";
+
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -D__ARM_PCS_VFP"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -MACHINE:ARM"
     arch="arm"
-    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --as=armasm --cpu=armv7 --enable-thumb"
+    # asm broken: table
+    # fft_vfp.S is broken in 87552d54d3337c3241e8a9e1a05df16eaa821496 (good c30eb74d182063c85a895c6fd3c9d47b93370bb0)
+    # jrevdct_arm.S is broken in 77cdfde73e91cdbcc82cdec6b8fec6f646b02782 and use "libavutil/arm/asm.S" (good 2ad4c241c852efc0baa79b21db6bbc87c27873ef)
+    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --as=armasm --cpu=armv7 --disable-neon --enable-vfp --enable-thumb"
   elif [ -n "`echo $CL_INFO |grep -i x64`" ]; then
     arch=x86_64
   else
@@ -162,7 +167,7 @@ setup_winrt_env() {
     family="WINAPI_FAMILY_PHONE_APP"
     INSTALL_DIR=winphone
     # phone ldflags only for win8.1?
-    ldflags="$ldflags -subsystem:console -opt:ref WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib -NODEFAULTLIB:kernel32.lib -NODEFAULTLIB:ole32.lib"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -subsystem:console -opt:ref WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib -NODEFAULTLIB:kernel32.lib -NODEFAULTLIB:ole32.lib"
   else
     family="WINAPI_FAMILY_PC_APP" #WINAPI_FAMILY_APP for win10?
   fi
@@ -170,10 +175,10 @@ setup_winrt_env() {
     INSTALL_DIR="${INSTALL_DIR}81${arch}"
   else
     INSTALL_DIR="${INSTALL_DIR}10${arch}"
-    ldflags="$ldflags WindowsApp.lib"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS WindowsApp.lib"
   fi
-  cflags="$cflags -DWINAPI_FAMILY=$family -D_WIN32_WINNT=$winver"
-  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --arch=$arch --extra-cflags=\"$cflags\" --extra-ldflags=\"$ldflags\""
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -DWINAPI_FAMILY=$family -D_WIN32_WINNT=$winver"
+  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --arch=$arch"
   echo "INSTALL_DIR=$INSTALL_DIR"
 }
 
@@ -351,7 +356,7 @@ test -n "$EXTRA_LDFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"$EXT
 test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
 echo $LIB_OPT
 is_libav || MISC_OPT="$MISC_OPT --disable-postproc"
-CONFIGURE="configure --extra-version=QtAV --disable-debug $LIB_OPT --enable-pic --enable-runtime-cpudetect $USER_OPT $MISC_OPT $PLATFORM_OPT $TOOLCHAIN_OPT"
+CONFIGURE="configure --extra-version=QtAV --disable-doc --disable-debug $LIB_OPT --enable-pic --enable-runtime-cpudetect $USER_OPT $MISC_OPT $PLATFORM_OPT $TOOLCHAIN_OPT"
 CONFIGURE=`echo $CONFIGURE |tr -s ' '`
 # http://ffmpeg.org/platform.html
 # static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
