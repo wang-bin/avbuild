@@ -1,0 +1,94 @@
+From bdf361eaaa0696e25680e5403ff7516869068587 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Tue, 29 Sep 2015 18:11:03 +0800
+Subject: [PATCH] winrt: multithreading support
+
+_beginthreadex is for desktop only. CreateThread is available for windows store apps on windows (and phone) 8.1 and later. http://msdn.microsoft.com/en-us/library/ms682453%28VS.85%29.aspx
+---
+ compat/w32pthreads.h | 5 +++++
+ configure            | 7 +++++++
+ libavutil/cpu.c      | 8 +++++++-
+ 3 files changed, 19 insertions(+), 1 deletion(-)
+
+diff --git a/compat/w32pthreads.h b/compat/w32pthreads.h
+index 2aff72a..c25a191 100644
+--- a/compat/w32pthreads.h
++++ b/compat/w32pthreads.h
+@@ -82,8 +82,13 @@ static av_unused int pthread_create(pthread_t *thread, const void *unused_attr,
+ {
+     thread->func   = start_routine;
+     thread->arg    = arg;
++#if HAVE_WINRT
++    thread->handle = (void*)CreateThread(NULL, 0, win32thread_worker, thread,
++                                           0, NULL);
++#else
+     thread->handle = (void*)_beginthreadex(NULL, 0, win32thread_worker, thread,
+                                            0, NULL);
++#endif
+     return !thread->handle;
+ }
+ 
+diff --git a/configure b/configure
+index b07f5d2..1b56412 100755
+--- a/configure
++++ b/configure
+@@ -1904,6 +1904,7 @@ HAVE_LIST="
+     dos_paths
+     dxva2api_cobj
+     dxva2_lib
++    winrt
+     libc_msvcrt
+     libdc1394_1
+     libdc1394_2
+@@ -5236,9 +5237,15 @@ check_type "va/va.h" "VAPictureParameterBufferHEVC"
+ 
+ check_type "vdpau/vdpau.h" "VdpPictureInfoHEVC"
+ 
++check_cpp_condition windows.h "!WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)" && enable winrt || disable winrt
++
+ if ! disabled w32threads && ! enabled pthreads; then
+     check_func_headers "windows.h process.h" _beginthreadex &&
+         enable w32threads || disable w32threads
++    if ! enabled w32threads && enabled winrt; then
++        check_func_headers "windows.h" CreateThread &&
++            enable w32threads || disable w32threads
++    fi
+ fi
+ 
+ # check for some common methods of building with pthread support
+diff --git a/libavutil/cpu.c b/libavutil/cpu.c
+index 780368d..c64baf9 100644
+--- a/libavutil/cpu.c
++++ b/libavutil/cpu.c
+@@ -30,7 +30,7 @@
+ #endif
+ #include <sched.h>
+ #endif
+-#if HAVE_GETPROCESSAFFINITYMASK
++#if HAVE_GETPROCESSAFFINITYMASK || HAVE_WINRT
+ #include <windows.h>
+ #endif
+ #if HAVE_SYSCTL
+@@ -253,6 +253,9 @@ int av_cpu_count(void)
+     static volatile int printed;
+ 
+     int nb_cpus = 1;
++#if HAVE_WINRT
++    SYSTEM_INFO sysinfo;
++#endif
+ #if HAVE_SCHED_GETAFFINITY && defined(CPU_COUNT)
+     cpu_set_t cpuset;
+ 
+@@ -274,6 +277,9 @@ int av_cpu_count(void)
+     nb_cpus = sysconf(_SC_NPROC_ONLN);
+ #elif HAVE_SYSCONF && defined(_SC_NPROCESSORS_ONLN)
+     nb_cpus = sysconf(_SC_NPROCESSORS_ONLN);
++#elif HAVE_WINRT
++    GetNativeSystemInfo(&sysinfo);
++    nb_cpus = sysinfo.dwNumberOfProcessors;
+ #endif
+ 
+     if (!printed) {
+-- 
+2.4.4
+
