@@ -143,17 +143,18 @@ setup_winrt_env() {
   EXTRA_LDFLAGS="-APPCONTAINER"
   local arch=x86_64 #used by configure --arch
   if [ -n "`echo $CL_INFO |grep -i arm`" ]; then
-    echo "you may have to ignore -fPIC in armasm_flags()"
-    which cpp &>/dev/null || echo "cpp is required by gas-preprocessor but it is missing. make sure (mingw) gcc is in your PATH"
+    which cpp &>/dev/null || {
+      echo "cpp is required by gas-preprocessor but it is missing. make sure (mingw) gcc is in your PATH"
+      exit 1
+    }
     #gas-preprocessor.pl change open(INPUT, "-|", @preprocess_c_cmd) || die "Error running preprocessor"; to open(INPUT, "@preprocess_c_cmd|") || die "Error running preprocessor";
-
     EXTRA_CFLAGS="$EXTRA_CFLAGS -D__ARM_PCS_VFP"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS -MACHINE:ARM"
     arch="arm"
     # asm broken: table
     # fft_vfp.S is broken in 87552d54d3337c3241e8a9e1a05df16eaa821496 (good c30eb74d182063c85a895c6fd3c9d47b93370bb0)
     # jrevdct_arm.S is broken in 77cdfde73e91cdbcc82cdec6b8fec6f646b02782 and use "libavutil/arm/asm.S" (good 2ad4c241c852efc0baa79b21db6bbc87c27873ef)
-    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --as=armasm --cpu=armv7 --disable-neon --enable-vfp --enable-thumb"
+    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --as=armasm --cpu=armv7-a --disable-neon --enable-vfp --enable-thumb"
   elif [ -n "`echo $CL_INFO |grep -i x64`" ]; then
     arch=x86_64
   else
@@ -214,10 +215,12 @@ setup_android_env() {
   local CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
   local FFARCH=$ANDROID_ARCH
   local PLATFORM=android-9 #ensure do not use log2f in libm
+  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-lto"
   if [ "$ANDROID_ARCH" = "x86" -o "$ANDROID_ARCH" = "i686" ]; then
     ANDROID_TOOLCHAIN_PREFIX="x86"
     CROSS_PREFIX=i686-linux-android-
   elif [ ! "${ANDROID_ARCH/arm/}" = "arm" ]; then
+#https://wiki.debian.org/ArmHardFloatPort/VfpComparison
     ANDROID_TOOLCHAIN_PREFIX="arm-linux-androideabi"
     CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
     FFARCH=arm
@@ -227,14 +230,13 @@ setup_android_env() {
       echo "armv5"
       #EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv5te -mtune=arm9tdmi -msoft-float"
     elif [ ! "${ANDROID_ARCH/neon/}" = "$ANDROID_ARCH" ]; then
-      echo "neon"
+      echo "neon. can not run on Marvell and nVidia"
       TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-neon" #--cpu=cortex-a8
-      EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mfpu=neon -mfloat-abi=softfp -mvectorize-with-neon-quad"
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mfloat-abi=softfp -mfpu=neon -mvectorize-with-neon-quad"
       #EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--fix-cortex-a8"
     else
       TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-neon"
-      EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp"
-      #EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--fix-cortex-a8"
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16"
     fi
   elif [ "$ANDROID_ARCH" = "aarch64" ]; then
     PLATFORM=android-21
