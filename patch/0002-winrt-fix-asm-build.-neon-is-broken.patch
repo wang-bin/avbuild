@@ -1,11 +1,11 @@
-From 17681aa147c328a5eed78bf0dd2a6919c30aa399 Mon Sep 17 00:00:00 2001
+From c72a6bb648fca4e2a844be65cc071fb1bb1554a1 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 8 Dec 2015 11:15:59 +0800
 Subject: [PATCH 2/2] winrt: fix asm build. neon is broken
 
 ---
  libavcodec/arm/Makefile                |   6 +-
- libavcodec/arm/fft_init_arm.c          |   3 +-
+ libavcodec/arm/fft_init_arm.c          |   2 +
  libavcodec/arm/fft_vfp.S               | 260 ++-------------------------------
  libavcodec/arm/jrevdct_arm.S           |  33 +++--
  libavcodec/arm/rv40dsp_init_arm.c      |   3 +-
@@ -13,10 +13,10 @@ Subject: [PATCH 2/2] winrt: fix asm build. neon is broken
  libavcodec/arm/vp8dsp_init_arm.c       |   4 +
  libswresample/arm/audio_convert_init.c |   7 +-
  libswscale/arm/swscale_unscaled.c      |   2 +
- 9 files changed, 52 insertions(+), 270 deletions(-)
+ 9 files changed, 52 insertions(+), 269 deletions(-)
 
 diff --git a/libavcodec/arm/Makefile b/libavcodec/arm/Makefile
-index cdd35b0..84bdcfb 100644
+index 179c403..43602d7 100644
 --- a/libavcodec/arm/Makefile
 +++ b/libavcodec/arm/Makefile
 @@ -70,9 +70,9 @@ ARMV6-OBJS-$(CONFIG_ME_CMP)            += arm/me_cmp_armv6.o
@@ -33,15 +33,13 @@ index cdd35b0..84bdcfb 100644
  # decoders/encoders
  ARMV6-OBJS-$(CONFIG_MLP_DECODER)       += arm/mlpdsp_armv6.o
 diff --git a/libavcodec/arm/fft_init_arm.c b/libavcodec/arm/fft_init_arm.c
-index 5087f5f..b9dcd35 100644
+index 055c2c1..a29ddd4 100644
 --- a/libavcodec/arm/fft_init_arm.c
 +++ b/libavcodec/arm/fft_init_arm.c
-@@ -39,9 +39,10 @@ void ff_rdft_calc_neon(struct RDFTContext *s, FFTSample *z);
- av_cold void ff_fft_init_arm(FFTContext *s)
- {
+@@ -41,7 +41,9 @@ av_cold void ff_fft_init_arm(FFTContext *s)
      int cpu_flags = av_get_cpu_flags();
--
-     if (have_vfp(cpu_flags) && !have_vfpv3(cpu_flags)) {
+ 
+     if (have_vfp_vm(cpu_flags)) {
 +#if !HAVE_WINRT
          s->fft_calc     = ff_fft_calc_vfp;
 +#endif
@@ -548,10 +546,10 @@ index ec9e62e..525cd08 100644
 +#endif
  }
 diff --git a/libswscale/arm/swscale_unscaled.c b/libswscale/arm/swscale_unscaled.c
-index 5d0c8e9..f385fb2 100644
+index ac1e4a9..f16cbc2 100644
 --- a/libswscale/arm/swscale_unscaled.c
 +++ b/libswscale/arm/swscale_unscaled.c
-@@ -140,6 +140,8 @@ static void get_unscaled_swscale_neon(SwsContext *c) {
+@@ -185,6 +185,8 @@ static void get_unscaled_swscale_neon(SwsContext *c) {
  void ff_get_unscaled_swscale_arm(SwsContext *c)
  {
      int cpu_flags = av_get_cpu_flags();

@@ -1,4 +1,4 @@
-From 51bc83130debefa883766973ae1dda2850c93373 Mon Sep 17 00:00:00 2001
+From 8e37d9e6de5673702b86ecd935fb67bfcddd445b Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 8 Dec 2015 11:15:20 +0800
 Subject: [PATCH 1/2] ignore -fPIC for armasm
@@ -8,10 +8,10 @@ Subject: [PATCH 1/2] ignore -fPIC for armasm
  1 file changed, 1 insertion(+)
 
 diff --git a/configure b/configure
-index d61c2aa..ec71470 100755
+index 2148f11..fcc898b 100755
 --- a/configure
 +++ b/configure
-@@ -3475,6 +3475,7 @@ armasm_flags(){
+@@ -3492,6 +3492,7 @@ armasm_flags(){
          case $flag in
              # Filter out MSVC cl.exe options from cflags that shouldn't
              # be passed to gas-preprocessor

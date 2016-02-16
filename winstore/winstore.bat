@@ -39,9 +39,9 @@ SET INCLUDE=%VSINSTALLDIR%VC\INCLUDE;%WindowsPhoneKitDir%\Include;%WindowsPhoneK
 goto end
 
 :SetEnv10
-SET LIB=%VSINSTALLDIR%VC\lib\store\%ARCH2%;%UniversalCRTSdkDir%lib\%UCRTVersion%\ucrt\%ARCH%;;%UniversalCRTSdkDir%lib\%UCRTVersion%\um\%ARCH%;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6\lib\um\%ARCH%;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6\Lib\um\%ARCH%
+SET LIB=%VSINSTALLDIR%VC\lib\store\%ARCH2%;%UniversalCRTSdkDir%lib\%UCRTVersion%\ucrt\%ARCH%;;%UniversalCRTSdkDir%lib\%UCRTVersion%\um\%ARCH%
 SET LIBPATH=%VSINSTALLDIR%VC\lib\%ARCH2%;
-SET INCLUDE=%VSINSTALLDIR%VC\include;%UniversalCRTSdkDir%Include\%UCRTVersion%\ucrt;%UniversalCRTSdkDir%Include\%UCRTVersion%\um;%UniversalCRTSdkDir%Include\%UCRTVersion%\shared;%UniversalCRTSdkDir%Include\%UCRTVersion%\winrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6\Include\um;
+SET INCLUDE=%VSINSTALLDIR%VC\include;%UniversalCRTSdkDir%Include\%UCRTVersion%\ucrt;%UniversalCRTSdkDir%Include\%UCRTVersion%\um;%UniversalCRTSdkDir%Include\%UCRTVersion%\shared;%UniversalCRTSdkDir%Include\%UCRTVersion%\winrt
 goto end
 
 :end

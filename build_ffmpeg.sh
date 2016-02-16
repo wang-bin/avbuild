@@ -1,25 +1,13 @@
 #/bin/bash
-#TODO: test both x86 x64. cc test then build with gcc -m32 -m64 or --enable-cross-compile --target-os=linux --arch=x86
-# Author: wbsecg1@gmail.com 2013-2015
-echo "This is part of QtAV project. Get the latest script from https://github.com/wang-bin/QtAV/tree/master/scripts"
-
-# Put this script in ffmpeg source dir. Make sure your build environment is correct. Then run "./build_ffmpeg.sh"
-# To build ffmpeg for android, run "./build_ffmpeg android". default is armv7-a.
+echo
+echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2016"
 
 PLATFORMS="ios|android|maemo5|maemo6|vc|x86|winstore|winpc|winphone"
-echo "Put this script in ffmpeg source dir. Make sure your build environment is correct."
-echo 'Or put this script in other place and set PATH to include ffmpeg source dir, e.g. "export PATH=~/ffmpeg:$PATH"'
-echo "usage: ./build_ffmpeg.sh [${PLATFORMS}]"
+echo "Usage:"
+test -d $PWD/ffmpeg || echo "  export FFSRC=/path/to/ffmpeg"
+echo "  ./build_ffmpeg.sh [${PLATFORMS} [arch]]"
 echo "(optional) set var in config-xxx.sh, xxx is ${PLATFORMS//\|/, }"
 echo "var can be: INSTALL_DIR, NDK_ROOT, MAEMO5_SYSROOT, MAEMO6_SYSROOT"
-
-echo "msys2: change target_os detect in configure: mingw32)=>mingw*|msys*)"
-echo "       pacman -Sy --needed diffutils pkg-config"
-echo 'export PATH=$PATH:$MINGW_BIN:$PWD # make.exe in mingw_builds can not deal with windows driver dir. use msys2 make instead' 
-echo "Author: wbsecg1@gmail.com 2013-2015"
-
-# TODO: PLATFORM=xxx TARGET=ooo TOOLCHAIN=ttt ./build_ffmpeg.sh
-
 TAGET_FLAG=$1
 TAGET_ARCH_FLAG=$2 #${2:-$1}
 
@@ -72,6 +60,11 @@ target_arch_is() {
 is_libav() {
   test "${PWD/libav*/}" = "$PWD" && return 1 || return 0
 }
+host_is MinGW || host_is MSYS && {
+  echo "msys2: change target_os detect in configure: mingw32)=>mingw*|msys*)"
+  echo "       pacman -Sy --needed diffutils pkg-config"
+  echo 'export PATH=$PATH:$MINGW_BIN:$PWD # make.exe in mingw_builds can not deal with windows driver dir. use msys2 make instead'
+}
 
 enable_opt() {
   local OPT=$1
@@ -81,11 +74,14 @@ enable_opt() {
 #CPU_FLAGS=-mmmx -msse -mfpmath=sse
 #ffmpeg 1.2 autodetect dxva, vaapi, vdpau. manually enable vda before 2.3
 enable_opt dxva2
-enable_opt vaapi
-enable_opt vdpau
-enable_opt vda
-enable_opt videotoolbox
-
+host_is Linux && {
+  enable_opt vaapi
+  enable_opt vdpau
+}
+host_is Darwin && {
+  enable_opt vda
+  enable_opt videotoolbox
+}
 # clock_gettime in librt instead of glibc>=2.17
 grep "LIBRT" $FFSRC/configure &>/dev/null && {
   # TODO: cc test
@@ -143,18 +139,19 @@ setup_winrt_env() {
   EXTRA_LDFLAGS="-APPCONTAINER"
   local arch=x86_64 #used by configure --arch
   if [ -n "`echo $CL_INFO |grep -i arm`" ]; then
+    # asm broken: table
+    # fft_vfp.S is broken in 87552d54d3337c3241e8a9e1a05df16eaa821496 (good c30eb74d182063c85a895c6fd3c9d47b93370bb0)
+    # jrevdct_arm.S is broken in 77cdfde73e91cdbcc82cdec6b8fec6f646b02782 and use "libavutil/arm/asm.S" (good 2ad4c241c852efc0baa79b21db6bbc87c27873ef)
+    ASM_OPT="--as=armasm --cpu=armv7-a --disable-neon --enable-vfp --enable-thumb"
     which cpp &>/dev/null || {
-      echo "cpp is required by gas-preprocessor but it is missing. make sure (mingw) gcc is in your PATH"
-      exit 1
+      echo "ASM is disabled: cpp is required by gas-preprocessor but it is missing. make sure (mingw) gcc is in your PATH"
+      ASM_OPT=--disable-asm
     }
     #gas-preprocessor.pl change open(INPUT, "-|", @preprocess_c_cmd) || die "Error running preprocessor"; to open(INPUT, "@preprocess_c_cmd|") || die "Error running preprocessor";
     EXTRA_CFLAGS="$EXTRA_CFLAGS -D__ARM_PCS_VFP"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS -MACHINE:ARM"
     arch="arm"
-    # asm broken: table
-    # fft_vfp.S is broken in 87552d54d3337c3241e8a9e1a05df16eaa821496 (good c30eb74d182063c85a895c6fd3c9d47b93370bb0)
-    # jrevdct_arm.S is broken in 77cdfde73e91cdbcc82cdec6b8fec6f646b02782 and use "libavutil/arm/asm.S" (good 2ad4c241c852efc0baa79b21db6bbc87c27873ef)
-    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --as=armasm --cpu=armv7-a --disable-neon --enable-vfp --enable-thumb"
+    TOOLCHAIN_OPT="$TOOLCHAIN_OPT $ASM_OPT"
   elif [ -n "`echo $CL_INFO |grep -i x64`" ]; then
     arch=x86_64
   else
@@ -169,8 +166,6 @@ setup_winrt_env() {
     INSTALL_DIR=winphone
     # phone ldflags only for win8.1?
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS -subsystem:console -opt:ref WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib -NODEFAULTLIB:kernel32.lib -NODEFAULTLIB:ole32.lib"
-  else
-    family="WINAPI_FAMILY_PC_APP" #WINAPI_FAMILY_APP for win10?
   fi
   if [ "$winver" == "0x0603" ]; then
     INSTALL_DIR="${INSTALL_DIR}81${arch}"
@@ -263,7 +258,7 @@ setup_ios_env() {
 # https://github.com/yixia/FFmpeg-Vitamio/blob/vitamio/build_ios.sh
   PLATFORM_OPT='--enable-cross-compile --arch=arm --target-os=darwin --cc="clang -arch armv7" --sysroot=$(xcrun --sdk iphoneos --show-sdk-path) --cpu=cortex-a8 --enable-pic'
   LIB_OPT="--enable-static"
-  MISC_OPT=$MISC_OPT --disable-avdevice
+  MISC_OPT="$MISC_OPT --disable-avdevice --disable-programs"
   INSTALL_DIR=sdk-ios
 }
 
@@ -271,7 +266,7 @@ setup_ios_simulator_env() {
 #iphoneos iphonesimulator i386
   PLATFORM_OPT='--enable-cross-compile --arch=i386 --cpu=i386 --target-os=darwin --cc="clang -arch i386" --sysroot=$(xcrun --sdk iphonesimulator --show-sdk-path) --enable-pic'
   LIB_OPT="--enable-static"
-  MISC_OPT=$MISC_OPT --disable-avdevice
+  MISC_OPT="$MISC_OPT --disable-avdevice --disable-programs"
   INSTALL_DIR=sdk-ios-i386
 }
 
@@ -336,6 +331,7 @@ else
   elif host_is Darwin; then
     test -n "$vda_opt" && PLATFORM_OPT="$PLATFORM_OPT $vda_opt"
     test -n "$videotoolbox_opt" && PLATFORM_OPT="$PLATFORM_OPT $videotoolbox_opt"
+    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=clang" #libav has no --cxx
     EXTRA_CFLAGS=-mmacosx-version-min=10.6
   fi
 fi
@@ -350,14 +346,14 @@ elif target_is winstore; then
   setup_winrt_env
 else
   EXTRA_CFLAGS="$EXTRA_CFLAGS -O3"
-  setup_mingw_env
+  setup_mingw_env || TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-lto"
   # wrong! detect target!=host
 fi
 test -n "$EXTRA_CFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-cflags=\"$EXTRA_CFLAGS\""
 test -n "$EXTRA_LDFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"$EXTRA_LDFLAGS\""
 test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
 echo $LIB_OPT
-is_libav || MISC_OPT="$MISC_OPT --disable-postproc"
+is_libav || MISC_OPT="$MISC_OPT --enable-avresample --disable-postproc"
 CONFIGURE="configure --extra-version=QtAV --disable-doc --disable-debug $LIB_OPT --enable-pic --enable-runtime-cpudetect $USER_OPT $MISC_OPT $PLATFORM_OPT $TOOLCHAIN_OPT"
 CONFIGURE=`echo $CONFIGURE |tr -s ' '`
 # http://ffmpeg.org/platform.html
