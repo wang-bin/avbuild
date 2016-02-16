@@ -256,18 +256,23 @@ setup_android_env() {
 setup_ios_env() {
 #iphoneos iphonesimulator i386
 # https://github.com/yixia/FFmpeg-Vitamio/blob/vitamio/build_ios.sh
-  PLATFORM_OPT='--enable-cross-compile --arch=arm --target-os=darwin --cc="clang -arch armv7" --sysroot=$(xcrun --sdk iphoneos --show-sdk-path) --cpu=cortex-a8 --enable-pic'
+  local IOS_ARCH=$1
+  PLATFORM_OPT="--enable-cross-compile --arch=$IOS_ARCH --target-os=darwin --cc=\"clang -arch $IOS_ARCH\" --sysroot=\$(xcrun --sdk iphoneos --show-sdk-path) --enable-pic"
   LIB_OPT="--enable-static"
   MISC_OPT="$MISC_OPT --disable-avdevice --disable-programs"
-  INSTALL_DIR=sdk-ios
+  EXTRA_CFLAGS=-miphoneos-version-min=5.1
+  INSTALL_DIR=sdk-ios-$IOS_ARCH
 }
 
 setup_ios_simulator_env() {
 #iphoneos iphonesimulator i386
-  PLATFORM_OPT='--enable-cross-compile --arch=i386 --cpu=i386 --target-os=darwin --cc="clang -arch i386" --sysroot=$(xcrun --sdk iphonesimulator --show-sdk-path) --enable-pic'
+# clang -arch i386 -arch x86_64
+  local IOS_ARCH=$1
+  PLATFORM_OPT="--enable-cross-compile --arch=$IOS_ARCH --cpu=$IOS_ARCH --target-os=darwin --cc=\"clang -arch $IOS_ARCH\" --sysroot=\$(xcrun --sdk iphonesimulator --show-sdk-path) --enable-pic"
   LIB_OPT="--enable-static"
   MISC_OPT="$MISC_OPT --disable-avdevice --disable-programs"
-  INSTALL_DIR=sdk-ios-i386
+  EXTRA_CFLAGS=-mios-simulator-version-min=5.1
+  INSTALL_DIR=sdk-ios-$IOS_ARCH
 }
 
 setup_maemo5_env() {
@@ -306,9 +311,9 @@ setup_maemo6_env() {
 if target_is android; then
   setup_android_env $TAGET_ARCH_FLAG
 elif target_is ios; then
-  setup_ios_env
+  setup_ios_env $TAGET_ARCH_FLAG
 elif target_is ios_simulator; then
-  setup_ios_simulator_env
+  setup_ios_simulator_env $TAGET_ARCH_FLAG
 elif target_is maemo5; then
   setup_maemo5_env
 elif target_is maemo6; then
