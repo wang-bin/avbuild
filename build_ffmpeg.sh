@@ -257,10 +257,12 @@ setup_ios_env() {
 #iphoneos iphonesimulator i386
 # https://github.com/yixia/FFmpeg-Vitamio/blob/vitamio/build_ios.sh
   local IOS_ARCH=$1
-  PLATFORM_OPT="--enable-cross-compile --arch=$IOS_ARCH --target-os=darwin --cc=\"clang -arch $IOS_ARCH\" --sysroot=\$(xcrun --sdk iphoneos --show-sdk-path) --enable-pic"
+  ## cc="xcrun -sdk iphoneos clang"
+  PLATFORM_OPT="--enable-cross-compile --arch=$IOS_ARCH --target-os=darwin --cc='xcrun -sdk iphonesimulator clang' --sysroot=\$(xcrun --sdk iphoneos --show-sdk-path)"
   LIB_OPT="--enable-static"
   MISC_OPT="$MISC_OPT --disable-avdevice --disable-programs"
-  EXTRA_CFLAGS=-miphoneos-version-min=5.1
+  EXTRA_CFLAGS="-arch $IOS_ARCH -miphoneos-version-min=6.0"
+  EXTRA_LDFLAGS="-arch $IOS_ARCH -miphoneos-version-min=6.0"
   INSTALL_DIR=sdk-ios-$IOS_ARCH
 }
 
@@ -268,10 +270,11 @@ setup_ios_simulator_env() {
 #iphoneos iphonesimulator i386
 # clang -arch i386 -arch x86_64
   local IOS_ARCH=$1
-  PLATFORM_OPT="--enable-cross-compile --arch=$IOS_ARCH --cpu=$IOS_ARCH --target-os=darwin --cc=\"clang -arch $IOS_ARCH\" --sysroot=\$(xcrun --sdk iphonesimulator --show-sdk-path) --enable-pic"
+  PLATFORM_OPT="--enable-cross-compile --arch=$IOS_ARCH --cpu=$IOS_ARCH --target-os=darwin --cc='xcrun -sdk iphoneos clang' --sysroot=\$(xcrun --sdk iphonesimulator --show-sdk-path)"
   LIB_OPT="--enable-static"
   MISC_OPT="$MISC_OPT --disable-avdevice --disable-programs"
-  EXTRA_CFLAGS=-mios-simulator-version-min=5.1
+  EXTRA_CFLAGS="-arch $IOS_ARCH -mios-simulator-version-min=6.0"
+  EXTRA_LDFLAGS="-arch $IOS_ARCH -mios-simulator-version-min=6.0"
   INSTALL_DIR=sdk-ios-$IOS_ARCH
 }
 
@@ -308,17 +311,28 @@ setup_maemo6_env() {
   INSTALL_DIR=sdk-maemo6
 }
 
+MORE_OPT=0
 if target_is android; then
   setup_android_env $TAGET_ARCH_FLAG
+  MORE_OPT=1
 elif target_is ios; then
   setup_ios_env $TAGET_ARCH_FLAG
 elif target_is ios_simulator; then
   setup_ios_simulator_env $TAGET_ARCH_FLAG
+elif target_is vc; then
+  setup_vc_env
+elif target_is winpc; then
+  setup_winrt_env
+elif target_is winphone; then
+  setup_winrt_env
+elif target_is winstore; then
+  setup_winrt_env
 elif target_is maemo5; then
   setup_maemo5_env
 elif target_is maemo6; then
   setup_maemo6_env
 elif target_is x86; then
+  MORE_OPT=1
   if [ "`uname -m`" = "x86_64" ]; then
     #TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=$(tolower $(uname -s)) --arch=x86"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS -m32"
@@ -339,17 +353,10 @@ else
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=clang" #libav has no --cxx
     EXTRA_CFLAGS=-mmacosx-version-min=10.6
   fi
+  MORE_OPT=1
 fi
 
-if target_is vc; then
-  setup_vc_env
-elif target_is winpc; then
-  setup_winrt_env
-elif target_is winphone; then
-  setup_winrt_env
-elif target_is winstore; then
-  setup_winrt_env
-else
+if [ $MORE_OPT -eq 1 ]; then
   EXTRA_CFLAGS="$EXTRA_CFLAGS -O3"
   setup_mingw_env || TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-lto"
   # wrong! detect target!=host
