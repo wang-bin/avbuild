@@ -255,26 +255,22 @@ setup_android_env() {
 
 setup_ios_env() {
 #iphoneos iphonesimulator i386
-# https://github.com/yixia/FFmpeg-Vitamio/blob/vitamio/build_ios.sh
-  local IOS_ARCH=$1
-  ## cc="xcrun -sdk iphoneos clang"
-  PLATFORM_OPT="--enable-cross-compile --arch=$IOS_ARCH --target-os=darwin --cc='xcrun -sdk iphonesimulator clang' --sysroot=\$(xcrun --sdk iphoneos --show-sdk-path)"
-  LIB_OPT="--enable-static"
-  MISC_OPT="$MISC_OPT --disable-avdevice --disable-programs"
-  EXTRA_CFLAGS="-arch $IOS_ARCH -miphoneos-version-min=6.0"
-  EXTRA_LDFLAGS="-arch $IOS_ARCH -miphoneos-version-min=6.0"
-  INSTALL_DIR=sdk-ios-$IOS_ARCH
-}
-
-setup_ios_simulator_env() {
-#iphoneos iphonesimulator i386
 # clang -arch i386 -arch x86_64
+## cc="xcrun -sdk iphoneos clang"
   local IOS_ARCH=$1
-  PLATFORM_OPT="--enable-cross-compile --arch=$IOS_ARCH --cpu=$IOS_ARCH --target-os=darwin --cc='xcrun -sdk iphoneos clang' --sysroot=\$(xcrun --sdk iphonesimulator --show-sdk-path)"
+  if [ "${IOS_ARCH:0:3}" == "arm" ]; then
+    SYSROOT_SDK=iphoneos
+    VER_OS=iphoneos
+  else
+    SYSROOT_SDK=iphonesimulator
+    VER_OS=ios-simulator
+  fi
+  #--cpu=$IOS_ARCH
+  PLATFORM_OPT="--enable-cross-compile --arch=$IOS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
   LIB_OPT="--enable-static"
   MISC_OPT="$MISC_OPT --disable-avdevice --disable-programs"
-  EXTRA_CFLAGS="-arch $IOS_ARCH -mios-simulator-version-min=6.0"
-  EXTRA_LDFLAGS="-arch $IOS_ARCH -mios-simulator-version-min=6.0"
+  EXTRA_CFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=6.0"
+  EXTRA_LDFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=6.0"
   INSTALL_DIR=sdk-ios-$IOS_ARCH
 }
 
@@ -317,8 +313,6 @@ if target_is android; then
   MORE_OPT=1
 elif target_is ios; then
   setup_ios_env $TAGET_ARCH_FLAG
-elif target_is ios_simulator; then
-  setup_ios_simulator_env $TAGET_ARCH_FLAG
 elif target_is vc; then
   setup_vc_env
 elif target_is winpc; then

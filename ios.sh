@@ -1,6 +1,12 @@
 
 OUT_DIR=sdk-ios
 mkdir -p $OUT_DIR/lib
+JOBS=`sysctl -n machdep.cpu.thread_count`
+ARCHS=(armv7 arm64 x86_64 i386)
+for arch in ${ARCHS[@]}; do
+  test -d build_${OUT_DIR}-$arch && make -j$JOBS install -C build_${OUT_DIR}-$arch prefix=$PWD/${OUT_DIR}-$arch || ./build_ffmpeg.sh ios $arch
+done
+
 SDK_ARCH_DIRS=$(find . -depth 1 |grep ./sdk-ios-)
 echo archs: ${SDK_ARCH_DIRS//.\/sdk-ios-/}
 SDK_ARCH_DIRS_A=($SDK_ARCH_DIRS)
