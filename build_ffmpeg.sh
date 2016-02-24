@@ -307,10 +307,8 @@ setup_maemo6_env() {
   INSTALL_DIR=sdk-maemo6
 }
 
-MORE_OPT=0
 if target_is android; then
   setup_android_env $TAGET_ARCH_FLAG
-  MORE_OPT=1
 elif target_is ios; then
   setup_ios_env $TAGET_ARCH_FLAG
 elif target_is vc; then
@@ -326,7 +324,6 @@ elif target_is maemo5; then
 elif target_is maemo6; then
   setup_maemo6_env
 elif target_is x86; then
-  MORE_OPT=1
   if [ "`uname -m`" = "x86_64" ]; then
     #TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=$(tolower $(uname -s)) --arch=x86"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS -m32"
@@ -345,16 +342,16 @@ else
     test -n "$vda_opt" && PLATFORM_OPT="$PLATFORM_OPT $vda_opt"
     test -n "$videotoolbox_opt" && PLATFORM_OPT="$PLATFORM_OPT $videotoolbox_opt"
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=clang" #libav has no --cxx
-    EXTRA_CFLAGS=-mmacosx-version-min=10.6
+    EXTRA_CFLAGS=-mmacosx-version-min=10.8
+    EXTRA_LDFLAGS=-mmacosx-version-min=10.8
   fi
-  MORE_OPT=1
 fi
-
-if [ $MORE_OPT -eq 1 ]; then
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -O3"
-  setup_mingw_env || TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-lto"
+#TODO: optimize size
+setup_mingw_env || {
+  [ ! "${LIB_OPT/disable-static/}" == "${LIB_OPT}" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-lto"
+}
   # wrong! detect target!=host
-fi
+
 test -n "$EXTRA_CFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-cflags=\"$EXTRA_CFLAGS\""
 test -n "$EXTRA_LDFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"$EXTRA_LDFLAGS\""
 test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
