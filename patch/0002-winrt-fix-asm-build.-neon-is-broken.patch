@@ -1,4 +1,4 @@
-From c72a6bb648fca4e2a844be65cc071fb1bb1554a1 Mon Sep 17 00:00:00 2001
+From 91132cca8bf2db997869126624737e2742128550 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 8 Dec 2015 11:15:59 +0800
 Subject: [PATCH 2/2] winrt: fix asm build. neon is broken
@@ -546,10 +546,10 @@ index ec9e62e..525cd08 100644
 +#endif
  }
 diff --git a/libswscale/arm/swscale_unscaled.c b/libswscale/arm/swscale_unscaled.c
-index ac1e4a9..f16cbc2 100644
+index 8aa933c..41520b4 100644
 --- a/libswscale/arm/swscale_unscaled.c
 +++ b/libswscale/arm/swscale_unscaled.c
-@@ -185,6 +185,8 @@ static void get_unscaled_swscale_neon(SwsContext *c) {
+@@ -181,6 +181,8 @@ static void get_unscaled_swscale_neon(SwsContext *c) {
  void ff_get_unscaled_swscale_arm(SwsContext *c)
  {
      int cpu_flags = av_get_cpu_flags();

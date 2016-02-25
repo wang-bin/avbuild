@@ -181,6 +181,8 @@ setup_winrt_env() {
 setup_mingw_env() {
   echo "TOOLCHAIN_OPT=$TOOLCHAIN_OPT"
   host_is MinGW || host_is MSYS || return 1
+  target_is winstore && return 1
+  target_is vc && return 1
     test -n "$dxva2_opt" && PLATFORM_OPT="$PLATFORM_OPT $dxva2_opt"
     TOOLCHAIN_OPT="$dxva2_opt --disable-iconv $TOOLCHAIN_OPT --extra-ldflags=\"-static-libgcc -Wl,-Bstatic\""
   # check host_is mingw64 is not enough
