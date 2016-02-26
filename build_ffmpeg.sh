@@ -212,7 +212,6 @@ setup_android_env() {
   local CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
   local FFARCH=$ANDROID_ARCH
   local PLATFORM=android-9 #ensure do not use log2f in libm
-  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-lto"
   if [ "$ANDROID_ARCH" = "x86" -o "$ANDROID_ARCH" = "i686" ]; then
     ANDROID_TOOLCHAIN_PREFIX="x86"
     CROSS_PREFIX=i686-linux-android-
