@@ -1,6 +1,10 @@
-@echo off
 :: set your MSYS2_BIN here
 set MSYS2_BIN=D:\build\msys64\usr\bin
+
+@echo Now you can run:
+@echo cd dir/of/build_ffmpeg
+@echo export FFSRC=/path/to/ffmpeg
+@echo ./build_ffmpeg.sh winstore
 
 if not exist %MSYS2_BIN% goto NoBash
 %MSYS2_BIN%\bash.exe --login -i

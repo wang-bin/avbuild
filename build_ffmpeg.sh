@@ -102,24 +102,23 @@ setup_vc_env() {
   #TOOLCHAIN_OPT=
   test -n "$dxva2_opt" && PLATFORM_OPT="$PLATFORM_OPT $dxva2_opt"
   PLATFORM_OPT="$PLATFORM_OPT --toolchain=msvc"
-  CL_INFO=`cl 2>&1 |grep -i Microsoft`
-  CL_VER=`echo $CL_INFO |sed 's,.* \([0-9]*\)\.[0-9]*\..*,\1,g'`
-  echo "cl version: $CL_VER"
-  if [ -n "`echo $CL_INFO |grep -i x86`" ]; then
-    echo "vc x86"
-    INSTALL_DIR="${INSTALL_DIR}-vc-x86"
-    test $CL_VER -gt 16 && echo "adding windows xp compatible link flags..." && PLATFORM_OPT="$PLATFORM_OPT --extra-ldflags=\"-SUBSYSTEM:CONSOLE,5.01\""
-  elif [ -n "`echo $CL_INFO |grep -i x64`" ]; then
+  CL_VER=${VisualStudioVersion:0:2}
+  echo "cl version: $CL_VER, platform: $Platform"
+  if [ "`tolower $Platform`" = "x64" ]; then
     INSTALL_DIR="${INSTALL_DIR}-vc-x66"
     echo "vc x64"
     test $CL_VER -gt 16 && echo "adding windows xp compatible link flags..." && PLATFORM_OPT="$PLATFORM_OPT --extra-ldflags=\"-SUBSYSTEM:CONSOLE,5.02\""
-  elif [ -n "`echo $CL_INFO |grep -i arm`" ]; then
+  elif [ "`tolower $Platform`" = "arm" ]; then
     INSTALL_DIR="${INSTALL_DIR}-vc-arm"
     echo "vc arm"
     # http://www.cnblogs.com/zjjcy/p/3384517.html  http://www.cnblogs.com/zjjcy/p/3499848.html
     # armasm: http://www.cnblogs.com/zcmmwbd/p/windows-phone-8-armasm-guide.html#2842650
     # TODO: use a wrapper function to deal with the parameters passed to armasm
     PLATFORM_OPT="--extra-cflags=\"-D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE -D_M_ARM -DWINAPI_FAMILY=WINAPI_FAMILY_APP\" --extra-ldflags=\"-MACHINE:ARM\" $PLATFORM_OPT --enable-cross-compile --arch=arm --cpu=armv7 --target-os=win32 --as=armasm --disable-yasm --disable-inline-asm"
+  else #Platform is empty
+    echo "vc x86"
+    INSTALL_DIR="${INSTALL_DIR}-vc-x86"
+    test $CL_VER -gt 16 && echo "adding windows xp compatible link flags..." && PLATFORM_OPT="$PLATFORM_OPT --extra-ldflags=\"-SUBSYSTEM:CONSOLE,5.01\""
   fi
 }
 
@@ -127,18 +126,18 @@ setup_winrt_env() {
 #http://fate.libav.org/arm-msvc-14-wp
   MISC_OPT="$MISC_OPT --disable-programs --disable-encoders --disable-muxers --disable-avdevice"
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --toolchain=msvc --enable-cross-compile --target-os=win32"
-  CL_INFO=`cl 2>&1 |grep -i Microsoft`
-  CL_VER=`echo $CL_INFO |sed 's,.* \([0-9]*\)\.[0-9]*\..*,\1,g'`
+  VS_VER=${VisualStudioVersion:0:2}
+  echo "vs version: $VS_VER, platform: $Platform"
   INSTALL_DIR=winrt
 
-  echo "cl version: $CL_VER"
+  echo "vs version: $VS_VER"
   local winver="0x0A00"
-  test $CL_VER -lt 19 && winver="0x0603"
+  test $VS_VER -lt 14 && winver="0x0603"
   local family="WINAPI_FAMILY_APP"
   EXTRA_CFLAGS="$EXTRA_CFLAGS -MD"
   EXTRA_LDFLAGS="-APPCONTAINER"
   local arch=x86_64 #used by configure --arch
-  if [ -n "`echo $CL_INFO |grep -i arm`" ]; then
+  if [ "`tolower $Platform`" = "arm" ]; then
     # asm broken: table
     # fft_vfp.S is broken in 87552d54d3337c3241e8a9e1a05df16eaa821496 (good c30eb74d182063c85a895c6fd3c9d47b93370bb0)
     # jrevdct_arm.S is broken in 77cdfde73e91cdbcc82cdec6b8fec6f646b02782 and use "libavutil/arm/asm.S" (good 2ad4c241c852efc0baa79b21db6bbc87c27873ef)
@@ -152,7 +151,7 @@ setup_winrt_env() {
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS -MACHINE:ARM"
     arch="arm"
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT $ASM_OPT"
-  elif [ -n "`echo $CL_INFO |grep -i x64`" ]; then
+  elif [ "`tolower $Platform`" = "x64" ]; then
     arch=x86_64
   else
     arch=x86

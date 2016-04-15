@@ -33,9 +33,9 @@ goto end
 
 :SetEnvPhone81
 SET WindowsPhoneKitDir=%WindowsSdkDir%..\..\Windows Phone Kits\8.1
-SET LIB=%VSINSTALLDIR%VC\lib\store\%ARCH2%;%WindowsPhoneKitDir%\lib\%ARCH%;;
+SET LIB=%VSINSTALLDIR%VC\lib\store\%ARCH2%;%WindowsPhoneKitDir%\lib\%ARCH%;
 SET LIBPATH=%VSINSTALLDIR%VC\lib\%ARCH2%
-SET INCLUDE=%VSINSTALLDIR%VC\INCLUDE;%WindowsPhoneKitDir%\Include;%WindowsPhoneKitDir%\Include\abi;%WindowsPhoneKitDir%\Include\mincore;%WindowsPhoneKitDir%\Include\minwin;%WindowsPhoneKitDir%\Include\wrl;
+SET INCLUDE=%VSINSTALLDIR%VC\INCLUDE;%WindowsSdkDir%Include\um;%WindowsSdkDir%Include\shared;%WindowsSdkDir%Include\winrt;%WindowsPhoneKitDir%\Include;%WindowsPhoneKitDir%\Include\abi;%WindowsPhoneKitDir%\Include\mincore;%WindowsPhoneKitDir%\Include\minwin;%WindowsPhoneKitDir%\Include\wrl;
 goto end
 
 :SetEnv10
@@ -50,8 +50,5 @@ goto end
 @echo LIBPATH=%LIBPATH%
 @echo -------------------------------------------------------------------------------
 @echo -----Build environment is ready: Windows Store %WIN_VER% %WIN_PHONE% %ARCH2%-----
-@echo Now you can run:
-@echo cd dir/of/build_ffmpeg
-@echo export FFSRC=/path/to/ffmpeg
-@echo ./build_ffmpeg.sh winstore
-call ..\msys2.bat
+
+if exist user.bat call user.bat
