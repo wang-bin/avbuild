@@ -114,7 +114,7 @@ setup_vc_env() {
     # http://www.cnblogs.com/zjjcy/p/3384517.html  http://www.cnblogs.com/zjjcy/p/3499848.html
     # armasm: http://www.cnblogs.com/zcmmwbd/p/windows-phone-8-armasm-guide.html#2842650
     # TODO: use a wrapper function to deal with the parameters passed to armasm
-    PLATFORM_OPT="--extra-cflags=\"-D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE -D_M_ARM -DWINAPI_FAMILY=WINAPI_FAMILY_APP\" --extra-ldflags=\"-MACHINE:ARM\" $PLATFORM_OPT --enable-cross-compile --arch=arm --cpu=armv7 --target-os=win32 --as=armasm --disable-yasm --disable-inline-asm"
+    PLATFORM_OPT="--extra-cflags=\"-D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE -D_M_ARM -DWINAPI_FAMILY=WINAPI_FAMILY_APP\" --extra-ldflags=\"-MACHINE:ARM\" $PLATFORM_OPT --enable-cross-compile --arch=arm --cpu=armv7 --target-os=win32 --as=armasm"
   else #Platform is empty
     echo "vc x86"
     INSTALL_DIR="${INSTALL_DIR}-vc-x86"
@@ -138,10 +138,7 @@ setup_winrt_env() {
   EXTRA_LDFLAGS="-APPCONTAINER"
   local arch=x86_64 #used by configure --arch
   if [ "`tolower $Platform`" = "arm" ]; then
-    # asm broken: table
-    # fft_vfp.S is broken in 87552d54d3337c3241e8a9e1a05df16eaa821496 (good c30eb74d182063c85a895c6fd3c9d47b93370bb0)
-    # jrevdct_arm.S is broken in 77cdfde73e91cdbcc82cdec6b8fec6f646b02782 and use "libavutil/arm/asm.S" (good 2ad4c241c852efc0baa79b21db6bbc87c27873ef)
-    ASM_OPT="--as=armasm --cpu=armv7-a --disable-neon --enable-vfp --enable-thumb"
+    ASM_OPT="--as=armasm --cpu=armv7-a --enable-thumb"
     which cpp &>/dev/null || {
       echo "ASM is disabled: cpp is required by gas-preprocessor but it is missing. make sure (mingw) gcc is in your PATH"
       ASM_OPT=--disable-asm
@@ -352,12 +349,13 @@ setup_mingw_env || {
 }
   # wrong! detect target!=host
 
+target_is winstore || TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-pic"
 test -n "$EXTRA_CFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-cflags=\"$EXTRA_CFLAGS\""
 test -n "$EXTRA_LDFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"$EXTRA_LDFLAGS\""
 test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
 echo $LIB_OPT
 is_libav || MISC_OPT="$MISC_OPT --enable-avresample --disable-postproc"
-CONFIGURE="configure --extra-version=QtAV --disable-doc --disable-debug $LIB_OPT --enable-pic --enable-runtime-cpudetect $USER_OPT $MISC_OPT $PLATFORM_OPT $TOOLCHAIN_OPT"
+CONFIGURE="configure --extra-version=QtAV --disable-doc --disable-debug $LIB_OPT --enable-runtime-cpudetect $USER_OPT $MISC_OPT $PLATFORM_OPT $TOOLCHAIN_OPT"
 CONFIGURE=`echo $CONFIGURE |tr -s ' '`
 # http://ffmpeg.org/platform.html
 # static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
