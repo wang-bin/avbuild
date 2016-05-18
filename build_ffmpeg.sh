@@ -179,6 +179,7 @@ setup_mingw_env() {
   host_is MinGW || host_is MSYS || return 1
   target_is winstore && return 1
   target_is vc && return 1
+  target_is android && return 1
     test -n "$dxva2_opt" && PLATFORM_OPT="$PLATFORM_OPT $dxva2_opt"
     TOOLCHAIN_OPT="$dxva2_opt --disable-iconv $TOOLCHAIN_OPT --extra-ldflags=\"-static-libgcc -Wl,-Bstatic\""
   # check host_is mingw64 is not enough
@@ -209,6 +210,7 @@ setup_android_env() {
   local FFARCH=$ANDROID_ARCH
   local PLATFORM=android-9 #ensure do not use log2f in libm
   if [ "$ANDROID_ARCH" = "x86" -o "$ANDROID_ARCH" = "i686" ]; then
+    ANDROID_ARCH=x86
     ANDROID_TOOLCHAIN_PREFIX="x86"
     CROSS_PREFIX=i686-linux-android-
   elif [ ! "${ANDROID_ARCH/arm/}" = "arm" ]; then
@@ -230,20 +232,23 @@ setup_android_env() {
       TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-neon"
       EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16"
     fi
-  elif [ "$ANDROID_ARCH" = "aarch64" ]; then
+  elif [ "$ANDROID_ARCH" = "aarch64" -o "$ANDROID_ARCH" = "arm64" ]; then
+    ANDROID_ARCH=arm64
     PLATFORM=android-21
   fi
   local TOOLCHAIN=${ANDROID_TOOLCHAIN_PREFIX}-4.9
   [ -d $NDK_ROOT/toolchains/${TOOLCHAIN} ] || TOOLCHAIN=${ANDROID_TOOLCHAIN_PREFIX}-4.8
-  local ANDROID_TOOLCHAIN_DIR="/tmp/ndk-$TOOLCHAIN"
+  local ANDROID_TOOLCHAIN_DIR="$NDK_ROOT/toolchains/${TOOLCHAIN}"
+  gxx=`find ${ANDROID_TOOLCHAIN_DIR} -name "*g++*"`
+  ANDROID_TOOLCHAIN_DIR=${gxx%%bin*}
   echo "ANDROID_TOOLCHAIN_DIR=${ANDROID_TOOLCHAIN_DIR}"
-  local ANDROID_SYSROOT="$ANDROID_TOOLCHAIN_DIR/sysroot"
+  local ANDROID_SYSROOT="$NDK_ROOT/platforms/$PLATFORM/arch-${ANDROID_ARCH}"
 # --enable-libstagefright-h264
   ANDROIDOPT="--enable-cross-compile --cross-prefix=$CROSS_PREFIX --sysroot=$ANDROID_SYSROOT --target-os=android --arch=${FFARCH}"
-  test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=$PLATFORM --toolchain=$TOOLCHAIN --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
+  #test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=$PLATFORM --toolchain=$TOOLCHAIN --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
   export PATH=$ANDROID_TOOLCHAIN_DIR/bin:$PATH
-  rm -rf $ANDROID_SYSROOT/usr/include/{libsw*,libav*}
-  rm -rf $ANDROID_SYSROOT/usr/lib/{libsw*,libav*}
+  #rm -rf $ANDROID_SYSROOT/usr/include/{libsw*,libav*}
+  #rm -rf $ANDROID_SYSROOT/usr/lib/{libsw*,libav*}
   #MISC_OPT=--disable-avdevice
   PLATFORM_OPT="$ANDROIDOPT"
   INSTALL_DIR=sdk-android-$ANDROID_ARCH
