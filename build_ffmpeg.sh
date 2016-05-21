@@ -240,7 +240,7 @@ setup_android_env() {
   [ -d $NDK_ROOT/toolchains/${TOOLCHAIN} ] || TOOLCHAIN=${ANDROID_TOOLCHAIN_PREFIX}-4.8
   local ANDROID_TOOLCHAIN_DIR="$NDK_ROOT/toolchains/${TOOLCHAIN}"
   gxx=`find ${ANDROID_TOOLCHAIN_DIR} -name "*g++*"`
-  ANDROID_TOOLCHAIN_DIR=${gxx%%bin*}
+  ANDROID_TOOLCHAIN_DIR=${gxx%bin*}
   echo "ANDROID_TOOLCHAIN_DIR=${ANDROID_TOOLCHAIN_DIR}"
   local ANDROID_SYSROOT="$NDK_ROOT/platforms/$PLATFORM/arch-${ANDROID_ARCH}"
 # --enable-libstagefright-h264
@@ -253,6 +253,8 @@ setup_android_env() {
   PLATFORM_OPT="$ANDROIDOPT"
   INSTALL_DIR=sdk-android-$ANDROID_ARCH
   # more flags see: https://github.com/yixia/FFmpeg-Vitamio/blob/vitamio/build_android.sh
+  enable_opt mediacodec
+  test -n "$mediacodec_opt" && PLATFORM_OPT="$mediacodec_opt --enable-jni $PLATFORM_OPT"
 }
 
 setup_ios_env() {
