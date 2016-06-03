@@ -362,7 +362,7 @@ test -n "$EXTRA_LDFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"$EXT
 test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
 echo $LIB_OPT
 is_libav || MISC_OPT="$MISC_OPT --enable-avresample --disable-postproc"
-CONFIGURE="configure --extra-version=QtAV --disable-doc --disable-debug $LIB_OPT --enable-runtime-cpudetect $USER_OPT $MISC_OPT $PLATFORM_OPT $TOOLCHAIN_OPT"
+CONFIGURE="configure --extra-version=QtAV --disable-doc --disable-debug $LIB_OPT --enable-runtime-cpudetect $MISC_OPT $PLATFORM_OPT $TOOLCHAIN_OPT $USER_OPT"
 CONFIGURE=`echo $CONFIGURE |tr -s ' '`
 # http://ffmpeg.org/platform.html
 # static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
