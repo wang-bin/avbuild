@@ -62,7 +62,7 @@ is_libav() {
 }
 host_is MinGW || host_is MSYS && {
   echo "msys2: change target_os detect in configure: mingw32)=>mingw*|msys*)"
-  echo "       pacman -Sy --needed diffutils pkg-config"
+  echo "       pacman -Sy --needed diffutils pkg-config mingw-w64-i686-gcc mingw-w64-x86_64-gcc"
   echo 'export PATH=$PATH:$MINGW_BIN:$PWD # make.exe in mingw_builds can not deal with windows driver dir. use msys2 make instead'
 }
 
@@ -181,7 +181,8 @@ setup_mingw_env() {
   target_is vc && return 1
   target_is android && return 1
     test -n "$dxva2_opt" && PLATFORM_OPT="$PLATFORM_OPT $dxva2_opt"
-    TOOLCHAIN_OPT="$dxva2_opt --disable-iconv $TOOLCHAIN_OPT --extra-ldflags=\"-static-libgcc -Wl,-Bstatic\""
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -static-libgcc -Wl,-Bstatic"
+    TOOLCHAIN_OPT="$dxva2_opt --disable-iconv $TOOLCHAIN_OPT"
   # check host_is mingw64 is not enough
   if [ -n "`gcc -dumpmachine |grep -i x86_64`" ]; then
     INSTALL_DIR="${INSTALL_DIR}-mingw64"
