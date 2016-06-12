@@ -1,4 +1,5 @@
 @echo off
+set MSYS2_PATH_TYPE=inherit
 set VCDIR=%VS140COMNTOOLS%
 if /i %1 == win81 set VCDIR=%VS120COMNTOOLS%
 set ARCH=%2
