@@ -213,8 +213,11 @@ setup_android_env() {
   if [ "$ANDROID_ARCH" = "x86" -o "$ANDROID_ARCH" = "i686" ]; then
     ANDROID_ARCH=x86
     ANDROID_TOOLCHAIN_PREFIX="x86"
+  elif [ "$ANDROID_ARCH" = "aarch64" -o "$ANDROID_ARCH" = "arm64" ]; then
+    ANDROID_ARCH=arm64
+    PLATFORM=android-21
     CROSS_PREFIX=i686-linux-android-
-  elif [ ! "${ANDROID_ARCH/arm/}" = "arm" ]; then
+  elif [ ! "${ANDROID_ARCH/arm/}" = "${ANDROID_ARCH}" ]; then
 #https://wiki.debian.org/ArmHardFloatPort/VfpComparison
     ANDROID_TOOLCHAIN_PREFIX="arm-linux-androideabi"
     CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
@@ -233,9 +236,7 @@ setup_android_env() {
       TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-neon"
       EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16"
     fi
-  elif [ "$ANDROID_ARCH" = "aarch64" -o "$ANDROID_ARCH" = "arm64" ]; then
-    ANDROID_ARCH=arm64
-    PLATFORM=android-21
+    ANDROID_ARCH=arm
   fi
   local TOOLCHAIN=${ANDROID_TOOLCHAIN_PREFIX}-4.9
   [ -d $NDK_ROOT/toolchains/${TOOLCHAIN} ] || TOOLCHAIN=${ANDROID_TOOLCHAIN_PREFIX}-4.8
@@ -252,7 +253,7 @@ setup_android_env() {
   #rm -rf $ANDROID_SYSROOT/usr/lib/{libsw*,libav*}
   #MISC_OPT=--disable-avdevice
   PLATFORM_OPT="$ANDROIDOPT"
-  INSTALL_DIR=sdk-android-$ANDROID_ARCH
+  INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}
   # more flags see: https://github.com/yixia/FFmpeg-Vitamio/blob/vitamio/build_android.sh
   enable_opt mediacodec
   test -n "$mediacodec_opt" && PLATFORM_OPT="$mediacodec_opt --enable-jni $PLATFORM_OPT"
