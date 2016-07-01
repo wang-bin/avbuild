@@ -11,10 +11,8 @@ echo "var can be: INSTALL_DIR, NDK_ROOT, MAEMO5_SYSROOT, MAEMO6_SYSROOT"
 TAGET_FLAG=$1
 TAGET_ARCH_FLAG=$2 #${2:-$1}
 
-if [ -n "$TAGET_FLAG" ]; then
-  USER_CONFIG=config-${TAGET_FLAG}.sh
-  test -f $USER_CONFIG &&  . $USER_CONFIG
-fi
+USER_CONFIG=config-${TAGET_FLAG}.sh
+test -f $USER_CONFIG &&  . $USER_CONFIG
 
 : ${INSTALL_DIR:=sdk}
 # set NDK_ROOT if compile for android
@@ -25,6 +23,8 @@ fi
 : ${MISC_OPT="--enable-hwaccels"}#--enable-gpl --enable-version3
 
 : ${FFSRC:=$PWD/ffmpeg}
+enable_lto=1
+
 echo FFSRC=$FFSRC
 [ -f $FFSRC/configure ] && {
   export PATH=$PATH:$FFSRC
@@ -213,10 +213,13 @@ setup_android_env() {
   if [ "$ANDROID_ARCH" = "x86" -o "$ANDROID_ARCH" = "i686" ]; then
     ANDROID_ARCH=x86
     ANDROID_TOOLCHAIN_PREFIX="x86"
+    CROSS_PREFIX=i686-linux-android-
+    enable_lto=0
   elif [ "$ANDROID_ARCH" = "aarch64" -o "$ANDROID_ARCH" = "arm64" ]; then
     ANDROID_ARCH=arm64
     PLATFORM=android-21
-    CROSS_PREFIX=i686-linux-android-
+    ANDROID_TOOLCHAIN_PREFIX=aarch64-linux-android
+    CROSS_PREFIX=aarch64-linux-android-
   elif [ ! "${ANDROID_ARCH/arm/}" = "${ANDROID_ARCH}" ]; then
 #https://wiki.debian.org/ArmHardFloatPort/VfpComparison
     ANDROID_TOOLCHAIN_PREFIX="arm-linux-androideabi"
@@ -354,7 +357,7 @@ else
 fi
 #TODO: optimize size
 setup_mingw_env || {
-  [ ! "${LIB_OPT/disable-static/}" == "${LIB_OPT}" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-lto"
+  [ "$enable_lto" == "1" ] && [ ! "${LIB_OPT/disable-static/}" == "${LIB_OPT}" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-lto"
 }
   # wrong! detect target!=host
 
