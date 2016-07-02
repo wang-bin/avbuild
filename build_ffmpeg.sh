@@ -23,7 +23,7 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 : ${MISC_OPT="--enable-hwaccels"}#--enable-gpl --enable-version3
 
 : ${FFSRC:=$PWD/ffmpeg}
-enable_lto=1
+: ${enable_lto:=1}
 
 echo FFSRC=$FFSRC
 [ -f $FFSRC/configure ] && {
@@ -350,9 +350,10 @@ else
   elif host_is Darwin; then
     test -n "$vda_opt" && PLATFORM_OPT="$PLATFORM_OPT $vda_opt"
     test -n "$videotoolbox_opt" && PLATFORM_OPT="$PLATFORM_OPT $videotoolbox_opt"
+    test -n "`grep install-name-dir $FFSRC/configure`" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --install_name_dir=@rpath"
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=clang" #libav has no --cxx
     EXTRA_CFLAGS=-mmacosx-version-min=10.8
-    EXTRA_LDFLAGS=-mmacosx-version-min=10.8
+    EXTRA_LDFLAGS="-mmacosx-version-min=10.8 -Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../Frameworks -Wl,-rpath,@loader_path/lib -Wl,-rpath,@loader_path/../lib"
   fi
 fi
 #TODO: optimize size
