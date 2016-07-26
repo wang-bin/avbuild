@@ -14,13 +14,14 @@ TAGET_ARCH_FLAG=$2 #${2:-$1}
 USER_CONFIG=config-${TAGET_FLAG}.sh
 test -f $USER_CONFIG &&  . $USER_CONFIG
 
+# TODO: use USER_OPT only
 : ${INSTALL_DIR:=sdk}
 # set NDK_ROOT if compile for android
 : ${NDK_ROOT:="/devel/android/android-ndk-r10e"}
 : ${MAEMO5_SYSROOT:=/opt/QtSDK/Maemo/4.6.2/sysroots/fremantle-arm-sysroot-20.2010.36-2-slim}
 : ${MAEMO6_SYSROOT:=/opt/QtSDK/Madde/sysroots/harmattan_sysroot_10.2011.34-1_slim}
 : ${LIB_OPT:="--enable-shared --disable-static"}
-: ${MISC_OPT="--enable-hwaccels"}#--enable-gpl --enable-version3
+: ${MISC_OPT:="--enable-hwaccels"}#--enable-gpl --enable-version3
 
 : ${FFSRC:=$PWD/ffmpeg}
 : ${enable_lto:=1}
@@ -58,7 +59,7 @@ target_arch_is() {
   test "$TAGET_ARCH_FLAG" = "$1" && return 0 || return 1
 }
 is_libav() {
-  test "${PWD/libav*/}" = "$PWD" && return 1 || return 0
+  test -f "$FFSRC/avconv.c" && return 0 || return 1
 }
 host_is MinGW || host_is MSYS && {
   echo "msys2: change target_os detect in configure: mingw32)=>mingw*|msys*)"
@@ -124,7 +125,7 @@ setup_vc_env() {
 
 setup_winrt_env() {
 #http://fate.libav.org/arm-msvc-14-wp
-  MISC_OPT="$MISC_OPT --disable-programs --disable-encoders --disable-muxers --disable-avdevice"
+  MISC_OPT="--disable-programs --disable-encoders --disable-muxers --disable-avdevicei $MISC_OPT" # prepend so that user can overwrite
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --toolchain=msvc --enable-cross-compile --target-os=win32"
   VS_VER=${VisualStudioVersion:0:2}
   echo "vs version: $VS_VER, platform: $Platform"
