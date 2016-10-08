@@ -215,9 +215,15 @@ setup_android_env() {
     ANDROID_TOOLCHAIN_PREFIX="x86"
     CROSS_PREFIX=i686-linux-android-
     enable_lto=0
-  elif [ "$ANDROID_ARCH" = "aarch64" -o "$ANDROID_ARCH" = "arm64" ]; then
-    ANDROID_ARCH=arm64
+  elif [ "$ANDROID_ARCH" = "x86_64" -o "$ANDROID_ARCH" = "x64" ]; then
     PLATFORM=android-21
+    ANDROID_ARCH=x86_64
+    ANDROID_TOOLCHAIN_PREFIX="x86_64"
+    CROSS_PREFIX=x86_64-linux-android-
+    enable_lto=0
+  elif [ "$ANDROID_ARCH" = "aarch64" -o "$ANDROID_ARCH" = "arm64" ]; then
+    PLATFORM=android-21
+    ANDROID_ARCH=arm64
     ANDROID_TOOLCHAIN_PREFIX=aarch64-linux-android
     CROSS_PREFIX=aarch64-linux-android-
   elif [ ! "${ANDROID_ARCH/arm/}" = "${ANDROID_ARCH}" ]; then
@@ -231,11 +237,12 @@ setup_android_env() {
       echo "armv5"
       #EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv5te -mtune=arm9tdmi -msoft-float"
     elif [ ! "${ANDROID_ARCH/neon/}" = "$ANDROID_ARCH" ]; then
+      enable_lto=0
       echo "neon. can not run on Marvell and nVidia"
-      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-neon" #--cpu=cortex-a8
-      EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mfloat-abi=softfp -mfpu=neon -mvectorize-with-neon-quad"
-      #EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--fix-cortex-a8"
-    else
+      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-neon" #--cpu= is deprecated in gcc 3, use -mtune=cortex-a8 instead
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mfloat-abi=softfp -mfpu=neon -mtune=cortex-a8 -mvectorize-with-neon-quad"
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--fix-cortex-a8"
+    else # TODO: hard float
       TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-neon"
       EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16"
     fi
