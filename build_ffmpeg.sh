@@ -211,6 +211,11 @@ setup_android_env() {
   local CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
   local FFARCH=$ANDROID_ARCH
   local PLATFORM=android-9 #ensure do not use log2f in libm
+#TODO: what if no following default flags (from ndk android.toolchain.cmake)?
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -ffast-math -fstrict-aliasing -Werror=strict-aliasing -ffunction-sections -fstack-protector-strong -Wa,--noexecstack" # " #-funwind-tables need libunwind.a for libc++?
+# -no-canonical-prefixes: results in "-mcpu= ", why?
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wl,--build-id -Wl,--warn-shared-textrel -Wl,--fatal-warnings"
+
   if [ "$ANDROID_ARCH" = "x86" -o "$ANDROID_ARCH" = "i686" ]; then
     ANDROID_ARCH=x86
     ANDROID_TOOLCHAIN_PREFIX="x86"
@@ -232,40 +237,55 @@ setup_android_env() {
     ANDROID_TOOLCHAIN_PREFIX="arm-linux-androideabi"
     CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
     FFARCH=arm
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -ffast-math -fstrict-aliasing -Werror=strict-aliasing -Wa,--noexecstack"
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-thumb"
     if [ ! "${ANDROID_ARCH/armv5/}" = "$ANDROID_ARCH" ]; then
       echo "armv5"
       #EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv5te -mtune=arm9tdmi -msoft-float"
+      CLANG_FLAGS="-target armv5te-none-linux-androideabi"
     elif [ ! "${ANDROID_ARCH/neon/}" = "$ANDROID_ARCH" ]; then
       enable_lto=0
       echo "neon. can not run on Marvell and nVidia"
       TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-neon" #--cpu= is deprecated in gcc 3, use -mtune=cortex-a8 instead
       EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mfloat-abi=softfp -mfpu=neon -mtune=cortex-a8 -mvectorize-with-neon-quad"
       EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--fix-cortex-a8"
+      CLANG_FLAGS="-target armv7-none-linux-androideabi"
     else # TODO: hard float
       TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-neon"
       EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16"
+      CLANG_FLAGS="-target armv7-none-linux-androideabi"
     fi
+    CLANG_FLAGS=" -fno-integrated-as $CLANG_FLAGS"
     ANDROID_ARCH=arm
   fi
   local TOOLCHAIN=${ANDROID_TOOLCHAIN_PREFIX}-4.9
   [ -d $NDK_ROOT/toolchains/${TOOLCHAIN} ] || TOOLCHAIN=${ANDROID_TOOLCHAIN_PREFIX}-4.8
   local ANDROID_TOOLCHAIN_DIR="$NDK_ROOT/toolchains/${TOOLCHAIN}"
   gxx=`find ${ANDROID_TOOLCHAIN_DIR} -name "*g++*"`
+  clangxx=`find $NDK_ROOT/toolchains/llvm/prebuilt -name "clang++*"`
+  echo "gxx: $gxx, clangxx: $clangxx"
   ANDROID_TOOLCHAIN_DIR=${gxx%bin*}
+  local ANDROID_LLVM_DIR=${clangxx%bin*}
   echo "ANDROID_TOOLCHAIN_DIR=${ANDROID_TOOLCHAIN_DIR}"
+  echo "ANDROID_LLVM_DIR=${ANDROID_LLVM_DIR}"
+  CLANG_FLAGS="$CLANG_FLAGS -gcc-toolchain $ANDROID_TOOLCHAIN_DIR"
   local ANDROID_SYSROOT="$NDK_ROOT/platforms/$PLATFORM/arch-${ANDROID_ARCH}"
 # --enable-libstagefright-h264
-  ANDROIDOPT="--enable-cross-compile --cross-prefix=$CROSS_PREFIX --sysroot=$ANDROID_SYSROOT --target-os=android --arch=${FFARCH}"
+  ANDROIDOPT="--sysroot=$ANDROID_SYSROOT --target-os=android --arch=${FFARCH} --enable-cross-compile"
+  if [ "$android_toolchain" = "clang" ]; then
+    enable_lto=0 # clang -flto will generate llvm ir bitcode instead of object file
+    ANDROIDOPT="$ANDROIDOPT --cc=clang"
+    EXTRA_CFLAGS="$EXTRA_CFLAGS $CLANG_FLAGS"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS $CLANG_FLAGS" # -Qunused-arguments is added by ffmpeg configure
+  else
+    ANDROIDOPT="$ANDROIDOPT --cross-prefix=$CROSS_PREFIX"
+  fi
   #test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=$PLATFORM --toolchain=$TOOLCHAIN --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
-  export PATH=$ANDROID_TOOLCHAIN_DIR/bin:$PATH
+  export PATH=$ANDROID_TOOLCHAIN_DIR/bin:$ANDROID_LLVM_DIR/bin:$PATH
+  type -a clang
   #rm -rf $ANDROID_SYSROOT/usr/include/{libsw*,libav*}
   #rm -rf $ANDROID_SYSROOT/usr/lib/{libsw*,libav*}
   #MISC_OPT=--disable-avdevice
-  PLATFORM_OPT="$ANDROIDOPT"
-  INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}
-  # more flags see: https://github.com/yixia/FFmpeg-Vitamio/blob/vitamio/build_android.sh
+  INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}-${android_toolchain:-gcc}
   enable_opt mediacodec
   test -n "$mediacodec_opt" && PLATFORM_OPT="$mediacodec_opt --enable-jni $PLATFORM_OPT"
 }
