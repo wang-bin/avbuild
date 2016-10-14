@@ -212,9 +212,9 @@ setup_android_env() {
   local FFARCH=$ANDROID_ARCH
   local PLATFORM=android-9 #ensure do not use log2f in libm
 #TODO: what if no following default flags (from ndk android.toolchain.cmake)?
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -ffast-math -fstrict-aliasing -Werror=strict-aliasing -ffunction-sections -fstack-protector-strong -Wa,--noexecstack" # " #-funwind-tables need libunwind.a for libc++?
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -ffast-math -fstrict-aliasing -Werror=strict-aliasing -ffunction-sections -fstack-protector-strong -Wa,--noexecstack -Wformat -Werror=format-security" # " #-funwind-tables need libunwind.a for libc++?
 # -no-canonical-prefixes: results in "-mcpu= ", why?
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wl,--build-id -Wl,--warn-shared-textrel -Wl,--fatal-warnings"
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wl,--build-id -Wl,--fatal-warnings" # -Wl,--warn-shared-textrel
 
   if [ "$ANDROID_ARCH" = "x86" -o "$ANDROID_ARCH" = "i686" ]; then
     ANDROID_ARCH=x86
@@ -242,17 +242,19 @@ setup_android_env() {
       echo "armv5"
       #EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv5te -mtune=arm9tdmi -msoft-float"
       CLANG_FLAGS="-target armv5te-none-linux-androideabi"
-    elif [ ! "${ANDROID_ARCH/neon/}" = "$ANDROID_ARCH" ]; then
-      enable_lto=0
-      echo "neon. can not run on Marvell and nVidia"
-      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-neon" #--cpu= is deprecated in gcc 3, use -mtune=cortex-a8 instead
-      EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mfloat-abi=softfp -mfpu=neon -mtune=cortex-a8 -mvectorize-with-neon-quad"
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -mtune=xscale -msoft-float"
+    else
+      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-neon"
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mtune=cortex-a8 -mfloat-abi=softfp" #--cpu= is deprecated in gcc 3, use -mtune=cortex-a8 instead
       EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--fix-cortex-a8"
       CLANG_FLAGS="-target armv7-none-linux-androideabi"
-    else # TODO: hard float
-      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-neon"
-      EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16"
-      CLANG_FLAGS="-target armv7-none-linux-androideabi"
+      if [ ! "${ANDROID_ARCH/neon/}" = "$ANDROID_ARCH" ]; then
+        enable_lto=0
+        echo "neon. can not run on Marvell and nVidia"
+        EXTRA_CFLAGS="$EXTRA_CFLAGS -mfpu=neon -mvectorize-with-neon-quad"
+      else
+        EXTRA_CFLAGS="$EXTRA_CFLAGS -mfpu=vfpv3-d16"
+      fi
     fi
     CLANG_FLAGS=" -fno-integrated-as $CLANG_FLAGS"
     ANDROID_ARCH=arm
@@ -270,18 +272,16 @@ setup_android_env() {
   CLANG_FLAGS="$CLANG_FLAGS -gcc-toolchain $ANDROID_TOOLCHAIN_DIR"
   local ANDROID_SYSROOT="$NDK_ROOT/platforms/$PLATFORM/arch-${ANDROID_ARCH}"
 # --enable-libstagefright-h264
-  ANDROIDOPT="--sysroot=$ANDROID_SYSROOT --target-os=android --arch=${FFARCH} --enable-cross-compile"
+  ANDROIDOPT="--sysroot=$ANDROID_SYSROOT --target-os=android --arch=${FFARCH} --enable-cross-compile --cross-prefix=$CROSS_PREFIX"
   if [ "$android_toolchain" = "clang" ]; then
     enable_lto=0 # clang -flto will generate llvm ir bitcode instead of object file
     ANDROIDOPT="$ANDROIDOPT --cc=clang"
     EXTRA_CFLAGS="$EXTRA_CFLAGS $CLANG_FLAGS"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS $CLANG_FLAGS" # -Qunused-arguments is added by ffmpeg configure
-  else
-    ANDROIDOPT="$ANDROIDOPT --cross-prefix=$CROSS_PREFIX"
   fi
   #test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=$PLATFORM --toolchain=$TOOLCHAIN --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
   export PATH=$ANDROID_TOOLCHAIN_DIR/bin:$ANDROID_LLVM_DIR/bin:$PATH
-  type -a clang
+  clang --version
   #rm -rf $ANDROID_SYSROOT/usr/include/{libsw*,libav*}
   #rm -rf $ANDROID_SYSROOT/usr/lib/{libsw*,libav*}
   #MISC_OPT=--disable-avdevice
@@ -290,7 +290,7 @@ setup_android_env() {
   enable_opt mediacodec
   test -n "$mediacodec_opt" && PLATFORM_OPT="$mediacodec_opt --enable-jni $PLATFORM_OPT"
 }
-
+#  --toolchain=hardened : https://wiki.debian.org/Hardening
 setup_ios_env() {
 #iphoneos iphonesimulator i386
 # clang -arch i386 -arch x86_64
