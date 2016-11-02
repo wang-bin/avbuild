@@ -112,9 +112,11 @@ setup_vc_env() {
   elif [ "`tolower $Platform`" = "arm" ]; then
     INSTALL_DIR="${INSTALL_DIR}-vc-arm"
     echo "vc arm"
-    # http://www.cnblogs.com/zjjcy/p/3384517.html  http://www.cnblogs.com/zjjcy/p/3499848.html
-    # armasm: http://www.cnblogs.com/zcmmwbd/p/windows-phone-8-armasm-guide.html#2842650
-    # TODO: use a wrapper function to deal with the parameters passed to armasm
+: <<EOC
+     http://www.cnblogs.com/zjjcy/p/3384517.html  http://www.cnblogs.com/zjjcy/p/3499848.html
+     armasm: http://www.cnblogs.com/zcmmwbd/p/windows-phone-8-armasm-guide.html#2842650
+     TODO: use a wrapper function to deal with the parameters passed to armasm
+EOC
     PLATFORM_OPT="--extra-cflags=\"-D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE -D_M_ARM -DWINAPI_FAMILY=WINAPI_FAMILY_APP\" --extra-ldflags=\"-MACHINE:ARM\" $PLATFORM_OPT --enable-cross-compile --arch=arm --cpu=armv7 --target-os=win32 --as=armasm"
   else #Platform is empty
     echo "vc x86"
@@ -237,14 +239,26 @@ setup_android_env() {
     ANDROID_TOOLCHAIN_PREFIX="arm-linux-androideabi"
     CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
     FFARCH=arm
-    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-thumb"
     if [ ! "${ANDROID_ARCH/armv5/}" = "$ANDROID_ARCH" ]; then
       echo "armv5"
+      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cpu=armv5te"
       #EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv5te -mtune=arm9tdmi -msoft-float"
       CLANG_FLAGS="-target armv5te-none-linux-androideabi"
+: '
+-mthumb error
+selected processor does not support Thumb mode `itt gt
+D:\msys2\tmp\ccXOcbBA.s:262: Error: instruction not supported in Thumb16 mode -- adds r3,r1,r0,lsr#31
+D:\msys2\tmp\ccXOcbBA.s:263: Error: selected processor does not support Thumb mode itet ne
+D:\msys2\tmp\ccXOcbBA.s:264: Error: Thumb does not support conditional execution
+use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/ARM-Options.html
+'
+# -msoft-float == -mfloat-abi=soft https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/ARM-Options.html
       EXTRA_CFLAGS="$EXTRA_CFLAGS -mtune=xscale -msoft-float"
+      if [ ! "$android_toolchain" = "clang" ]; then
+        EXTRA_CFLAGS="$EXTRA_CFLAGS -mthumb-interwork"
+      fi
     else
-      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-neon"
+      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-thumb --enable-neon"
       EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mtune=cortex-a8 -mfloat-abi=softfp" #--cpu= is deprecated in gcc 3, use -mtune=cortex-a8 instead
       EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--fix-cortex-a8"
       CLANG_FLAGS="-target armv7-none-linux-androideabi"
@@ -412,7 +426,7 @@ fi
 echo $CONFIGURE
 mkdir -p build_$INSTALL_DIR
 cd build_$INSTALL_DIR
-time eval $CONFIGURE
+time (eval $CONFIGURE)
 if [ $? -eq 0 ]; then
   time (make -j$JOBS install prefix="$PWD/../$INSTALL_DIR")
 fi
