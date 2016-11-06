@@ -180,9 +180,7 @@ setup_winrt_env() {
 setup_mingw_env() {
   echo "TOOLCHAIN_OPT=$TOOLCHAIN_OPT"
   host_is MinGW || host_is MSYS || return 1
-  target_is winstore && return 1
-  target_is vc && return 1
-  target_is android && return 1
+  test -n "`echo $TOOLCHAIN_OPT $PLATFORM_OPT $USER_OPT $MISC_OPT|grep cross`" && return 1
     test -n "$dxva2_opt" && PLATFORM_OPT="$PLATFORM_OPT $dxva2_opt"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS -static-libgcc -Wl,-Bstatic"
     TOOLCHAIN_OPT="$dxva2_opt --disable-iconv $TOOLCHAIN_OPT"
