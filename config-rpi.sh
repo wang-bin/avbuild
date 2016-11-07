@@ -1,6 +1,8 @@
+. config-lite.sh
 SYSROOT=`arm-linux-gnueabihf-gcc -print-sysroot`
-USER_OPT="--enable-omx-rpi --enable-mmal --enable-small --disable-avdevice --disable-filters --enable-filter=aeval,afade,aformat,all*,amix,arealtime,aresample,asplit,atempo,color*,blend,con*,draw*,eq*,fade,format,frame*,null,overlay,pad,split,volume --disable-muxers --enable-muxer=mov,mp4,matroska,hls,mpegts,tee,rtsp --disable-encoders --enable-encoder=h264_omx,aac* --disable-decoders  --enable-decoder=aac*,ac3*,ass,ssa,eac3,srt,flv,flac,h264,vc1,mp3,mpeg4,mpeg2video,mpegvideo,mpeg1video,vp8,wma*,wmv*,opus,pcm*,wmv* --disable-demuxers --enable-demuxer=aac,concat,data,flv,hls,live_flv,mov,mpegts,mpegps,ac3,ass,avi,eac3,flac,flv,mp3,mpegvideo,mxf,nsv,nut,ogg,rawvideo,rtp,rtsp,srt,vc1,v210,wav --disable-bsfs --enable-bsf=aac*,h264*,mpv*,mp3*,mpeg4* --disable-parsers --enable-parser=aac*,ac3,flac,h264,mpeg4video,mpegaudio,mpegvideo,opus,vc1,vp8"
-
+USER_OPT="$USER_OPT --enable-omx-rpi --enable-mmal \
+--enable-muxer=mov,mp4,matroska,hls,mpegts,tee,rtsp \
+--enable-encoder=h264_omx,aac*"
 TOOLCHAIN_OPT="--enable-cross-compile --cross-prefix=arm-linux-gnueabihf- --target-os=linux --arch=arm --cpu=armv6"
 EXTRA_CFLAGS="-mfloat-abi=hard -mfpu=vfp -isystem$SYSROOT/opt/vc/include -isystem$SYSROOT/opt/vc/include/IL"
 EXTRA_LDFLAGS="-L$SYSROOT/opt/vc/lib -lrt" #-lrt: clock_gettime in glibc2.17 
