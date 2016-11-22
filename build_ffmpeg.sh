@@ -99,29 +99,25 @@ cd -
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR"
 
 setup_vc_env() {
+  echo Call "set MSYS2_PATH_TYPE=inherit" before msys2 sh.exe if cl.exe is not found!
 # http://ffmpeg.org/platform.html#Microsoft-Visual-C_002b_002b-or-Intel-C_002b_002b-Compiler-for-Windows
   #TOOLCHAIN_OPT=
   test -n "$dxva2_opt" && PLATFORM_OPT="$PLATFORM_OPT $dxva2_opt"
   PLATFORM_OPT="$PLATFORM_OPT --toolchain=msvc"
-  CL_VER=${VisualStudioVersion:0:2}
-  echo "cl version: $CL_VER, platform: $Platform"
+  VS_VER=${VisualStudioVersion:0:2}
+  echo "VS version: $VS_VER, platform: $Platform"
   if [ "`tolower $Platform`" = "x64" ]; then
-    INSTALL_DIR="${INSTALL_DIR}-vc-x66"
+    INSTALL_DIR="${INSTALL_DIR}-vc-x64"
     echo "vc x64"
-    test $CL_VER -gt 16 && echo "adding windows xp compatible link flags..." && PLATFORM_OPT="$PLATFORM_OPT --extra-ldflags=\"-SUBSYSTEM:CONSOLE,5.02\""
+    test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && EXTRA_LDFLAGS="-SUBSYSTEM:CONSOLE,5.02"
   elif [ "`tolower $Platform`" = "arm" ]; then
     INSTALL_DIR="${INSTALL_DIR}-vc-arm"
-    echo "vc arm"
-: <<EOC
-     http://www.cnblogs.com/zjjcy/p/3384517.html  http://www.cnblogs.com/zjjcy/p/3499848.html
-     armasm: http://www.cnblogs.com/zcmmwbd/p/windows-phone-8-armasm-guide.html#2842650
-     TODO: use a wrapper function to deal with the parameters passed to armasm
-EOC
-    PLATFORM_OPT="--extra-cflags=\"-D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE -D_M_ARM -DWINAPI_FAMILY=WINAPI_FAMILY_APP\" --extra-ldflags=\"-MACHINE:ARM\" $PLATFORM_OPT --enable-cross-compile --arch=arm --cpu=armv7 --target-os=win32 --as=armasm"
+    echo "use scripts in winstore dir instead"
+    exit 0
   else #Platform is empty
     echo "vc x86"
     INSTALL_DIR="${INSTALL_DIR}-vc-x86"
-    test $CL_VER -gt 16 && echo "adding windows xp compatible link flags..." && PLATFORM_OPT="$PLATFORM_OPT --extra-ldflags=\"-SUBSYSTEM:CONSOLE,5.01\""
+    test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && EXTRA_LDFLAGS="-SUBSYSTEM:CONSOLE,5.01"
   fi
 }
 
@@ -179,6 +175,7 @@ setup_winrt_env() {
 
 setup_mingw_env() {
   echo "TOOLCHAIN_OPT=$TOOLCHAIN_OPT"
+  target_is vc && return 1
   host_is MinGW || host_is MSYS || return 1
   test -n "`echo $TOOLCHAIN_OPT $PLATFORM_OPT $USER_OPT $MISC_OPT|grep cross`" && return 1
     test -n "$dxva2_opt" && PLATFORM_OPT="$PLATFORM_OPT $dxva2_opt"
