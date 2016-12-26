@@ -11,6 +11,7 @@ echo "var can be: INSTALL_DIR, NDK_ROOT, MAEMO5_SYSROOT, MAEMO6_SYSROOT"
 TAGET_FLAG=$1
 TAGET_ARCH_FLAG=$2 #${2:-$1}
 
+test -f config.sh && . config.sh
 USER_CONFIG=config-${TAGET_FLAG}.sh
 test -f $USER_CONFIG &&  . $USER_CONFIG
 
@@ -60,6 +61,10 @@ target_arch_is() {
 }
 is_libav() {
   test -f "$FFSRC/avconv.c" && return 0 || return 1
+}
+add_ffopt() {
+  # check opt exitsts (--enable/disable), do nothing if exists
+  echo "not implemented"
 }
 host_is MinGW || host_is MSYS && {
   echo "msys2: change target_os detect in configure: mingw32)=>mingw*|msys*)"
@@ -301,13 +306,20 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
 }
 #  --toolchain=hardened : https://wiki.debian.org/Hardening
 setup_ios_env() {
-#iphoneos iphonesimulator i386
+# TODO: multi arch (Xarch+arch)
 # clang -arch i386 -arch x86_64
 ## cc="xcrun -sdk iphoneos clang"
   local IOS_ARCH=$1
+  local cc_has_bitcode=0 # bitcode since xcode 7
+  clang -fembed-bitcode -E - </dev/null &>/dev/null && cc_has_bitcode=1
+  : ${BITCODE:=1}
+  local enable_bitcode=0
+  test $BITCODE = 1 && test $cc_has_bitcode = 1 && enable_bitcode=1
+  test $enable_bitcode = 1 && echo "Bitcode is enabled by default. Run 'BITCODE=0 ./ios.sh' to disable bitcode"
   if [ "${IOS_ARCH:0:3}" == "arm" ]; then
     SYSROOT_SDK=iphoneos
     VER_OS=iphoneos
+    test $enable_bitcode = 1 && BITCODE_FLAGS="-fembed-bitcode"
   else
     SYSROOT_SDK=iphonesimulator
     VER_OS=ios-simulator
@@ -316,8 +328,8 @@ setup_ios_env() {
   PLATFORM_OPT="--enable-cross-compile --arch=$IOS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
   LIB_OPT="--enable-static"
   MISC_OPT="$MISC_OPT --disable-avdevice --disable-programs"
-  EXTRA_CFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=6.0"
-  EXTRA_LDFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=6.0"
+  EXTRA_CFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=6.0 $BITCODE_FLAGS"
+  EXTRA_LDFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=6.0 $BITCODE_FLAGS"
   INSTALL_DIR=sdk-ios-$IOS_ARCH
 }
 
@@ -389,8 +401,7 @@ else
     test -n "$vda_opt" && PLATFORM_OPT="$PLATFORM_OPT $vda_opt"
     test -n "$videotoolbox_opt" && PLATFORM_OPT="$PLATFORM_OPT $videotoolbox_opt"
     test -n "`grep install-name-dir $FFSRC/configure`" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --install_name_dir=@rpath"
-    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=clang" #libav has no --cxx
-    EXTRA_CFLAGS=-mmacosx-version-min=10.8
+    EXTRA_CFLAGS="-mmacosx-version-min=10.8"
     EXTRA_LDFLAGS="-mmacosx-version-min=10.8 -Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../Frameworks -Wl,-rpath,@loader_path/lib -Wl,-rpath,@loader_path/../lib"
   fi
 fi
