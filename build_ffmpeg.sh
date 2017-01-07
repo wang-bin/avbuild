@@ -308,7 +308,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
 setup_ios_env() {
 # TODO: multi arch (Xarch+arch)
 # clang -arch i386 -arch x86_64
-## cc="xcrun -sdk iphoneos clang"
+## cc="xcrun -sdk iphoneos clang" or cc=`xcrun -sdk iphoneos --find clang`
   local IOS_ARCH=$1
   local cc_has_bitcode=0 # bitcode since xcode 7
   clang -fembed-bitcode -E - </dev/null &>/dev/null && cc_has_bitcode=1
@@ -326,6 +326,7 @@ setup_ios_env() {
     SYSROOT_SDK=iphonesimulator
     VER_OS=ios-simulator
   fi
+  export LIBRARY_PATH=$PWD/lib/ios5
   #--cpu=$IOS_ARCH
   PLATFORM_OPT="--enable-cross-compile --arch=$IOS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
   LIB_OPT="--enable-static"
