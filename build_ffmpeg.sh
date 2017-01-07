@@ -313,8 +313,10 @@ setup_ios_env() {
   local cc_has_bitcode=0 # bitcode since xcode 7
   clang -fembed-bitcode -E - </dev/null &>/dev/null && cc_has_bitcode=1
   : ${BITCODE:=1}
+  : ${IOS_VERSION:=6.0}
   local enable_bitcode=0
   test $BITCODE = 1 && test $cc_has_bitcode = 1 && enable_bitcode=1
+  # TODO: bitcode link requires iOS>=6.0. If we create static libs, so compiling with bitcode for 5.0 is fine. but ffmpeg config tests fails to create exe(ios10 sdk, no crt1.3.1.o), so 6.0 is required
   test $enable_bitcode = 1 && echo "Bitcode is enabled by default. Run 'BITCODE=0 ./ios.sh' to disable bitcode"
   if [ "${IOS_ARCH:0:3}" == "arm" ]; then
     SYSROOT_SDK=iphoneos
@@ -328,8 +330,8 @@ setup_ios_env() {
   PLATFORM_OPT="--enable-cross-compile --arch=$IOS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
   LIB_OPT="--enable-static"
   MISC_OPT="$MISC_OPT --disable-avdevice --disable-programs"
-  EXTRA_CFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=6.0 $BITCODE_FLAGS"
-  EXTRA_LDFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=6.0 $BITCODE_FLAGS"
+  EXTRA_CFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=$IOS_VERSION $BITCODE_FLAGS"
+  EXTRA_LDFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=$IOS_VERSION" #No bitcode flags for iOS < 6.0. we always build static libs. but config test will try to create exe
   INSTALL_DIR=sdk-ios-$IOS_ARCH
 }
 
