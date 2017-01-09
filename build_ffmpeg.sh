@@ -313,19 +313,28 @@ setup_ios_env() {
   local cc_has_bitcode=0 # bitcode since xcode 7
   clang -fembed-bitcode -E - </dev/null &>/dev/null && cc_has_bitcode=1
   : ${BITCODE:=1}
-  : ${IOS_VERSION:=6.0}
   local enable_bitcode=0
   test $BITCODE = 1 && test $cc_has_bitcode = 1 && enable_bitcode=1
   # TODO: bitcode link requires iOS>=6.0. If we create static libs, so compiling with bitcode for 5.0 is fine. but ffmpeg config tests fails to create exe(ios10 sdk, no crt1.3.1.o), so 6.0 is required
   test $enable_bitcode = 1 && echo "Bitcode is enabled by default. Run 'BITCODE=0 ./ios.sh' to disable bitcode"
+# http://iossupportmatrix.com
+  local ios_min=6.0
   if [ "${IOS_ARCH:0:3}" == "arm" ]; then
     SYSROOT_SDK=iphoneos
     VER_OS=iphoneos
     test $enable_bitcode = 1 && BITCODE_FLAGS="-fembed-bitcode"
+    # armv7 since 3.2, but latest ios sdk does not have crt1.o/crt1.3.1.o, so use 6.0.
+    if [ "${IOS_ARCH:0:5}" == "arm64" ]; then
+      ios_min=7.0
+    fi
   else
     SYSROOT_SDK=iphonesimulator
     VER_OS=ios-simulator
+    if [ "${IOS_ARCH}" == "x86_64" ]; then
+      ios_min=7.0
+    fi
   fi
+  : ${IOS_VERSION:=${ios_min}}
   export LIBRARY_PATH=$PWD/lib/ios5
   #--cpu=$IOS_ARCH
   PLATFORM_OPT="--enable-cross-compile --arch=$IOS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
