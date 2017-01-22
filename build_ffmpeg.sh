@@ -23,6 +23,7 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 : ${MAEMO6_SYSROOT:=/opt/QtSDK/Madde/sysroots/harmattan_sysroot_10.2011.34-1_slim}
 : ${LIB_OPT:="--enable-shared --disable-static"}
 : ${MISC_OPT:="--enable-hwaccels"}#--enable-gpl --enable-version3
+: ${DEBUG_OPT:="--disable-debug"}
 
 : ${FFSRC:=$PWD/ffmpeg}
 : ${enable_lto:=1}
@@ -182,6 +183,7 @@ setup_mingw_env() {
   echo "TOOLCHAIN_OPT=$TOOLCHAIN_OPT"
   target_is vc && return 1
   host_is MinGW || host_is MSYS || return 1
+  # TODO: cross build
   test -n "`echo $TOOLCHAIN_OPT $PLATFORM_OPT $USER_OPT $MISC_OPT|grep cross`" && return 1
     test -n "$dxva2_opt" && PLATFORM_OPT="$PLATFORM_OPT $dxva2_opt"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS -static-libgcc -Wl,-Bstatic"
@@ -410,11 +412,15 @@ else
     test -n "$vaapi_opt" && PLATFORM_OPT="$PLATFORM_OPT $vaapi_opt"
     test -n "$vdpau_opt" && PLATFORM_OPT="$PLATFORM_OPT $vdpau_opt"
   elif host_is Darwin; then
-    test -n "$vda_opt" && PLATFORM_OPT="$PLATFORM_OPT $vda_opt"
-    test -n "$videotoolbox_opt" && PLATFORM_OPT="$PLATFORM_OPT $videotoolbox_opt"
-    test -n "`grep install-name-dir $FFSRC/configure`" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --install_name_dir=@rpath"
-    EXTRA_CFLAGS="-mmacosx-version-min=10.8"
-    EXTRA_LDFLAGS="-mmacosx-version-min=10.8 -Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../Frameworks -Wl,-rpath,@loader_path/lib -Wl,-rpath,@loader_path/../lib"
+    if target_is ""; then
+      test -n "$vda_opt" && PLATFORM_OPT="$PLATFORM_OPT $vda_opt"
+      test -n "$videotoolbox_opt" && PLATFORM_OPT="$PLATFORM_OPT $videotoolbox_opt"
+      test -n "`grep install-name-dir $FFSRC/configure`" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --install_name_dir=@rpath"
+      EXTRA_CFLAGS="-mmacosx-version-min=10.8"
+      EXTRA_LDFLAGS="-mmacosx-version-min=10.8 -Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../Frameworks -Wl,-rpath,@loader_path/lib -Wl,-rpath,@loader_path/../lib"
+    else
+      echo "cross build on macOS"
+    fi
   fi
 fi
 #TODO: optimize size
@@ -429,7 +435,7 @@ test -n "$EXTRA_LDFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"$EXT
 test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
 echo $LIB_OPT
 is_libav || MISC_OPT="$MISC_OPT --enable-avresample --disable-postproc"
-CONFIGURE="configure --extra-version=QtAV --disable-doc --disable-debug $LIB_OPT --enable-runtime-cpudetect $MISC_OPT $PLATFORM_OPT $TOOLCHAIN_OPT $USER_OPT"
+CONFIGURE="configure --extra-version=QtAV --disable-doc ${DEBUG_OPT} $LIB_OPT --enable-runtime-cpudetect $MISC_OPT $PLATFORM_OPT $TOOLCHAIN_OPT $USER_OPT"
 CONFIGURE=`echo $CONFIGURE |tr -s ' '`
 # http://ffmpeg.org/platform.html
 # static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
