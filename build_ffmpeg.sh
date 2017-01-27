@@ -1,13 +1,30 @@
 #/bin/bash
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2016"
+echo "https://github.com/wang-bin/build_ffmpeg"
 
-PLATFORMS="ios|android|maemo5|maemo6|vc|x86|winstore|winpc|winphone"
+PLATFORMS="ios|android|maemo5|maemo6|vc|x86|winstore|winpc|winphone|mingw64"
 echo "Usage:"
 test -d $PWD/ffmpeg || echo "  export FFSRC=/path/to/ffmpeg"
-echo "  ./build_ffmpeg.sh [${PLATFORMS} [arch]]"
-echo "(optional) set var in config-xxx.sh, xxx is ${PLATFORMS//\|/, }"
-echo "var can be: INSTALL_DIR, NDK_ROOT, MAEMO5_SYSROOT, MAEMO6_SYSROOT"
+cat<<HELP
+./build_ffmpeg.sh [target_platform [target_architecture]]
+target_platform can be: ${PLATFORMS}
+target_architecture can be:
+   ios   |  android  |  mingw64
+         |   armv5   |
+  armv7  |   armv7   |
+  arm64  |   arm64   |
+x86/i366 |  x86/i686 |  x86/i686
+ x86_64  |   x86_64  |   x86_64
+If no parameter is passed, build for the host platform compiler.
+Use a shortcut in winstore to build for WinRT target.
+Use ios.sh to build for iOS universal target.
+(Optional) set var in config-xxx.sh, xxx is ${PLATFORMS//\|/, }
+var can be: INSTALL_DIR, NDK_ROOT, MAEMO5_SYSROOT, MAEMO6_SYSROOT
+config.sh will be automatically included.
+config-lite.sh is options to build smaller libraries.
+HELP
+
 TAGET_FLAG=$1
 TAGET_ARCH_FLAG=$2 #${2:-$1}
 
@@ -180,19 +197,21 @@ setup_winrt_env() {
 }
 
 setup_mingw_env() {
-  echo "TOOLCHAIN_OPT=$TOOLCHAIN_OPT"
-  target_is vc && return 1
-  host_is MinGW || host_is MSYS || return 1
-  # TODO: cross build
-  test -n "`echo $TOOLCHAIN_OPT $PLATFORM_OPT $USER_OPT $MISC_OPT|grep cross`" && return 1
-    test -n "$dxva2_opt" && PLATFORM_OPT="$PLATFORM_OPT $dxva2_opt"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -static-libgcc -Wl,-Bstatic"
-    TOOLCHAIN_OPT="$dxva2_opt --disable-iconv $TOOLCHAIN_OPT"
+  local gcc=gcc
+  host_is MinGW -o host_is MSYS || {
+    local arch=$1
+    [ "$arch" = "x86" ] && arch=i686
+    gcc=${arch}-w64-mingw32-gcc
+    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --cross-prefix=${arch}-w64-mingw32- --target-os=mingw32 --arch=$arch"
+  }
+  test -n "$dxva2_opt" && PLATFORM_OPT="$PLATFORM_OPT $dxva2_opt"
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -static-libgcc -Wl,-Bstatic"
+  TOOLCHAIN_OPT="$dxva2_opt --disable-iconv $TOOLCHAIN_OPT"
   # check host_is mingw64 is not enough
-  if [ -n "`gcc -dumpmachine |grep -i x86_64`" ]; then
-    INSTALL_DIR="${INSTALL_DIR}-mingw64"
+  if [ -n "`$gcc -dumpmachine |grep -i x86_64`" ]; then
+    INSTALL_DIR="${INSTALL_DIR}-mingw-x64"
   else
-    INSTALL_DIR="${INSTALL_DIR}-mingw32"
+    INSTALL_DIR="${INSTALL_DIR}-mingw-x86"
   fi
 }
 
@@ -334,6 +353,8 @@ setup_ios_env() {
     VER_OS=ios-simulator
     if [ "${IOS_ARCH}" == "x86_64" ]; then
       ios_min=7.0
+    elif [ "${IOS_ARCH}" == "x86" ]; then
+      IOS_ARCH=i386
     fi
   fi
   : ${IOS_VERSION:=${ios_min}}
@@ -385,6 +406,7 @@ if target_is android; then
 elif target_is ios; then
   setup_ios_env $TAGET_ARCH_FLAG
 elif target_is vc; then
+  enable_lto=0
   setup_vc_env
 elif target_is winpc; then
   setup_winrt_env
@@ -396,6 +418,9 @@ elif target_is maemo5; then
   setup_maemo5_env
 elif target_is maemo6; then
   setup_maemo6_env
+elif target_is mingw64; then
+  enable_lto=0
+  setup_mingw_env $TAGET_ARCH_FLAG
 elif target_is x86; then
   if [ "`uname -m`" = "x86_64" ]; then
     #TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=$(tolower $(uname -s)) --arch=x86"
@@ -421,15 +446,15 @@ else
     else
       echo "cross build on macOS"
     fi
+  elif host_is MinGW || host_is MSYS; then
+    enable_lto=0
+    setup_mingw_env
   fi
 fi
-#TODO: optimize size
-setup_mingw_env || {
-  [ "$enable_lto" == "1" ] && [ ! "${LIB_OPT/disable-static/}" == "${LIB_OPT}" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-lto"
-}
-  # wrong! detect target!=host
 
-target_is winstore || TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-pic"
+[ "$enable_lto" == "1" ] && [ ! "${LIB_OPT/disable-static/}" == "${LIB_OPT}" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-lto"
+
+target_is winstore || TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-pic" # armasm(gas) error (unsupported option) if pic is enabled
 test -n "$EXTRA_CFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-cflags=\"$EXTRA_CFLAGS\""
 test -n "$EXTRA_LDFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"$EXTRA_LDFLAGS\""
 test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
