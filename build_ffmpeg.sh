@@ -1,9 +1,11 @@
 #/bin/bash
+# TODO: -flto=nb_cpus
+# -flto=> cc: -GL, ld: /LTCG
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2016"
 echo "https://github.com/wang-bin/build_ffmpeg"
 
-PLATFORMS="ios|android|maemo5|maemo6|vc|x86|winstore|winpc|winphone|mingw64"
+PLATFORMS="ios|android|maemo|vc|x86|winstore|winpc|winphone|mingw64"
 echo "Usage:"
 test -d $PWD/ffmpeg || echo "  export FFSRC=/path/to/ffmpeg"
 cat<<HELP
@@ -19,8 +21,9 @@ x86/i366 |  x86/i686 |  x86/i686
 If no parameter is passed, build for the host platform compiler.
 Use a shortcut in winstore to build for WinRT target.
 Use ios.sh to build for iOS universal target.
+If target_platform is ios, mininal ios version(major.minor) can be specified by suffix, e.g. ios5.0
 (Optional) set var in config-xxx.sh, xxx is ${PLATFORMS//\|/, }
-var can be: INSTALL_DIR, NDK_ROOT, MAEMO5_SYSROOT, MAEMO6_SYSROOT
+var can be: INSTALL_DIR, NDK_ROOT, MAEMO_SYSROOT
 config.sh will be automatically included.
 config-lite.sh is options to build smaller libraries.
 HELP
@@ -38,12 +41,12 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 : ${NDK_ROOT:="/devel/android/android-ndk-r10e"}
 : ${MAEMO5_SYSROOT:=/opt/QtSDK/Maemo/4.6.2/sysroots/fremantle-arm-sysroot-20.2010.36-2-slim}
 : ${MAEMO6_SYSROOT:=/opt/QtSDK/Madde/sysroots/harmattan_sysroot_10.2011.34-1_slim}
-: ${LIB_OPT:="--enable-shared --disable-static"}
-: ${MISC_OPT:="--enable-hwaccels"}#--enable-gpl --enable-version3
+: ${LIB_OPT:="--enable-shared"}
+: ${FEATURE_OPT:="--enable-hwaccels"} #--enable-gpl --enable-version3
 : ${DEBUG_OPT:="--disable-debug"}
 
 : ${FFSRC:=$PWD/ffmpeg}
-: ${enable_lto:=1}
+: ${enable_lto:=true}
 
 echo FFSRC=$FFSRC
 [ -f $FFSRC/configure ] && {
@@ -66,10 +69,7 @@ tolower(){
 }
 
 host_is() {
-  local name=$1
-#TODO: osx=>darwin
-  local line=`uname -a |grep -i $name`
-  test -n "$line" && return 0 || return 1
+  uname |grep -iq $1 && return 0 || return 1
 }
 target_is() {
   test "$TAGET_FLAG" = "$1" && return 0 || return 1
@@ -93,7 +93,7 @@ host_is MinGW || host_is MSYS && {
 enable_opt() {
   local OPT=$1
   # grep -m1
-  grep "\-\-enable\-$OPT" $FFSRC/configure && eval ${OPT}_opt="--enable-$OPT" &>/dev/null
+  grep -q "\-\-enable\-$OPT" $FFSRC/configure && eval ${OPT}_opt="--enable-$OPT"
 }
 #CPU_FLAGS=-mmmx -msse -mfpmath=sse
 #ffmpeg 1.2 autodetect dxva, vaapi, vdpau. manually enable vda before 2.3
@@ -107,7 +107,7 @@ host_is Darwin && {
   enable_opt videotoolbox
 }
 # clock_gettime in librt instead of glibc>=2.17
-grep "LIBRT" $FFSRC/configure &>/dev/null && {
+grep -q "LIBRT" $FFSRC/configure && {
   # TODO: cc test
   host_is Linux && ! target_is android && EXTRALIBS="$EXTRALIBS -lrt"
 }
@@ -122,11 +122,11 @@ cd -
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR"
 
 setup_vc_env() {
+  LIB_OPT="$LIB_OPT --disable-static"
   echo Call "set MSYS2_PATH_TYPE=inherit" before msys2 sh.exe if cl.exe is not found!
 # http://ffmpeg.org/platform.html#Microsoft-Visual-C_002b_002b-or-Intel-C_002b_002b-Compiler-for-Windows
-  #TOOLCHAIN_OPT=
-  test -n "$dxva2_opt" && PLATFORM_OPT="$PLATFORM_OPT $dxva2_opt"
-  PLATFORM_OPT="$PLATFORM_OPT --toolchain=msvc"
+  test -n "$dxva2_opt" && FEATURE_OPT="$FEATURE_OPT $dxva2_opt"
+  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --toolchain=msvc"
   VS_VER=${VisualStudioVersion:0:2}
   echo "VS version: $VS_VER, platform: $Platform"
   if [ "`tolower $Platform`" = "x64" ]; then
@@ -145,8 +145,9 @@ setup_vc_env() {
 }
 
 setup_winrt_env() {
+  LIB_OPT="$LIB_OPT --disable-static"
 #http://fate.libav.org/arm-msvc-14-wp
-  MISC_OPT="--disable-programs --disable-encoders --disable-muxers --disable-avdevicei $MISC_OPT" # prepend so that user can overwrite
+  FEATURE_OPT="--disable-programs $FEATURE_OPT" # prepend so that user can overwrite
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --toolchain=msvc --enable-cross-compile --target-os=win32"
   VS_VER=${VisualStudioVersion:0:2}
   echo "vs version: $VS_VER, platform: $Platform"
@@ -160,7 +161,7 @@ setup_winrt_env() {
   EXTRA_LDFLAGS="-APPCONTAINER"
   local arch=x86_64 #used by configure --arch
   if [ "`tolower $Platform`" = "arm" ]; then
-    ASM_OPT="--as=armasm --cpu=armv7-a --enable-thumb"
+    ASM_OPT="--as=armasm --cpu=armv7-a --enable-thumb" # --arch
     which cpp &>/dev/null || {
       echo "ASM is disabled: cpp is required by gas-preprocessor but it is missing. make sure (mingw) gcc is in your PATH"
       ASM_OPT=--disable-asm
@@ -175,10 +176,10 @@ setup_winrt_env() {
   else
     arch=x86
   fi
-  local winphone=N
-  target_is winstore && test "x$WIN_PHONE" != "x" && winphone=Y
-  target_is winphone && winphone=Y
-  if [ "$winphone" == "Y" ]; then
+  local winphone=false
+  target_is winstore && test -n "$WIN_PHONE" && winphone=true
+  target_is winphone && winphone=true
+  if $winphone; then
   # export dirs (lib, include)
     family="WINAPI_FAMILY_PHONE_APP"
     INSTALL_DIR=winphone
@@ -193,10 +194,11 @@ setup_winrt_env() {
   fi
   EXTRA_CFLAGS="$EXTRA_CFLAGS -DWINAPI_FAMILY=$family -D_WIN32_WINNT=$winver"
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --arch=$arch"
-  echo "INSTALL_DIR=$INSTALL_DIR"
 }
 
 setup_mingw_env() {
+  LIB_OPT="$LIB_OPT --disable-static"
+  enable_lto=false
   local gcc=gcc
   host_is MinGW -o host_is MSYS || {
     local arch=$1
@@ -204,26 +206,14 @@ setup_mingw_env() {
     gcc=${arch}-w64-mingw32-gcc
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --cross-prefix=${arch}-w64-mingw32- --target-os=mingw32 --arch=$arch"
   }
-  test -n "$dxva2_opt" && PLATFORM_OPT="$PLATFORM_OPT $dxva2_opt"
+  test -n "$dxva2_opt" && FEATURE_OPT="$FEATURE_OPT $dxva2_opt"
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -static-libgcc -Wl,-Bstatic"
-  TOOLCHAIN_OPT="$dxva2_opt --disable-iconv $TOOLCHAIN_OPT"
-  # check host_is mingw64 is not enough
-  if [ -n "`$gcc -dumpmachine |grep -i x86_64`" ]; then
-    INSTALL_DIR="${INSTALL_DIR}-mingw-x64"
-  else
-    INSTALL_DIR="${INSTALL_DIR}-mingw-x86"
-  fi
-}
-
-setup_icc_env() {
-  #TOOLCHAIN_OPT=
-  PLATFORM_OPT="--toolchain=icl"
+  FEATURE_OPT="--disable-iconv $FEATURE_OPT"
+  $gcc -dumpmachine |grep -iq x86_64 && INSTALL_DIR="${INSTALL_DIR}-mingw-x64" || INSTALL_DIR="${INSTALL_DIR}-mingw-x86"
 }
 
 setup_wince_env() {
-  WINCEOPT="--enable-cross-compile --cross-prefix=arm-mingw32ce- --target-os=mingw32ce --arch=arm --cpu=arm"
-  PLATFORM_OPT="$WINCEOPT"
-  MISC_OPT=
+  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --cross-prefix=arm-mingw32ce- --target-os=mingw32ce --arch=arm --cpu=arm"
   INSTALL_DIR=sdk-wince
 }
 
@@ -243,13 +233,13 @@ setup_android_env() {
     ANDROID_ARCH=x86
     ANDROID_TOOLCHAIN_PREFIX="x86"
     CROSS_PREFIX=i686-linux-android-
-    enable_lto=0
+    enable_lto=false
   elif [ "$ANDROID_ARCH" = "x86_64" -o "$ANDROID_ARCH" = "x64" ]; then
     PLATFORM=android-21
     ANDROID_ARCH=x86_64
     ANDROID_TOOLCHAIN_PREFIX="x86_64"
     CROSS_PREFIX=x86_64-linux-android-
-    enable_lto=0
+    enable_lto=false
   elif [ "$ANDROID_ARCH" = "aarch64" -o "$ANDROID_ARCH" = "arm64" ]; then
     PLATFORM=android-21
     ANDROID_ARCH=arm64
@@ -280,11 +270,11 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
       fi
     else
       TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-thumb --enable-neon"
-      EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mtune=cortex-a8 -mfloat-abi=softfp" #--cpu= is deprecated in gcc 3, use -mtune=cortex-a8 instead
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mtune=cortex-a8 -mfloat-abi=softfp" #-mcpu= is deprecated in gcc 3, use -mtune=cortex-a8 instead
       EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--fix-cortex-a8"
       CLANG_FLAGS="-target armv7-none-linux-androideabi"
       if [ ! "${ANDROID_ARCH/neon/}" = "$ANDROID_ARCH" ]; then
-        enable_lto=0
+        enable_lto=false
         echo "neon. can not run on Marvell and nVidia"
         EXTRA_CFLAGS="$EXTRA_CFLAGS -mfpu=neon -mvectorize-with-neon-quad"
       else
@@ -297,33 +287,29 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   local TOOLCHAIN=${ANDROID_TOOLCHAIN_PREFIX}-4.9
   [ -d $NDK_ROOT/toolchains/${TOOLCHAIN} ] || TOOLCHAIN=${ANDROID_TOOLCHAIN_PREFIX}-4.8
   local ANDROID_TOOLCHAIN_DIR="$NDK_ROOT/toolchains/${TOOLCHAIN}"
-  gxx=`find ${ANDROID_TOOLCHAIN_DIR} -name "*g++*"`
-  clangxx=`find $NDK_ROOT/toolchains/llvm/prebuilt -name "clang++*"`
-  echo "gxx: $gxx, clangxx: $clangxx"
+  gxx=`find ${ANDROID_TOOLCHAIN_DIR} -name "*g++*"` # can not use "*-gcc*": can be -gcc-ar, stdint-gcc.h
+  clangxx=`find $NDK_ROOT/toolchains/llvm/prebuilt -name "clang++*"` # can not be "clang*": clang-tidy
+  echo "g++: $gxx, clang++: $clangxx"
   ANDROID_TOOLCHAIN_DIR=${gxx%bin*}
   local ANDROID_LLVM_DIR=${clangxx%bin*}
   echo "ANDROID_TOOLCHAIN_DIR=${ANDROID_TOOLCHAIN_DIR}"
   echo "ANDROID_LLVM_DIR=${ANDROID_LLVM_DIR}"
   CLANG_FLAGS="$CLANG_FLAGS -gcc-toolchain $ANDROID_TOOLCHAIN_DIR"
   local ANDROID_SYSROOT="$NDK_ROOT/platforms/$PLATFORM/arch-${ANDROID_ARCH}"
-# --enable-libstagefright-h264
-  ANDROIDOPT="--sysroot=$ANDROID_SYSROOT --target-os=android --arch=${FFARCH} --enable-cross-compile --cross-prefix=$CROSS_PREFIX"
+  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=$ANDROID_SYSROOT --target-os=android --arch=${FFARCH} --enable-cross-compile --cross-prefix=$CROSS_PREFIX"
   if [ "$android_toolchain" = "clang" ]; then
-    enable_lto=0 # clang -flto will generate llvm ir bitcode instead of object file
-    ANDROIDOPT="$ANDROIDOPT --cc=clang"
+    enable_lto=false # clang -flto will generate llvm ir bitcode instead of object file
+    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=clang"
     EXTRA_CFLAGS="$EXTRA_CFLAGS $CLANG_FLAGS"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS $CLANG_FLAGS" # -Qunused-arguments is added by ffmpeg configure
   fi
   #test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=$PLATFORM --toolchain=$TOOLCHAIN --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
   export PATH=$ANDROID_TOOLCHAIN_DIR/bin:$ANDROID_LLVM_DIR/bin:$PATH
   clang --version
-  #rm -rf $ANDROID_SYSROOT/usr/include/{libsw*,libav*}
-  #rm -rf $ANDROID_SYSROOT/usr/lib/{libsw*,libav*}
-  #MISC_OPT=--disable-avdevice
-  PLATFORM_OPT="$ANDROIDOPT --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE\""
+  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE\""
   INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}-${android_toolchain:-gcc}
   enable_opt mediacodec
-  test -n "$mediacodec_opt" && PLATFORM_OPT="$mediacodec_opt --enable-jni $PLATFORM_OPT"
+  test -n "$mediacodec_opt" && FEATURE_OPT="$mediacodec_opt --enable-jni $FEATURE_OPT"
 }
 #  --toolchain=hardened : https://wiki.debian.org/Hardening
 setup_ios_env() {
@@ -331,23 +317,25 @@ setup_ios_env() {
 # clang -arch i386 -arch x86_64
 ## cc="xcrun -sdk iphoneos clang" or cc=`xcrun -sdk iphoneos --find clang`
   local IOS_ARCH=$1
-  local cc_has_bitcode=0 # bitcode since xcode 7
-  clang -fembed-bitcode -E - </dev/null &>/dev/null && cc_has_bitcode=1
-  : ${BITCODE:=1}
-  local enable_bitcode=0
-  test $BITCODE = 1 && test $cc_has_bitcode = 1 && enable_bitcode=1
-  # TODO: bitcode link requires iOS>=6.0. If we create static libs, so compiling with bitcode for 5.0 is fine. but ffmpeg config tests fails to create exe(ios10 sdk, no crt1.3.1.o), so 6.0 is required
-  test $enable_bitcode = 1 && echo "Bitcode is enabled by default. Run 'BITCODE=0 ./ios.sh' to disable bitcode"
+  local cc_has_bitcode=false # bitcode since xcode 7
+  clang -fembed-bitcode -E - </dev/null &>/dev/null && cc_has_bitcode=true
+  : ${BITCODE:=true}
+  local enable_bitcode=false
+  $BITCODE && $cc_has_bitcode && enable_bitcode=true
+  # bitcode link requires iOS>=6.0. Creating static lib is fine. So compiling with bitcode for <5.0 is fine. but ffmpeg config tests fails to create exe(ios10 sdk, no crt1.3.1.o), so 6.0 is required
+  $enable_bitcode && echo "Bitcode is enabled by default. Run 'BITCODE=false ./ios.sh' to disable bitcode"
 # http://iossupportmatrix.com
   local ios_min=6.0
+  local SYSROOT_SDK=iphoneos
+  local VER_OS=iphoneos
+  local BITCODE_FLAGS=
   if [ "${IOS_ARCH:0:3}" == "arm" ]; then
-    SYSROOT_SDK=iphoneos
-    VER_OS=iphoneos
-    test $enable_bitcode = 1 && BITCODE_FLAGS="-fembed-bitcode"
+    $enable_bitcode && BITCODE_FLAGS="-fembed-bitcode"
     # armv7 since 3.2, but latest ios sdk does not have crt1.o/crt1.3.1.o, so use 6.0.
     if [ "${IOS_ARCH:0:5}" == "arm64" ]; then
       ios_min=7.0
     fi
+    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-thumb"
   else
     SYSROOT_SDK=iphonesimulator
     VER_OS=ios-simulator
@@ -357,114 +345,82 @@ setup_ios_env() {
       IOS_ARCH=i386
     fi
   fi
-  : ${IOS_VERSION:=${ios_min}}
+  ios_ver=${2##ios}
+  : ${ios_ver:=$ios_min}
   export LIBRARY_PATH=$PWD/lib/ios5
-  #--cpu=$IOS_ARCH
-  PLATFORM_OPT="--enable-cross-compile --arch=$IOS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
-  LIB_OPT="--enable-static"
-  MISC_OPT="$MISC_OPT --disable-avdevice --disable-programs"
-  EXTRA_CFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=$IOS_VERSION $BITCODE_FLAGS"
-  EXTRA_LDFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=$IOS_VERSION" #No bitcode flags for iOS < 6.0. we always build static libs. but config test will try to create exe
+  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --arch=$IOS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
+  FEATURE_OPT="$FEATURE_OPT --disable-programs" #FEATURE_OPT
+  EXTRA_CFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver $BITCODE_FLAGS"
+  EXTRA_LDFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver" #No bitcode flags for iOS < 6.0. we always build static libs. but config test will try to create exe
   INSTALL_DIR=sdk-ios-$IOS_ARCH
 }
 
-setup_maemo5_env() {
+setup_maemo_env() {
 #--arch=armv7l --cpu=armv7l
 #CLANG=clang
+  if [ -z "$MAEMO_SYSROOT" ]; then
+    test $1 = 5 && MAEMO_SYSROOT=$MAEMO5_SYSROOT || MAEMO_SYSROOT=$MAEMO6_SYSROOT
+  fi
+  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=linux --arch=armv7-a --sysroot=$MAEMO_SYSROOT"
   if [ -n "$CLANG" ]; then
     CLANG_CFLAGS="-target arm-none-linux-gnueabi"
     CLANG_LFLAGS="-target arm-none-linux-gnueabi"
     HOSTCC=clang
-    MAEMO_OPT="--host-cc=$HOSTCC --cc=$HOSTCC --enable-cross-compile  --target-os=linux --arch=armv7-a --sysroot=$MAEMO5_SYSROOT"
+    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --host-cc=$HOSTCC --cc=$HOSTCC"
   else
     HOSTCC=gcc
-    MAEMO_OPT="--host-cc=$HOSTCC --cross-prefix=arm-none-linux-gnueabi- --enable-cross-compile --target-os=linux --arch=armv7-a --sysroot=$MAEMO5_SYSROOT"
+    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --host-cc=gcc --cross-prefix=arm-none-linux-gnueabi-"
   fi
-  PLATFORM_OPT="$MAEMO_OPT"
-  MISC_OPT=$MISC_OPT --disable-avdevice
-  INSTALL_DIR=sdk-maemo5
-}
-setup_maemo6_env() {
-#--arch=armv7l --cpu=armv7l
-#CLANG=clang
-  if [ -n "$CLANG" ]; then
-    CLANG_CFLAGS="-target arm-none-linux-gnueabi"
-    CLANG_LFLAGS="-target arm-none-linux-gnueabi"
-    HOSTCC=clang
-    MAEMO_OPT="--host-cc=$HOSTCC --cc=$HOSTCC --enable-cross-compile  --target-os=linux --arch=armv7-a --sysroot=$MAEMO6_SYSROOT"
-  else
-    HOSTCC=gcc
-    MAEMO_OPT="--host-cc=$HOSTCC --cross-prefix=arm-none-linux-gnueabi- --enable-cross-compile --target-os=linux --arch=armv7-a --sysroot=$MAEMO6_SYSROOT"
-  fi
-  PLATFORM_OPT="$MAEMO_OPT"
-  MISC_OPT=$MISC_OPT --disable-avdevice
-  INSTALL_DIR=sdk-maemo6
+  INSTALL_DIR=sdk-maemo
 }
 
-if target_is android; then
-  setup_android_env $TAGET_ARCH_FLAG
-elif target_is ios; then
-  setup_ios_env $TAGET_ARCH_FLAG
-elif target_is vc; then
-  enable_lto=0
-  setup_vc_env
-elif target_is winpc; then
-  setup_winrt_env
-elif target_is winphone; then
-  setup_winrt_env
-elif target_is winstore; then
-  setup_winrt_env
-elif target_is maemo5; then
-  setup_maemo5_env
-elif target_is maemo6; then
-  setup_maemo6_env
-elif target_is mingw64; then
-  enable_lto=0
-  setup_mingw_env $TAGET_ARCH_FLAG
-elif target_is x86; then
-  if [ "`uname -m`" = "x86_64" ]; then
-    #TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=$(tolower $(uname -s)) --arch=x86"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -m32"
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -m32"
-    INSTALL_DIR=sdk-x86
-  fi
-else
-  if host_is Sailfish; then
-    echo "Build in Sailfish SDK"
-    MISC_OPT=$MISC_OPT --disable-avdevice
-    INSTALL_DIR=sdk-sailfish
-  elif host_is Linux; then
-    test -n "$vaapi_opt" && PLATFORM_OPT="$PLATFORM_OPT $vaapi_opt"
-    test -n "$vdpau_opt" && PLATFORM_OPT="$PLATFORM_OPT $vdpau_opt"
-  elif host_is Darwin; then
-    if target_is ""; then
-      test -n "$vda_opt" && PLATFORM_OPT="$PLATFORM_OPT $vda_opt"
-      test -n "$videotoolbox_opt" && PLATFORM_OPT="$PLATFORM_OPT $videotoolbox_opt"
-      test -n "`grep install-name-dir $FFSRC/configure`" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --install_name_dir=@rpath"
-      EXTRA_CFLAGS="-mmacosx-version-min=10.8"
-      EXTRA_LDFLAGS="-mmacosx-version-min=10.8 -Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../Frameworks -Wl,-rpath,@loader_path/lib -Wl,-rpath,@loader_path/../lib"
-    else
-      echo "cross build on macOS"
+case $1 in
+  android)    setup_android_env $TAGET_ARCH_FLAG ;;
+  ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
+  mingw64)    setup_mingw_env $TAGET_ARCH_FLAG ;;
+  vc)         enable_lto=false && setup_vc_env ;; # TODO: test lto
+  winpc|winphone|winrt) setup_winrt_env ;;    # TODO: test lto
+  maemo*)     setup_maemo_env ${1##maemo} ;;
+  x86)
+    if [ "`uname -m`" = "x86_64" ]; then
+      #TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=$(tolower $(uname -s)) --arch=x86"
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -m32"
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -m32"
+      INSTALL_DIR=sdk-x86
     fi
-  elif host_is MinGW || host_is MSYS; then
-    enable_lto=0
-    setup_mingw_env
-  fi
-fi
+    ;;
+  *) # assume host build. use "") ?
+    if host_is MinGW || host_is MSYS; then
+      setup_mingw_env
+    elif host_is Linux; then
+      test -n "$vaapi_opt" && FEATURE_OPT="$FEATURE_OPT $vaapi_opt"
+      test -n "$vdpau_opt" && FEATURE_OPT="$FEATURE_OPT $vdpau_opt"
+    elif host_is Darwin; then
+      test -n "$vda_opt" && FEATURE_OPT="$FEATURE_OPT $vda_opt"
+      test -n "$videotoolbox_opt" && FEATURE_OPT="$FEATURE_OPT $videotoolbox_opt"
+      grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --install_name_dir=@rpath"
+      EXTRA_CFLAGS="-mmacosx-version-min=10.6" #TODO ./build_ffmpeg.sh macOS10.6
+      EXTRA_LDFLAGS="-mmacosx-version-min=10.6 -Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../Frameworks -Wl,-rpath,@loader_path/lib -Wl,-rpath,@loader_path/../lib"
+    elif host_is Sailfish; then
+      echo "Build in Sailfish SDK"
+      INSTALL_DIR=sdk-sailfish
+    fi
+    ;;
+esac
 
-[ "$enable_lto" == "1" ] && [ ! "${LIB_OPT/disable-static/}" == "${LIB_OPT}" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-lto"
+$enable_lto && [ ! "${LIB_OPT/disable-static/}" == "${LIB_OPT}" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-lto"
 
 target_is winstore || TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-pic" # armasm(gas) error (unsupported option) if pic is enabled
 test -n "$EXTRA_CFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-cflags=\"$EXTRA_CFLAGS\""
 test -n "$EXTRA_LDFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"$EXTRA_LDFLAGS\""
 test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
+echo INSTALL_DIR: $INSTALL_DIR
 echo $LIB_OPT
-is_libav || MISC_OPT="$MISC_OPT --enable-avresample --disable-postproc"
-CONFIGURE="configure --extra-version=QtAV --disable-doc ${DEBUG_OPT} $LIB_OPT --enable-runtime-cpudetect $MISC_OPT $PLATFORM_OPT $TOOLCHAIN_OPT $USER_OPT"
+is_libav || FEATURE_OPT="$FEATURE_OPT --enable-avresample --disable-postproc"
+CONFIGURE="configure --extra-version=QtAV --disable-doc ${DEBUG_OPT} $LIB_OPT --enable-runtime-cpudetect $FEATURE_OPT $FEATURE_OPT $TOOLCHAIN_OPT $USER_OPT"
 CONFIGURE=`echo $CONFIGURE |tr -s ' '`
 # http://ffmpeg.org/platform.html
 # static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
-# ios: https://github.com/FFmpeg/gas-preprocessor
 
 JOBS=2
 if which nproc >/dev/null; then
@@ -480,6 +436,5 @@ if [ $? -eq 0 ]; then
   time (make -j$JOBS install prefix="$PWD/../$INSTALL_DIR")
 fi
 
-# --enable-pic is default  --enable-lto
 # http://cmzx3444.iteye.com/blog/1447366
 # --enable-openssl  --enable-hardcoded-tables  --enable-librtmp --enable-zlib
