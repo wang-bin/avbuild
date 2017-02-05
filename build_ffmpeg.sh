@@ -111,10 +111,13 @@ host_is Darwin && {
 enable_vtenc(){
   test -f $FFSRC/libavcodec/videotoolboxenc.c && echo "$USER_OPT" |grep -q "disable-encoders" && USER_OPT="$USER_OPT --enable-encoder=*_videotoolbox"
 }
+
+add_librt(){
 # clock_gettime in librt instead of glibc>=2.17
-grep -q "LIBRT" $FFSRC/configure && {
-  # TODO: cc test
-  host_is Linux && ! target_is android && EXTRALIBS="$EXTRALIBS -lrt"
+  grep -q "LIBRT" $FFSRC/configure && {
+    # TODO: cc test
+    host_is Linux && ! target_is android && EXTRALIBS="$EXTRALIBS -lrt"
+  }
 }
 #avr >= ffmpeg0.11
 #FFMAJOR=`pwd |sed 's,.*-\(.*\)\..*\..*,\1,'`
@@ -388,6 +391,7 @@ case $1 in
   winpc|winphone|winrt) setup_winrt_env ;;    # TODO: test lto
   maemo*)     setup_maemo_env ${1##maemo} ;;
   x86)
+    add_librt
     if [ "`uname -m`" = "x86_64" ]; then
       #TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=$(tolower $(uname -s)) --arch=x86"
       EXTRA_LDFLAGS="$EXTRA_LDFLAGS -m32"
@@ -401,6 +405,7 @@ case $1 in
     elif host_is Linux; then
       test -n "$vaapi_opt" && FEATURE_OPT="$FEATURE_OPT $vaapi_opt"
       test -n "$vdpau_opt" && FEATURE_OPT="$FEATURE_OPT $vdpau_opt"
+      add_librt
     elif host_is Darwin; then
       enable_vtenc
       test -n "$vda_opt" && FEATURE_OPT="$FEATURE_OPT $vda_opt"
