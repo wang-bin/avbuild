@@ -1,6 +1,7 @@
 #/bin/bash
 # TODO: -flto=nb_cpus
-# -flto=> cc: -GL, ld: /LTCG
+# %MSYS2_BIN% --login -x %~dp0build_ffmpeg.sh vc
+# MXE cross toolchain
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2016"
 echo "https://github.com/wang-bin/build_ffmpeg"
@@ -105,6 +106,10 @@ host_is Linux && {
 host_is Darwin && {
   enable_opt vda
   enable_opt videotoolbox
+}
+
+enable_vtenc(){
+  test -f $FFSRC/libavcodec/videotoolboxenc.c && echo "$USER_OPT" |grep -q "disable-encoders" && USER_OPT="$USER_OPT --enable-encoder=*_videotoolbox"
 }
 # clock_gettime in librt instead of glibc>=2.17
 grep -q "LIBRT" $FFSRC/configure && {
@@ -332,7 +337,7 @@ setup_ios_env() {
   if [ "${IOS_ARCH:0:3}" == "arm" ]; then
     $enable_bitcode && BITCODE_FLAGS="-fembed-bitcode"
     # armv7 since 3.2, but latest ios sdk does not have crt1.o/crt1.3.1.o, so use 6.0.
-    if [ "${IOS_ARCH:0:5}" == "arm64" ]; then
+    if [ "${IOS_ARCH:3:2}" == "64" ]; then
       ios_min=7.0
     fi
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-thumb"
@@ -352,6 +357,7 @@ setup_ios_env() {
   FEATURE_OPT="$FEATURE_OPT --disable-programs" #FEATURE_OPT
   EXTRA_CFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver $BITCODE_FLAGS"
   EXTRA_LDFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver" #No bitcode flags for iOS < 6.0. we always build static libs. but config test will try to create exe
+  enable_vtenc
   INSTALL_DIR=sdk-ios-$IOS_ARCH
 }
 
@@ -396,11 +402,13 @@ case $1 in
       test -n "$vaapi_opt" && FEATURE_OPT="$FEATURE_OPT $vaapi_opt"
       test -n "$vdpau_opt" && FEATURE_OPT="$FEATURE_OPT $vdpau_opt"
     elif host_is Darwin; then
+      enable_vtenc
       test -n "$vda_opt" && FEATURE_OPT="$FEATURE_OPT $vda_opt"
       test -n "$videotoolbox_opt" && FEATURE_OPT="$FEATURE_OPT $videotoolbox_opt"
       grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --install_name_dir=@rpath"
-      EXTRA_CFLAGS="-mmacosx-version-min=10.6" #TODO ./build_ffmpeg.sh macOS10.6
-      EXTRA_LDFLAGS="-mmacosx-version-min=10.6 -Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../Frameworks -Wl,-rpath,@loader_path/lib -Wl,-rpath,@loader_path/../lib"
+      # 10.6: ld: warning: target OS does not support re-exporting symbol _av_gettime from libavutil/libavutil.dylib
+      EXTRA_CFLAGS="-mmacosx-version-min=10.7" #TODO ./build_ffmpeg.sh macOS10.6
+      EXTRA_LDFLAGS="-mmacosx-version-min=10.7 -Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../Frameworks -Wl,-rpath,@loader_path/lib -Wl,-rpath,@loader_path/../lib"
     elif host_is Sailfish; then
       echo "Build in Sailfish SDK"
       INSTALL_DIR=sdk-sailfish
@@ -433,7 +441,7 @@ mkdir -p build_$INSTALL_DIR
 cd build_$INSTALL_DIR
 time (eval $CONFIGURE)
 if [ $? -eq 0 ]; then
-  time (make -j$JOBS install prefix="$PWD/../$INSTALL_DIR")
+  time (make -j$JOBS install prefix="$PWD/../$INSTALL_DIR" && echo $CONFIGURE >>$PWD/../$INSTALL_DIR/config.txt)
 fi
 
 # http://cmzx3444.iteye.com/blog/1447366
