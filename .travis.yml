@@ -1,0 +1,73 @@
+language: cpp
+sudo: false
+dist: trusty
+addons:
+  apt:
+    packages:
+      - yasm
+      - diffutils
+      - libva-dev
+# TODO: libvdpau-dev
+#cache: apt
+cache:
+  directories:
+    - ffmpeg-release
+
+git:
+  submodules: true
+
+matrix:
+  include:
+    - os: osx
+      compiler: clang
+      osx_image: xcode8.2
+      env:
+        - TARGET=host
+    - os: osx
+      compiler: clang
+      osx_image: xcode8.2
+      env:
+        - TARGET=iOS
+    - os: linux
+      compiler: gcc
+      env:
+        - TARGET=host
+
+before_install:
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update --all; fi
+install:
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install yasm perl; fi
+  - mkdir -p ffmpeg-release
+  - |
+      if [ `grep -q ${FFVERSION} ffmpeg-release/VERSION 2>/dev/null` ]; then
+        echo "ffmpeg source exists"
+      else
+        wget http://ffmpeg.org/releases/ffmpeg-${FFVERSION}.tar.bz2
+        tar jxf ffmpeg-${FFVERSION}.tar.bz2
+        rm -rf ffmpeg-release
+        mv ffmpeg-${FFVERSION} ffmpeg-release
+      fi
+  - wget https://raw.githubusercontent.com/FFmpeg/gas-preprocessor/master/gas-preprocessor.pl
+  - mv gas-preprocessor.pl ffmpeg-release
+
+script:
+  - export FFSRC=$PWD/ffmpeg-release
+  - ln -sf config{-lite,}.sh
+  - if [ "$TARGET" == "host" ]; then ./build_ffmpeg.sh; fi
+  - if [ "$TARGET" == "iOS" ]; then ./ios.sh; fi
+
+# after_success:
+
+branches:
+  only:
+    - master
+    - prelease
+    - ci/travis
+    - /^travis.*$/
+
+notifications:
+  email:
+    recipients:
+      - wbsecg1@gmail.com
+    on_success: change
+    on_failure: always
