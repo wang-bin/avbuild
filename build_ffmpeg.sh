@@ -24,7 +24,7 @@ Use a shortcut in winstore to build for WinRT target.
 Use ios.sh to build for iOS universal target.
 If target_platform is ios, mininal ios version(major.minor) can be specified by suffix, e.g. ios5.0
 (Optional) set var in config-xxx.sh, xxx is ${PLATFORMS//\|/, }
-var can be: INSTALL_DIR, NDK_ROOT, MAEMO_SYSROOT
+var can be: INSTALL_DIR, NDK_ROOT or ANDROID_NDK, MAEMO_SYSROOT
 config.sh will be automatically included.
 config-lite.sh is options to build smaller libraries.
 HELP
@@ -39,7 +39,7 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 # TODO: use USER_OPT only
 : ${INSTALL_DIR:=sdk}
 # set NDK_ROOT if compile for android
-: ${NDK_ROOT:="/devel/android/android-ndk-r10e"}
+: ${NDK_ROOT:="$ANDROID_NDK"}
 : ${MAEMO5_SYSROOT:=/opt/QtSDK/Maemo/4.6.2/sysroots/fremantle-arm-sysroot-20.2010.36-2-slim}
 : ${MAEMO6_SYSROOT:=/opt/QtSDK/Madde/sysroots/harmattan_sysroot_10.2011.34-1_slim}
 : ${LIB_OPT:="--enable-shared"}
@@ -444,7 +444,7 @@ fi
 echo $CONFIGURE
 mkdir -p build_$INSTALL_DIR
 cd build_$INSTALL_DIR
-time (eval $CONFIGURE)
+time (eval $CONFIGURE || tail config.log)
 if [ $? -eq 0 ]; then
   time (make -j$JOBS install prefix="$PWD/../$INSTALL_DIR" && echo $CONFIGURE >>$PWD/../$INSTALL_DIR/config.txt)
 fi

@@ -4,14 +4,17 @@ dist: trusty
 addons:
   apt:
     packages:
+      - p7zip-full
       - yasm
       - diffutils
       - libva-dev
-# TODO: libvdpau-dev
-#cache: apt
+      - libvdpau-dev
 cache:
+  apt: true
   directories:
     - ffmpeg-release
+#    - android-ndk  # may be as slow as downloading from original source
+# TODO: libav
 
 git:
   submodules: true
@@ -32,6 +35,23 @@ matrix:
       compiler: gcc
       env:
         - TARGET=host
+    - os: linux
+      compiler: gcc # host compiler is not used, just to tell build script to use which compiler to use from ndk. env: CC/CXX
+      env:
+        - TARGET=android-armv5
+    - os: linux
+      compiler: gcc
+      env:
+        - TARGET=android-armv7
+    - os: linux
+      compiler: gcc
+      env:
+        - TARGET=android-arm64
+    - os: linux
+      compiler: clang
+      env:
+        - TARGET=android-x86
+# TODO: mingw64
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update --all; fi
@@ -39,22 +59,39 @@ install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install yasm perl; fi
   - mkdir -p ffmpeg-release
   - |
-      if [ `grep -q ${FFVERSION} ffmpeg-release/VERSION 2>/dev/null` ]; then
+      if grep -q ${FF_VERSION} ffmpeg-release/VERSION 2>/dev/null; then
         echo "ffmpeg source exists"
       else
-        wget http://ffmpeg.org/releases/ffmpeg-${FFVERSION}.tar.bz2
-        tar jxf ffmpeg-${FFVERSION}.tar.bz2
+        wget http://ffmpeg.org/releases/ffmpeg-${FF_VERSION}.tar.bz2
+        tar jxf ffmpeg-${FF_VERSION}.tar.bz2
         rm -rf ffmpeg-release
-        mv ffmpeg-${FFVERSION} ffmpeg-release
+        mv ffmpeg-${FF_VERSION} ffmpeg-release
       fi
   - wget https://raw.githubusercontent.com/FFmpeg/gas-preprocessor/master/gas-preprocessor.pl
   - mv gas-preprocessor.pl ffmpeg-release
+  - |
+      if [ "${TARGET:0:7}" == "android" -a ! -f android-ndk/${NDK_VERSION} ]; then
+        wget https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux-x86_64.zip
+        7z x -y android-ndk-${NDK_VERSION}-linux-x86_64.zip >/dev/null
+        rm -rf android-ndk
+        ls -l
+        mv android-ndk-${NDK_VERSION} android-ndk
+        touch android-ndk/${NDK_VERSION}
+      fi
 
 script:
   - export FFSRC=$PWD/ffmpeg-release
   - ln -sf config{-lite,}.sh
-  - if [ "$TARGET" == "host" ]; then ./build_ffmpeg.sh; fi
-  - if [ "$TARGET" == "iOS" ]; then ./ios.sh; fi
+  - |
+      if [ "$TARGET" == "host" ]; then
+        ./build_ffmpeg.sh
+      elif [ "$TARGET" == "iOS" ]; then
+      # FIXME: ios armv7 can not find gas-preprocessor
+        ./ios.sh
+      elif [ "${TARGET:0:7}" == "android" ]; then
+        export ANDROID_NDK=$PWD/android-ndk
+        android_toolchain=$CC ./build_ffmpeg.sh android "${TARGET:8}"
+      fi
 
 # after_success:
 
