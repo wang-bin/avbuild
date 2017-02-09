@@ -2,6 +2,10 @@
 # TODO: -flto=nb_cpus
 # %MSYS2_BIN% --login -x %~dp0build_ffmpeg.sh vc
 # MXE cross toolchain
+# cache and compare config change to reduce build/config time
+# ios paralell config
+# submodule: https://github.com/FFmpeg/gas-preprocessor.git
+# unify vc desktop and store
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2016"
 echo "https://github.com/wang-bin/build_ffmpeg"
@@ -130,6 +134,7 @@ cd -
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR"
 
 setup_vc_env() {
+  enable_lto=false # ffmpeg requires DCE, while vc with LTCG (-GL) does not support DCE
   LIB_OPT="$LIB_OPT --disable-static"
   echo Call "set MSYS2_PATH_TYPE=inherit" before msys2 sh.exe if cl.exe is not found!
 # http://ffmpeg.org/platform.html#Microsoft-Visual-C_002b_002b-or-Intel-C_002b_002b-Compiler-for-Windows
@@ -153,6 +158,7 @@ setup_vc_env() {
 }
 
 setup_winrt_env() {
+  enable_lto=false # ffmpeg requires DCE, while vc with LTCG (-GL) does not support DCE
   LIB_OPT="$LIB_OPT --disable-static"
 #http://fate.libav.org/arm-msvc-14-wp
   FEATURE_OPT="--disable-programs $FEATURE_OPT" # prepend so that user can overwrite
@@ -236,6 +242,7 @@ setup_android_env() {
   EXTRA_CFLAGS="$EXTRA_CFLAGS -ffast-math -fstrict-aliasing -Werror=strict-aliasing -ffunction-sections -fstack-protector-strong -Wa,--noexecstack -Wformat -Werror=format-security" # " #-funwind-tables need libunwind.a for libc++?
 # -no-canonical-prefixes: results in "-mcpu= ", why?
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wl,--build-id -Wl,--fatal-warnings" # -Wl,--warn-shared-textrel
+  # TODO: clang use -arch like iOS?
 
   if [ "$ANDROID_ARCH" = "x86" -o "$ANDROID_ARCH" = "i686" ]; then
     ANDROID_ARCH=x86
@@ -314,6 +321,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   #test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=$PLATFORM --toolchain=$TOOLCHAIN --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
   export PATH=$ANDROID_TOOLCHAIN_DIR/bin:$ANDROID_LLVM_DIR/bin:$PATH
   clang --version
+  # FIXME: system ld is used on linux
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE\""
   INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}-${android_toolchain:-gcc}
   enable_opt mediacodec
@@ -387,8 +395,8 @@ case $1 in
   android)    setup_android_env $TAGET_ARCH_FLAG ;;
   ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
   mingw64)    setup_mingw_env $TAGET_ARCH_FLAG ;;
-  vc)         enable_lto=false && setup_vc_env ;; # TODO: test lto
-  winpc|winphone|winrt) setup_winrt_env ;;    # TODO: test lto
+  vc)         setup_vc_env ;;
+  winstore|winpc|winphone|winrt) setup_winrt_env ;;
   maemo*)     setup_maemo_env ${1##maemo} ;;
   x86)
     add_librt
@@ -444,9 +452,11 @@ fi
 echo $CONFIGURE
 mkdir -p build_$INSTALL_DIR
 cd build_$INSTALL_DIR
-time (eval $CONFIGURE || tail config.log)
+time eval $CONFIGURE
 if [ $? -eq 0 ]; then
   time (make -j$JOBS install prefix="$PWD/../$INSTALL_DIR" && echo $CONFIGURE >>$PWD/../$INSTALL_DIR/config.txt)
+else
+  tail config.log
 fi
 
 # http://cmzx3444.iteye.com/blog/1447366
