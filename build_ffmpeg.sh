@@ -4,8 +4,7 @@
 # MXE cross toolchain
 # cache and compare config change to reduce build/config time
 # ios paralell config
-# submodule: https://github.com/FFmpeg/gas-preprocessor.git
-# unify vc desktop and store
+
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2016"
 echo "https://github.com/wang-bin/build_ffmpeg"
@@ -52,6 +51,8 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 
 : ${FFSRC:=$PWD/ffmpeg}
 : ${enable_lto:=true}
+
+export PATH=$PWD/tools/gas-preprocessor:$PATH
 
 echo FFSRC=$FFSRC
 [ -f $FFSRC/configure ] && {
@@ -175,6 +176,7 @@ setup_winrt_env() {
   EXTRA_LDFLAGS="-APPCONTAINER"
   local arch=x86_64 #used by configure --arch
   if [ "`tolower $Platform`" = "arm" ]; then
+    type -a gas-preprocessor.pl
     ASM_OPT="--as=armasm --cpu=armv7-a --enable-thumb" # --arch
     which cpp &>/dev/null || {
       echo "ASM is disabled: cpp is required by gas-preprocessor but it is missing. make sure (mingw) gcc is in your PATH"
@@ -190,10 +192,9 @@ setup_winrt_env() {
   else
     arch=x86
   fi
-  local winphone=false
-  target_is winstore && test -n "$WIN_PHONE" && winphone=true
-  target_is winphone && winphone=true
-  if $winphone; then
+  : ${WINPHONE:=false}
+  target_is winphone && WINPHONE=true
+  if $WINPHONE; then
   # export dirs (lib, include)
     family="WINAPI_FAMILY_PHONE_APP"
     INSTALL_DIR=winphone

@@ -39,7 +39,6 @@ if /i [%OS:~0,8%] == [winphone] (
     set WINRT=true
     set WINSTORE=true
     set WINPHONE=true
-    set WIN_PHONE=true
 )
 if /i [%OS:~0,8%] == [winstore] (
     set WINRT=true
