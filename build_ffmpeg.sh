@@ -347,9 +347,11 @@ setup_ios_env() {
   local BITCODE_FLAGS=
   if [ "${IOS_ARCH:0:3}" == "arm" ]; then
     $enable_bitcode && BITCODE_FLAGS="-fembed-bitcode"
-    # armv7 since 3.2, but latest ios sdk does not have crt1.o/crt1.3.1.o, so use 6.0.
+    # armv7 since 3.2, but latest ios sdk does not have crt1.o/crt1.3.1.o, use 6.0 is ok. but we add these files in tools/lib/ios5, so 5.0 and older is fine
     if [ "${IOS_ARCH:3:2}" == "64" ]; then
       ios_min=7.0
+    else
+      ios_min=5.0
     fi
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-thumb"
   else
@@ -363,7 +365,7 @@ setup_ios_env() {
   fi
   ios_ver=${2##ios}
   : ${ios_ver:=$ios_min}
-  export LIBRARY_PATH=$PWD/lib/ios5
+  export LIBRARY_PATH=$PWD/tools/lib/ios5
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --arch=$IOS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
   FEATURE_OPT="$FEATURE_OPT --disable-programs" #FEATURE_OPT
   EXTRA_CFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver $BITCODE_FLAGS"
