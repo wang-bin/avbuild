@@ -134,7 +134,15 @@ FFMINOR=`./version.sh |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
 cd -
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR"
 
-setup_vc_env() {
+setup_vc_env(){
+  if $WINRT; then
+    setup_winrt_env
+  else
+    setup_vc_desktop_env
+  fi
+}
+
+setup_vc_desktop_env() {
   enable_lto=false # ffmpeg requires DCE, while vc with LTCG (-GL) does not support DCE
   LIB_OPT="$LIB_OPT --disable-static"
   echo Call "set MSYS2_PATH_TYPE=inherit" before msys2 sh.exe if cl.exe is not found!
@@ -215,7 +223,7 @@ setup_mingw_env() {
   LIB_OPT="$LIB_OPT --disable-static"
   enable_lto=false
   local gcc=gcc
-  host_is MinGW -o host_is MSYS || {
+  host_is MinGW || host_is MSYS || {
     local arch=$1
     [ "$arch" = "x86" ] && arch=i686
     gcc=${arch}-w64-mingw32-gcc
@@ -398,7 +406,7 @@ case $1 in
   android)    setup_android_env $TAGET_ARCH_FLAG ;;
   ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
   mingw64)    setup_mingw_env $TAGET_ARCH_FLAG ;;
-  vc)         setup_vc_env ;;
+  vc)         setup_vc_desktop_env ;;
   winstore|winpc|winphone|winrt) setup_winrt_env ;;
   maemo*)     setup_maemo_env ${1##maemo} ;;
   x86)
@@ -411,7 +419,10 @@ case $1 in
     fi
     ;;
   *) # assume host build. use "") ?
-    if host_is MinGW || host_is MSYS; then
+    : {VC_BUILD:=false}
+    if $VC_BUILD; then
+      setup_vc_env
+    elif host_is MinGW || host_is MSYS; then
       setup_mingw_env
     elif host_is Linux; then
       test -n "$vaapi_opt" && FEATURE_OPT="$FEATURE_OPT $vaapi_opt"
