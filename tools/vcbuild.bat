@@ -145,4 +145,3 @@ goto end
 
 
 if exist user.bat call user.bat
-pause

@@ -1,0 +1,66 @@
+branches:
+  only:
+    - master
+    - prelease
+    - ci/appveyor
+    - appveyor
+
+environment:
+# win 8, 8.1, 10, uwp, phone8 sdk is available
+  matrix:
+  - arch: x86
+    cc: VS2013
+    target: desktop
+
+  - arch: x64
+    cc: VS2015
+    target: desktop
+
+  - arch: arm
+    cc: VS2015
+    target: winstore
+
+  - arch: x64
+    cc: VS2015
+    target: winstore
+# only mingw32 is available
+  - arch: 32
+    cc: MinGW
+    target: desktop
+
+matrix:
+  fast_finish: false
+
+#cache:
+#  - ffmpeg
+
+init:
+  - echo NUMBER_OF_PROCESSORS=%NUMBER_OF_PROCESSORS%
+  - echo PROCESSOR_IDENTIFIER=%PROCESSOR_IDENTIFIER%
+  - dir C:\msys64
+
+install:
+  - git submodule update --init
+  - appveyor DownloadFile "http://ffmpeg.org/releases/ffmpeg-%FF_VERSION%.tar.xz"
+  - 7z x ffmpeg-%FF_VERSION%.tar.xz
+  - 7z x ffmpeg-%FF_VERSION%.tar > NUL
+  - mv ffmpeg-%FF_VERSION% ffmpeg
+
+before_build:
+  - set PATH=%PATH%;C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0
+  - set MSYS2_PATH_TYPE=inherit
+  - set MSYS2_DIR=C:\msys64
+  - set BUILD_NOW=true
+  - set HOME=%CD%
+
+build_script:
+  - if %cc%==MinGW %MSYS2_DIR%\usr\bin\bash.exe --login build_ffmpeg.sh
+  - if not %cc%==MinGW tools\vcbuild.bat %cc% %target% %arch%
+
+after_build:
+  - 7z a ffmpeg-%FF_VERSION%-%cc%-%target%-%arch%.7z sdk_*
+
+test: off
+
+artifacts:
+  - path: 'ffmpeg*.7z'  # relative to repo root
