@@ -143,5 +143,4 @@ goto end
 @echo -------------------------------------------------------------------------------
 @echo -----Build environment is ready: %OS% %OS_VER% %ARCH2%. WinRT: %WINRT%-----
 
-
-if exist user.bat call user.bat
+if exist %~dp0user.bat call %~dp0user.bat

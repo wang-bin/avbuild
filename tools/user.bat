@@ -1,1 +1,1 @@
-if exist ..\msys2.bat call ..\msys2.bat
+if exist %~dp0..\msys2.bat call %~dp0..\msys2.bat

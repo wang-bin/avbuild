@@ -52,6 +52,7 @@ before_build:
   - set MSYS2_DIR=C:\msys64
   - set BUILD_NOW=true
   - set HOME=%CD%
+  - dir
 
 build_script:
   - if %cc%==MinGW %MSYS2_DIR%\usr\bin\bash.exe --login build_ffmpeg.sh
