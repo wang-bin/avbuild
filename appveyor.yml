@@ -8,25 +8,26 @@ branches:
 environment:
 # win 8, 8.1, 10, uwp, phone8 sdk is available
   matrix:
+# only mingw32 is available
+  - arch: 32
+    compiler: MinGW
+    target: desktop
+
   - arch: x86
-    cc: VS2013
+    compiler: VS2013
     target: desktop
 
   - arch: x64
-    cc: VS2015
+    compiler: VS2015
     target: desktop
 
   - arch: arm
-    cc: VS2015
+    compiler: VS2015
     target: winstore
 
   - arch: x64
-    cc: VS2015
+    compiler: VS2015
     target: winstore
-# only mingw32 is available
-  - arch: 32
-    cc: MinGW
-    target: desktop
 
 matrix:
   fast_finish: false
@@ -52,14 +53,15 @@ before_build:
   - set MSYS2_DIR=C:\msys64
   - set BUILD_NOW=true
   - set HOME=%CD%
+  - copy /y config-lite.sh config.sh
   - dir
 
 build_script:
-  - if %cc%==MinGW %MSYS2_DIR%\usr\bin\bash.exe --login build_ffmpeg.sh
-  - if not %cc%==MinGW tools\vcbuild.bat %cc% %target% %arch%
+  - if %compiler%==MinGW %MSYS2_DIR%\usr\bin\bash.exe --login build_ffmpeg.sh
+  - if not %compiler%==MinGW tools\vcbuild.bat %compiler% %target% %arch%
 
 after_build:
-  - 7z a ffmpeg-%FF_VERSION%-%cc%-%target%-%arch%.7z sdk_*
+  - 7z a ffmpeg-%FF_VERSION%-%compiler%-%target%-%arch%.7z sdk_*
 
 test: off
 
