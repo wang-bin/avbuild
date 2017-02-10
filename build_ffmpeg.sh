@@ -4,6 +4,7 @@
 # MXE cross toolchain
 # cache and compare config change to reduce build/config time
 # ios paralell config
+# detect rpi in host build
 
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2016"
@@ -419,7 +420,7 @@ case $1 in
     fi
     ;;
   *) # assume host build. use "") ?
-    : {VC_BUILD:=false}
+    : ${VC_BUILD:=false}
     if $VC_BUILD; then
       setup_vc_env
     elif host_is MinGW || host_is MSYS; then
@@ -471,6 +472,7 @@ if [ $? -eq 0 ]; then
   time (make -j$JOBS install prefix="$PWD/../$INSTALL_DIR" && echo $CONFIGURE >>$PWD/../$INSTALL_DIR/config.txt)
 else
   tail config.log
+  exit 1
 fi
 
 # http://cmzx3444.iteye.com/blog/1447366
