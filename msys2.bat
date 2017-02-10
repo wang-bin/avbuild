@@ -12,11 +12,11 @@ set PATH=%PATH%;%CPP_DIR%
 set TARGET_PARAM=vc
 if [%WINRT%] == [true] set TARGET_PARAM=winstore
 @echo Now you can run:
-@echo cd dir/of/build_ffmpeg
 @echo export FFSRC=/path/to/ffmpeg
 @echo ./build_ffmpeg.sh or ./build_ffmpeg %TARGET_PARAM%
 
 if not exist %MSYS2_DIR% goto NoBash
+set HOME=%~dp0
 %MSYS2_DIR%\usr\bin\bash.exe --login -i
 goto end
 
