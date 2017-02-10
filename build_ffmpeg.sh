@@ -1,6 +1,5 @@
 #/bin/bash
 # TODO: -flto=nb_cpus
-# %MSYS2_BIN% --login -x %~dp0build_ffmpeg.sh vc
 # MXE cross toolchain
 # cache and compare config change to reduce build/config time
 # ios paralell config
@@ -52,6 +51,7 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 
 : ${FFSRC:=$PWD/ffmpeg}
 : ${enable_lto:=true}
+enable_pic=tue
 
 export PATH=$PWD/tools/gas-preprocessor:$PATH
 
@@ -155,7 +155,7 @@ setup_vc_desktop_env() {
   if [ "`tolower $Platform`" = "x64" ]; then
     INSTALL_DIR="${INSTALL_DIR}-vc-x64"
     echo "vc x64"
-    test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && EXTRA_LDFLAGS="-SUBSYSTEM:CONSOLE,5.02"
+    test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && EXTRA_LDFLAGS="-SUBSYSTEM:CONSOLE,5.02" # TODO: ffmpeg bug, user32 is used by hwcontext_dxva2
   elif [ "`tolower $Platform`" = "arm" ]; then
     INSTALL_DIR="${INSTALL_DIR}-vc-arm"
     echo "use scripts in winstore dir instead"
@@ -185,11 +185,13 @@ setup_winrt_env() {
   EXTRA_LDFLAGS="-APPCONTAINER"
   local arch=x86_64 #used by configure --arch
   if [ "`tolower $Platform`" = "arm" ]; then
+    enable_pic=false  # TODO: ffmpeg bug, should filter out -fPIC. armasm(gas) error (unsupported option) if pic is
     type -a gas-preprocessor.pl
     ASM_OPT="--as=armasm --cpu=armv7-a --enable-thumb" # --arch
     which cpp &>/dev/null || {
       echo "ASM is disabled: cpp is required by gas-preprocessor but it is missing. make sure (mingw) gcc is in your PATH"
       ASM_OPT=--disable-asm
+      enable_pic=tue # not tested
     }
     #gas-preprocessor.pl change open(INPUT, "-|", @preprocess_c_cmd) || die "Error running preprocessor"; to open(INPUT, "@preprocess_c_cmd|") || die "Error running preprocessor";
     EXTRA_CFLAGS="$EXTRA_CFLAGS -D__ARM_PCS_VFP"
@@ -445,8 +447,7 @@ case $1 in
 esac
 
 $enable_lto && [ ! "${LIB_OPT/disable-static/}" == "${LIB_OPT}" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-lto"
-
-target_is winstore || TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-pic" # armasm(gas) error (unsupported option) if pic is enabled
+$enable_pic && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-pic"
 test -n "$EXTRA_CFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-cflags=\"$EXTRA_CFLAGS\""
 test -n "$EXTRA_LDFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"$EXTRA_LDFLAGS\""
 test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
