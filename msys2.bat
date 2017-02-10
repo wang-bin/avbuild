@@ -1,7 +1,9 @@
+@echo on
 :: set your MSYS2_DIR here
-set MSYS2_DIR=D:\msys2
+if [%MSYS2_DIR%] == [] set MSYS2_DIR=D:\msys2
 :: use vc to build ffmpeg. set to other value to use mingw toolchain
 set VC_BUILD=true
+
 
 set CPP_DIR=
 if "%ARCH%" == "arm" (
@@ -17,7 +19,15 @@ if [%WINRT%] == [true] set TARGET_PARAM=winstore
 
 if not exist %MSYS2_DIR% goto NoBash
 set HOME=%~dp0
+:: --login -x is verbose
+if [%BUILD_NOW%] == [] goto StartBash
+
+%MSYS2_DIR%\usr\bin\bash.exe --login build_ffmpeg.sh
+goto end
+
+:StartBash
 %MSYS2_DIR%\usr\bin\bash.exe --login -i
+
 goto end
 
 :NoBash
