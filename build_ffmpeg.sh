@@ -149,6 +149,9 @@ setup_vc_desktop_env() {
   echo Call "set MSYS2_PATH_TYPE=inherit" before msys2 sh.exe if cl.exe is not found!
 # http://ffmpeg.org/platform.html#Microsoft-Visual-C_002b_002b-or-Intel-C_002b_002b-Compiler-for-Windows
   test -n "$dxva2_opt" && FEATURE_OPT="$FEATURE_OPT $dxva2_opt"
+  # ldflags prepends flags. extralibs appends libs and add to pkg-config
+  # can not use -luser32 because extralibs will not be filter -l to .lib (ldflags_filter is not ready, ffmpeg bug)
+  EXTRALIBS="$EXTRALIBS user32.lib" # ffmpeg bug: hwcontext_dxva2 GetDesktopWindow()
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --toolchain=msvc"
   VS_VER=${VisualStudioVersion:0:2}
   echo "VS version: $VS_VER, platform: $Platform"
