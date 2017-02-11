@@ -2,6 +2,7 @@
 # TODO: -flto=nb_cpus
 # MXE cross toolchain
 # ios paralell config
+# -MD -NODEFAULTLIB:libcmt
 
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2016"
@@ -219,6 +220,7 @@ setup_winrt_env() {
   fi
   EXTRA_CFLAGS="$EXTRA_CFLAGS -DWINAPI_FAMILY=$family -D_WIN32_WINNT=$winver"
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --arch=$arch"
+  INSTALL_DIR="sdk-$INSTALL_DIR"
 }
 
 setup_mingw_env() {
@@ -487,5 +489,4 @@ else
   exit 1
 fi
 
-# http://cmzx3444.iteye.com/blog/1447366
 # --enable-openssl  --enable-hardcoded-tables  --enable-librtmp --enable-zlib

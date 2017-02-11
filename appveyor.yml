@@ -62,7 +62,7 @@ build_script:
   - if not %compiler%==MinGW tools\vcbuild.bat %compiler% %target% %arch%
 
 after_build:
-  - 7z a ffmpeg-%FF_VERSION%-%compiler%-%target%-%arch%.7z sdk_*
+  - 7z a ffmpeg-%FF_VERSION%-%compiler%-%target%-%arch%.7z sdk-*
 
 test: off
 

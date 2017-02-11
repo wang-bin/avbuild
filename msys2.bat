@@ -1,4 +1,4 @@
-@echo on
+@echo off
 :: set your MSYS2_DIR here
 if [%MSYS2_DIR%] == [] set MSYS2_DIR=D:\msys2
 :: use vc to build ffmpeg. set to other value to use mingw toolchain
