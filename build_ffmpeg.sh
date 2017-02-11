@@ -1,7 +1,6 @@
 #/bin/bash
 # TODO: -flto=nb_cpus
 # MXE cross toolchain
-# cache and compare config change to reduce build/config time
 # ios paralell config
 
 echo
@@ -129,6 +128,7 @@ add_librt(){
 #FFMINOR=`pwd |sed 's,.*\.\(.*\)\..*,\1,'`
 # n1.2.8, 2.5.1, 2.5
 cd $FFSRC
+FFVERSION_FULL=`./version.sh`
 FFMAJOR=`./version.sh |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
 FFMINOR=`./version.sh |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
 cd -
@@ -468,12 +468,20 @@ if which nproc >/dev/null; then
 elif host_is Darwin && which sysctl >/dev/null; then
     JOBS=`sysctl -n machdep.cpu.thread_count`
 fi
-echo $CONFIGURE
 mkdir -p build_$INSTALL_DIR
 cd build_$INSTALL_DIR
-time eval $CONFIGURE
+echo $CONFIGURE |tee config-new.txt
+echo $FFVERSION_FULL >>config-new.txt
+if diff -NrubBw config{-new,}.txt >/dev/null; then
+  echo configuration does not change. skip configure
+else
+  echo configuration changes
+  time eval $CONFIGURE
+fi
 if [ $? -eq 0 ]; then
-  time (make -j$JOBS install prefix="$PWD/../$INSTALL_DIR" && echo $CONFIGURE >>$PWD/../$INSTALL_DIR/config.txt)
+  echo $CONFIGURE >config.txt
+  echo $FFVERSION_FULL >>config.txt
+  time (make -j$JOBS install prefix="$PWD/../$INSTALL_DIR" && cp -af config.txt $PWD/../$INSTALL_DIR)
 else
   tail config.log
   exit 1
