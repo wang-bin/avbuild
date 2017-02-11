@@ -3,7 +3,6 @@
 # MXE cross toolchain
 # cache and compare config change to reduce build/config time
 # ios paralell config
-# detect rpi in host build
 
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2016"
@@ -51,7 +50,7 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 
 : ${FFSRC:=$PWD/ffmpeg}
 : ${enable_lto:=true}
-enable_pic=tue
+enable_pic=true
 
 export PATH=$PWD/tools/gas-preprocessor:$PATH
 
@@ -122,7 +121,7 @@ add_librt(){
 # clock_gettime in librt instead of glibc>=2.17
   grep -q "LIBRT" $FFSRC/configure && {
     # TODO: cc test
-    host_is Linux && ! target_is android && EXTRALIBS="$EXTRALIBS -lrt"
+    host_is Linux && ! target_is android && ! echo $EXTRALIBS |grep -q '\-lrt' && ! echo $EXTRA_LDFLAGS |grep -q '\-lrt' && EXTRALIBS="$EXTRALIBS -lrt"
   }
 }
 #avr >= ffmpeg0.11
@@ -428,8 +427,12 @@ case $1 in
     elif host_is MinGW || host_is MSYS; then
       setup_mingw_env
     elif host_is Linux; then
-      test -n "$vaapi_opt" && FEATURE_OPT="$FEATURE_OPT $vaapi_opt"
-      test -n "$vdpau_opt" && FEATURE_OPT="$FEATURE_OPT $vdpau_opt"
+      if [ -f /opt/vc/include/bcm_host.h ]; then
+        . config-rpi.sh
+      else
+        test -n "$vaapi_opt" && FEATURE_OPT="$FEATURE_OPT $vaapi_opt"
+        test -n "$vdpau_opt" && FEATURE_OPT="$FEATURE_OPT $vdpau_opt"
+      fi
       add_librt
     elif host_is Darwin; then
       enable_vtenc
