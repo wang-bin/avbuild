@@ -74,6 +74,17 @@ tolower(){
     echo "$@" | tr ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz
 }
 
+trim(){
+  local var="$@"
+  var="${var#"${var%%[![:space:]]*}"}" #bash4: ${a##+([[:space:]])}
+  var="${var%"${var##*[![:space:]]}"}"
+  echo -n "$var"
+}
+# why eval $v=$(trim_compress "\$$v") will have a leading white space (used in trim_vars)?
+trim2(){
+  trim "$@" |tr -s ' '
+}
+
 host_is() {
   uname |grep -iq $1 && return 0 || return 1
 }
@@ -456,6 +467,9 @@ esac
 
 $enable_lto && [ ! "${LIB_OPT/disable-static/}" == "${LIB_OPT}" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-lto"
 $enable_pic && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-pic"
+EXTRA_CFLAGS=$(trim2 $EXTRA_CFLAGS)
+EXTRA_LDFLAGS=$(trim2 $EXTRA_LDFLAGS)
+EXTRALIBS=$(trim2 $EXTRALIBS)
 test -n "$EXTRA_CFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-cflags=\"$EXTRA_CFLAGS\""
 test -n "$EXTRA_LDFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"$EXTRA_LDFLAGS\""
 test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
@@ -463,7 +477,7 @@ echo INSTALL_DIR: $INSTALL_DIR
 echo $LIB_OPT
 is_libav || FEATURE_OPT="$FEATURE_OPT --enable-avresample --disable-postproc"
 CONFIGURE="configure --extra-version=QtAV --disable-doc ${DEBUG_OPT} $LIB_OPT --enable-runtime-cpudetect $FEATURE_OPT $FEATURE_OPT $TOOLCHAIN_OPT $USER_OPT"
-CONFIGURE=`echo $CONFIGURE |tr -s ' '`
+CONFIGURE=`trim2 $CONFIGURE`
 # http://ffmpeg.org/platform.html
 # static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
 
@@ -477,7 +491,7 @@ mkdir -p build_$INSTALL_DIR
 cd build_$INSTALL_DIR
 echo $CONFIGURE |tee config-new.txt
 echo $FFVERSION_FULL >>config-new.txt
-if diff -NrubBw config{-new,}.txt >/dev/null; then
+if diff -NrubB config{-new,}.txt >/dev/null; then
   echo configuration does not change. skip configure
 else
   echo configuration changes
