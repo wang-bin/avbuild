@@ -155,29 +155,32 @@ setup_vc_env(){
 }
 
 setup_vc_desktop_env() {
+  echo Call "set MSYS2_PATH_TYPE=inherit" before msys2 sh.exe if cl.exe is not found!
   enable_lto=false # ffmpeg requires DCE, while vc with LTCG (-GL) does not support DCE
   LIB_OPT="$LIB_OPT --disable-static"
-  echo Call "set MSYS2_PATH_TYPE=inherit" before msys2 sh.exe if cl.exe is not found!
 # http://ffmpeg.org/platform.html#Microsoft-Visual-C_002b_002b-or-Intel-C_002b_002b-Compiler-for-Windows
   test -n "$dxva2_opt" && FEATURE_OPT="$FEATURE_OPT $dxva2_opt"
   # ldflags prepends flags. extralibs appends libs and add to pkg-config
   # can not use -luser32 because extralibs will not be filter -l to .lib (ldflags_filter is not ready, ffmpeg bug)
   EXTRALIBS="$EXTRALIBS user32.lib" # ffmpeg bug: hwcontext_dxva2 GetDesktopWindow()
+  # dylink crt
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -MD"
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -NODEFAULTLIB:libcmt"
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --toolchain=msvc"
-  VS_VER=${VisualStudioVersion:0:2}
+  VS_VER=${VisualStudioVersion:0:2} # FIXME: vs2017 major version is the same as vs2015
   echo "VS version: $VS_VER, platform: $Platform"
   if [ "`tolower $Platform`" = "x64" ]; then
-    INSTALL_DIR="${INSTALL_DIR}-vc-x64"
+    INSTALL_DIR="${INSTALL_DIR}-vc${VS_VER}-x64"
     echo "vc x64"
-    test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && EXTRA_LDFLAGS="-SUBSYSTEM:CONSOLE,5.02" # TODO: ffmpeg bug, user32 is used by hwcontext_dxva2
+    test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && EXTRA_LDFLAGS="$EXTRA_LDFLAGS -SUBSYSTEM:CONSOLE,5.02" # TODO: ffmpeg bug, user32 is used by hwcontext_dxva2
   elif [ "`tolower $Platform`" = "arm" ]; then
-    INSTALL_DIR="${INSTALL_DIR}-vc-arm"
+    INSTALL_DIR="${INSTALL_DIR}-vc${VS_VER}-arm"
     echo "use scripts in winstore dir instead"
     exit 0
   else #Platform is empty
     echo "vc x86"
-    INSTALL_DIR="${INSTALL_DIR}-vc-x86"
-    test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && EXTRA_LDFLAGS="-SUBSYSTEM:CONSOLE,5.01"
+    INSTALL_DIR="${INSTALL_DIR}-vc${VS_VER}-x86"
+    test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && EXTRA_LDFLAGS="$EXTRA_LDFLAGS -SUBSYSTEM:CONSOLE,5.01"
   fi
 }
 
