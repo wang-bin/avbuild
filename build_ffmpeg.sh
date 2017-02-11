@@ -1,8 +1,7 @@
 #/bin/bash
-# TODO: -flto=nb_cpus
+# TODO: -flto=nb_cpus. lto with static build (except android)
 # MXE cross toolchain
-# ios paralell config
-# -MD -NODEFAULTLIB:libcmt
+# native msys2 build --target-os=mingw32
 
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2016"
@@ -97,10 +96,7 @@ target_arch_is() {
 is_libav() {
   test -f "$FFSRC/avconv.c" && return 0 || return 1
 }
-add_ffopt() {
-  # check opt exitsts (--enable/disable), do nothing if exists
-  echo "not implemented"
-}
+
 host_is MinGW || host_is MSYS && {
   echo "msys2: change target_os detect in configure: mingw32)=>mingw*|msys*)"
   echo "       pacman -Sy --needed diffutils pkg-config mingw-w64-i686-gcc mingw-w64-x86_64-gcc"
@@ -172,7 +168,7 @@ setup_vc_desktop_env() {
   if [ "`tolower $Platform`" = "x64" ]; then
     INSTALL_DIR="${INSTALL_DIR}-vc${VS_VER}-x64"
     echo "vc x64"
-    test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && EXTRA_LDFLAGS="$EXTRA_LDFLAGS -SUBSYSTEM:CONSOLE,5.02" # TODO: ffmpeg bug, user32 is used by hwcontext_dxva2
+    test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && EXTRA_LDFLAGS="$EXTRA_LDFLAGS -SUBSYSTEM:CONSOLE,5.02"
   elif [ "`tolower $Platform`" = "arm" ]; then
     INSTALL_DIR="${INSTALL_DIR}-vc${VS_VER}-arm"
     echo "use scripts in winstore dir instead"
@@ -351,7 +347,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   #test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=$PLATFORM --toolchain=$TOOLCHAIN --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
   export PATH=$ANDROID_TOOLCHAIN_DIR/bin:$ANDROID_LLVM_DIR/bin:$PATH
   clang --version
-  # FIXME: system ld is used on linux
+  # FIXME: system ld is used on travis
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE\""
   INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}-${android_toolchain:-gcc}
   enable_opt mediacodec
@@ -503,10 +499,12 @@ fi
 if [ $? -eq 0 ]; then
   echo $CONFIGURE >config.txt
   echo $FFVERSION_FULL >>config.txt
+  : ${NO_BUILD:=false}
+  $NO_BUILD && exit 0
   time (make -j$JOBS install prefix="$PWD/../$INSTALL_DIR" && cp -af config.txt $PWD/../$INSTALL_DIR)
+  [ $? -eq 0 ] || exit 2
 else
   tail config.log
   exit 1
 fi
-
 # --enable-openssl  --enable-hardcoded-tables  --enable-librtmp --enable-zlib
