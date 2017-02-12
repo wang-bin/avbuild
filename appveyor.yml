@@ -8,9 +8,13 @@ branches:
 environment:
 # win 8, 8.1, 10, uwp, phone8 sdk is available
   matrix:
-# only mingw32 is available
+# standalone mingw32: C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0
   - arch: 32
-    compiler: MinGW
+    compiler: MINGW
+    target: desktop
+
+  - arch: 64
+    compiler: MINGW
     target: desktop
 
   - arch: x86
@@ -20,6 +24,14 @@ environment:
   - arch: x64
     compiler: VS2015
     target: desktop
+
+  - arch: arm
+    compiler: VS2013
+    target: winphone
+
+  - arch: x64
+    compiler: VS2013
+    target: winstore
 
   - arch: arm
     compiler: VS2015
@@ -49,17 +61,17 @@ install:
   - appveyor DownloadFile http://www.tortall.net/projects/yasm/releases/yasm-1.3.0-win64.exe -FileName ffmpeg/yasm.exe
 
 before_build:
-  - set PATH=%PATH%;C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0
   - set MSYS2_PATH_TYPE=inherit
   - set MSYS2_DIR=C:\msys64
   - set BUILD_NOW=true
   - set HOME=%CD%
+  - set MSYSTEM=%compiler%%arch% # ffmpeg configure refuses to build for mingw in pure msys. so we lie. MUST use upper case. ommited by msvc
   - copy /y config-lite.sh config.sh
-  - dir
 
 build_script:
-  - if %compiler%==MinGW %MSYS2_DIR%\usr\bin\bash.exe --login build_ffmpeg.sh
-  - if not %compiler%==MinGW tools\vcbuild.bat %compiler% %target% %arch%
+  - if /i %compiler%==MinGW set VC_BUILD=false
+  - if /i %compiler%==MinGW %MSYS2_DIR%\usr\bin\bash.exe --login build_ffmpeg.sh
+  - if not /i %compiler%==MinGW tools\vcbuild.bat %compiler% %target% %arch%
 
 after_build:
   - 7z a ffmpeg-%FF_VERSION%-%compiler%-%target%-%arch%.7z sdk-*

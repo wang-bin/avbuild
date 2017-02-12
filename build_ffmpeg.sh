@@ -1,7 +1,6 @@
 #/bin/bash
 # TODO: -flto=nb_cpus. lto with static build (except android)
 # MXE cross toolchain
-# native msys2 build --target-os=mingw32
 
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2016"
@@ -510,4 +509,4 @@ fi
 cd $PWD/../$INSTALL_DIR
 [ -f bin/avutil.lib ] && mv bin/*.lib lib
 # --enable-openssl  --enable-hardcoded-tables  --enable-librtmp --enable-zlib
-$SECONDS
+echo ${SECONDS}s elapsed
