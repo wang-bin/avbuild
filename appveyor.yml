@@ -6,40 +6,39 @@ branches:
     - appveyor
 
 environment:
-# win 8, 8.1, 10, uwp, phone8 sdk is available
   matrix:
 # standalone mingw32: C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0
-  - arch: 32
-    compiler: MINGW
-    target: desktop
+  - _ARCH: 32
+    _CC: MINGW
+    _PLATFORM: desktop
 
-  - arch: 64
-    compiler: MINGW
-    target: desktop
+  - _ARCH: 64
+    _CC: MINGW
+    _PLATFORM: desktop
 
-  - arch: x86
-    compiler: VS2013
-    target: desktop
+  - _ARCH: x86
+    _CC: VS2013
+    _PLATFORM: desktop
 
-  - arch: x64
-    compiler: VS2015
-    target: desktop
+  - _ARCH: x64
+    _CC: VS2015
+    _PLATFORM: desktop
 
-  - arch: arm
-    compiler: VS2013
-    target: winphone
+  - _ARCH: arm
+    _CC: VS2013
+    _PLATFORM: winphone
 
-  - arch: x64
-    compiler: VS2013
-    target: winstore
+  - _ARCH: x64
+    _CC: VS2013
+    _PLATFORM: winstore
 
-  - arch: arm
-    compiler: VS2015
-    target: winstore
+  - _ARCH: arm
+    _CC: VS2015
+    _PLATFORM: winstore
 
-  - arch: x64
-    compiler: VS2015
-    target: winstore
+  - _ARCH: x64
+    _CC: VS2015
+    _PLATFORM: winstore
 
 matrix:
   fast_finish: false
@@ -53,7 +52,7 @@ init:
   - dir C:\msys64
 
 install:
-  - if %arch%==arm git submodule update --init
+  - if /i %_ARCH%==arm git submodule update --init
   - appveyor DownloadFile "http://ffmpeg.org/releases/ffmpeg-%FF_VERSION%.tar.xz"
   - 7z x ffmpeg-%FF_VERSION%.tar.xz
   - 7z x ffmpeg-%FF_VERSION%.tar > NUL
@@ -65,16 +64,16 @@ before_build:
   - set MSYS2_DIR=C:\msys64
   - set BUILD_NOW=true
   - set HOME=%CD%
-  - set MSYSTEM=%compiler%%arch% # ffmpeg configure refuses to build for mingw in pure msys. so we lie. MUST use upper case. ommited by msvc
+  - set MSYSTEM=%_CC%%_ARCH% # ffmpeg configure refuses to build for mingw in pure msys. so we lie. MUST use upper case. ommited by msvc
   - copy /y config-lite.sh config.sh
 
 build_script:
-  - if /i %compiler%==MinGW set VC_BUILD=false
-  - if /i %compiler%==MinGW %MSYS2_DIR%\usr\bin\bash.exe --login build_ffmpeg.sh
-  - if not /i %compiler%==MinGW tools\vcbuild.bat %compiler% %target% %arch%
+  - if /i %_CC%==MinGW set VC_BUILD=false
+  - if /i %_CC%==MinGW %MSYS2_DIR%\usr\bin\bash.exe --login build_ffmpeg.sh
+  - if /i not %_CC%==MinGW tools\vcbuild.bat %_CC% %_PLATFORM% %_ARCH%
 
 after_build:
-  - 7z a ffmpeg-%FF_VERSION%-%compiler%-%target%-%arch%.7z sdk-*
+  - 7z a ffmpeg-%FF_VERSION%-%_CC%-%_PLATFORM%-%_ARCH%.7z sdk-*
 
 test: off
 
