@@ -204,7 +204,7 @@ setup_winrt_env() {
     which cpp &>/dev/null || {
       echo "ASM is disabled: cpp is required by gas-preprocessor but it is missing. make sure (mingw) gcc is in your PATH"
       ASM_OPT=--disable-asm
-      enable_pic=tue # not tested
+      enable_pic=true # not tested
     }
     #gas-preprocessor.pl change open(INPUT, "-|", @preprocess_c_cmd) || die "Error running preprocessor"; to open(INPUT, "@preprocess_c_cmd|") || die "Error running preprocessor";
     EXTRA_CFLAGS="$EXTRA_CFLAGS -D__ARM_PCS_VFP"
@@ -507,4 +507,7 @@ else
   tail config.log
   exit 1
 fi
+cd $PWD/../$INSTALL_DIR
+[ -f bin/avutil.lib ] && mv bin/*.lib lib
 # --enable-openssl  --enable-hardcoded-tables  --enable-librtmp --enable-zlib
+$SECONDS
