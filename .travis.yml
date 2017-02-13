@@ -9,6 +9,8 @@ addons:
       - diffutils
       - libva-dev
       - libvdpau-dev
+      - sshpass
+      - xz-utils
 cache:
   apt: true
   directories:
@@ -56,7 +58,7 @@ matrix:
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update --all; fi
 install:
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install yasm perl; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install yasm perl hudochenkov/sshpass/sshpass xz; fi
   - mkdir -p ffmpeg-release
   - |
       if grep -q ${FF_VERSION} ffmpeg-release/VERSION 2>/dev/null; then
@@ -93,7 +95,13 @@ script:
         android_toolchain=$CC ./avbuild.sh android "${TARGET:8}"
       fi
 
-# after_success:
+after_success:
+  - SUFFIX=${TARGET}
+  - if [ "$SUFFIX" == "host" ]; then SUFFIX=${TRAVIS_OS_NAME}; fi
+  - if [ "$SUFFIX" == "osx" ]; then SUFFIX=macOS; fi
+  - mv sdk* ffmpeg-${FF_VERSION}-${SUFFIX}-lite
+  - tar Jcf ffmpeg-${FF_VERSION}-${SUFFIX}-lite{.tar.xz,}
+  - sshpass -p $SF_PW scp -o StrictHostKeyChecking=no ffmpeg-${FF_VERSION}-${SUFFIX}-lite.tar.xz $SF_USER,avbuild@frs.sourceforge.net:/home/frs/project/a/av/avbuild/${SUFFIX%%-*}
 
 branches:
   only:
