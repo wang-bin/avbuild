@@ -270,23 +270,26 @@ setup_android_env() {
 # -no-canonical-prefixes: results in "-mcpu= ", why?
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wl,--build-id -Wl,--fatal-warnings" # -Wl,--warn-shared-textrel
   # TODO: clang use -arch like iOS?
-
+  # TODO: clang lto in r14 (gcc?)
   if [ "$ANDROID_ARCH" = "x86" -o "$ANDROID_ARCH" = "i686" ]; then
     ANDROID_ARCH=x86
     ANDROID_TOOLCHAIN_PREFIX="x86"
     CROSS_PREFIX=i686-linux-android-
+    CLANG_FLAGS="-target i686-none-linux-android"
     enable_lto=false
   elif [ "$ANDROID_ARCH" = "x86_64" -o "$ANDROID_ARCH" = "x64" ]; then
     PLATFORM=android-21
     ANDROID_ARCH=x86_64
     ANDROID_TOOLCHAIN_PREFIX="x86_64"
     CROSS_PREFIX=x86_64-linux-android-
+    CLANG_FLAGS="-target x86_64-none-linux-android"
     enable_lto=false
   elif [ "$ANDROID_ARCH" = "aarch64" -o "$ANDROID_ARCH" = "arm64" ]; then
     PLATFORM=android-21
     ANDROID_ARCH=arm64
     ANDROID_TOOLCHAIN_PREFIX=aarch64-linux-android
     CROSS_PREFIX=aarch64-linux-android-
+    CLANG_FLAGS="-target aarch64-none-linux-android"
   elif [ ! "${ANDROID_ARCH/arm/}" = "${ANDROID_ARCH}" ]; then
 #https://wiki.debian.org/ArmHardFloatPort/VfpComparison
     ANDROID_TOOLCHAIN_PREFIX="arm-linux-androideabi"
@@ -323,7 +326,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
         EXTRA_CFLAGS="$EXTRA_CFLAGS -mfpu=vfpv3-d16"
       fi
     fi
-    CLANG_FLAGS=" -fno-integrated-as $CLANG_FLAGS"
+    CLANG_FLAGS="-fno-integrated-as $CLANG_FLAGS" # Disable integrated-as for better compatibility. from ndk cmake
     ANDROID_ARCH=arm
   fi
   local TOOLCHAIN=${ANDROID_TOOLCHAIN_PREFIX}-4.9
