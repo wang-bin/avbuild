@@ -479,7 +479,7 @@ test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\
 echo INSTALL_DIR: $INSTALL_DIR
 echo $LIB_OPT
 is_libav || FEATURE_OPT="$FEATURE_OPT --enable-avresample --disable-postproc"
-CONFIGURE="configure --extra-version=QtAV --disable-doc ${DEBUG_OPT} $LIB_OPT --enable-runtime-cpudetect $FEATURE_OPT $FEATURE_OPT $TOOLCHAIN_OPT $USER_OPT"
+CONFIGURE="configure --extra-version=QtAV --disable-doc ${DEBUG_OPT} $LIB_OPT --enable-runtime-cpudetect $FEATURE_OPT $TOOLCHAIN_OPT $USER_OPT"
 CONFIGURE=`trim2 $CONFIGURE`
 # http://ffmpeg.org/platform.html
 # static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
