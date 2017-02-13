@@ -1,16 +1,18 @@
 #/bin/bash
 # TODO: -flto=nb_cpus. lto with static build (except android)
 # MXE cross toolchain
+# enable cuda
 
 echo
-echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2016"
-echo "https://github.com/wang-bin/build_ffmpeg"
+echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2017"
+echo "https://github.com/wang-bin/avbuild"
 
+THIS_NAME=${0##*/}
 PLATFORMS="ios|android|maemo|vc|x86|winstore|winpc|winphone|mingw64"
 echo "Usage:"
 test -d $PWD/ffmpeg || echo "  export FFSRC=/path/to/ffmpeg"
 cat<<HELP
-./build_ffmpeg.sh [target_platform [target_architecture]]
+./$THIS_NAME [target_platform [target_architecture]]
 target_platform can be: ${PLATFORMS}
 target_architecture can be:
    ios   |  android  |  mingw64
@@ -454,7 +456,7 @@ case $1 in
       test -n "$videotoolbox_opt" && FEATURE_OPT="$FEATURE_OPT $videotoolbox_opt"
       grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --install_name_dir=@rpath"
       # 10.6: ld: warning: target OS does not support re-exporting symbol _av_gettime from libavutil/libavutil.dylib
-      EXTRA_CFLAGS="-mmacosx-version-min=10.7" #TODO ./build_ffmpeg.sh macOS10.6
+      EXTRA_CFLAGS="-mmacosx-version-min=10.7" #TODO ./$THIS_NAME macOS10.6
       EXTRA_LDFLAGS="-mmacosx-version-min=10.7 -Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../Frameworks -Wl,-rpath,@loader_path/lib -Wl,-rpath,@loader_path/../lib"
     elif host_is Sailfish; then
       echo "Build in Sailfish SDK"
@@ -503,7 +505,7 @@ if [ $? -eq 0 ]; then
   time (make -j$JOBS install prefix="$PWD/../$INSTALL_DIR" && cp -af config.txt $PWD/../$INSTALL_DIR)
   [ $? -eq 0 ] || exit 2
 else
-  tail config.log
+  tail config.log || tail avbuild/config.log #libav moves config.log to avbuild dir
   exit 1
 fi
 cd $PWD/../$INSTALL_DIR

@@ -12,7 +12,7 @@ CONFIG_JOBS=()
 for arch in ${ARCHS[@]}; do
   test -f build_${OUT_DIR}-$arch/config.txt || {
     CONFIG_JOBS=(${CONFIG_JOBS[@]} %$((${#CONFIG_JOBS[@]}+1)))
-    NO_BUILD=true ./build_ffmpeg.sh ios $arch &
+    NO_BUILD=true ./avbuild.sh ios $arch &
   }
 done
 [ ${#CONFIG_JOBS[@]} -gt 0 ] && {

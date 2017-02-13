@@ -7,7 +7,7 @@ if [%MSYS2_DIR%] == [] set MSYS2_DIR=D:\msys2
 set CC_ARG=%1%
 set OS_ARG=%2%
 set ARCH_ARG=%3%
-:: VC_BUILD is checked in build_ffmpeg.sh host build.
+:: VC_BUILD is checked in avbuild.sh host build.
 set VC_BUILD=true
 if /i [%CC_ARG%] == [gcc] (
 :: MSYSTEM MUST use upper case
@@ -27,8 +27,8 @@ if [%VC_BUILD%] == [true] set TARGET_PARAM=vc
 if [%WINRT%] == [true] set TARGET_PARAM=winstore
 @echo Now you can run:
 @echo export FFSRC=/path/to/ffmpeg
-@echo ./build_ffmpeg.sh
-if not [%TARGET_PARAM%] == [] @echo or ./build_ffmpeg %TARGET_PARAM%
+@echo ./avbuild.sh
+if not [%TARGET_PARAM%] == [] @echo or ./avbuild %TARGET_PARAM%
 
 if not exist %MSYS2_DIR% goto NoBash
 set HOME=%~dp0
@@ -36,7 +36,7 @@ set HOME=%~dp0
 :: --login -x is verbose
 if [%BUILD_NOW%] == [] goto StartBash
 
-%MSYS2_DIR%\usr\bin\bash.exe --login build_ffmpeg.sh
+%MSYS2_DIR%\usr\bin\bash.exe --login avbuild.sh
 goto end
 
 :StartBash

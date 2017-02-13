@@ -69,7 +69,7 @@ before_build:
 
 build_script:
   - if /i %_CC%==MinGW set VC_BUILD=false
-  - if /i %_CC%==MinGW %MSYS2_DIR%\usr\bin\bash.exe --login build_ffmpeg.sh
+  - if /i %_CC%==MinGW %MSYS2_DIR%\usr\bin\bash.exe --login avbuild.sh
   - if /i not %_CC%==MinGW tools\vcbuild.bat %_CC% %_PLATFORM% %_ARCH%
 
 after_build:

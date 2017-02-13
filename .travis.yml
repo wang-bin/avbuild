@@ -84,13 +84,13 @@ script:
   - ln -sf config{-lite,}.sh
   - |
       if [ "$TARGET" == "host" ]; then
-        ./build_ffmpeg.sh
+        ./avbuild.sh
       elif [ "$TARGET" == "iOS" ]; then
       # FIXME: ios armv7 can not find gas-preprocessor
         ./ios.sh
       elif [ "${TARGET:0:7}" == "android" ]; then
         export ANDROID_NDK=$PWD/android-ndk
-        android_toolchain=$CC ./build_ffmpeg.sh android "${TARGET:8}"
+        android_toolchain=$CC ./avbuild.sh android "${TARGET:8}"
       fi
 
 # after_success:
