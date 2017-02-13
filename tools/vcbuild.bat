@@ -1,5 +1,5 @@
-:: this file only contains environemnt settings
-:: copyright wang bin 2017
+:: this file only contains vc environemnt settings
+:: Copyright (c) 2017 wang bin <wbsecg1 at gmail.com>
 
 :: vcbuild <msvc_ver|vs_ver|cl_ver> <desktop|phone|store> <version(5.1,6.1,6.2,10)> <arch>
 :: vcbuild <msvc_ver|vs_ver|cl_ver> <xp|vista|win7|win8,win8.1|win10|winphone8.1|winstore10> <arch>
@@ -9,6 +9,7 @@
 
 @echo off
 set MSYS2_PATH_TYPE=inherit
+set VC_BUILD=true
 set VS_CL=%1
 if [%VS_CL%] == [] set /P VS_CL="VS CL name, e.g. vs2015, vs140, cl1900: "
 
