@@ -20,6 +20,8 @@ done
   wait ${CONFIG_JOBS[@]}
 }
 echo all configuration are finished
+export PATH=$PWD/tools/gas-preprocessor:$PATH
+export LIBRARY_PATH=$PWD/tools/lib/ios5
 for arch in ${ARCHS[@]}; do
   echo "building ios $arch..."
   test -d build_${OUT_DIR}-$arch && make -j$JOBS install -C build_${OUT_DIR}-$arch prefix=$PWD/${OUT_DIR}-$arch
@@ -40,6 +42,6 @@ for a in libavutil libavformat libavcodec libavfilter libavresample libavdevice 
     lipo -info $OUT_DIR/lib/${a}.a
   }
 done
-cat sdk-ios-*/config.txt >$OUT_DIR/config.txt
+cat build_sdk-ios-*/config.txt >$OUT_DIR/config.txt
 echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
 rm -rf sdk-ios-*
