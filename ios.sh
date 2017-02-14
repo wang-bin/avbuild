@@ -39,12 +39,7 @@ for a in libavutil libavformat libavcodec libavfilter libavresample libavdevice 
     lipo -create $libs -o $OUT_DIR/lib/${a}.a
     lipo -info $OUT_DIR/lib/${a}.a
   }
-:<<NOTE
-xcrun lipo -create $(
-    for a in ${ARCHS}; do
-      echo -arch ${a} ${a}/lib/${libname}
-    done
-  ) -output universal/lib/${libname}
-NOTE
-
 done
+cat sdk-ios-*/config.txt >$OUT_DIR/config.txt
+echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
+rm -rf sdk-ios-*

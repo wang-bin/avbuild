@@ -159,7 +159,8 @@ setup_vc_desktop_env() {
   test -n "$dxva2_opt" && FEATURE_OPT="$FEATURE_OPT $dxva2_opt"
   # ldflags prepends flags. extralibs appends libs and add to pkg-config
   # can not use -luser32 because extralibs will not be filter -l to .lib (ldflags_filter is not ready, ffmpeg bug)
-  EXTRALIBS="$EXTRALIBS user32.lib" # ffmpeg bug: hwcontext_dxva2 GetDesktopWindow()
+  # TODO: check dxva2_extralibs="-luser32" in configure
+  EXTRALIBS="$EXTRALIBS user32.lib" # ffmpeg 3.x bug: hwcontext_dxva2 GetDesktopWindow()
   # dylink crt
   EXTRA_CFLAGS="$EXTRA_CFLAGS -MD"
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -NODEFAULTLIB:libcmt"
@@ -359,6 +360,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
 }
 #  --toolchain=hardened : https://wiki.debian.org/Hardening
 setup_ios_env() {
+  LIB_OPT= #static only
 # TODO: multi arch (Xarch+arch)
 # clang -arch i386 -arch x86_64
 ## cc="xcrun -sdk iphoneos clang" or cc=`xcrun -sdk iphoneos --find clang`
@@ -477,7 +479,6 @@ test -n "$EXTRA_CFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-cflags=\"$EXTRA
 test -n "$EXTRA_LDFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"$EXTRA_LDFLAGS\""
 test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
 echo INSTALL_DIR: $INSTALL_DIR
-echo $LIB_OPT
 is_libav || FEATURE_OPT="$FEATURE_OPT --enable-avresample --disable-postproc"
 CONFIGURE="configure --extra-version=QtAV --disable-doc ${DEBUG_OPT} $LIB_OPT --enable-runtime-cpudetect $FEATURE_OPT $TOOLCHAIN_OPT $USER_OPT"
 CONFIGURE=`trim2 $CONFIGURE`
@@ -512,6 +513,7 @@ else
   exit 1
 fi
 cd $PWD/../$INSTALL_DIR
+echo "https://github.com/wang-bin/avbuild" > README.txt
 [ -f bin/avutil.lib ] && mv bin/*.lib lib
 # --enable-openssl  --enable-hardcoded-tables  --enable-librtmp --enable-zlib
 echo ${SECONDS}s elapsed
