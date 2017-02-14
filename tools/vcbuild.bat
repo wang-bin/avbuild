@@ -36,26 +36,26 @@ if [%OS%] == [] set /P OS="OS name (xp, vista, win7, win8, win8.1, win10, winpho
 set WINRT=false
 set WINSTORE=false
 set WINPHONE=false
-if /i [%OS:~0,8%] == [winphone] (
+if not [%OS:phone=%] == [%OS%] (
     set WINRT=true
     set WINSTORE=true
     set WINPHONE=true
 )
-if /i [%OS:~0,8%] == [winstore] (
+if not [%OS:store=%] == [%OS%] (
     set WINRT=true
     set WINSTORE=true
 )
 
 set OS_VER=%OS:~-2%
 :: store/phone compiler is limited
-if /i [%OS%] == [winphone80] set VSVER=110
-if /i [%OS%] == [winphone81] set VSVER=120
-if /i [%OS%] == [winstore] (
+if not [%OS%] == [%OS:phone80=%] set VSVER=110
+if not [%OS%] == [%OS:phone81=%] set VSVER=120
+if not [%OS%] == [%OS:store=%] (
     if [%VSVER%] == [140] set OS_VER=10
     if [%VSVER%] == [120] set OS_VER=81
     if [%VSVER%] == [110] set OS_VER=80
 )
-if /i [%OS%] == [winphone] (
+if not [%OS%] == [%OS:phone=%] (
     if [%VSVER%] == [140] set OS_VER=10
     if [%VSVER%] == [120] set OS_VER=81
     if [%VSVER%] == [110] set OS_VER=80

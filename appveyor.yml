@@ -26,19 +26,19 @@ environment:
 
   - _ARCH: arm
     _CC: VS2013
-    _PLATFORM: winphone
+    _PLATFORM: phone
 
   - _ARCH: x64
     _CC: VS2013
-    _PLATFORM: winstore
+    _PLATFORM: store
 
   - _ARCH: arm
     _CC: VS2015
-    _PLATFORM: winstore
+    _PLATFORM: store
 
   - _ARCH: x64
     _CC: VS2015
-    _PLATFORM: winstore
+    _PLATFORM: store
 
 matrix:
   fast_finish: false
@@ -73,9 +73,20 @@ build_script:
   - if /i not %_CC%==MinGW tools\vcbuild.bat %_CC% %_PLATFORM% %_ARCH%
 
 after_build:
-  - 7z a ffmpeg-%FF_VERSION%-%_CC%-%_PLATFORM%-%_ARCH%.7z sdk-*
+  - move sdk* ffmpeg-%FF_VERSION%-%_CC%-%_PLATFORM%-%_ARCH%-lite
+  - 7z a ffmpeg-%FF_VERSION%-%_CC%-%_PLATFORM%-%_ARCH%-lite.7z ffmpeg-%FF_VERSION%-%_CC%-%_PLATFORM%-%_ARCH%-lite
 
 test: off
 
 artifacts:
   - path: 'ffmpeg*.7z'  # relative to repo root
+
+deploy:
+  provider: FTP
+  protocol: sftp
+  host: frs.sourceforge.net
+  username: novesky
+  password:
+    secure: 2mQg4oxdX8S7rMJz2TCGGg==
+  folder: /home/frs/project/avbuild/windows-%_PLATFORM% # why always relative path even if starts with / ? I have to make a link home/frs/project/avbuild/xxx => /home/frs/project/avbuild/xxx
+  active_mode: false
