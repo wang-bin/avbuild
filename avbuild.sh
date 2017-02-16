@@ -51,6 +51,7 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 : ${FFSRC:=$PWD/ffmpeg}
 : ${enable_lto:=true}
 enable_pic=true
+patch_clock_gettime=0
 
 export PATH=$PWD/tools/gas-preprocessor:$PATH
 
@@ -163,7 +164,7 @@ setup_vc_desktop_env() {
   EXTRALIBS="$EXTRALIBS user32.lib" # ffmpeg 3.x bug: hwcontext_dxva2 GetDesktopWindow()
   # dylink crt
   EXTRA_CFLAGS="$EXTRA_CFLAGS -MD"
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -NODEFAULTLIB:libcmt"
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --toolchain=msvc"
   VS_VER=${VisualStudioVersion:0:2} # FIXME: vs2017 major version is the same as vs2015
   echo "VS version: $VS_VER, platform: $Platform"
@@ -404,6 +405,8 @@ setup_ios_env() {
   EXTRA_LDFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver" #No bitcode flags for iOS < 6.0. we always build static libs. but config test will try to create exe
   enable_vtenc
   INSTALL_DIR=sdk-ios-$IOS_ARCH
+  IOS_SDK_MAJOR=`xcrun --show-sdk-version --sdk iphoneos |cut -d '.' -f 1`
+  [ $IOS_SDK_MAJOR -gt 9 ] && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
 }
 
 setup_maemo_env() {
@@ -463,6 +466,10 @@ case $1 in
       # 10.6: ld: warning: target OS does not support re-exporting symbol _av_gettime from libavutil/libavutil.dylib
       EXTRA_CFLAGS="-mmacosx-version-min=10.7" #TODO ./$THIS_NAME macOS10.6
       EXTRA_LDFLAGS="-mmacosx-version-min=10.7 -Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../Frameworks -Wl,-rpath,@loader_path/lib -Wl,-rpath,@loader_path/../lib"
+      MACOS_SDK_VERSION=`xcrun --show-sdk-version --sdk macosx`
+      MACOS_SDK_MAJOR=`echo $MACOS_SDK_VERSION |cut -d '.' -f 1`
+      MACOS_SDK_MINOR=`echo $MACOS_SDK_VERSION |cut -d '.' -f 2`
+      [ $((100*$MACOS_SDK_MAJOR + $MACOS_SDK_MINOR)) -ge 1012 ] && $patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
     elif host_is Sailfish; then
       echo "Build in Sailfish SDK"
       INSTALL_DIR=sdk-sailfish
@@ -504,6 +511,11 @@ fi
 if [ $? -eq 0 ]; then
   echo $CONFIGURE >config.txt
   echo $FFVERSION_FULL >>config.txt
+  config_h_bak=
+  host_is darwin && config_h_bak=".bak"
+  if [ $patch_clock_gettime == 1 ]; then
+    sed -i $config_h_bak 's/\(.*HAVE_CLOCK_GETTIME\).*/\1 0/g' config.h
+  fi
   : ${NO_BUILD:=false}
   $NO_BUILD && exit 0
   time (make -j$JOBS install prefix="$PWD/../$INSTALL_DIR" && cp -af config.txt $PWD/../$INSTALL_DIR)
