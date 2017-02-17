@@ -1,9 +1,13 @@
 language: cpp
 sudo: false
 dist: trusty
-addons:
+addons: #can be used in matrix, but required by every combination
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
+      #- llvm-toolchain-precise-3.9
     packages:
+      - gcc-6
       - p7zip-full
       - yasm
       - diffutils
@@ -37,6 +41,7 @@ matrix:
       compiler: gcc
       env:
         - TARGET=host
+        - _CC=gcc-6 #--cc=$_CC
     - os: linux
       compiler: gcc # host compiler is not used, just to tell build script to use which compiler to use from ndk. env: CC/CXX
       env:
@@ -86,13 +91,14 @@ script:
   - ln -sf config{-lite,}.sh
   - |
       if [ "$TARGET" == "host" ]; then
+        [ -n "$_CC" ] && export USER_OPT=--cc=gcc-6
         ./avbuild.sh
       elif [ "$TARGET" == "iOS" ]; then
       # FIXME: ios armv7 can not find gas-preprocessor
         ./ios.sh
       elif [ "${TARGET:0:7}" == "android" ]; then
         export ANDROID_NDK=$PWD/android-ndk
-        android_toolchain=$CC ./avbuild.sh android "${TARGET:8}"
+        android_toolchain=$CC ./avbuild.sh android "${TARGET:8}" # CC(gcc/clang) is set by travis depending on compiler
       fi
 
 after_success:
