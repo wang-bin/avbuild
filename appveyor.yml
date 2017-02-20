@@ -10,10 +10,12 @@ environment:
   - _ARCH: 32
     _CC: MINGW
     _PLATFORM: desktop
+    _CACHE: msys64
 
   - _ARCH: 64
     _CC: MINGW
     _PLATFORM: desktop
+    _CACHE: msys64
 
   - _ARCH: x86
     _CC: VS2013
@@ -43,7 +45,8 @@ matrix:
   fast_finish: false
 
 cache:
-  - C:\msys64\var\cache\pacman\pkg
+  - C:\%_CACHE%\var\cache\pacman\pkg
+  - C:\%_CACHE%\var\lib\pacman\local
 #  - ffmpeg
 
 init:
@@ -54,12 +57,15 @@ init:
 
 install:
 # can not starts with %
-  - C:\msys64\usr\bin\pacman -Syyuu --noconfirm # Update core packages
-  - C:\msys64\usr\bin\pacman -Suu --noconfirm   # Update non-core packages
+  - if /i %_ARCH%==32 set _ARCH2=i686
+  - if /i %_ARCH%==64 set _ARCH2=x86_64
+  - C:\msys64\usr\bin\pacman -Rsc --noconfirm gcc-fortran gdb gperf python2 scons swig subversion mingw-w64-x86_64-ncurses
+  - if /i %_CC%==MinGW %MSYS2_DIR%\usr\bin\pacman -Rsc --noconfirm mingw-w64-i686-crt-git mingw-w64-i686-gdb mingw-w64-i686-gcc-ada mingw-w64-i686-gcc-fortran mingw-w64-i686-gcc-objc  mingw-w64-x86_64-crt-git mingw-w64-x86_64-gcc-ada mingw-w64-x86_64-gcc-fortran mingw-w64-x86_64-gcc-objc
+  - if /i %_CC%==MinGW %MSYS2_DIR%\usr\bin\pacman -Syyuu --noconfirm # Update core packages
+  - if /i %_CC%==MinGW %MSYS2_DIR%\usr\bin\pacman -Suu --noconfirm   # Update non-core packages
   - C:\msys64\usr\bin\pacman -S --noconfirm --needed diffutils pkg-config yasm
-  - C:\msys64\usr\bin\pacman -Sc --noconfirm    # Delete unused packages to reduce cache space
-  - if /i %_ARCH%==32 %MSYS2_DIR%\usr\bin\pacman -S --noconfirm --needed mingw-w64-i686-gcc
-  - if /i %_ARCH%==64 %MSYS2_DIR%\usr\bin\pacman -S --noconfirm --needed mingw-w64-x86_64-gcc
+  - if /i %_CC%==MinGW %MSYS2_DIR%\usr\bin\pacman -S --noconfirm --needed mingw-w64-%_ARCH2%-gcc
+  - if /i %_CC%==MinGW %MSYS2_DIR%\usr\bin\pacman -Sc --noconfirm    # Delete unused packages to reduce cache space
   - if /i %_ARCH%==arm git submodule update --init
 # TODO: cache ffmpeg and check version. can not let ERRORLEVEL be 1
   - appveyor DownloadFile "http://ffmpeg.org/releases/ffmpeg-%FF_VERSION%.tar.xz"
