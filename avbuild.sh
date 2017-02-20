@@ -1,8 +1,8 @@
 #/bin/bash
 # TODO: -flto=nb_cpus. lto with static build (except android)
 # MXE cross toolchain
-# enable cuda
-
+# enable cuda, qsv
+#set -x
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2017"
 echo "https://github.com/wang-bin/avbuild"
@@ -32,14 +32,13 @@ config-lite.sh is options to build smaller libraries.
 HELP
 
 TAGET_FLAG=$1
-TAGET_ARCH_FLAG=$2 #${2:-$1}
-
+TAGET_ARCH_FLAG=$2 #${2:-$1} #local
+THIS_DIR=$PWD
 test -f config.sh && . config.sh
 USER_CONFIG=config-${TAGET_FLAG}.sh
 test -f $USER_CONFIG &&  . $USER_CONFIG
 
 # TODO: use USER_OPT only
-: ${INSTALL_DIR:=sdk}
 # set NDK_ROOT if compile for android
 : ${NDK_ROOT:="$ANDROID_NDK"}
 : ${MAEMO5_SYSROOT:=/opt/QtSDK/Maemo/4.6.2/sysroots/fremantle-arm-sysroot-20.2010.36-2-slim}
@@ -49,9 +48,8 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 : ${DEBUG_OPT:="--disable-debug"}
 
 : ${FFSRC:=$PWD/ffmpeg}
-: ${enable_lto:=true}
-enable_pic=true
-patch_clock_gettime=0
+
+trap "kill -- -$$; rm -rf $THIS_DIR/.dir exit 3" SIGTERM SIGINT SIGKILL
 
 export PATH=$PWD/tools/gas-preprocessor:$PATH
 
@@ -66,6 +64,17 @@ echo FFSRC=$FFSRC
   FFSRC=`which configure`
   FFSRC=${FFSRC%/configure}
 }
+
+#avr >= ffmpeg0.11
+#FFMAJOR=`pwd |sed 's,.*-\(.*\)\..*\..*,\1,'`
+#FFMINOR=`pwd |sed 's,.*\.\(.*\)\..*,\1,'`
+# n1.2.8, 2.5.1, 2.5
+cd $FFSRC
+FFVERSION_FULL=`./version.sh`
+FFMAJOR=`./version.sh |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
+FFMINOR=`./version.sh |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
+cd -
+echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR"
 
 toupper(){
     echo "$@" | tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ
@@ -101,7 +110,7 @@ is_libav() {
 
 host_is MinGW || host_is MSYS && {
   echo "msys2: change target_os detect in configure: mingw32)=>mingw*|msys*)"
-  echo "       pacman -Sy --needed diffutils pkg-config mingw-w64-i686-gcc mingw-w64-x86_64-gcc"
+  echo "       pacman -Sy --needed diffutils gawk pkg-config mingw-w64-i686-gcc mingw-w64-x86_64-gcc"
   echo 'export PATH=$PATH:$MINGW_BIN:$PWD # make.exe in mingw_builds can not deal with windows driver dir. use msys2 make instead'
 }
 
@@ -133,16 +142,6 @@ add_librt(){
     host_is Linux && ! target_is android && ! echo $EXTRALIBS |grep -q '\-lrt' && ! echo $EXTRA_LDFLAGS |grep -q '\-lrt' && EXTRALIBS="$EXTRALIBS -lrt"
   }
 }
-#avr >= ffmpeg0.11
-#FFMAJOR=`pwd |sed 's,.*-\(.*\)\..*\..*,\1,'`
-#FFMINOR=`pwd |sed 's,.*\.\(.*\)\..*,\1,'`
-# n1.2.8, 2.5.1, 2.5
-cd $FFSRC
-FFVERSION_FULL=`./version.sh`
-FFMAJOR=`./version.sh |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
-FFMINOR=`./version.sh |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
-cd -
-echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR"
 
 setup_vc_env(){
   if $WINRT; then
@@ -278,6 +277,7 @@ setup_android_env() {
     ANDROID_TOOLCHAIN_PREFIX="x86"
     CROSS_PREFIX=i686-linux-android-
     CLANG_FLAGS="-target i686-none-linux-android"
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -mstackrealign"
     enable_lto=false
   elif [ "$ANDROID_ARCH" = "x86_64" -o "$ANDROID_ARCH" = "x64" ]; then
     PLATFORM=android-21
@@ -351,13 +351,14 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS $CLANG_FLAGS" # -Qunused-arguments is added by ffmpeg configure
   fi
   #test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=$PLATFORM --toolchain=$TOOLCHAIN --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
-  export PATH=$ANDROID_TOOLCHAIN_DIR/bin:$ANDROID_LLVM_DIR/bin:$PATH
   clang --version
   # FIXME: system ld is used on travis
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE\""
   INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}-${android_toolchain:-gcc}
   enable_opt mediacodec
   test -n "$mediacodec_opt" && FEATURE_OPT="$mediacodec_opt --enable-jni $FEATURE_OPT"
+  mkdir -p $THIS_DIR/build_$INSTALL_DIR
+  echo "export PATH=$ANDROID_TOOLCHAIN_DIR/bin:$ANDROID_LLVM_DIR/bin:$PATH" > $THIS_DIR/build_$INSTALL_DIR/.env.sh
 }
 #  --toolchain=hardened : https://wiki.debian.org/Hardening
 setup_ios_env() {
@@ -398,7 +399,6 @@ setup_ios_env() {
   fi
   ios_ver=${2##ios}
   : ${ios_ver:=$ios_min}
-  export LIBRARY_PATH=$PWD/tools/lib/ios5
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --arch=$IOS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
   FEATURE_OPT="$FEATURE_OPT --disable-programs" #FEATURE_OPT
   EXTRA_CFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver $BITCODE_FLAGS"
@@ -406,7 +406,10 @@ setup_ios_env() {
   enable_vtenc
   INSTALL_DIR=sdk-ios-$IOS_ARCH
   IOS_SDK_MAJOR=`xcrun --show-sdk-version --sdk iphoneos |cut -d '.' -f 1`
+  #FIXME: git version
   [ $IOS_SDK_MAJOR -gt 9 ] && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
+  mkdir -p $THIS_DIR/build_$INSTALL_DIR
+  echo "export LIBRARY_PATH=$THIS_DIR/tools/lib/ios5" >$THIS_DIR/build_$INSTALL_DIR/.env.sh
 }
 
 setup_maemo_env() {
@@ -428,104 +431,198 @@ setup_maemo_env() {
   INSTALL_DIR=sdk-maemo
 }
 
-case $1 in
-  android)    setup_android_env $TAGET_ARCH_FLAG ;;
-  ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
-  mingw64)    setup_mingw_env $TAGET_ARCH_FLAG ;;
-  vc)         setup_vc_desktop_env ;;
-  winstore|winpc|winphone|winrt) setup_winrt_env ;;
-  maemo*)     setup_maemo_env ${1##maemo} ;;
-  x86)
-    add_librt
-    if [ "`uname -m`" = "x86_64" ]; then
-      #TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=$(tolower $(uname -s)) --arch=x86"
-      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -m32"
-      EXTRA_CFLAGS="$EXTRA_CFLAGS -m32"
-      INSTALL_DIR=sdk-x86
-    fi
-    ;;
-  *) # assume host build. use "") ?
-    : ${VC_BUILD:=false}
-    if $VC_BUILD; then
-      setup_vc_env
-    elif host_is MinGW || host_is MSYS; then
-      setup_mingw_env
-    elif host_is Linux; then
-      if [ -f /opt/vc/include/bcm_host.h ]; then
-        . config-rpi.sh
-      else
-        test -n "$vaapi_opt" && FEATURE_OPT="$FEATURE_OPT $vaapi_opt"
-        test -n "$vdpau_opt" && FEATURE_OPT="$FEATURE_OPT $vdpau_opt"
-      fi
+# 1 target os & 1 target arch
+config1(){
+  local TAGET_FLAG=$1
+  local TAGET_ARCH_FLAG=$2
+  local EXTRA_LDFLAGS=$EXTRA_LDFLAGS
+  local EXTRA_CFLAGS=$EXTRA_CFLAGS
+  local FEATURE_OPT=$FEATURE_OPT
+  local TOOLCHAIN_OPT=$TOOLCHAIN_OPT
+  local LIB_OPT=$LIB_OPT
+  local INSTALL_DIR=sdk
+  local patch_clock_gettime=0
+  local enable_pic=true
+  local enable_lto=true
+  case $1 in
+    android)    setup_android_env $TAGET_ARCH_FLAG ;;
+    ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
+    mingw64)    setup_mingw_env $TAGET_ARCH_FLAG ;;
+    vc)         setup_vc_desktop_env ;;
+    winstore|winpc|winphone|winrt) setup_winrt_env ;;
+    maemo*)     setup_maemo_env ${1##maemo} ;;
+    x86)
       add_librt
-    elif host_is Darwin; then
-      enable_vtenc
-      test -n "$vda_opt" && FEATURE_OPT="$FEATURE_OPT $vda_opt"
-      test -n "$videotoolbox_opt" && FEATURE_OPT="$FEATURE_OPT $videotoolbox_opt"
-      grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --install_name_dir=@rpath"
-      # 10.6: ld: warning: target OS does not support re-exporting symbol _av_gettime from libavutil/libavutil.dylib
-      EXTRA_CFLAGS="-mmacosx-version-min=10.7" #TODO ./$THIS_NAME macOS10.6
-      EXTRA_LDFLAGS="-mmacosx-version-min=10.7 -Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../Frameworks -Wl,-rpath,@loader_path/lib -Wl,-rpath,@loader_path/../lib"
-      MACOS_SDK_VERSION=`xcrun --show-sdk-version --sdk macosx`
-      MACOS_SDK_MAJOR=`echo $MACOS_SDK_VERSION |cut -d '.' -f 1`
-      MACOS_SDK_MINOR=`echo $MACOS_SDK_VERSION |cut -d '.' -f 2`
-      [ $((100*$MACOS_SDK_MAJOR + $MACOS_SDK_MINOR)) -ge 1012 ] && $patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
-    elif host_is Sailfish; then
-      echo "Build in Sailfish SDK"
-      INSTALL_DIR=sdk-sailfish
-    fi
-    ;;
-esac
+      if [ "`uname -m`" = "x86_64" ]; then
+        #TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=$(tolower $(uname -s)) --arch=x86"
+        EXTRA_LDFLAGS="$EXTRA_LDFLAGS -m32"
+        EXTRA_CFLAGS="$EXTRA_CFLAGS -m32"
+        INSTALL_DIR=sdk-x86
+      fi
+      ;;
+    *) # assume host build. use "") ?
+      : ${VC_BUILD:=false} #global is fine because no parallel configure now
+      if $VC_BUILD; then
+        setup_vc_env
+      elif host_is MinGW || host_is MSYS; then
+        setup_mingw_env
+      elif host_is Linux; then
+        if [ -f /opt/vc/include/bcm_host.h ]; then
+          . config-rpi.sh
+        else
+          test -n "$vaapi_opt" && FEATURE_OPT="$FEATURE_OPT $vaapi_opt"
+          test -n "$vdpau_opt" && FEATURE_OPT="$FEATURE_OPT $vdpau_opt"
+        fi
+        add_librt
+      elif host_is Darwin; then
+        enable_vtenc
+        test -n "$vda_opt" && FEATURE_OPT="$FEATURE_OPT $vda_opt"
+        test -n "$videotoolbox_opt" && FEATURE_OPT="$FEATURE_OPT $videotoolbox_opt"
+        grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --install_name_dir=@rpath"
+        # 10.6: ld: warning: target OS does not support re-exporting symbol _av_gettime from libavutil/libavutil.dylib
+        EXTRA_CFLAGS="-mmacosx-version-min=10.7" #TODO ./$THIS_NAME macOS10.6
+        EXTRA_LDFLAGS="-mmacosx-version-min=10.7 -Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../Frameworks -Wl,-rpath,@loader_path/lib -Wl,-rpath,@loader_path/../lib"
+        local MACOS_SDK_VERSION=`xcrun --show-sdk-version --sdk macosx`
+        local MACOS_SDK_MAJOR=`echo $MACOS_SDK_VERSION |cut -d '.' -f 1`
+        local MACOS_SDK_MINOR=`echo $MACOS_SDK_VERSION |cut -d '.' -f 2`
+        [ $((100*$MACOS_SDK_MAJOR + $MACOS_SDK_MINOR)) -ge 1012 ] && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
+      elif host_is Sailfish; then
+        echo "Build in Sailfish SDK"
+        INSTALL_DIR=sdk-sailfish
+      fi
+      ;;
+  esac
 
-$enable_lto && [ ! "${LIB_OPT/disable-static/}" == "${LIB_OPT}" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-lto"
-$enable_pic && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-pic"
-EXTRA_CFLAGS=$(trim2 $EXTRA_CFLAGS)
-EXTRA_LDFLAGS=$(trim2 $EXTRA_LDFLAGS)
-EXTRALIBS=$(trim2 $EXTRALIBS)
-test -n "$EXTRA_CFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-cflags=\"$EXTRA_CFLAGS\""
-test -n "$EXTRA_LDFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"$EXTRA_LDFLAGS\""
-test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
-echo INSTALL_DIR: $INSTALL_DIR
-is_libav || FEATURE_OPT="$FEATURE_OPT --enable-avresample --disable-postproc"
-CONFIGURE="configure --extra-version=QtAV --disable-doc ${DEBUG_OPT} $LIB_OPT --enable-runtime-cpudetect $FEATURE_OPT $TOOLCHAIN_OPT $USER_OPT"
-CONFIGURE=`trim2 $CONFIGURE`
-# http://ffmpeg.org/platform.html
-# static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
+  $enable_lto && [ ! "${LIB_OPT/disable-static/}" == "${LIB_OPT}" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-lto"
+  $enable_pic && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-pic"
+  EXTRA_CFLAGS=$(trim2 $EXTRA_CFLAGS)
+  EXTRA_LDFLAGS=$(trim2 $EXTRA_LDFLAGS)
+  EXTRALIBS=$(trim2 $EXTRALIBS)
+  test -n "$EXTRA_CFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-cflags=\"$EXTRA_CFLAGS\""
+  test -n "$EXTRA_LDFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"$EXTRA_LDFLAGS\""
+  test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
+  echo INSTALL_DIR: $INSTALL_DIR
+  is_libav || FEATURE_OPT="$FEATURE_OPT --enable-avresample --disable-postproc"
+  local CONFIGURE="configure --extra-version=QtAV --disable-doc ${DEBUG_OPT} $LIB_OPT --enable-runtime-cpudetect $FEATURE_OPT $TOOLCHAIN_OPT $USER_OPT"
+  CONFIGURE=`trim2 $CONFIGURE`
+  # http://ffmpeg.org/platform.html
+  # static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
 
-JOBS=2
-if which nproc >/dev/null; then
-    JOBS=`nproc`
-elif host_is Darwin && which sysctl >/dev/null; then
-    JOBS=`sysctl -n machdep.cpu.thread_count`
-fi
-mkdir -p build_$INSTALL_DIR
-cd build_$INSTALL_DIR
-echo $CONFIGURE |tee config-new.txt
-echo $FFVERSION_FULL >>config-new.txt
-if diff -NrubB config{-new,}.txt >/dev/null; then
-  echo configuration does not change. skip configure
-else
-  echo configuration changes
-  time eval $CONFIGURE
-fi
-if [ $? -eq 0 ]; then
-  echo $CONFIGURE >config.txt
-  echo $FFVERSION_FULL >>config.txt
-  config_h_bak=
-  host_is darwin && config_h_bak=".bak"
-  if [ $patch_clock_gettime == 1 ]; then
-    sed -i $config_h_bak 's/\(.*HAVE_CLOCK_GETTIME\).*/\1 0/g' config.h
+  mkdir -p build_$INSTALL_DIR
+  cd build_$INSTALL_DIR
+  echo $CONFIGURE |tee config-new.txt
+  echo $FFVERSION_FULL >>config-new.txt
+  local reconf=true
+  if diff -NrubB config{-new,}.txt >/dev/null; then
+    [ -f config.h -a -f config.mak ] && echo configuration does not change. skip configure && reconf=false
   fi
-  : ${NO_BUILD:=false}
-  $NO_BUILD && exit 0
-  time (make -j$JOBS install prefix="$PWD/../$INSTALL_DIR" && cp -af config.txt $PWD/../$INSTALL_DIR)
+  if $reconf; then
+    [ -f .env.sh ] && . .env.sh && cat .env.sh
+    echo configuration changes
+    time eval $CONFIGURE
+  fi
+  if [ $? -eq 0 ]; then
+    echo $CONFIGURE >config.txt
+    echo $FFVERSION_FULL >>config.txt
+    # TODO: check config.h exists
+    config_h_bak=
+    host_is darwin && config_h_bak=".bak"
+    if [ $patch_clock_gettime == 1 ]; then
+      # modify only if HAVE_CLOCK_GETTIME is 1 to avoid rebuild
+      if grep 'HAVE_CLOCK_GETTIME 1' config.h; then
+        sed -i $config_h_bak 's/\(.*HAVE_CLOCK_GETTIME\).*/\1 0/g' config.h
+      fi
+    fi
+  else
+    tail config.log || tail avbuild/config.log #libav moves config.log to avbuild dir
+    exit 1
+  fi
+  touch $THIS_DIR/.dir/$INSTALL_DIR
+}
+
+build1(){
+  if diff -NrubB config{-new,}.txt >/dev/null; then
+    echo configuration ok
+  else
+    echo configure was not finished
+    exit 1
+  fi
+  [ -f .env.sh ] && . .env.sh
+  time (make -j`getconf _NPROCESSORS_ONLN` install prefix="$THIS_DIR/$INSTALL_DIR" && cp -af config.txt $THIS_DIR/$INSTALL_DIR)
   [ $? -eq 0 ] || exit 2
-else
-  tail config.log || tail avbuild/config.log #libav moves config.log to avbuild dir
-  exit 1
-fi
-cd $PWD/../$INSTALL_DIR
-echo "https://github.com/wang-bin/avbuild" > README.txt
-[ -f bin/avutil.lib ] && mv bin/*.lib lib
+  cd $THIS_DIR/$INSTALL_DIR
+  echo "https://github.com/wang-bin/avbuild" > README.txt
+  [ -f bin/avutil.lib ] && mv bin/*.lib lib
+}
+
+build_all(){
+  local os=$1
+  [ -z "$os" ] && {
+    echo ">>>>>no os is set. host build"
+    config1
+  } || {
+    local archs=($2)
+    [ -z "$archs" ] && {
+      echo ">>>>>no arch is set. setting default archs..."
+      [ "$os" == "ios" ] && archs=(armv7 arm64 x86 x86_64)
+      [ "$os" == "android" ] && archs=(armv5 armv7 arm64 x86)
+    }
+    echo ">>>>>archs: ${archs[@]}"
+    [ -z "$archs" ] && {
+      config1
+    } || {
+      local CONFIG_JOBS=()
+      for arch in ${archs[@]}; do
+        CONFIG_JOBS=(${CONFIG_JOBS[@]} %$((${#CONFIG_JOBS[@]}+1)))
+        config1 $os $arch &
+      done
+      [ ${#CONFIG_JOBS[@]} -gt 0 ] && {
+        echo "waiting for all configure jobs(${#CONFIG_JOBS[@]}) finished..."
+        wait ${CONFIG_JOBS[@]}
+        echo all configuration are finished
+      }
+    }
+  }
+  cd $THIS_DIR
+  dirs=`ls .dir`
+  rm -rf .dir
+  for d in $dirs; do
+    cd build_$d
+    local INSTALL_DIR=$d
+    echo building $d...
+    build1
+    cd $THIS_DIR
+  done
+  make_universal $os "$dirs"
+}
+
+make_universal()
+{
+  local os=$1
+  local dirs=($2)
+  [ -z "$dirs" ] && return 0
+  [ "$os" == "ios" ] || return 0
+  local OUT_DIR=sdk-$os
+  cd $THIS_DIR
+  mkdir -p $OUT_DIR/lib
+  cp -af ${dirs[0]}/include $OUT_DIR
+  for a in libavutil libavformat libavcodec libavfilter libavresample libavdevice libswscale libswresample; do
+    libs=
+    for d in ${dirs[@]}; do
+      [ -f $d/lib/${a}.a ] && libs="$libs $d/lib/${a}.a"
+    done
+    echo "lipo -create $libs -o $OUT_DIR/lib/${a}.a"
+    test -n "$libs" && {
+      lipo -create $libs -o $OUT_DIR/lib/${a}.a
+      lipo -info $OUT_DIR/lib/${a}.a
+    }
+  done
+  cat build_sdk-${os}-*/config.txt >$OUT_DIR/config.txt
+  echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
+  rm -rf sdk-${os}-*
+}
+mkdir -p .dir
+
+build_all "$@"
 # --enable-openssl  --enable-hardcoded-tables  --enable-librtmp --enable-zlib
 echo ${SECONDS}s elapsed
