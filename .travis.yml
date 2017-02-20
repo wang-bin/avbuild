@@ -42,22 +42,44 @@ matrix:
       env:
         - TARGET=host
         - _CC=gcc-6 #--cc=$_CC
+      addons: #can be used in matrix, but required by every combination
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            #- llvm-toolchain-precise-3.9
+          packages:
+            - gcc-6
+            - p7zip-full
+            - yasm
+            - diffutils
+            - libva-dev
+            - libvdpau-dev
+            - sshpass
+            - xz-utils
     - os: linux
       compiler: gcc # host compiler is not used, just to tell build script to use which compiler to use from ndk. env: CC/CXX
       env:
-        - TARGET=android-armv5
+        - TARGET=android
+      addons: #can be used in matrix, but required by every combination
+        apt:
+          packages:
+            - p7zip-full
+            - yasm
+            - diffutils
+            - sshpass
+            - xz-utils
     - os: linux
-      compiler: gcc
+      compiler: clang # host compiler is not used, just to tell build script to use which compiler to use from ndk. env: CC/CXX
       env:
-        - TARGET=android-armv7
-    - os: linux
-      compiler: gcc
-      env:
-        - TARGET=android-arm64
-    - os: linux
-      compiler: clang
-      env:
-        - TARGET=android-x86
+        - TARGET=android
+      addons: #can be used in matrix, but required by every combination
+        apt:
+          packages:
+            - p7zip-full
+            - yasm
+            - diffutils
+            - sshpass
+            - xz-utils
 # TODO: mingw64
 
 before_install:
@@ -90,7 +112,10 @@ script:
   - export FFSRC=$PWD/ffmpeg-release
   - ln -sf config{-lite,}.sh
   - |
-      if [ "${TARGET:0:7}" == "android" ]; then
+      if [ "$TARGET" == "android" ]; then
+        export ANDROID_NDK=$PWD/android-ndk
+        USE_TOOLCHAIN=$CC ./avbuild.sh android
+      elif [ "${TARGET:0:7}" == "android" ]; then  # for TARGET=android-armv5 etc.
         export ANDROID_NDK=$PWD/android-ndk
         USE_TOOLCHAIN=$CC ./avbuild.sh android "${TARGET:8}" # CC(gcc/clang) is set by travis depending on compiler
       else
@@ -102,6 +127,7 @@ after_success:
   - SUFFIX=${TARGET}
   - if [ "$SUFFIX" == "host" ]; then SUFFIX=${TRAVIS_OS_NAME}; fi
   - if [ "$SUFFIX" == "osx" ]; then SUFFIX=macOS; fi
+  - if [ "$SUFFIX" == "android" ]; then SUFFIX="$SUFFIX-$CC"; fi
   - mv sdk* ffmpeg-${FF_VERSION}-${SUFFIX}-lite
   - tar Jcf ffmpeg-${FF_VERSION}-${SUFFIX}-lite{.tar.xz,}
   - sshpass -p $SF_PW scp -o StrictHostKeyChecking=no ffmpeg-${FF_VERSION}-${SUFFIX}-lite.tar.xz $SF_USER,avbuild@frs.sourceforge.net:/home/frs/project/a/av/avbuild/${SUFFIX%%-*}

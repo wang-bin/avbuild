@@ -624,12 +624,22 @@ make_universal()
     echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
     rm -rf sdk-${os}-*
   elif [ "$os" == "android" ]; then
+    # emulate hash in bash3
+    local armv5=armeabi
+    local armv7=armeabi-v7a
+    local armeabi=armeabi
+    #local armeabi-v7a=armeabi-v7a # '-' in var name is not allowed
+    local arm64=arm64
+    local x86=x86
     for d in ${dirs[@]}; do
       USE_TOOLCHAIN=${d##*-}
       [ ! "$USE_TOOLCHAIN" == "gcc" -a ! "$USE_TOOLCHAIN" == "clang" ] && USE_TOOLCHAIN=gcc
       OUT_DIR=sdk-$os-${USE_TOOLCHAIN}
       arch=${d%-*}
       arch=${arch#sdk-$os-}
+      arch2=`eval 'echo ${'$arch'}'`
+      arch=${arch2:=${arch}} # armeabi-v7a
+
       mkdir -p $OUT_DIR/lib
       cp -af $d/include $OUT_DIR
       cp -af $d/lib $OUT_DIR/lib/$arch
