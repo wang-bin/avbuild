@@ -604,25 +604,40 @@ make_universal()
   local os=$1
   local dirs=($2)
   [ -z "$dirs" ] && return 0
-  [ "$os" == "ios" ] || return 0
-  local OUT_DIR=sdk-$os
-  cd $THIS_DIR
-  mkdir -p $OUT_DIR/lib
-  cp -af ${dirs[0]}/include $OUT_DIR
-  for a in libavutil libavformat libavcodec libavfilter libavresample libavdevice libswscale libswresample; do
-    libs=
-    for d in ${dirs[@]}; do
-      [ -f $d/lib/${a}.a ] && libs="$libs $d/lib/${a}.a"
+  if [ "$os" == ios ]; then
+    local OUT_DIR=sdk-$os${USE_TOOLCHAIN:+-${USE_TOOLCHAIN}}
+    cd $THIS_DIR
+    mkdir -p $OUT_DIR/lib
+    cp -af ${dirs[0]}/include $OUT_DIR
+    for a in libavutil libavformat libavcodec libavfilter libavresample libavdevice libswscale libswresample; do
+      libs=
+      for d in ${dirs[@]}; do
+        [ -f $d/lib/${a}.a ] && libs="$libs $d/lib/${a}.a"
+      done
+      echo "lipo -create $libs -o $OUT_DIR/lib/${a}.a"
+      test -n "$libs" && {
+        lipo -create $libs -o $OUT_DIR/lib/${a}.a
+        lipo -info $OUT_DIR/lib/${a}.a
+      }
     done
-    echo "lipo -create $libs -o $OUT_DIR/lib/${a}.a"
-    test -n "$libs" && {
-      lipo -create $libs -o $OUT_DIR/lib/${a}.a
-      lipo -info $OUT_DIR/lib/${a}.a
-    }
-  done
-  cat build_sdk-${os}-*/config.txt >$OUT_DIR/config.txt
-  echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
-  rm -rf sdk-${os}-*
+    cat build_sdk-${os}-*/config.txt >$OUT_DIR/config.txt
+    echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
+    rm -rf sdk-${os}-*
+  elif [ "$os" == "android" ]; then
+    for d in ${dirs[@]}; do
+      USE_TOOLCHAIN=${d##*-}
+      [ ! "$USE_TOOLCHAIN" == "gcc" -a ! "$USE_TOOLCHAIN" == "clang" ] && USE_TOOLCHAIN=gcc
+      OUT_DIR=sdk-$os-${USE_TOOLCHAIN}
+      arch=${d%-*}
+      arch=${arch#sdk-$os-}
+      mkdir -p $OUT_DIR/lib
+      cp -af $d/include $OUT_DIR
+      cp -af $d/lib $OUT_DIR/lib/$arch
+      cat $d/config.txt >$OUT_DIR/config-$arch.txt
+      echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
+      rm -rf $d
+    done
+  fi
 }
 mkdir -p .dir
 
