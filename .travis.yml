@@ -92,7 +92,7 @@ script:
   - |
       if [ "${TARGET:0:7}" == "android" ]; then
         export ANDROID_NDK=$PWD/android-ndk
-        android_toolchain=$CC ./avbuild.sh android "${TARGET:8}" # CC(gcc/clang) is set by travis depending on compiler
+        USE_TOOLCHAIN=$CC ./avbuild.sh android "${TARGET:8}" # CC(gcc/clang) is set by travis depending on compiler
       else
         [ -n "$_CC" ] && export USER_OPT=--cc=$_CC
         ./avbuild.sh

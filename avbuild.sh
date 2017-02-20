@@ -312,7 +312,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
 '
 # -msoft-float == -mfloat-abi=soft https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/ARM-Options.html
       EXTRA_CFLAGS="$EXTRA_CFLAGS -mtune=xscale -msoft-float"
-      if [ ! "$android_toolchain" = "clang" ]; then
+      if [ ! "$USE_TOOLCHAIN" = "clang" ]; then
         EXTRA_CFLAGS="$EXTRA_CFLAGS -mthumb-interwork"
       fi
     else
@@ -344,7 +344,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   CLANG_FLAGS="$CLANG_FLAGS -gcc-toolchain $ANDROID_TOOLCHAIN_DIR"
   local ANDROID_SYSROOT="$NDK_ROOT/platforms/$PLATFORM/arch-${ANDROID_ARCH}"
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=$ANDROID_SYSROOT --target-os=android --arch=${FFARCH} --enable-cross-compile --cross-prefix=$CROSS_PREFIX"
-  if [ "$android_toolchain" = "clang" ]; then
+  if [ "$USE_TOOLCHAIN" = "clang" ]; then
     enable_lto=false # clang -flto will generate llvm ir bitcode instead of object file
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=clang"
     EXTRA_CFLAGS="$EXTRA_CFLAGS $CLANG_FLAGS"
@@ -352,9 +352,8 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   fi
   #test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=$PLATFORM --toolchain=$TOOLCHAIN --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
   clang --version
-  # FIXME: system ld is used on travis
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE\""
-  INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}-${android_toolchain:-gcc}
+  INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}-${USE_TOOLCHAIN:-gcc}
   enable_opt mediacodec
   test -n "$mediacodec_opt" && FEATURE_OPT="$mediacodec_opt --enable-jni $FEATURE_OPT"
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
@@ -524,7 +523,6 @@ config1(){
   if [ $? -eq 0 ]; then
     echo $CONFIGURE >config.txt
     echo $FFVERSION_FULL >>config.txt
-    # TODO: check config.h exists
     config_h_bak=
     host_is darwin && config_h_bak=".bak"
     if [ $patch_clock_gettime == 1 ]; then
@@ -557,6 +555,7 @@ build1(){
 
 build_all(){
   local os=$1
+  local USE_TOOLCHAIN=$USE_TOOLCHAIN
   [ -z "$os" ] && {
     echo ">>>>>no os is set. host build"
     config1
@@ -573,6 +572,10 @@ build_all(){
     } || {
       local CONFIG_JOBS=()
       for arch in ${archs[@]}; do
+        if [ "${arch##*-}" == "clang" -o "${arch##*-}" == "gcc" ]; then
+          USE_TOOLCHAIN=${arch##*-}
+          arch=${arch%-*}
+        fi
         CONFIG_JOBS=(${CONFIG_JOBS[@]} %$((${#CONFIG_JOBS[@]}+1)))
         config1 $os $arch &
       done
