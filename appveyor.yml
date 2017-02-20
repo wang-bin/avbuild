@@ -51,7 +51,6 @@ init:
   - echo PROCESSOR_IDENTIFIER=%PROCESSOR_IDENTIFIER%
   - set MSYS2_PATH_TYPE=inherit
   - set MSYS2_DIR=C:\msys64
-  - if /i %_ARCH%==arm git submodule update --init
 
 install:
 # can not starts with %
@@ -61,6 +60,7 @@ install:
   - C:\msys64\usr\bin\pacman -Sc --noconfirm    # Delete unused packages to reduce cache space
   - if /i %_ARCH%==32 %MSYS2_DIR%\usr\bin\pacman -S --noconfirm --needed mingw-w64-i686-gcc
   - if /i %_ARCH%==64 %MSYS2_DIR%\usr\bin\pacman -S --noconfirm --needed mingw-w64-x86_64-gcc
+  - if /i %_ARCH%==arm git submodule update --init
 # TODO: cache ffmpeg and check version. can not let ERRORLEVEL be 1
   - appveyor DownloadFile "http://ffmpeg.org/releases/ffmpeg-%FF_VERSION%.tar.xz"
   - 7z x ffmpeg-%FF_VERSION%.tar.xz
