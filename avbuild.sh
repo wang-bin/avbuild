@@ -108,6 +108,18 @@ is_libav() {
   test -f "$FFSRC/avconv.c" && return 0 || return 1
 }
 
+android_arch(){
+  # emulate hash in bash3
+  local armv5=armeabi   # ${!armv5} is armeabi<=armeabi<=armv5
+  local armv7=armeabi-v7a
+  # indirect reference
+  arch=${!1}
+  echo ${arch:=$1}
+  return 0
+  arch=`eval 'echo ${'$1'}'`
+  echo ${arch:=$1}
+}
+
 host_is MinGW || host_is MSYS && {
   echo "msys2: change target_os detect in configure: mingw32)=>mingw*|msys*)"
   echo "       pacman -Sy --needed diffutils gawk pkg-config mingw-w64-i686-gcc mingw-w64-x86_64-gcc"
@@ -556,7 +568,7 @@ build1(){
 }
 
 build_all(){
-  local os=$1
+  local os=`tolower $1`
   local USE_TOOLCHAIN=$USE_TOOLCHAIN
   [ -z "$os" ] && {
     echo ">>>>>no os is set. host build"
@@ -607,7 +619,7 @@ make_universal()
   local dirs=($2)
   [ -z "$dirs" ] && return 0
   if [ "$os" == ios ]; then
-    local OUT_DIR=sdk-$os${USE_TOOLCHAIN:+-${USE_TOOLCHAIN}}
+    local OUT_DIR=sdk-$os
     cd $THIS_DIR
     mkdir -p $OUT_DIR/lib
     cp -af ${dirs[0]}/include $OUT_DIR
@@ -624,23 +636,15 @@ make_universal()
     done
     cat build_sdk-${os}-*/config.txt >$OUT_DIR/config.txt
     echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
-    rm -rf sdk-${os}-*
+    rm -rf ${dirs[@]}
   elif [ "$os" == "android" ]; then
-    # emulate hash in bash3
-    local armv5=armeabi
-    local armv7=armeabi-v7a
-    local armeabi=armeabi
-    #local armeabi-v7a=armeabi-v7a # '-' in var name is not allowed
-    local arm64=arm64
-    local x86=x86
     for d in ${dirs[@]}; do
       USE_TOOLCHAIN=${d##*-}
       [ ! "$USE_TOOLCHAIN" == "gcc" -a ! "$USE_TOOLCHAIN" == "clang" ] && USE_TOOLCHAIN=gcc
       OUT_DIR=sdk-$os-${USE_TOOLCHAIN}
       arch=${d%-*}
       arch=${arch#sdk-$os-}
-      arch2=`eval 'echo ${'$arch'}'`
-      arch=${arch2:=${arch}} # armeabi-v7a
+      arch=$(android_arch $arch)
 
       mkdir -p $OUT_DIR/lib
       cp -af $d/include $OUT_DIR
