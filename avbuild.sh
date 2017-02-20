@@ -277,7 +277,9 @@ setup_android_env() {
     ANDROID_TOOLCHAIN_PREFIX="x86"
     CROSS_PREFIX=i686-linux-android-
     CLANG_FLAGS="-target i686-none-linux-android"
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -mstackrealign"
+    # from ndk: x86 devices have stack alignment issues.
+    # clang error: inline assembly requires more registers than available ("movzbl "statep"    , "ret")
+    [ "$USE_TOOLCHAIN" == "clang" ] || EXTRA_CFLAGS="$EXTRA_CFLAGS -mstackrealign"
     enable_lto=false
   elif [ "$ANDROID_ARCH" = "x86_64" -o "$ANDROID_ARCH" = "x64" ]; then
     PLATFORM=android-21
