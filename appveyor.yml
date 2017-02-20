@@ -45,8 +45,7 @@ matrix:
   fast_finish: false
 
 cache:
-  - C:\%_CACHE%\var\cache\pacman\pkg
-  - C:\%_CACHE%\var\lib\pacman\local
+  - C:\%_CACHE%\var\cache\pacman\pkg -> appveyor.yml
 #  - ffmpeg
 
 init:
@@ -59,8 +58,7 @@ install:
 # can not starts with %
   - if /i %_ARCH%==32 set _ARCH2=i686
   - if /i %_ARCH%==64 set _ARCH2=x86_64
-  - C:\msys64\usr\bin\pacman -Rsc --noconfirm gcc-fortran gdb gperf python2 scons swig subversion mingw-w64-x86_64-ncurses
-  - if /i %_CC%==MinGW %MSYS2_DIR%\usr\bin\pacman -Rsc --noconfirm mingw-w64-i686-crt-git mingw-w64-i686-gdb mingw-w64-i686-gcc-ada mingw-w64-i686-gcc-fortran mingw-w64-i686-gcc-objc  mingw-w64-x86_64-crt-git mingw-w64-x86_64-gcc-ada mingw-w64-x86_64-gcc-fortran mingw-w64-x86_64-gcc-objc
+  - if /i %_CC%==MinGW %MSYS2_DIR%\usr\bin\pacman -Rsc --noconfirm bsdcpio bsdtar gcc gdb gperf mpc python2 scons swig subversion mingw-w64-x86_64-ncurses mingw-w64-i686-crt-git mingw-w64-i686-gdb mingw-w64-i686-gcc-ada mingw-w64-i686-gcc-fortran mingw-w64-i686-gcc-objc  mingw-w64-x86_64-crt-git mingw-w64-x86_64-gcc-ada mingw-w64-x86_64-gcc-fortran mingw-w64-x86_64-gcc-objc
   - if /i %_CC%==MinGW %MSYS2_DIR%\usr\bin\pacman -Syyuu --noconfirm # Update core packages
   - if /i %_CC%==MinGW %MSYS2_DIR%\usr\bin\pacman -Suu --noconfirm   # Update non-core packages
   - C:\msys64\usr\bin\pacman -S --noconfirm --needed diffutils pkg-config yasm
