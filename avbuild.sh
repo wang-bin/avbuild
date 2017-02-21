@@ -72,8 +72,10 @@ cd $FFSRC
 FFVERSION_FULL=`./version.sh`
 FFMAJOR=`./version.sh |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
 FFMINOR=`./version.sh |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
+FFGIT=false
+[ ${#FFMAJOR} -gt 3 ] && FFGIT=true
 cd -
-echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR"
+echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR  git: $FFGIT"
 
 toupper(){
     echo "$@" | tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ
@@ -367,7 +369,6 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS $CLANG_FLAGS" # -Qunused-arguments is added by ffmpeg configure
   fi
   #test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=$PLATFORM --toolchain=$TOOLCHAIN --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
-  clang --version
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE\""
   INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}-${USE_TOOLCHAIN:-gcc}
   enable_opt mediacodec
@@ -425,8 +426,11 @@ setup_ios_env() {
   enable_vtenc
   INSTALL_DIR=sdk-ios-$IOS_ARCH
   IOS_SDK_MAJOR=`xcrun --show-sdk-version --sdk iphoneos |cut -d '.' -f 1`
-  #FIXME: git version
-  [ $IOS_SDK_MAJOR -gt 9 ] && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
+  if $FFGIT; then
+    patch_clock_gettime=1
+  else
+    [ $IOS_SDK_MAJOR -gt 9 ] && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
+  fi
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   echo "export LIBRARY_PATH=$THIS_DIR/tools/lib/ios5" >$THIS_DIR/build_$INSTALL_DIR/.env.sh
 }
@@ -501,10 +505,14 @@ config1(){
         # 10.6: ld: warning: target OS does not support re-exporting symbol _av_gettime from libavutil/libavutil.dylib
         EXTRA_CFLAGS="-mmacosx-version-min=10.7" #TODO ./$THIS_NAME macOS10.6
         EXTRA_LDFLAGS="-mmacosx-version-min=10.7 -Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../Frameworks -Wl,-rpath,@loader_path/lib -Wl,-rpath,@loader_path/../lib"
-        local MACOS_SDK_VERSION=`xcrun --show-sdk-version --sdk macosx`
-        local MACOS_SDK_MAJOR=`echo $MACOS_SDK_VERSION |cut -d '.' -f 1`
-        local MACOS_SDK_MINOR=`echo $MACOS_SDK_VERSION |cut -d '.' -f 2`
-        [ $((100*$MACOS_SDK_MAJOR + $MACOS_SDK_MINOR)) -ge 1012 ] && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
+        if $FFGIT; then
+          patch_clock_gettime=1
+        else
+          local MACOS_SDK_VERSION=`xcrun --show-sdk-version --sdk macosx`
+          local MACOS_SDK_MAJOR=`echo $MACOS_SDK_VERSION |cut -d '.' -f 1`
+          local MACOS_SDK_MINOR=`echo $MACOS_SDK_VERSION |cut -d '.' -f 2`
+          [ $((100*$MACOS_SDK_MAJOR + $MACOS_SDK_MINOR)) -ge 1012 ] && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
+        fi
       elif host_is Sailfish; then
         echo "Build in Sailfish SDK"
         INSTALL_DIR=sdk-sailfish
@@ -548,6 +556,7 @@ config1(){
     if [ $patch_clock_gettime == 1 ]; then
       # modify only if HAVE_CLOCK_GETTIME is 1 to avoid rebuild
       if grep 'HAVE_CLOCK_GETTIME 1' config.h; then
+        echo patching clock_gettime...
         sed -i $config_h_bak 's/\(.*HAVE_CLOCK_GETTIME\).*/\1 0/g' config.h
       fi
     fi
