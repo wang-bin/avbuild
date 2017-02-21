@@ -23,7 +23,6 @@ x86/i366 |  x86/i686 |  x86/i686
  x86_64  |   x86_64  |   x86_64
 If no parameter is passed, build for the host platform compiler.
 Use a shortcut in winstore to build for WinRT target.
-Use ios.sh to build for iOS universal target.
 If target_platform is ios, mininal ios version(major.minor) can be specified by suffix, e.g. ios5.0
 (Optional) set var in config-xxx.sh, xxx is ${PLATFORMS//\|/, }
 var can be: INSTALL_DIR, NDK_ROOT or ANDROID_NDK, MAEMO_SYSROOT
@@ -112,6 +111,7 @@ android_arch(){
   # emulate hash in bash3
   local armv5=armeabi   # ${!armv5} is armeabi<=armeabi<=armv5
   local armv7=armeabi-v7a
+  local arm64=arm64-v8a
   # indirect reference
   arch=${!1}
   echo ${arch:=$1}
@@ -129,7 +129,9 @@ host_is MinGW || host_is MSYS && {
 enable_opt() {
   local OPT=$1
   # grep -m1
-  grep -q "\-\-enable\-$OPT" $FFSRC/configure && eval ${OPT}_opt="--enable-$OPT"
+  if grep -q "\-\-enable\-$OPT" $FFSRC/configure; then
+    eval ${OPT}_opt="--enable-$OPT"
+  fi
 }
 #CPU_FLAGS=-mmmx -msse -mfpmath=sse
 #ffmpeg 1.2 autodetect dxva, vaapi, vdpau. manually enable vda before 2.3
@@ -386,7 +388,7 @@ setup_ios_env() {
   local enable_bitcode=false
   $BITCODE && $cc_has_bitcode && enable_bitcode=true
   # bitcode link requires iOS>=6.0. Creating static lib is fine. So compiling with bitcode for <5.0 is fine. but ffmpeg config tests fails to create exe(ios10 sdk, no crt1.3.1.o), so 6.0 is required
-  $enable_bitcode && echo "Bitcode is enabled by default. Run 'BITCODE=false ./ios.sh' to disable bitcode"
+  $enable_bitcode && echo "Bitcode is enabled by default. set 'BITCODE=false' to disable"
 # http://iossupportmatrix.com
   local ios_min=6.0
   local SYSROOT_SDK=iphoneos
@@ -398,7 +400,11 @@ setup_ios_env() {
     if [ "${IOS_ARCH:3:2}" == "64" ]; then
       ios_min=7.0
     else
-      ios_min=5.0
+      if [ -f `xcrun --show-sdk-path --sdk iphoneos`/usr/lib/crt1.o -o -f $THIS_DIR/tools/lib/ios5/crt1.o ]; then
+        ios_min=5.0
+      else
+        ios_min=6.0
+      fi
     fi
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-thumb"
   else
