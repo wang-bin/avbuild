@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 # TODO: -flto=nb_cpus. lto with static build (except android)
 # MXE cross toolchain
 # enable cuda, qsv
