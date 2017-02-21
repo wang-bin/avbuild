@@ -635,6 +635,7 @@ make_universal()
   [ -z "$dirs" ] && return 0
   if [ "$os" == ios ]; then
     local OUT_DIR=sdk-$os
+    rm -rf $OUT_DIR
     cd $THIS_DIR
     mkdir -p $OUT_DIR/lib
     cp -af ${dirs[0]}/include $OUT_DIR
@@ -653,6 +654,7 @@ make_universal()
     echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
     rm -rf ${dirs[@]}
   elif [ "$os" == "android" ]; then
+    rm -rf sdk-$os-{gcc,clang}
     for d in ${dirs[@]}; do
       USE_TOOLCHAIN=${d##*-}
       [ ! "$USE_TOOLCHAIN" == "gcc" -a ! "$USE_TOOLCHAIN" == "clang" ] && USE_TOOLCHAIN=gcc
