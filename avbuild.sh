@@ -8,6 +8,7 @@ echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2017"
 echo "https://github.com/wang-bin/avbuild"
 
 THIS_NAME=${0##*/}
+THIS_DIR=$PWD
 PLATFORMS="ios|android|maemo|vc|x86|winstore|winpc|winphone|mingw64"
 echo "Usage:"
 test -d $PWD/ffmpeg || echo "  export FFSRC=/path/to/ffmpeg"
@@ -15,7 +16,7 @@ cat<<HELP
 ./$THIS_NAME [target_platform [target_architecture]]
 target_platform can be: ${PLATFORMS}
 target_architecture can be:
-   ios   |  android  |  mingw64
+ ios(x.y)|  android  |  mingw64
          |   armv5   |
   armv7  |   armv7   |
   arm64  |   arm64   |
@@ -23,25 +24,19 @@ x86/i366 |  x86/i686 |  x86/i686
  x86_64  |   x86_64  |   x86_64
 If no parameter is passed, build for the host platform compiler.
 Use a shortcut in winstore to build for WinRT target.
-If target_platform is ios, mininal ios version(major.minor) can be specified by suffix, e.g. ios5.0
 (Optional) set var in config-xxx.sh, xxx is ${PLATFORMS//\|/, }
-var can be: INSTALL_DIR, NDK_ROOT or ANDROID_NDK, MAEMO_SYSROOT
+var can be: USER_OPT, ANDROID_NDK, MAEMO_SYSROOT
 config.sh will be automatically included.
-config-lite.sh is options to build smaller libraries.
+config-lite.sh is default options to build smaller libraries.
 HELP
 
-TAGET_FLAG=$1
-TAGET_ARCH_FLAG=$2 #${2:-$1} #local
-THIS_DIR=$PWD
 test -f config.sh && . config.sh
-USER_CONFIG=config-${TAGET_FLAG}.sh
+USER_CONFIG=config-$1.sh
 test -f $USER_CONFIG &&  . $USER_CONFIG
 
 # TODO: use USER_OPT only
 # set NDK_ROOT if compile for android
 : ${NDK_ROOT:="$ANDROID_NDK"}
-: ${MAEMO5_SYSROOT:=/opt/QtSDK/Maemo/4.6.2/sysroots/fremantle-arm-sysroot-20.2010.36-2-slim}
-: ${MAEMO6_SYSROOT:=/opt/QtSDK/Madde/sysroots/harmattan_sysroot_10.2011.34-1_slim}
 : ${LIB_OPT:="--enable-shared"}
 : ${FEATURE_OPT:="--enable-hwaccels"} #--enable-gpl --enable-version3
 : ${DEBUG_OPT:="--disable-debug"}
@@ -122,41 +117,13 @@ android_arch(){
   echo ${arch:=$1}
 }
 
-host_is MinGW || host_is MSYS && {
-  echo "msys2: change target_os detect in configure: mingw32)=>mingw*|msys*)"
-  echo "       pacman -Sy --needed diffutils gawk pkg-config mingw-w64-i686-gcc mingw-w64-x86_64-gcc"
-  echo 'export PATH=$PATH:$MINGW_BIN:$PWD # make.exe in mingw_builds can not deal with windows driver dir. use msys2 make instead'
-}
-
+#ffmpeg 1.2 autodetect dxva, vaapi, vdpau. manually enable vda before 2.3
 enable_opt() {
   local OPT=$1
   # grep -m1
   if grep -q "\-\-enable\-$OPT" $FFSRC/configure; then
     eval ${OPT}_opt="--enable-$OPT"
   fi
-}
-#CPU_FLAGS=-mmmx -msse -mfpmath=sse
-#ffmpeg 1.2 autodetect dxva, vaapi, vdpau. manually enable vda before 2.3
-enable_opt dxva2
-host_is Linux && {
-  enable_opt vaapi
-  enable_opt vdpau
-}
-host_is Darwin && {
-  enable_opt vda
-  enable_opt videotoolbox
-}
-
-enable_vtenc(){
-  test -f $FFSRC/libavcodec/videotoolboxenc.c && echo "$USER_OPT" |grep -q "disable-encoders" && USER_OPT="$USER_OPT --enable-encoder=*_videotoolbox"
-}
-
-add_librt(){
-# clock_gettime in librt instead of glibc>=2.17
-  grep -q "LIBRT" $FFSRC/configure && {
-    # TODO: cc test
-    host_is Linux && ! target_is android && ! echo $EXTRALIBS |grep -q '\-lrt' && ! echo $EXTRA_LDFLAGS |grep -q '\-lrt' && EXTRALIBS="$EXTRALIBS -lrt"
-  }
 }
 
 setup_vc_env(){
@@ -172,7 +139,8 @@ setup_vc_desktop_env() {
   enable_lto=false # ffmpeg requires DCE, while vc with LTCG (-GL) does not support DCE
   LIB_OPT="$LIB_OPT --disable-static"
 # http://ffmpeg.org/platform.html#Microsoft-Visual-C_002b_002b-or-Intel-C_002b_002b-Compiler-for-Windows
-  test -n "$dxva2_opt" && FEATURE_OPT="$FEATURE_OPT $dxva2_opt"
+  enable_opt dxva2
+  FEATURE_OPT="$FEATURE_OPT $dxva2_opt"
   # ldflags prepends flags. extralibs appends libs and add to pkg-config
   # can not use -luser32 because extralibs will not be filter -l to .lib (ldflags_filter is not ready, ffmpeg bug)
   # TODO: check dxva2_extralibs="-luser32" in configure
@@ -182,19 +150,16 @@ setup_vc_desktop_env() {
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --toolchain=msvc"
   VS_VER=${VisualStudioVersion:0:2} # FIXME: vs2017 major version is the same as vs2015
-  echo "VS version: $VS_VER, platform: $Platform"
+  echo "VS version: $VS_VER, platform: $Platform" # Platform is from vsvarsall.bat
   if [ "`tolower $Platform`" = "x64" ]; then
     INSTALL_DIR="${INSTALL_DIR}-vc${VS_VER}-x64"
-    echo "vc x64"
-    test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && EXTRA_LDFLAGS="$EXTRA_LDFLAGS -SUBSYSTEM:CONSOLE,5.02"
+    test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.02'"
   elif [ "`tolower $Platform`" = "arm" ]; then
-    INSTALL_DIR="${INSTALL_DIR}-vc${VS_VER}-arm"
     echo "use scripts in winstore dir instead"
-    exit 0
-  else #Platform is empty
-    echo "vc x86"
+    exit 1
+  else #Platform is empty(native) or x86(cross)
     INSTALL_DIR="${INSTALL_DIR}-vc${VS_VER}-x86"
-    test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && EXTRA_LDFLAGS="$EXTRA_LDFLAGS -SUBSYSTEM:CONSOLE,5.01"
+    test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.01'"
   fi
 }
 
@@ -258,13 +223,16 @@ setup_mingw_env() {
   LIB_OPT="$LIB_OPT --disable-static"
   enable_lto=false
   local gcc=gcc
-  host_is MinGW || host_is MSYS || {
+  host_is MinGW || host_is MSYS && {
+    echo "install msys2 packages: pacman -Sy --needed diffutils gawk pkg-config mingw-w64-i686-gcc mingw-w64-x86_64-gcc"
+  } || {
+    echo "mingw cross build"
     local arch=$1
     [ "$arch" = "x86" ] && arch=i686
     gcc=${arch}-w64-mingw32-gcc
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --cross-prefix=${arch}-w64-mingw32- --target-os=mingw32 --arch=$arch"
   }
-  test -n "$dxva2_opt" && FEATURE_OPT="$FEATURE_OPT $dxva2_opt"
+  enable_opt dxva2 && FEATURE_OPT="$FEATURE_OPT $dxva2_opt"
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -static-libgcc -Wl,-Bstatic"
   FEATURE_OPT="--disable-iconv $FEATURE_OPT"
   $gcc -dumpmachine |grep -iq x86_64 && INSTALL_DIR="${INSTALL_DIR}-mingw-x64" || INSTALL_DIR="${INSTALL_DIR}-mingw-x86"
@@ -372,12 +340,20 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE\""
   INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}-${USE_TOOLCHAIN:-gcc}
   enable_opt mediacodec
-  test -n "$mediacodec_opt" && FEATURE_OPT="$mediacodec_opt --enable-jni $FEATURE_OPT"
+  enable_opt jni
+  FEATURE_OPT="$mediacodec_opt --enable-jni $FEATURE_OPT"
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   echo "export PATH=$ANDROID_TOOLCHAIN_DIR/bin:$ANDROID_LLVM_DIR/bin:$PATH" > $THIS_DIR/build_$INSTALL_DIR/.env.sh
 }
 #  --toolchain=hardened : https://wiki.debian.org/Hardening
+
+enable_vtenc(){
+  test -f $FFSRC/libavcodec/videotoolboxenc.c && echo "$USER_OPT" |grep -q "disable-encoders" && USER_OPT="$USER_OPT --enable-encoder=*_videotoolbox"
+}
+
 setup_ios_env() {
+  enable_vtenc
+  enable_opt videotoolbox && FEATURE_OPT="$FEATURE_OPT $videotoolbox_opt"
   LIB_OPT= #static only
 # TODO: multi arch (Xarch+arch)
 # clang -arch i386 -arch x86_64
@@ -395,13 +371,16 @@ setup_ios_env() {
   local SYSROOT_SDK=iphoneos
   local VER_OS=iphoneos
   local BITCODE_FLAGS=
+  local ios5_lib_dir=
   if [ "${IOS_ARCH:0:3}" == "arm" ]; then
     $enable_bitcode && BITCODE_FLAGS="-fembed-bitcode"
-    # armv7 since 3.2, but latest ios sdk does not have crt1.o/crt1.3.1.o, use 6.0 is ok. but we add these files in tools/lib/ios5, so 5.0 and older is fine
     if [ "${IOS_ARCH:3:2}" == "64" ]; then
       ios_min=7.0
     else
-      if [ -f `xcrun --show-sdk-path --sdk iphoneos`/usr/lib/crt1.o -o -f $THIS_DIR/tools/lib/ios5/crt1.o ]; then
+      # armv7 since 3.2, but ios10 sdk does not have crt1.o/crt1.3.1.o, use 6.0 is ok. but we add these files in tools/lib/ios5, so 5.0 and older is fine
+      local sdk_crt1_o=`xcrun --show-sdk-path --sdk iphoneos`/usr/lib/crt1.o
+      if [ -f $sdk_crt1_o -o -f $THIS_DIR/tools/lib/ios5/crt1.o ]; then
+        [ -f $sdk_crt1_o ] || ios5_lib_dir=$THIS_DIR/tools/lib/ios5
         ios_min=5.0
       else
         ios_min=6.0
@@ -423,24 +402,57 @@ setup_ios_env() {
   FEATURE_OPT="$FEATURE_OPT --disable-programs" #FEATURE_OPT
   EXTRA_CFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver $BITCODE_FLAGS"
   EXTRA_LDFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver" #No bitcode flags for iOS < 6.0. we always build static libs. but config test will try to create exe
-  enable_vtenc
-  INSTALL_DIR=sdk-ios-$IOS_ARCH
-  IOS_SDK_MAJOR=`xcrun --show-sdk-version --sdk iphoneos |cut -d '.' -f 1`
   if $FFGIT; then
     patch_clock_gettime=1
   else
-    [ $IOS_SDK_MAJOR -gt 9 ] && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
+    apple_sdk_version ">=" ios 10.0 && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
   fi
+  INSTALL_DIR=sdk-ios-$IOS_ARCH
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
-  echo "export LIBRARY_PATH=$THIS_DIR/tools/lib/ios5" >$THIS_DIR/build_$INSTALL_DIR/.env.sh
+  [ -n "$ios5_lib_dir" ] && echo "export LIBRARY_PATH=$ios5_lib_dir" >$THIS_DIR/build_$INSTALL_DIR/.env.sh
+}
+
+setup_macos_env(){
+  enable_vtenc
+  enable_opt videotoolbox
+  enable_opt vda
+  FEATURE_OPT="$FEATURE_OPT $vda_opt $videotoolbox_opt"
+  grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --install_name_dir=@rpath"
+  # 10.6: ld: warning: target OS does not support re-exporting symbol _av_gettime from libavutil/libavutil.dylib
+  EXTRA_CFLAGS="-mmacosx-version-min=10.7" #TODO ./$THIS_NAME macOS10.6
+  EXTRA_LDFLAGS="-mmacosx-version-min=10.7 -Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../Frameworks -Wl,-rpath,@loader_path/lib -Wl,-rpath,@loader_path/../lib"
+  if $FFGIT; then
+    patch_clock_gettime=1
+  else
+    apple_sdk_version ">=" macos 10.12 && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
+  fi
+}
+
+apple_sdk_version(){
+  #$1: operator with "" around ("<=", "<", "==", ">", ">=")
+  #$2: os name used by xcrun (ios, macos, iphoneos, macosx ...)
+  #$3: version number (x.y)
+  local ios=iphoneos
+  local macos=macosx
+  local os=${!2}
+  os=${os:=$2}
+  local sdk_ver=`xcrun --show-sdk-version --sdk $os`
+  local sdk_major=`echo $sdk_ver |cut -d '.' -f 1`
+  local sdk_minor=`echo $sdk_ver |cut -d '.' -f 2`
+  local major=`echo $3 |cut -d '.' -f 1`
+  local minor=`echo $3 |cut -d '.' -f 2`
+  eval return $((1-$(($(($((sdk_major*100))+$sdk_minor))${1}$(($((major*100))+$minor))))))
 }
 
 setup_maemo_env() {
+  : ${MAEMO5_SYSROOT:=/opt/QtSDK/Maemo/4.6.2/sysroots/fremantle-arm-sysroot-20.2010.36-2-slim}
+  : ${MAEMO6_SYSROOT:=/opt/QtSDK/Madde/sysroots/harmattan_sysroot_10.2011.34-1_slim}
 #--arch=armv7l --cpu=armv7l
 #CLANG=clang
   if [ -z "$MAEMO_SYSROOT" ]; then
     test $1 = 5 && MAEMO_SYSROOT=$MAEMO5_SYSROOT || MAEMO_SYSROOT=$MAEMO6_SYSROOT
   fi
+  echo "MAEMO_SYSROOT=$MAEMO_SYSROOT"
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=linux --arch=armv7-a --sysroot=$MAEMO_SYSROOT"
   if [ -n "$CLANG" ]; then
     CLANG_CFLAGS="-target arm-none-linux-gnueabi"
@@ -467,10 +479,17 @@ config1(){
   local patch_clock_gettime=0
   local enable_pic=true
   local enable_lto=true
+  add_librt(){
+  # clock_gettime in librt instead of glibc>=2.17
+    grep -q "LIBRT" $FFSRC/configure && {
+      # TODO: cc test
+      host_is Linux && ! target_is android && ! echo $EXTRALIBS |grep -q '\-lrt' && ! echo $EXTRA_LDFLAGS |grep -q '\-lrt' && EXTRALIBS="$EXTRALIBS -lrt"
+    }
+  }
   case $1 in
     android)    setup_android_env $TAGET_ARCH_FLAG ;;
     ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
-    mingw64)    setup_mingw_env $TAGET_ARCH_FLAG ;;
+    mingw*)    setup_mingw_env $TAGET_ARCH_FLAG ;;
     vc)         setup_vc_desktop_env ;;
     winstore|winpc|winphone|winrt) setup_winrt_env ;;
     maemo*)     setup_maemo_env ${1##maemo} ;;
@@ -493,26 +512,13 @@ config1(){
         if [ -f /opt/vc/include/bcm_host.h ]; then
           . config-rpi.sh
         else
-          test -n "$vaapi_opt" && FEATURE_OPT="$FEATURE_OPT $vaapi_opt"
-          test -n "$vdpau_opt" && FEATURE_OPT="$FEATURE_OPT $vdpau_opt"
+          enable_opt vaapi
+          enable_opt vdpau
+          FEATURE_OPT="$FEATURE_OPT $vaapi_opt $vdpau_opt"
         fi
         add_librt
       elif host_is Darwin; then
-        enable_vtenc
-        test -n "$vda_opt" && FEATURE_OPT="$FEATURE_OPT $vda_opt"
-        test -n "$videotoolbox_opt" && FEATURE_OPT="$FEATURE_OPT $videotoolbox_opt"
-        grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --install_name_dir=@rpath"
-        # 10.6: ld: warning: target OS does not support re-exporting symbol _av_gettime from libavutil/libavutil.dylib
-        EXTRA_CFLAGS="-mmacosx-version-min=10.7" #TODO ./$THIS_NAME macOS10.6
-        EXTRA_LDFLAGS="-mmacosx-version-min=10.7 -Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../Frameworks -Wl,-rpath,@loader_path/lib -Wl,-rpath,@loader_path/../lib"
-        if $FFGIT; then
-          patch_clock_gettime=1
-        else
-          local MACOS_SDK_VERSION=`xcrun --show-sdk-version --sdk macosx`
-          local MACOS_SDK_MAJOR=`echo $MACOS_SDK_VERSION |cut -d '.' -f 1`
-          local MACOS_SDK_MINOR=`echo $MACOS_SDK_VERSION |cut -d '.' -f 2`
-          [ $((100*$MACOS_SDK_MAJOR + $MACOS_SDK_MINOR)) -ge 1012 ] && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
-        fi
+        setup_macos_env
       elif host_is Sailfish; then
         echo "Build in Sailfish SDK"
         INSTALL_DIR=sdk-sailfish
@@ -586,8 +592,7 @@ build_all(){
   local os=`tolower $1`
   local USE_TOOLCHAIN=$USE_TOOLCHAIN
   [ -z "$os" ] && {
-    echo ">>>>>no os is set. host build"
-    config1
+    config1 $@
   } || {
     local archs=($2)
     [ -z "$archs" ] && {
@@ -597,7 +602,7 @@ build_all(){
     }
     echo ">>>>>archs: ${archs[@]}"
     [ -z "$archs" ] && {
-      config1
+      config1 $@
     } || {
       local CONFIG_JOBS=()
       for arch in ${archs[@]}; do
