@@ -46,6 +46,8 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 trap "kill -- -$$; rm -rf $THIS_DIR/.dir exit 3" SIGTERM SIGINT SIGKILL
 
 export PATH=$PWD/tools/gas-preprocessor:$PATH
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_EXT:$PKG_CONFIG_PATH
+echo PKG_CONFIG_PATH=$PKG_CONFIG_PATH
 
 echo FFSRC=$FFSRC
 [ -f $FFSRC/configure ] && {

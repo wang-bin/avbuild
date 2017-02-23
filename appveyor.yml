@@ -7,16 +7,6 @@ branches:
 
 environment:
   matrix:
-  - _ARCH: 32
-    _CC: MINGW
-    _PLATFORM: desktop
-    _CACHE: msys64
-
-  - _ARCH: 64
-    _CC: MINGW
-    _PLATFORM: desktop
-    _CACHE: msys64
-
   - _ARCH: x86
     _CC: VS2013
     _PLATFORM: desktop
@@ -40,6 +30,16 @@ environment:
   - _ARCH: x64
     _CC: VS2015
     _PLATFORM: store
+
+  - _ARCH: 32
+    _CC: MINGW
+    _PLATFORM: desktop
+    _CACHE: msys64
+
+  - _ARCH: 64
+    _CC: MINGW
+    _PLATFORM: desktop
+    _CACHE: msys64
 
 matrix:
   fast_finish: false
@@ -73,7 +73,7 @@ install:
   - echo _PLATFORM=%_PLATFORM%
   - if /i %_PLATFORM%==desktop appveyor DownloadFile "https://sourceforge.net/projects/avbuild/files/dep/libmfx.7z/download" -FileName libmfx.7z
   - if /i %_PLATFORM%==desktop 7z x libmfx.7z -otools
-  - if /i %_PLATFORM%==desktop set PKG_CONFIG_PATH=%CD%\tools\%_PLATFORM%%_ARCH%\lib\pkgconfig
+  - if /i %_PLATFORM%==desktop set PKG_CONFIG_PATH_EXT=%CD%\tools\%_CC%%_ARCH%\lib\pkgconfig
 
 before_build:
   - set BUILD_NOW=true
