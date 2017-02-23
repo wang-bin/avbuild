@@ -1,3 +1,4 @@
+@echo on
 if [%MSYSTEM%] == [] goto SetupMSYS2
 
 :SetupAV
