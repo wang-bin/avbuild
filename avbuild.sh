@@ -126,6 +126,14 @@ enable_opt() {
   fi
 }
 
+enable_libmfx(){
+  # TODO: which pkg-config to use for cross build
+  if pkg-config --libs libmfx ; then
+    enable_opt libmfx
+    FEATURE_OPT="$FEATURE_OPT $libmfx_opt"
+  fi
+}
+
 setup_vc_env(){
   if $WINRT; then
     setup_winrt_env
@@ -139,6 +147,7 @@ setup_vc_desktop_env() {
   enable_lto=false # ffmpeg requires DCE, while vc with LTCG (-GL) does not support DCE
   LIB_OPT="$LIB_OPT --disable-static"
 # http://ffmpeg.org/platform.html#Microsoft-Visual-C_002b_002b-or-Intel-C_002b_002b-Compiler-for-Windows
+  enable_libmfx
   enable_opt dxva2
   FEATURE_OPT="$FEATURE_OPT $dxva2_opt"
   # ldflags prepends flags. extralibs appends libs and add to pkg-config
@@ -232,6 +241,7 @@ setup_mingw_env() {
     gcc=${arch}-w64-mingw32-gcc
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --cross-prefix=${arch}-w64-mingw32- --target-os=mingw32 --arch=$arch"
   }
+  enable_libmfx
   enable_opt dxva2 && FEATURE_OPT="$FEATURE_OPT $dxva2_opt"
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -static-libgcc -Wl,-Bstatic"
   FEATURE_OPT="--disable-iconv $FEATURE_OPT"
@@ -489,7 +499,7 @@ config1(){
   case $1 in
     android)    setup_android_env $TAGET_ARCH_FLAG ;;
     ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
-    mingw*)    setup_mingw_env $TAGET_ARCH_FLAG ;;
+    mingw*)     setup_mingw_env $TAGET_ARCH_FLAG ;;
     vc)         setup_vc_desktop_env ;;
     winstore|winpc|winphone|winrt) setup_winrt_env ;;
     maemo*)     setup_maemo_env ${1##maemo} ;;
@@ -512,6 +522,7 @@ config1(){
         if [ -f /opt/vc/include/bcm_host.h ]; then
           . config-rpi.sh
         else
+          enable_libmfx
           enable_opt vaapi
           enable_opt vdpau
           FEATURE_OPT="$FEATURE_OPT $vaapi_opt $vdpau_opt"

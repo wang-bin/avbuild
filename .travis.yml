@@ -35,6 +35,7 @@ matrix:
             #- llvm-toolchain-precise-3.9
           packages:
             - gcc-6
+            - libstdc++-6-dev
             - p7zip-full
             - yasm
             - libva-dev
@@ -84,6 +85,12 @@ install:
         ls -l
         mv android-ndk-${NDK_VERSION} android-ndk
         touch android-ndk/${NDK_VERSION}
+      fi
+  - |
+      if [ "$TRAVIS_OS_NAME" == "linux" -a "$TARGET" == "host" ]; then
+        wget https://sourceforge.net/projects/avbuild/files/dep/libmfx.7z/download -O libmfx.7z
+        7z x libmfx.7z -otools &>/dev/null
+        export PKG_CONFIG_PATH=$PWD/tools/linux64-gcc/lib/pkgconfig
       fi
 
 script:
