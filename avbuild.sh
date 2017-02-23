@@ -46,7 +46,7 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 trap "kill -- -$$; rm -rf $THIS_DIR/.dir exit 3" SIGTERM SIGINT SIGKILL
 
 export PATH=$PWD/tools/gas-preprocessor:$PATH
-export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_EXT:$PKG_CONFIG_PATH
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_EXT
 echo PKG_CONFIG_PATH=$PKG_CONFIG_PATH
 
 echo FFSRC=$FFSRC
@@ -598,7 +598,9 @@ build1(){
   [ $? -eq 0 ] || exit 2
   cd $THIS_DIR/$INSTALL_DIR
   echo "https://github.com/wang-bin/avbuild" > README.txt
-  [ -f bin/avutil.lib ] && mv bin/*.lib lib
+  if [ -f bin/avutil.lib ]; then 
+    mv bin/*.lib lib
+  fi
 }
 
 build_all(){
@@ -629,7 +631,11 @@ build_all(){
       [ ${#CONFIG_JOBS[@]} -gt 0 ] && {
         echo "waiting for all configure jobs(${#CONFIG_JOBS[@]}) finished..."
         wait ${CONFIG_JOBS[@]}
-        echo all configuration are finished
+        if [ $? == 0 ]; then
+          echo all configuration are finished
+        else
+          exit 1
+        fi
       }
     }
   }

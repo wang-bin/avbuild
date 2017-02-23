@@ -4,8 +4,13 @@ dist: trusty
 cache:
   apt: true
   directories:
-    - ffmpeg-release
-#    - android-ndk  # may be as slow as downloading from original source. only cache 1 platform+toolchains?
+    - ffmpeg-$FF_VERSION
+    - android-ndk-${NDK_VERSION}/platforms/android-{9,21}
+    - android-ndk-${NDK_VERSION}/sources/${llvm*,gnu-libstdc++,system}
+    - android-ndk-${NDK_VERSION}/toolchains/llvm
+    - android-ndk-${NDK_VERSION}/toolchains/aarch64-linux-android-4.9
+    - android-ndk-${NDK_VERSION}/toolchains/arm-linux-androideabi-4.9
+    - android-ndk-${NDK_VERSION}/toolchains/x86-4.9
 # TODO: libav
 
 git:
@@ -35,7 +40,7 @@ matrix:
             #- llvm-toolchain-precise-3.9
           packages:
             - gcc-6
-            - libstdc++-6-dev
+            - libstdc++-6-dev #libmfx
             - p7zip-full
             - yasm
             - libva-dev
@@ -61,41 +66,32 @@ matrix:
             - p7zip-full
             - yasm
             - sshpass
-# TODO: mingw64
+# TODO: mingw64 cross build
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update --all; fi
 install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install yasm perl hudochenkov/sshpass/sshpass xz; fi
-  - mkdir -p ffmpeg-release
   - |
-      if grep -q ${FF_VERSION} ffmpeg-release/VERSION 2>/dev/null; then
-        echo "ffmpeg source exists"
-      else
+      if [ ! -d ffmpeg-${FF_VERSION} ]; then
         wget http://ffmpeg.org/releases/ffmpeg-${FF_VERSION}.tar.bz2
         tar jxf ffmpeg-${FF_VERSION}.tar.bz2
-        rm -rf ffmpeg-release
-        mv ffmpeg-${FF_VERSION} ffmpeg-release
       fi
   - |
-      if [ "${TARGET:0:7}" == "android" -a ! -f android-ndk/${NDK_VERSION} ]; then
+      if [ "${TARGET:0:7}" == "android" -a ! -d android-ndk-${NDK_VERSION} ]; then
         wget https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux-x86_64.zip
         7z x -y android-ndk-${NDK_VERSION}-linux-x86_64.zip >/dev/null
-        rm -rf android-ndk
-        ls -l
-        mv android-ndk-${NDK_VERSION} android-ndk
-        touch android-ndk/${NDK_VERSION}
       fi
   - |
       if [ "$TRAVIS_OS_NAME" == "linux" -a "$TARGET" == "host" ]; then
         wget https://sourceforge.net/projects/avbuild/files/dep/libmfx.7z/download -O libmfx.7z
-        7z x libmfx.7z -otools &>/dev/null
-        export PKG_CONFIG_PATH=$PWD/tools/linux64-gcc/lib/pkgconfig
+        7z x -y libmfx.7z -otools &>/dev/null
+        export PKG_CONFIG_PATH_EXT=$PWD/tools/linux64-gcc/lib/pkgconfig
       fi
 
 script:
-  - export FFSRC=$PWD/ffmpeg-release
-  - export ANDROID_NDK=$PWD/android-ndk
+  - export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+  - export ANDROID_NDK=$PWD/android-ndk-${NDK_VERSION}
   - if [ -n "$_CC" ]; then export USER_OPT=--cc=$_CC; fi
   - ln -sf config{-lite,}.sh
   - |
@@ -120,7 +116,7 @@ branches:
   only:
     - master
     - prelease
-    - ci/travis
+    - ci
     - /^travis.*$/
 
 notifications:
