@@ -46,8 +46,10 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 trap "kill -- -$$; rm -rf $THIS_DIR/.dir exit 3" SIGTERM SIGINT SIGKILL
 
 export PATH=$PWD/tools/gas-preprocessor:$PATH
-export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_EXT
-echo PKG_CONFIG_PATH=$PKG_CONFIG_PATH
+if [ -n "PKG_CONFIG_PATH_EXT" ]; then
+  export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_EXT # $PKG_CONFIG_PATH/../.. is used in libmfx.pc, so no ":" separated list
+  echo PKG_CONFIG_PATH=$PKG_CONFIG_PATH
+fi
 
 echo FFSRC=$FFSRC
 [ -f $FFSRC/configure ] && {
@@ -412,8 +414,8 @@ setup_ios_env() {
   : ${ios_ver:=$ios_min}
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --arch=$IOS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
   FEATURE_OPT="$FEATURE_OPT --disable-programs" #FEATURE_OPT
-  EXTRA_CFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver $BITCODE_FLAGS"
-  EXTRA_LDFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver" #No bitcode flags for iOS < 6.0. we always build static libs. but config test will try to create exe
+  EXTRA_CFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver $BITCODE_FLAGS" # -fvisibility=hidden -fvisibility-inlines-hidden"
+  EXTRA_LDFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver" # -fvisibility=hidden -fvisibility-inlines-hidden" #No bitcode flags for iOS < 6.0. we always build static libs. but config test will try to create exe
   if $FFGIT; then
     patch_clock_gettime=1
   else
@@ -658,6 +660,9 @@ make_universal()
   local dirs=($2)
   [ -z "$dirs" ] && return 0
   if [ "$os" == ios ]; then
+    if [ ${#dirs[@]} -le 1 ]; then
+      return 0
+    fi
     local OUT_DIR=sdk-$os
     rm -rf $OUT_DIR
     cd $THIS_DIR
