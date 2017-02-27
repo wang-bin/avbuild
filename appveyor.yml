@@ -1,3 +1,4 @@
+# can not have space before '&&', ')' when setting env var in multiple line commands
 branches:
   only:
     - master
@@ -68,8 +69,7 @@ install:
   - if /i %_PLATFORM%==desktop (
       appveyor DownloadFile "https://sourceforge.net/projects/avbuild/files/dep/libmfx.7z/download" -FileName libmfx.7z &&
       7z x -y libmfx.7z -otools &&
-      set PKG_CONFIG_PATH_EXT=%CD%\tools\%_CC%%_ARCH%\lib\pkgconfig
-    )
+      set PKG_CONFIG_PATH_EXT=%CD%\tools\%_CC%%_ARCH%\lib\pkgconfig)
 
 before_build:
   - set HOME=%CD%
@@ -78,7 +78,6 @@ before_build:
   - set FFSRC=%CD%\ffmpeg-%FF_VERSION%
 
 build_script:
-# can not have space before &&
   - if /i %_CC%==MinGW (
       set VC_BUILD=false&&
       C:\msys64\usr\bin\bash.exe --login avbuild.sh

@@ -48,7 +48,7 @@ trap "kill -- -$$; rm -rf $THIS_DIR/.dir exit 3" SIGTERM SIGINT SIGKILL
 export PATH=$PWD/tools/gas-preprocessor:$PATH
 if [ -n "PKG_CONFIG_PATH_EXT" ]; then
   export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_EXT # $PKG_CONFIG_PATH/../.. is used in libmfx.pc, so no ":" separated list
-  echo PKG_CONFIG_PATH=$PKG_CONFIG_PATH
+  echo ">>>PKG_CONFIG_PATH=$PKG_CONFIG_PATH<<<"
 fi
 
 echo FFSRC=$FFSRC
