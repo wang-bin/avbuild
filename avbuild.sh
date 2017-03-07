@@ -275,7 +275,7 @@ setup_android_env() {
 #TODO: what if no following default flags (from ndk android.toolchain.cmake)?
   EXTRA_CFLAGS="$EXTRA_CFLAGS -ffast-math -fstrict-aliasing -ffunction-sections -fstack-protector-strong -Wa,--noexecstack" # " #-funwind-tables need libunwind.a for libc++?
 # -no-canonical-prefixes: results in "-mcpu= ", why?
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wl,--build-id"
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack"
   # TODO: clang use -arch like iOS?
   # TODO: clang lto in r14 (gcc?)
   if [ "$ANDROID_ARCH" = "x86" -o "$ANDROID_ARCH" = "i686" ]; then
@@ -630,10 +630,13 @@ build_all(){
       config1 $@
     } || {
       local CONFIG_JOBS=()
+      USE_TOOLCHAIN0=$USE_TOOLCHAIN
       for arch in ${archs[@]}; do
         if [ "${arch##*-}" == "clang" -o "${arch##*-}" == "gcc" ]; then
           USE_TOOLCHAIN=${arch##*-}
           arch=${arch%-*}
+        else
+          USE_TOOLCHAIN=$USE_TOOLCHAIN0
         fi
         CONFIG_JOBS=(${CONFIG_JOBS[@]} %$((${#CONFIG_JOBS[@]}+1)))
         config1 $os $arch &
