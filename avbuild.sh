@@ -2,6 +2,9 @@
 # TODO: -flto=nb_cpus. lto with static build (except android)
 # MXE cross toolchain
 # enable cuda
+# Unify gcc/clang(elf?) flags(like android): -Wl,-z,now -Wl,-z,-relro -Bsymbolic ...
+# https://wiki.debian.org/Hardening#DEB_BUILD_HARDENING_RELRO_.28ld_-z_relro.29
+
 #set -x
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2017"
@@ -42,6 +45,7 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 : ${DEBUG_OPT:="--disable-debug"}
 
 : ${FFSRC:=$PWD/ffmpeg}
+# other env vars to control build: NO_ENC, BITCODE, WINPHONE, VC_BUILD (bool)
 
 trap "kill -- -$$; rm -rf $THIS_DIR/.dir exit 3" SIGTERM SIGINT SIGKILL
 
@@ -137,6 +141,8 @@ enable_libmfx(){
     FEATURE_OPT="$FEATURE_OPT $libmfx_opt"
   fi
 }
+
+# warnings are used by ffmpeg developer:  -Werror=format-security -Werror=strict-aliasing -Wl,--fatal-warnings -Wl,--warn-shared-textrel
 
 setup_vc_env(){
   if $WINRT; then
@@ -258,6 +264,8 @@ setup_wince_env() {
 }
 
 setup_android_env() {
+  ENC_OPT=$ENC_OPT_MOBILE
+  MUX_OPT=$MUX_OPT_MOBILE
   local ANDROID_ARCH=$1
   test -n "$ANDROID_ARCH" || ANDROID_ARCH=arm
   local ANDROID_TOOLCHAIN_PREFIX="${ANDROID_ARCH}-linux-android"
@@ -265,9 +273,9 @@ setup_android_env() {
   local FFARCH=$ANDROID_ARCH
   local PLATFORM=android-9 #ensure do not use log2f in libm
 #TODO: what if no following default flags (from ndk android.toolchain.cmake)?
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -ffast-math -fstrict-aliasing -Werror=strict-aliasing -ffunction-sections -fstack-protector-strong -Wa,--noexecstack -Wformat -Werror=format-security" # " #-funwind-tables need libunwind.a for libc++?
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -ffast-math -fstrict-aliasing -ffunction-sections -fstack-protector-strong -Wa,--noexecstack" # " #-funwind-tables need libunwind.a for libc++?
 # -no-canonical-prefixes: results in "-mcpu= ", why?
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wl,--build-id -Wl,--fatal-warnings" # -Wl,--warn-shared-textrel
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wl,--build-id"
   # TODO: clang use -arch like iOS?
   # TODO: clang lto in r14 (gcc?)
   if [ "$ANDROID_ARCH" = "x86" -o "$ANDROID_ARCH" = "i686" ]; then
@@ -362,6 +370,8 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
 #  --toolchain=hardened : https://wiki.debian.org/Hardening
 
 setup_ios_env() {
+  ENC_OPT=$ENC_OPT_MOBILE
+  MUX_OPT=$MUX_OPT_MOBILE
   enable_opt videotoolbox && FEATURE_OPT="$FEATURE_OPT $videotoolbox_opt"
   LIB_OPT= #static only
 # TODO: multi arch (Xarch+arch)
@@ -546,6 +556,10 @@ config1(){
   echo INSTALL_DIR: $INSTALL_DIR
   is_libav || FEATURE_OPT="$FEATURE_OPT --enable-avresample --disable-postproc"
   local CONFIGURE="configure --extra-version=QtAV --disable-doc ${DEBUG_OPT} $LIB_OPT --enable-runtime-cpudetect $FEATURE_OPT $TOOLCHAIN_OPT $USER_OPT"
+  : ${NO_ENC=false}
+  if ! $NO_ENC && [ -n "$ENC_OPT" ]; then
+    CONFIGURE="$CONFIGURE $ENC_OPT $MUX_OPT"
+  fi
   CONFIGURE=`trim2 $CONFIGURE`
   # http://ffmpeg.org/platform.html
   # static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
