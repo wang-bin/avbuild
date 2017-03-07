@@ -78,6 +78,8 @@ before_build:
   - set FFSRC=%CD%\ffmpeg-%FF_VERSION%
 
 build_script:
+# V=1 to check libmfx error, but the error disappears if V=1. WTF
+  - if /i not %_CC%==MinGW if /i not %_PLATFORM%==store set V=1
   - if /i %_CC%==MinGW (
       set VC_BUILD=false&&
       C:\msys64\usr\bin\bash.exe --login avbuild.sh
