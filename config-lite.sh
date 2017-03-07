@@ -1,11 +1,18 @@
-USER_OPT="--enable-small --disable-avdevice --disable-avresample --disable-filters \
+USER_OPT="--enable-small --disable-avdevice --disable-avresample \
+--disable-filters \
 --enable-filter=aeval,afade,aformat,all*,amix,arealtime,aresample,asplit,atempo,color*,blend,con*,draw*,eq*,fade,format,frame*,null,overlay,pad,split,volume \
---disable-muxers --disable-encoders --disable-decoders \
---enable-decoder=aac*,ac3*,ass,cook,ssa,eac3,srt,flv,flac,h264*,hevc*,vc1*,mjpeg*,mp1*,mp2*,mp3*,mpeg*,nellymoser,vorbis,vp6*,vp7*,vp8*,vp9*,wma*,wmv*,opus,pcm*,wmv*,rv* \
---disable-demuxers --enable-demuxer=aac,concat,data,flv,hls,h264,hevc,live_flv,matroska,mjpeg*,mov,mpeg*,ac3,ass,avi,eac3,flac,flv,mp3,mxf,nsv,nut,ogg,rawvideo,rtp,rtsp,srt,vc1,v210,wav --disable-bsfs --enable-bsf=aac*,h264*,hevc*,mjpeg*,mpv*,mp3*,mpeg*,vp9* \
---disable-parsers --enable-parser=aac*,ac3,cook,flac,h263,h264,hevc,mjpeg*,mpeg*,opus,rv*,vc1,vorbis,vp8,vp9 \
+--disable-muxers \
+--enable-muxer=dash,fifo,gif,h264,hevc,hls,mjpeg,matroska*,mov,mp4,mpegts,nu*,og*,opus,pcm*,rawvideo,rtp,rtsp,wav \
+--disable-encoders \
+--enable-encoder=aac,gif,h26[3-4]*,hevc*,mjpeg,mpeg[2-4]*,nellymoser,nvenc*,opus,pcm*,rawvideo,vorbis \
+--disable-decoders \
+--enable-decoder=aac*,ac3*,ape,ass,cook,eac3,flv,flac,h264*,hevc*,mjpeg*,mp[1-3]*,*mpeg*,nellymoser,opus,pcm*,rv*,srt,ssa,v210*,vc1*,vorbis,vp[6-9],wmv* \
+--disable-demuxers \
+--enable-demuxer=aac,ac3,ape,ass,avi,concat,eac3,flac,*flv,hls,h264,hevc,matroska,mjpeg*,mov,mpeg*,mp3,mxf,nsv,nut,ogg,rawvideo,rt*p,srt,vc1,v210*,wav \
+--disable-bsfs --enable-bsf=aac*,mjpeg*,*mov*,*mp*,vp9* \
+--disable-parsers --enable-parser=aac*,ac3,cook,flac,h26[3-4],hevc,mjpeg*,mpeg*,opus,rv*,vc1,vorbis,vp[8-9] \
 $USER_OPT
 "
-#LIB_OPT="--enable-shared"
-
-#TODO: hw enc enable
+# nellymoser: used by flash video, longzhu
+# LIB_OPT="--enable-shared"
+#TODO: image2?

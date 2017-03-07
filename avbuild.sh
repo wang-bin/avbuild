@@ -361,12 +361,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
 }
 #  --toolchain=hardened : https://wiki.debian.org/Hardening
 
-enable_vtenc(){
-  test -f $FFSRC/libavcodec/videotoolboxenc.c && echo "$USER_OPT" |grep -q "disable-encoders" && USER_OPT="$USER_OPT --enable-encoder=*_videotoolbox"
-}
-
 setup_ios_env() {
-  enable_vtenc
   enable_opt videotoolbox && FEATURE_OPT="$FEATURE_OPT $videotoolbox_opt"
   LIB_OPT= #static only
 # TODO: multi arch (Xarch+arch)
@@ -427,7 +422,6 @@ setup_ios_env() {
 }
 
 setup_macos_env(){
-  enable_vtenc
   enable_opt videotoolbox
   enable_opt vda
   FEATURE_OPT="$FEATURE_OPT $vda_opt $videotoolbox_opt"
