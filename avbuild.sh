@@ -1,7 +1,7 @@
 #!/bin/bash
 # TODO: -flto=nb_cpus. lto with static build (except android)
 # MXE cross toolchain
-# enable cuda, qsv
+# enable cuda
 #set -x
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2017"
@@ -594,7 +594,7 @@ build1(){
   [ $? -eq 0 ] || exit 2
   cd $THIS_DIR/$INSTALL_DIR
   echo "https://github.com/wang-bin/avbuild" > README.txt
-  if [ -f bin/avutil.lib ]; then 
+  if [ -f bin/avutil.lib ]; then
     mv bin/*.lib lib
   fi
 }
