@@ -43,9 +43,9 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 : ${LIB_OPT:="--enable-shared"}
 : ${FEATURE_OPT:="--enable-hwaccels"} #--enable-gpl --enable-version3
 : ${DEBUG_OPT:="--disable-debug"}
-
+: {FORCE_LTO:=false}
 : ${FFSRC:=$PWD/ffmpeg}
-# other env vars to control build: NO_ENC, BITCODE, WINPHONE, VC_BUILD (bool)
+# other env vars to control build: NO_ENC, BITCODE, WINPHONE, VC_BUILD, FORCE_LTO (bool)
 
 trap "kill -- -$$; rm -rf $THIS_DIR/.dir exit 3" SIGTERM SIGINT SIGKILL
 
@@ -142,7 +142,7 @@ enable_libmfx(){
   fi
 }
 
-# warnings are used by ffmpeg developer:  -Werror=format-security -Werror=strict-aliasing -Wl,--fatal-warnings -Wl,--warn-shared-textrel
+# warnings are used by ffmpeg developer, some are enabled by configure: -Wl,--warn-shared-textrel
 
 setup_vc_env(){
   if $WINRT; then
@@ -349,14 +349,22 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   local ANDROID_LLVM_DIR=${clangxx%bin*}
   echo "ANDROID_TOOLCHAIN_DIR=${ANDROID_TOOLCHAIN_DIR}"
   echo "ANDROID_LLVM_DIR=${ANDROID_LLVM_DIR}"
-  CLANG_FLAGS="$CLANG_FLAGS -gcc-toolchain $ANDROID_TOOLCHAIN_DIR"
+  ANDROID_TOOLCHAIN_DIR_REL=${ANDROID_TOOLCHAIN_DIR#$NDK_ROOT}
+  CLANG_FLAGS="$CLANG_FLAGS -gcc-toolchain \$NDK_ROOT/$ANDROID_TOOLCHAIN_DIR_REL"
   local ANDROID_SYSROOT="$NDK_ROOT/platforms/$PLATFORM/arch-${ANDROID_ARCH}"
-  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=$ANDROID_SYSROOT --target-os=android --arch=${FFARCH} --enable-cross-compile --cross-prefix=$CROSS_PREFIX"
+  local ANDROID_SYSROOT_REL="platforms/$PLATFORM/arch-${ANDROID_ARCH}"
+  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\$NDK_ROOT/$ANDROID_SYSROOT_REL --target-os=android --arch=${FFARCH} --enable-cross-compile --cross-prefix=$CROSS_PREFIX"
   if [ "$USE_TOOLCHAIN" = "clang" ]; then
     enable_lto=false # clang -flto will generate llvm ir bitcode instead of object file
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=clang"
     EXTRA_CFLAGS="$EXTRA_CFLAGS $CLANG_FLAGS"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS $CLANG_FLAGS" # -Qunused-arguments is added by ffmpeg configure
+  else
+    if $enable_lto; then
+      if [ $FORCE_LTO ] || [ ! "${LIB_OPT/disable-static/}" == "${LIB_OPT}" ]; then
+        TOOLCHAIN_OPT="$TOOLCHAIN_OPT --ar=${CROSS_PREFIX}gcc-ar --ranlib=${CROSS_PREFIX}gcc-ranlib"
+      fi
+    fi
   fi
   #test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=$PLATFORM --toolchain=$TOOLCHAIN --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE\""
@@ -545,7 +553,14 @@ config1(){
       ;;
   esac
 
-  $enable_lto && [ ! "${LIB_OPT/disable-static/}" == "${LIB_OPT}" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-lto"
+  if $enable_lto; then
+    if [ ! $FORCE_LTO ] && [ "${LIB_OPT/disable-static/}" == "${LIB_OPT}" ]; then
+      echo "lto is disabled when build static libs to get better compatibility"
+    else
+      echo "lto is enabled"
+      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-lto"
+    fi
+  fi
   $enable_pic && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-pic"
   EXTRA_CFLAGS=$(trim2 $EXTRA_CFLAGS)
   EXTRA_LDFLAGS=$(trim2 $EXTRA_LDFLAGS)
