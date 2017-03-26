@@ -93,7 +93,7 @@ script:
   - export FFSRC=$PWD/ffmpeg-${FF_VERSION}
   - export ANDROID_NDK=$PWD/android-ndk-${NDK_VERSION}
   - if [ -n "$_CC" ]; then export USER_OPT=--cc=$_CC; fi
-  - ln -sf config{-lite,}.sh
+  - if [ -n "${CONFIG_SUFFIX}" ]; then ln -sf config{${CONFIG_SUFFIX},}.sh; fi
   - |
       if [ "${TARGET/-/}" == "$TARGET" ]; then
         USE_TOOLCHAIN=$CC ./avbuild.sh $TARGET  # CC(gcc/clang) is set by travis depending on compiler
@@ -106,7 +106,7 @@ after_success:
   - SUFFIX=${SUFFIX/#host/${TRAVIS_OS_NAME}}
   - SUFFIX=${SUFFIX/#osx/macOS}
   - SUFFIX=${SUFFIX/%android/$SUFFIX-$CC}
-  - SUFFIX=${SUFFIX}-lite
+  - SUFFIX=${SUFFIX}${CONFIG_SUFFIX}
   - mv sdk* ffmpeg-${FF_VERSION}-${SUFFIX}
   - tar Jcf ffmpeg-${FF_VERSION}-${SUFFIX}{.tar.xz,}
   - ls -hl ffmpeg-${FF_VERSION}-${SUFFIX}.tar.xz
