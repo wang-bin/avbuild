@@ -4,7 +4,7 @@ USER_OPT="--enable-small --disable-avdevice --disable-avresample \
 --disable-muxers \
 --disable-encoders \
 --disable-decoders \
---enable-decoder=aac*,ac3*,ape,ass,cook,eac3,flv,flac,h264*,hevc*,mp[1-3]*,*m*peg*,nellymoser,opus,pcm*,rv*,srt,ssa,v210*,vc1*,vorbis,vp[6-9],wmv* \
+--enable-decoder=aac*,ac3*,ape,ass,cook,eac3,flv,flac,h264*,hevc*,mp[1-3]*,*m*peg*,nellymoser,opus,pcm*,rv*,srt,ssa,v210*,vc1*,vorbis,vp[6-9],wm* \
 --disable-demuxers \
 --enable-demuxer=aac,ac3,ape,ass,avi,concat,eac3,flac,*flv,hls,h264,hevc,matroska,mjpeg*,mov,mpeg*,mp3,mxf,nsv,nut,ogg,rawvideo,rt*p,srt,vc1,v210*,wav \
 --disable-bsfs --enable-bsf=aac*,mjpeg*,*mov*,*mp*,vp9* \
