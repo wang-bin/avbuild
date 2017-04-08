@@ -4,6 +4,7 @@
 # enable cuda
 # Unify gcc/clang(elf?) flags(like android): -Wl,-z,now -Wl,-z,-relro -Bsymbolic ...
 # https://wiki.debian.org/Hardening#DEB_BUILD_HARDENING_RELRO_.28ld_-z_relro.29
+# remove sdl2 in modules
 
 #set -x
 echo
@@ -45,6 +46,7 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 : ${DEBUG_OPT:="--disable-debug"}
 : {FORCE_LTO:=false}
 : ${FFSRC:=$PWD/ffmpeg}
+[ ! "${LIB_OPT/disable-static/}" == "${LIB_OPT}" ] && FORCE_LTO=true
 # other env vars to control build: NO_ENC, BITCODE, WINPHONE, VC_BUILD, FORCE_LTO (bool)
 
 trap "kill -- -$$; rm -rf $THIS_DIR/.dir exit 3" SIGTERM SIGINT SIGKILL
@@ -197,7 +199,7 @@ setup_winrt_env() {
   test $VS_VER -lt 14 && winver="0x0603"
   local family="WINAPI_FAMILY_APP"
   EXTRA_CFLAGS="$EXTRA_CFLAGS -MD"
-  EXTRA_LDFLAGS="-APPCONTAINER"
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -APPCONTAINER"
   local arch=x86_64 #used by configure --arch
   if [ "`tolower $Platform`" = "arm" ]; then
     enable_pic=false  # TODO: ffmpeg bug, should filter out -fPIC. armasm(gas) error (unsupported option) if pic is
@@ -355,13 +357,13 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   local ANDROID_SYSROOT_REL="platforms/$PLATFORM/arch-${ANDROID_ARCH}"
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\$NDK_ROOT/$ANDROID_SYSROOT_REL --target-os=android --arch=${FFARCH} --enable-cross-compile --cross-prefix=$CROSS_PREFIX"
   if [ "$USE_TOOLCHAIN" = "clang" ]; then
-    enable_lto=false # clang -flto will generate llvm ir bitcode instead of object file
+    enable_lto=false # clang -flto will generate llvm ir bitcode instead of object file. TODO: ndk-r14 supports clang lto
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=clang"
     EXTRA_CFLAGS="$EXTRA_CFLAGS $CLANG_FLAGS"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS $CLANG_FLAGS" # -Qunused-arguments is added by ffmpeg configure
   else
     if $enable_lto; then
-      if [ $FORCE_LTO ] || [ ! "${LIB_OPT/disable-static/}" == "${LIB_OPT}" ]; then
+      if [ $FORCE_LTO ]; then
         TOOLCHAIN_OPT="$TOOLCHAIN_OPT --ar=${CROSS_PREFIX}gcc-ar --ranlib=${CROSS_PREFIX}gcc-ranlib"
       fi
     fi
@@ -377,6 +379,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
 }
 #  --toolchain=hardened : https://wiki.debian.org/Hardening
 
+# TODO: Security framework
 setup_ios_env() {
   ENC_OPT=$ENC_OPT_MOBILE
   MUX_OPT=$MUX_OPT_MOBILE
@@ -427,8 +430,8 @@ setup_ios_env() {
   : ${ios_ver:=$ios_min}
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --arch=$IOS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
   FEATURE_OPT="$FEATURE_OPT --disable-programs" #FEATURE_OPT
-  EXTRA_CFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver $BITCODE_FLAGS" # -fvisibility=hidden -fvisibility-inlines-hidden"
-  EXTRA_LDFLAGS="-arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver" # -fvisibility=hidden -fvisibility-inlines-hidden" #No bitcode flags for iOS < 6.0. we always build static libs. but config test will try to create exe
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver $BITCODE_FLAGS" # -fvisibility=hidden -fvisibility-inlines-hidden"
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver -Wl,-dead_strip" # -fvisibility=hidden -fvisibility-inlines-hidden" #No bitcode flags for iOS < 6.0. we always build static libs. but config test will try to create exe
   if $FFGIT; then
     patch_clock_gettime=1
   else
@@ -440,18 +443,38 @@ setup_ios_env() {
 }
 
 setup_macos_env(){
+  local MACOS_VER=10.7
+  local MACOS_ARCH=
+  if [ "${1:0:5}" == "macos" ]; then
+    MACOS_VER=${1##macos}
+  elif [ -n "$1" ]; then
+    MACOS_ARCH=$1
+    ARCH_FLAG="-arch $1"
+    [ -n "$2" ] && MACOS_VER=${2##macos}
+  fi
   enable_opt videotoolbox
   enable_opt vda
   FEATURE_OPT="$FEATURE_OPT $vda_opt $videotoolbox_opt"
+  version_compare $MACOS_VER "<" 10.7 && FEATURE_OPT="$FEATURE_OPT --disable-lzma --disable-avdevice" #avfoundation is not supported on 10.6
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --install_name_dir=@rpath"
   # 10.6: ld: warning: target OS does not support re-exporting symbol _av_gettime from libavutil/libavutil.dylib
-  EXTRA_CFLAGS="-mmacosx-version-min=10.7" #TODO ./$THIS_NAME macOS10.6
-  EXTRA_LDFLAGS="-mmacosx-version-min=10.7 -Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../Frameworks -Wl,-rpath,@loader_path/lib -Wl,-rpath,@loader_path/../lib"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS $ARCH_FLAG -mmacosx-version-min=$MACOS_VER"
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS $ARCH_FLAG -mmacosx-version-min=$MACOS_VER -flat_namespace -Wl,-dead_strip -Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../Frameworks -Wl,-rpath,@loader_path/lib -Wl,-rpath,@loader_path/../lib"
   if $FFGIT; then
     patch_clock_gettime=1
   else
     apple_sdk_version ">=" macos 10.12 && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
   fi
+  INSTALL_DIR=sdk-macOS${MACOS_VER}${MACOS_ARCH}
+}
+
+# version_compare v1 "op" v2, e.g. version_compare 10.6 "<" 10.7
+version_compare(){
+  local v1_major=`echo $1 |cut -d '.' -f 1`
+  local v1_minor=`echo $1 |cut -d '.' -f 2`
+  local v2_major=`echo $3 |cut -d '.' -f 1`
+  local v2_minor=`echo $3 |cut -d '.' -f 2`
+  eval return $((1-$(($(($((v1_major*100))+$v1_minor))${2}$(($((v2_major*100))+$v2_minor))))))
 }
 
 apple_sdk_version(){
@@ -463,11 +486,7 @@ apple_sdk_version(){
   local os=${!2}
   os=${os:=$2}
   local sdk_ver=`xcrun --show-sdk-version --sdk $os`
-  local sdk_major=`echo $sdk_ver |cut -d '.' -f 1`
-  local sdk_minor=`echo $sdk_ver |cut -d '.' -f 2`
-  local major=`echo $3 |cut -d '.' -f 1`
-  local minor=`echo $3 |cut -d '.' -f 2`
-  eval return $((1-$(($(($((sdk_major*100))+$sdk_minor))${1}$(($((major*100))+$minor))))))
+  return version_compare $sdk_ver $1 $3
 }
 
 setup_maemo_env() {
@@ -515,6 +534,7 @@ config1(){
   case $1 in
     android)    setup_android_env $TAGET_ARCH_FLAG ;;
     ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
+    macos*)     setup_macos_env $TAGET_ARCH_FLAG $1 ;;
     mingw*)     setup_mingw_env $TAGET_ARCH_FLAG ;;
     vc)         setup_vc_desktop_env ;;
     winstore|winpc|winphone|winrt) setup_winrt_env ;;
@@ -554,7 +574,7 @@ config1(){
   esac
 
   if $enable_lto; then
-    if [ ! $FORCE_LTO ] && [ "${LIB_OPT/disable-static/}" == "${LIB_OPT}" ]; then
+    if [ ! $FORCE_LTO ]; then
       echo "lto is disabled when build static libs to get better compatibility"
     else
       echo "lto is enabled"
@@ -604,6 +624,12 @@ config1(){
         sed -i $config_h_bak 's/\(.*HAVE_CLOCK_GETTIME\).*/\1 0/g' config.h
       fi
     fi
+    host_is darwin && {
+      config_mak_bak=".bak"
+      echo "patching weak frameworks for old macOS"
+      sed -i $config_mak_bak 's/-framework VideoToolbox/-weak_framework VideoToolbox/g' config.mak
+      sed -i $config_mak_bak 's/-framework CoreMedia/-weak_framework CoreMedia/g' config.mak
+    }
   else
     tail config.log || tail avbuild/config.log #libav moves config.log to avbuild dir
     exit 1
@@ -639,10 +665,11 @@ build_all(){
       echo ">>>>>no arch is set. setting default archs..."
       [ "$os" == "ios" ] && archs=(armv7 arm64 x86 x86_64)
       [ "$os" == "android" ] && archs=(armv5 armv7 arm64 x86)
+      #[ "${os:0:5}" == "macos" ] && archs=(x86_64 i386)
     }
     echo ">>>>>archs: ${archs[@]}"
     [ -z "$archs" ] && {
-      config1 $@
+      config1 $os
     } || {
       local CONFIG_JOBS=()
       USE_TOOLCHAIN0=$USE_TOOLCHAIN
