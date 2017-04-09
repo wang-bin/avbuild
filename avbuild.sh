@@ -486,7 +486,7 @@ apple_sdk_version(){
   local os=${!2}
   os=${os:=$2}
   local sdk_ver=`xcrun --show-sdk-version --sdk $os`
-  return version_compare $sdk_ver $1 $3
+  version_compare $sdk_ver $1 $3
 }
 
 setup_maemo_env() {
