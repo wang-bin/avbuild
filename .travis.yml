@@ -123,6 +123,7 @@ after_success:
   - SUFFIX=${SUFFIX/#host/${TRAVIS_OS_NAME}}
   - SUFFIX=${SUFFIX/#osx/macOS}
   - SUFFIX=${SUFFIX/%android/$SUFFIX-$CC}
+  - SUFFIX=${SUFFIX/%linux/$SUFFIX-$CC}
   - SUFFIX=${SUFFIX}${CONFIG_SUFFIX}
   - mv sdk* ffmpeg-${FF_VERSION}-${SUFFIX}
   - tar Jcf ffmpeg-${FF_VERSION}-${SUFFIX}{.tar.xz,}
