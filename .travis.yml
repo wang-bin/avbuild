@@ -20,12 +20,12 @@ matrix:
   include:
     - os: osx
       compiler: clang
-      osx_image: xcode8.2
+      osx_image: xcode8.3
       env:
         - TARGET=host
     - os: osx
       compiler: clang
-      osx_image: xcode8.2
+      osx_image: xcode8.3
       env:
         - TARGET=iOS
     - os: linux
@@ -37,9 +37,26 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            #- llvm-toolchain-precise-3.9
           packages:
             - gcc-6
+            - libstdc++-6-dev #libmfx
+            - p7zip-full
+            - yasm
+            - libva-dev
+            - libvdpau-dev
+            - sshpass
+    - os: linux
+      compiler: clang
+      env:
+        - TARGET=host
+        - _CC=clang-4.0 #--cc=$_CC
+      addons: #can be used in matrix, but required by every combination
+        apt:
+          sources:
+            - llvm-toolchain-trusty-4.0
+            - ubuntu-toolchain-r-test #libstdc++
+          packages:
+            - clang-4.0
             - libstdc++-6-dev #libmfx
             - p7zip-full
             - yasm
