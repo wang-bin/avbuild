@@ -437,6 +437,7 @@ setup_ios_env() {
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver -Wl,-dead_strip" # -fvisibility=hidden -fvisibility-inlines-hidden" #No bitcode flags for iOS < 6.0. we always build static libs. but config test will try to create exe
   if $FFGIT; then
     patch_clock_gettime=1
+    [ -d $FFSRC/ffbuild ] && patch_clock_gettime=0 # since 3.3
   else
     apple_sdk_version ">=" ios 10.0 && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
   fi
@@ -465,6 +466,7 @@ setup_macos_env(){
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS $ARCH_FLAG -mmacosx-version-min=$MACOS_VER -flat_namespace -Wl,-dead_strip -Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../Frameworks -Wl,-rpath,@loader_path/lib -Wl,-rpath,@loader_path/../lib"
   if $FFGIT; then
     patch_clock_gettime=1
+    [ -d $FFSRC/ffbuild ] && patch_clock_gettime=0 # since 3.3
   else
     apple_sdk_version ">=" macos 10.12 && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
   fi
@@ -632,7 +634,7 @@ config1(){
     [ -f $CONFIG_MAK ] || CONFIG_MAK=avbuild/config.mak
     host_is darwin && {
       config_mak_bak=".bak"
-      echo "patching weak frameworks for old macOS"
+      echo "patching weak frameworks for old macOS/iOS"
       sed -i $config_mak_bak 's/-framework VideoToolbox/-weak_framework VideoToolbox/g' $CONFIG_MAK
       sed -i $config_mak_bak 's/-framework CoreMedia/-weak_framework CoreMedia/g' $CONFIG_MAK
     }
