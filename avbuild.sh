@@ -74,9 +74,12 @@ echo FFSRC=$FFSRC
 #FFMINOR=`pwd |sed 's,.*\.\(.*\)\..*,\1,'`
 # n1.2.8, 2.5.1, 2.5
 cd $FFSRC
-FFVERSION_FULL=`./version.sh`
-FFMAJOR=`./version.sh |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
-FFMINOR=`./version.sh |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
+VER_SH=version.sh
+[ -f $VER_SH ] || VER_SH=ffbuild/version.sh
+[ -f $VER_SH ] || VER_SH=avbuild/version.sh
+FFVERSION_FULL=`./$VER_SH`
+FFMAJOR=`echo $FFVERSION_FULL |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
+FFMINOR=`echo $FFVERSION_FULL |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
 FFGIT=false
 [ ${#FFMAJOR} -gt 3 ] && FFGIT=true
 cd -
@@ -605,7 +608,7 @@ config1(){
   echo $FFVERSION_FULL >>config-new.txt
   local reconf=true
   if diff -NrubB config{-new,}.txt >/dev/null; then
-    [ -f config.h -a -f config.mak ] && echo configuration does not change. skip configure && reconf=false
+    [ -f config.h ] && echo configuration does not change. skip configure && reconf=false
   fi
   if $reconf; then
     [ -f .env.sh ] && . .env.sh && cat .env.sh
@@ -624,11 +627,14 @@ config1(){
         sed -i $config_h_bak 's/\(.*HAVE_CLOCK_GETTIME\).*/\1 0/g' config.h
       fi
     fi
+    CONFIG_MAK=config.mak
+    [ -f $CONFIG_MAK ] || CONFIG_MAK=ffbuild/config.mak
+    [ -f $CONFIG_MAK ] || CONFIG_MAK=avbuild/config.mak
     host_is darwin && {
       config_mak_bak=".bak"
       echo "patching weak frameworks for old macOS"
-      sed -i $config_mak_bak 's/-framework VideoToolbox/-weak_framework VideoToolbox/g' config.mak
-      sed -i $config_mak_bak 's/-framework CoreMedia/-weak_framework CoreMedia/g' config.mak
+      sed -i $config_mak_bak 's/-framework VideoToolbox/-weak_framework VideoToolbox/g' $CONFIG_MAK
+      sed -i $config_mak_bak 's/-framework CoreMedia/-weak_framework CoreMedia/g' $CONFIG_MAK
     }
   else
     tail config.log || tail avbuild/config.log #libav moves config.log to avbuild dir
