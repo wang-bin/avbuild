@@ -1,0 +1,28 @@
+From 2f7fad06276759c1c6e7d0d77fd20df2d63e4914 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Mon, 19 Jun 2017 13:31:52 +0800
+Subject: [PATCH] winrt: use LoadPackagedLibrary
+
+---
+ compat/w32dlfcn.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/compat/w32dlfcn.h b/compat/w32dlfcn.h
+index bc9bb8c9f5..8c0c2db962 100644
+--- a/compat/w32dlfcn.h
++++ b/compat/w32dlfcn.h
+@@ -71,7 +71,11 @@ exit:
+ #ifndef LOAD_LIBRARY_SEARCH_SYSTEM32
+ #   define LOAD_LIBRARY_SEARCH_SYSTEM32        0x00000800
+ #endif
++#if HAVE_WINRT
++    return LoadPackagedLibrary(name, 0);
++#else
+     return LoadLibraryExA(name, NULL, LOAD_LIBRARY_SEARCH_APPLICATION_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32);
++#endif
+ }
+ #define dlopen(name, flags) win32_dlopen(name)
+ #define dlclose FreeLibrary
+-- 
+2.13.1
+

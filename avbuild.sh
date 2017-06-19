@@ -1,5 +1,6 @@
 #!/bin/bash
 # TODO: -flto=nb_cpus. lto with static build (except android)
+# android ndk unified headers
 # MXE cross toolchain
 # enable cuda
 # Unify gcc/clang(elf?) flags(like android): -Wl,-z,now -Wl,-z,-relro -Bsymbolic ...
@@ -188,6 +189,7 @@ setup_vc_desktop_env() {
 }
 
 setup_winrt_env() {
+  grep -q HAVE_WINRT $FFSRC/compat/w32dlfcn.h && patch -p1 <patches/0001-winrt-use-LoadPackagedLibrary.patch
   enable_lto=false # ffmpeg requires DCE, while vc with LTCG (-GL) does not support DCE
   LIB_OPT="$LIB_OPT --disable-static"
 #http://fate.libav.org/arm-msvc-14-wp
@@ -653,6 +655,7 @@ build1(){
     exit 1
   fi
   [ -f .env.sh ] && . .env.sh
+  ## https://github.com/ninja-build/ninja/pull/1224
   time (make -j`getconf _NPROCESSORS_ONLN` install prefix="$THIS_DIR/$INSTALL_DIR" && cp -af config.txt $THIS_DIR/$INSTALL_DIR)
   [ $? -eq 0 ] || exit 2
   cd $THIS_DIR/$INSTALL_DIR
