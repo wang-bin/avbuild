@@ -1,7 +1,7 @@
 :: this file only contains vc environemnt settings
 :: Copyright (c) 2017 wang bin <wbsecg1 at gmail.com>
 
-:: vcbuild <msvc_ver|vs_ver|cl_ver> <desktop|phone|store> <version(5.1,6.1,6.2,10)> <arch>
+:: vcbuild <msvc_ver|vs_ver|cl_ver> <desktop|phone|store> <version(5.1,6.1,6.2,10)/sdk_version(8.1,10.0.15063.0)> <arch>
 :: vcbuild <msvc_ver|vs_ver|cl_ver> <xp|vista|win7|win8,win8.1|win10|winphone8.1|winstore10> <arch>
 :: windows version affects compiler and linker flags (-D_WIN32_WINNT=)
 :: msvc_ver: vs2013, vs2015, vs2017; vs_ver: VS120, VS140; cl_ver: cl18, cl19
@@ -11,11 +11,12 @@
 set MSYS2_PATH_TYPE=inherit
 set VC_BUILD=true
 set VS_CL=%1
-if [%VS_CL%] == [] set /P VS_CL="VS CL name, e.g. vs2015, vs140, cl1900: "
+if [%VS_CL%] == [] set /P VS_CL="VS CL name, e.g. vs2017 vs2015, vs140, cl1900: "
 
 set VSVER=140
 if /i [%VS_CL:~0,2%] == [vs] (
     set VSVER=%VS_CL:~2%
+    if [%VS_CL:~2%] == [2017] set VSVER=150
     if [%VS_CL:~2%] == [2015] set VSVER=140
     if [%VS_CL:~2%] == [2013] set VSVER=120
     if [%VS_CL:~2%] == [2012] set VSVER=110
@@ -61,7 +62,6 @@ if not [%OS%] == [%OS:phone=%] (
     if [%VSVER%] == [110] set OS_VER=80
 )
 
-:: TODO vs2017 layout changes
 set ARCH=%3
 if [%ARCH%] == [] set /P ARCH="architecture (x86, x64, arm): "
 
@@ -76,6 +76,41 @@ if "%ARCH%" == "x64" (
   set ARG=x86_amd64
 )
 
+if [%VSVER%] == [150] goto SetupVC150Env
+
+goto SetupVCEnvLegacy
+
+:SetupVC150Env
+:: copy from https://github.com/Leandros/VisualStudioStandalone
+:: Registry keys.
+set VS_KEY="HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\SxS\VS7"
+set VS_VAL="15.0"
+set WIN_SDK_KEY="SOFTWARE\WOW6432Node\Microsoft\Windows Kits\Installed Roots"
+set WIN_SDK_VAL="KitsRoot10"
+
+:: Find out where Visual Studio is installed.
+FOR /F "usebackq skip=2 tokens=1-2*" %%A IN (`REG QUERY %VS_KEY% /v %VS_VAL% 2^>nul`) DO (
+    set VS_INSTALL_DIR=%%C
+)
+if not defined VS_INSTALL_DIR (
+    echo No Visual Studio installation found!
+    exit /B 1
+)
+echo Visual Studio installation found at %VS_INSTALL_DIR%
+
+:: Get current Visual Studio version.
+set VS_TOOLS="%VS_INSTALL_DIR%\VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt"
+set /p VS_TOOLS_VERSION=<%VS_TOOLS%
+set VS_TOOLS_VERSION=%VS_TOOLS_VERSION: =%
+echo Using tools version %VS_TOOLS_VERSION%
+
+if [%WINRT%] == [true] set ARG=%ARG% store
+:: TODO: sdk version, or pass all vcvarsall.bat parameters to support old windows target, onecore etc
+call "%VS_INSTALL_DIR%\VC\Auxiliary\Build\vcvarsall.bat" %ARG%
+
+goto end
+
+:SetupVCEnvLegacy
 :: setlocal enableDelayedExpansion
 :: set VCDIR=!%VS%VSVER%COMNTOOLS%!
 :: endlocal
