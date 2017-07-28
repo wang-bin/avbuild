@@ -622,24 +622,31 @@ config1(){
   if [ $? -eq 0 ]; then
     echo $CONFIGURE >config.txt
     echo $FFVERSION_FULL >>config.txt
-    config_h_bak=
-    host_is darwin && config_h_bak=".bak"
+    sed_bak=
+    host_is darwin && sed_bak=".bak"
     if [ $patch_clock_gettime == 1 ]; then
       # modify only if HAVE_CLOCK_GETTIME is 1 to avoid rebuild
       if grep 'HAVE_CLOCK_GETTIME 1' config.h; then
         echo patching clock_gettime...
-        sed -i $config_h_bak 's/\(.*HAVE_CLOCK_GETTIME\).*/\1 0/g' config.h
+        sed -i $sed_bak 's/\(.*HAVE_CLOCK_GETTIME\).*/\1 0/g' config.h
       fi
     fi
     CONFIG_MAK=config.mak
     [ -f $CONFIG_MAK ] || CONFIG_MAK=ffbuild/config.mak
     [ -f $CONFIG_MAK ] || CONFIG_MAK=avbuild/config.mak
     host_is darwin && {
-      config_mak_bak=".bak"
       echo "patching weak frameworks for old macOS/iOS"
-      sed -i $config_mak_bak 's/-framework VideoToolbox/-weak_framework VideoToolbox/g' $CONFIG_MAK
-      sed -i $config_mak_bak 's/-framework CoreMedia/-weak_framework CoreMedia/g' $CONFIG_MAK
+      sed -i $sed_bak 's/-framework VideoToolbox/-weak_framework VideoToolbox/g' $CONFIG_MAK
+      sed -i $sed_bak 's/-framework CoreMedia/-weak_framework CoreMedia/g' $CONFIG_MAK
     }
+    local MAX_SLICES=`grep '#define MAX_SLICES' $FFSRC/libavcodec/h264dec.h 2>/dev/null`
+    if [ $? -eq 0 ]; then
+      MAX_SLICES=`echo $MAX_SLICES |cut -d ' ' -f 3`
+      if [ $MAX_SLICES -lt 64 ]; then
+        echo "patching MAX_SLICES..."
+        sed -i $sed_bak 's/\(#define MAX_SLICES\) .*/\1 64/' $FFSRC/libavcodec/h264dec.h
+      fi
+    fi
   else
     tail config.log || tail avbuild/config.log #libav moves config.log to avbuild dir
     exit 1
