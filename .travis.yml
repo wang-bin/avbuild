@@ -32,13 +32,13 @@ matrix:
       compiler: gcc
       env:
         - TARGET=host
-        - _CC=gcc-6 #--cc=$_CC
+        - _CC=gcc-7 #--cc=$_CC
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-6
+            - gcc-7
             - libstdc++-6-dev #libmfx
             - p7zip-full
             - yasm
