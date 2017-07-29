@@ -161,13 +161,15 @@ setup_vc_env(){
   VS_VER=${VisualStudioVersion:0:2}
   echo "VS version: $VS_VER, platform: $Platform" # Platform is from vsvarsall.bat
   FAMILY=
+  WIN_VER=
   if $WINRT; then
     setup_winrt_env
   else
     FAMILY=_DESKTOP
     setup_vc_desktop_env
   fi
-  INSTALL_DIR="sdk-vc${VS_VER}$Platform${FAMILY}"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -D_WIN32_WINNT=$WIN_VER" #  -DWINAPI_FAMILY=WINAPI_FAMILY${FAMILY}_APP is not required for desktop
+  INSTALL_DIR="`tolower sdk-vc${VS_VER}$Platform${FAMILY}`"
 }
 
 setup_vc_desktop_env() {
@@ -179,13 +181,14 @@ setup_vc_desktop_env() {
   # can not use -luser32 because extralibs will not be filter -l to .lib (ldflags_filter is not ready, ffmpeg bug)
   # TODO: check dxva2_extralibs="-luser32" in configure
   EXTRALIBS="$EXTRALIBS user32.lib" # ffmpeg 3.x bug: hwcontext_dxva2 GetDesktopWindow()
-
   if [ "`tolower $Platform`" = "x64" ]; then
+    WIN_VER="0x0502"
     test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.02'"
   elif [ "`tolower $Platform`" = "arm" ]; then
     echo "use scripts in winstore dir instead"
     exit 1
   else #Platform is empty(native) or x86(cross)
+    WIN_VER="0x0501"
     test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.01'"
   fi
 }
@@ -196,11 +199,11 @@ setup_winrt_env() {
   FEATURE_OPT="--disable-programs $FEATURE_OPT" # prepend so that user can overwrite
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=win32"
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -APPCONTAINER"
-  local winver="0x0A00"
-  test $VS_VER -lt 14 && winver="0x0603" #FIXME: vc can support multiple target (and sdk)
+  WIN_VER="0x0A00"
+  test $VS_VER -lt 14 && WIN_VER="0x0603" #FIXME: vc can support multiple target (and sdk)
   WIN10_VER_DEC=`printf "%d" 0x0A00`
   WIN81_VER_DEC=`printf "%d" 0x0603`
-  WIN_VER_DEC=`printf "%d" $winver`
+  WIN_VER_DEC=`printf "%d" $WIN_VER`
   local arch=x86_64 #used by configure --arch
   if [ "`tolower $Platform`" = "arm" ]; then # TODO: arm64
     enable_pic=false  # TODO: ffmpeg bug, should filter out -fPIC. armasm(gas) error (unsupported option) if pic is
@@ -232,8 +235,8 @@ setup_winrt_env() {
   if [ $WIN_VER_DEC  -gt ${WIN81_VER_DEC} ]; then
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS WindowsApp.lib"
   fi
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -DWINAPI_FAMILY=WINAPI_FAMILY${FAMILY}_APP -D_WIN32_WINNT=$winver"
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --arch=$arch"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -DWINAPI_FAMILY=WINAPI_FAMILY${FAMILY}_APP"
 }
 
 setup_mingw_env() {
