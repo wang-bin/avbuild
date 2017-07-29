@@ -1,5 +1,5 @@
 #!/bin/bash
-# TODO: -flto=nb_cpus. lto with static build (except android)
+# TODO: -flto=nb_cpus. lto with static build (except android), gc-sections
 # android ndk unified headers
 # MXE cross toolchain
 # enable cuda
@@ -172,9 +172,9 @@ setup_vc_desktop_env() {
   EXTRALIBS="$EXTRALIBS user32.lib" # ffmpeg 3.x bug: hwcontext_dxva2 GetDesktopWindow()
   # dylink crt
   EXTRA_CFLAGS="$EXTRA_CFLAGS -MD"
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --toolchain=msvc"
-  VS_VER=${VisualStudioVersion:0:2} # FIXME: vs2017 major version is the same as vs2015
+  VS_VER=${VisualStudioVersion:0:2}
   echo "VS version: $VS_VER, platform: $Platform" # Platform is from vsvarsall.bat
   if [ "`tolower $Platform`" = "x64" ]; then
     INSTALL_DIR="${INSTALL_DIR}-vc${VS_VER}-x64"
@@ -201,10 +201,10 @@ setup_winrt_env() {
 
   echo "vs version: $VS_VER"
   local winver="0x0A00"
-  test $VS_VER -lt 14 && winver="0x0603"
+  test $VS_VER -lt 14 && winver="0x0603" #FIXME: vc can support multiple target (and sdk)
   local family="WINAPI_FAMILY_APP"
   EXTRA_CFLAGS="$EXTRA_CFLAGS -MD"
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -APPCONTAINER"
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -subsystem:console -APPCONTAINER"
   local arch=x86_64 #used by configure --arch
   if [ "`tolower $Platform`" = "arm" ]; then
     enable_pic=false  # TODO: ffmpeg bug, should filter out -fPIC. armasm(gas) error (unsupported option) if pic is
@@ -232,7 +232,7 @@ setup_winrt_env() {
     family="WINAPI_FAMILY_PHONE_APP"
     INSTALL_DIR=winphone
     # phone ldflags only for win8.1?
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -subsystem:console -opt:ref WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib -NODEFAULTLIB:kernel32.lib -NODEFAULTLIB:ole32.lib"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -opt:ref WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib -NODEFAULTLIB:kernel32.lib -NODEFAULTLIB:ole32.lib"
   fi
   if [ "$winver" == "0x0603" ]; then
     INSTALL_DIR="${INSTALL_DIR}81${arch}"
@@ -242,7 +242,7 @@ setup_winrt_env() {
   fi
   EXTRA_CFLAGS="$EXTRA_CFLAGS -DWINAPI_FAMILY=$family -D_WIN32_WINNT=$winver"
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --arch=$arch"
-  INSTALL_DIR="sdk-$INSTALL_DIR"
+  INSTALL_DIR="sdk-$INSTALL_DIR" # TODO: vc suffix
 }
 
 setup_mingw_env() {
