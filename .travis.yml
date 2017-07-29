@@ -39,7 +39,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - gcc-7
-            - libstdc++-6-dev #libmfx
+            - libstdc++-7-dev #libmfx
             - p7zip-full
             - yasm
             - libva-dev
