@@ -631,9 +631,9 @@ config1(){
       sed -i $sed_bak 's/-framework CoreMedia/-weak_framework CoreMedia/g' $CONFIG_MAK
     }
     local MAX_SLICES=`grep '#define MAX_SLICES' $FFSRC/libavcodec/h264dec.h 2>/dev/null`
-    if [ $? -eq 0 ]; then
+    if [ -n "$MAX_SLICES" ]; then
       MAX_SLICES=`echo $MAX_SLICES |cut -d ' ' -f 3`
-      if [ $MAX_SLICES -lt 64 ]; then
+      if [ "$MAX_SLICES" -lt 64 ]; then
         echo "patching MAX_SLICES..."
         sed -i $sed_bak 's/\(#define MAX_SLICES\) .*/\1 64/' $FFSRC/libavcodec/h264dec.h
       fi
