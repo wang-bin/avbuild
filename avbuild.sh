@@ -151,17 +151,26 @@ enable_libmfx(){
 # warnings are used by ffmpeg developer, some are enabled by configure: -Wl,--warn-shared-textrel
 
 setup_vc_env(){
-  if $WINRT; then
-    setup_winrt_env
-  else
-    setup_vc_desktop_env
-  fi
-}
-
-setup_vc_desktop_env() {
   echo Call "set MSYS2_PATH_TYPE=inherit" before msys2 sh.exe if cl.exe is not found!
   enable_lto=false # ffmpeg requires DCE, while vc with LTCG (-GL) does not support DCE
   LIB_OPT="$LIB_OPT --disable-static"
+  # dylink crt
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -MD"
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
+  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --toolchain=msvc"
+  VS_VER=${VisualStudioVersion:0:2}
+  echo "VS version: $VS_VER, platform: $Platform" # Platform is from vsvarsall.bat
+  FAMILY=
+  if $WINRT; then
+    setup_winrt_env
+  else
+    FAMILY=_DESKTOP
+    setup_vc_desktop_env
+  fi
+  INSTALL_DIR="sdk-vc${VS_VER}$Platform${FAMILY}"
+}
+
+setup_vc_desktop_env() {
 # http://ffmpeg.org/platform.html#Microsoft-Visual-C_002b_002b-or-Intel-C_002b_002b-Compiler-for-Windows
   enable_libmfx
   enable_opt dxva2
@@ -170,43 +179,30 @@ setup_vc_desktop_env() {
   # can not use -luser32 because extralibs will not be filter -l to .lib (ldflags_filter is not ready, ffmpeg bug)
   # TODO: check dxva2_extralibs="-luser32" in configure
   EXTRALIBS="$EXTRALIBS user32.lib" # ffmpeg 3.x bug: hwcontext_dxva2 GetDesktopWindow()
-  # dylink crt
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -MD"
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
-  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --toolchain=msvc"
-  VS_VER=${VisualStudioVersion:0:2}
-  echo "VS version: $VS_VER, platform: $Platform" # Platform is from vsvarsall.bat
+
   if [ "`tolower $Platform`" = "x64" ]; then
-    INSTALL_DIR="${INSTALL_DIR}-vc${VS_VER}-x64"
     test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.02'"
   elif [ "`tolower $Platform`" = "arm" ]; then
     echo "use scripts in winstore dir instead"
     exit 1
   else #Platform is empty(native) or x86(cross)
-    INSTALL_DIR="${INSTALL_DIR}-vc${VS_VER}-x86"
     test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.01'"
   fi
 }
 
 setup_winrt_env() {
   grep -q HAVE_WINRT $FFSRC/compat/w32dlfcn.h && patch -p1 <patches/0001-winrt-use-LoadPackagedLibrary.patch
-  enable_lto=false # ffmpeg requires DCE, while vc with LTCG (-GL) does not support DCE
-  LIB_OPT="$LIB_OPT --disable-static"
-#http://fate.libav.org/arm-msvc-14-wp
+  #http://fate.libav.org/arm-msvc-14-wp
   FEATURE_OPT="--disable-programs $FEATURE_OPT" # prepend so that user can overwrite
-  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --toolchain=msvc --enable-cross-compile --target-os=win32"
-  VS_VER=${VisualStudioVersion:0:2}
-  echo "vs version: $VS_VER, platform: $Platform"
-  INSTALL_DIR=winrt
-
-  echo "vs version: $VS_VER"
+  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=win32"
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -APPCONTAINER"
   local winver="0x0A00"
   test $VS_VER -lt 14 && winver="0x0603" #FIXME: vc can support multiple target (and sdk)
-  local family="WINAPI_FAMILY_APP"
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -MD"
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -subsystem:console -APPCONTAINER"
+  WIN10_VER_DEC=`printf "%d" 0x0A00`
+  WIN81_VER_DEC=`printf "%d" 0x0603`
+  WIN_VER_DEC=`printf "%d" $winver`
   local arch=x86_64 #used by configure --arch
-  if [ "`tolower $Platform`" = "arm" ]; then
+  if [ "`tolower $Platform`" = "arm" ]; then # TODO: arm64
     enable_pic=false  # TODO: ffmpeg bug, should filter out -fPIC. armasm(gas) error (unsupported option) if pic is
     type -a gas-preprocessor.pl
     ASM_OPT="--as=armasm --cpu=armv7-a --enable-thumb" # --arch
@@ -229,20 +225,15 @@ setup_winrt_env() {
   target_is winphone && WINPHONE=true
   if $WINPHONE; then
   # export dirs (lib, include)
-    family="WINAPI_FAMILY_PHONE_APP"
-    INSTALL_DIR=winphone
+    FAMILY=_PHONE
     # phone ldflags only for win8.1?
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS -opt:ref WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib -NODEFAULTLIB:kernel32.lib -NODEFAULTLIB:ole32.lib"
   fi
-  if [ "$winver" == "0x0603" ]; then
-    INSTALL_DIR="${INSTALL_DIR}81${arch}"
-  else
-    INSTALL_DIR="${INSTALL_DIR}10${arch}"
+  if [ $WIN_VER_DEC  -gt ${WIN81_VER_DEC} ]; then
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS WindowsApp.lib"
   fi
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -DWINAPI_FAMILY=$family -D_WIN32_WINNT=$winver"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -DWINAPI_FAMILY=WINAPI_FAMILY${FAMILY}_APP -D_WIN32_WINNT=$winver"
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --arch=$arch"
-  INSTALL_DIR="sdk-$INSTALL_DIR" # TODO: vc suffix
 }
 
 setup_mingw_env() {
