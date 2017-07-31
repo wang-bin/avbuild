@@ -1,5 +1,5 @@
 #!/bin/bash
-# TODO: -flto=nb_cpus. lto with static build (except android), gc-sections
+# TODO: -flto=nb_cpus. lto with static build (except android)
 # android ndk unified headers
 # MXE cross toolchain
 # enable cuda
@@ -273,10 +273,10 @@ setup_android_env() {
   local CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
   local FFARCH=$ANDROID_ARCH
   local PLATFORM=android-9 #ensure do not use log2f in libm
-#TODO: what if no following default flags (from ndk android.toolchain.cmake)?
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -ffast-math -fstrict-aliasing -ffunction-sections -fstack-protector-strong -Wa,--noexecstack" # " #-funwind-tables need libunwind.a for libc++?
+  # -Wl,-z,noexecstack -Wl,--as-needed is added by configure
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -ffast-math -fstrict-aliasing -fdata-sections -ffunction-sections -fstack-protector-strong" # " #-funwind-tables need libunwind.a for libc++?
 # -no-canonical-prefixes: results in "-mcpu= ", why?
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack"
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,-z,relro -Wl,-z,now -Wl,--gc-sections"
   # TODO: clang use -arch like iOS?
   # TODO: clang lto in r14 (gcc?)
   if [ "$ANDROID_ARCH" = "x86" -o "$ANDROID_ARCH" = "i686" ]; then
@@ -556,6 +556,8 @@ config1(){
       elif host_is MinGW || host_is MSYS; then
         setup_mingw_env
       elif host_is Linux; then
+        EXTRA_CFLAGS="$EXTRA_CFLAGS -fdata-sections -ffunction-sections"
+        EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--gc-sections"
         if [ -f /opt/vc/include/bcm_host.h ]; then
           . config-rpi.sh
         else
