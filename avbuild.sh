@@ -647,6 +647,16 @@ config1(){
         sed -i $sed_bak 's/\(#define MAX_SLICES\) .*/\1 64/' $FFSRC/libavcodec/h264dec.h
       fi
     fi
+    if $VC_BUILD; then # check ffmpeg version?
+      # ffmpeg.c includes compat/atomics/win32/stdatomic.h which includes winsock.h (from windows.h), os_support.h includes winsock2.h later and then have duplicated definations. winsock2,h defines _WINSOCKAPI_ to prevent inclusion of winsock.h in windows.h
+      if ! `grep -q WINSOCK_PATCHED $FFSRC/ffmpeg.c`; then
+        sed -i '/#include "config.h"/a #include "libavformat/os_support.h"  \/\/WINSOCK_PATCHED' $FFSRC/ffmpeg.c
+      fi
+      if ! `grep -q SETDLLDIRECTORY_PATCHED $FFSRC/cmdutils.c`; then
+        sed -i '/SetDllDirectory("")/i #if (_WIN32_WINNT+0) >= 0x0502  \/\/SETDLLDIRECTORY_PATCHED' $FFSRC/cmdutils.c
+        sed -i '/SetDllDirectory("")/a #endif' $FFSRC/cmdutils.c
+      fi
+    fi
   else
     tail config.log || tail avbuild/config.log #libav moves config.log to avbuild dir
     exit 1
