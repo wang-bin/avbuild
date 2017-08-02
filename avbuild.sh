@@ -614,6 +614,10 @@ config1(){
     [ -f .env.sh ] && . .env.sh && cat .env.sh
     echo configuration changes
     time eval $CONFIGURE
+    if $VC_BUILD && [ ${VisualStudioVersion:0:2} -gt 14 ] && `echo $LANG |grep -q zh`; then  # check ffmpeg version?
+      iconv -t "UTF-8" -f "GBK" config.h > config-utf8.h
+      cp -f config{-utf8,}.h
+    fi
   fi
   if [ $? -eq 0 ]; then
     echo $CONFIGURE >config.txt
