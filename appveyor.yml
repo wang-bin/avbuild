@@ -6,14 +6,25 @@ branches:
     - ci
     - appveyor
 
+# https://www.appveyor.com/docs/build-environment/#using-multiple-images-for-the-same-build
+# APPVEYOR_BUILD_WORKER_IMAGE is used in environment matrix, image is not
 environment:
   matrix:
+  - _ARCH: x64
+    _CC: VS2017
+    _PLATFORM: desktop
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+  - _ARCH: x86
+    _CC: VS2017
+    _PLATFORM: desktop
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
   - _ARCH: x86
     _CC: VS2013
     _PLATFORM: desktop
   - _ARCH: x64
     _CC: VS2015
     _PLATFORM: desktop
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
   - _ARCH: arm
     _CC: VS2013
     _PLATFORM: phone
@@ -23,9 +34,11 @@ environment:
   - _ARCH: arm
     _CC: VS2015
     _PLATFORM: store
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
   - _ARCH: x64
     _CC: VS2015
     _PLATFORM: store
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
   - _ARCH: 32
     _CC: MINGW
     _PLATFORM: desktop
@@ -47,6 +60,8 @@ init:
   - echo PROCESSOR_IDENTIFIER=%PROCESSOR_IDENTIFIER%
   - set MSYS2_PATH_TYPE=inherit
   - set MSYS2_DIR=C:\msys64
+
+#https://stackoverflow.com/questions/37627248/how-to-split-a-command-over-multiple-lines-in-appveyor-yml
 
 install:
 # can not starts with %
