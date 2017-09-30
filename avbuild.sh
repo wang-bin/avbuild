@@ -272,7 +272,9 @@ setup_android_env() {
   local ANDROID_TOOLCHAIN_PREFIX="${ANDROID_ARCH}-linux-android"
   local CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
   local FFARCH=$ANDROID_ARCH
-  local PLATFORM=android-9 #ensure do not use log2f in libm
+  local API_LEVEL=9 #ensure do not use log2f in libm
+  local UNIFIED_SYSROOT="$NDK_ROOT/sysroot"
+  [ -d "$UNIFIED_SYSROOT" ] || UNIFIED_SYSROOT=
   # -Wl,-z,noexecstack -Wl,--as-needed is added by configure
   EXTRA_CFLAGS="$EXTRA_CFLAGS -ffast-math -fstrict-aliasing -fdata-sections -ffunction-sections -fstack-protector-strong" # " #-funwind-tables need libunwind.a for libc++?
 # -no-canonical-prefixes: results in "-mcpu= ", why?
@@ -281,7 +283,8 @@ setup_android_env() {
   # TODO: clang lto in r14 (gcc?)
   if [ "$ANDROID_ARCH" = "x86" -o "$ANDROID_ARCH" = "i686" ]; then
     ANDROID_ARCH=x86
-    ANDROID_TOOLCHAIN_PREFIX="x86"
+    ANDROID_TOOLCHAIN_PREFIX=x86
+    ANDROID_HEADER_TRIPLE=i686-linux-android
     CROSS_PREFIX=i686-linux-android-
     CLANG_FLAGS="-target i686-none-linux-android"
     # from ndk: x86 devices have stack alignment issues.
@@ -289,21 +292,24 @@ setup_android_env() {
     [ "$USE_TOOLCHAIN" == "clang" ] || EXTRA_CFLAGS="$EXTRA_CFLAGS -mstackrealign"
     enable_lto=false
   elif [ "$ANDROID_ARCH" = "x86_64" -o "$ANDROID_ARCH" = "x64" ]; then
-    PLATFORM=android-21
+    API_LEVEL=21
     ANDROID_ARCH=x86_64
-    ANDROID_TOOLCHAIN_PREFIX="x86_64"
+    ANDROID_TOOLCHAIN_PREFIX=x86_64
+    ANDROID_HEADER_TRIPLE=x86_64-linux-android
     CROSS_PREFIX=x86_64-linux-android-
     CLANG_FLAGS="-target x86_64-none-linux-android"
     enable_lto=false
   elif [ "$ANDROID_ARCH" = "aarch64" -o "$ANDROID_ARCH" = "arm64" ]; then
-    PLATFORM=android-21
+    API_LEVEL=21
     ANDROID_ARCH=arm64
     ANDROID_TOOLCHAIN_PREFIX=aarch64-linux-android
+    ANDROID_HEADER_TRIPLE=aarch64-linux-android
     CROSS_PREFIX=aarch64-linux-android-
     CLANG_FLAGS="-target aarch64-none-linux-android"
   elif [ ! "${ANDROID_ARCH/arm/}" = "${ANDROID_ARCH}" ]; then
 #https://wiki.debian.org/ArmHardFloatPort/VfpComparison
-    ANDROID_TOOLCHAIN_PREFIX="arm-linux-androideabi"
+    ANDROID_TOOLCHAIN_PREFIX=arm-linux-androideabi
+    ANDROID_HEADER_TRIPLE=arm-linux-androideabi
     CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
     FFARCH=arm
     if [ ! "${ANDROID_ARCH/armv5/}" = "$ANDROID_ARCH" ]; then
@@ -353,9 +359,22 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   echo "ANDROID_LLVM_DIR=${ANDROID_LLVM_DIR}"
   ANDROID_TOOLCHAIN_DIR_REL=${ANDROID_TOOLCHAIN_DIR#$NDK_ROOT}
   CLANG_FLAGS="$CLANG_FLAGS -gcc-toolchain \$NDK_ROOT/$ANDROID_TOOLCHAIN_DIR_REL"
-  local ANDROID_SYSROOT="$NDK_ROOT/platforms/$PLATFORM/arch-${ANDROID_ARCH}"
-  local ANDROID_SYSROOT_REL="platforms/$PLATFORM/arch-${ANDROID_ARCH}"
-  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\$NDK_ROOT/$ANDROID_SYSROOT_REL --target-os=android --arch=${FFARCH} --enable-cross-compile --cross-prefix=$CROSS_PREFIX"
+  local ANDROID_SYSROOT_LIB="$NDK_ROOT/platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
+  local ANDROID_SYSROOT_LIB_REL="platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
+  if [ -d "$UNIFIED_SYSROOT" ]; then
+    ANDROID_SYSROOT_REL=sysroot
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -D__ANDROID_API__=$API_LEVEL --sysroot \$NDK_ROOT/$ANDROID_SYSROOT_REL"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS --sysroot \$NDK_ROOT/$ANDROID_SYSROOT_LIB_REL" # linker need crt objects in platform-$API_LEVEL dir, must set the dir as sysroot. but --sysroot in extra-ldflags comes before configure --sysroot= and has no effect
+    if [ "$USE_TOOLCHAIN" = "clang" ]; then
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -iwithsysroot /usr/include/$ANDROID_HEADER_TRIPLE"
+    else
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -isystem=/usr/include/$ANDROID_HEADER_TRIPLE"
+    fi
+  else
+    ANDROID_SYSROOT_REL=${ANDROID_SYSROOT_LIB_REL}
+    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\$NDK_ROOT/$ANDROID_SYSROOT_REL"
+  fi
+  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --target-os=android --arch=${FFARCH} --enable-cross-compile --cross-prefix=$CROSS_PREFIX"
   if [ "$USE_TOOLCHAIN" = "clang" ]; then
     enable_lto=false # clang -flto will generate llvm ir bitcode instead of object file. TODO: ndk-r14 supports clang lto
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=clang"
@@ -368,14 +387,16 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
       fi
     fi
   fi
-  #test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=$PLATFORM --toolchain=$TOOLCHAIN --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
+  #test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-$API_LEVEL --toolchain=$TOOLCHAIN --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE\""
   INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}-${USE_TOOLCHAIN:-gcc}
   enable_opt mediacodec
   enable_opt jni
   FEATURE_OPT="$mediacodec_opt --enable-jni $FEATURE_OPT"
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
-  echo "export PATH=$ANDROID_TOOLCHAIN_DIR/bin:$ANDROID_LLVM_DIR/bin:$PATH" > $THIS_DIR/build_$INSTALL_DIR/.env.sh
+  cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
+export PATH=$ANDROID_TOOLCHAIN_DIR/bin:$ANDROID_LLVM_DIR/bin:$PATH
+EOF
 }
 #  --toolchain=hardened : https://wiki.debian.org/Hardening
 
