@@ -762,7 +762,7 @@ make_universal()
   local os=$1
   local dirs=($2)
   [ -z "$dirs" ] && return 0
-  if [ "$os" == ios ]; then
+  if [ "${os:0:3}" == ios ]; then
     if [ ${#dirs[@]} -le 1 ]; then
       return 0
     fi
