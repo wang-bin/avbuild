@@ -43,7 +43,7 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 # set NDK_ROOT if compile for android
 : ${NDK_ROOT:="$ANDROID_NDK"}
 : ${LIB_OPT:="--enable-shared"}
-: ${FEATURE_OPT:="--enable-hwaccels"} #--enable-gpl --enable-version3
+#: ${FEATURE_OPT:="--enable-hwaccels"}
 : ${DEBUG_OPT:="--disable-debug"}
 : {FORCE_LTO:=false}
 : ${FFSRC:=$PWD/ffmpeg}
@@ -133,28 +133,31 @@ android_arch(){
 
 #ffmpeg 1.2 autodetect dxva, vaapi, vdpau. manually enable vda before 2.3
 enable_opt() {
-  local OPT=$1
   # grep -m1
-  if grep -q "\-\-enable\-$OPT" $FFSRC/configure; then
-    eval ${OPT}_opt="--enable-$OPT"
-  fi
+  for OPT in $@; do
+    if grep -q "\-\-enable\-$OPT" $FFSRC/configure; then
+      FEATURE_OPT="--enable-$OPT $FEATURE_OPT" # prepend to support override
+    fi
+  done
+}
+
+disable_opt() {
+  # grep -m1
+  for OPT in $@; do
+   if grep -q "\-\-disable\-$OPT" $FFSRC/configure; then
+      FEATURE_OPT="--disable-$OPT $FEATURE_OPT" # prepend to support override
+    fi
+  done
 }
 
 enable_libmfx(){
   # TODO: which pkg-config to use for cross build
   if pkg-config --libs libmfx ; then
     enable_opt libmfx
-    FEATURE_OPT="$FEATURE_OPT $libmfx_opt"
   fi
 }
 
-disable_if() {
-  local OPT=$1
-  # grep -m1
-  if grep -q "\-\-disable\-$OPT" $FFSRC/configure; then
-    eval ${OPT}_opt="--disable-$OPT"
-  fi
-}
+enable_opt hwaccels
 
 # warnings are used by ffmpeg developer, some are enabled by configure: -Wl,--warn-shared-textrel
 
@@ -184,7 +187,6 @@ setup_vc_desktop_env() {
 # http://ffmpeg.org/platform.html#Microsoft-Visual-C_002b_002b-or-Intel-C_002b_002b-Compiler-for-Windows
   enable_libmfx
   enable_opt dxva2
-  FEATURE_OPT="$FEATURE_OPT $dxva2_opt"
   # ldflags prepends flags. extralibs appends libs and add to pkg-config
   # can not use -luser32 because extralibs will not be filter -l to .lib (ldflags_filter is not ready, ffmpeg bug)
   # TODO: check dxva2_extralibs="-luser32" in configure
@@ -204,7 +206,7 @@ setup_vc_desktop_env() {
 setup_winrt_env() {
   grep -q HAVE_WINRT $FFSRC/compat/w32dlfcn.h && patch -p1 <patches/0001-winrt-use-LoadPackagedLibrary.patch
   #http://fate.libav.org/arm-msvc-14-wp
-  FEATURE_OPT="--disable-programs $FEATURE_OPT" # prepend so that user can overwrite
+  disable_opt programs
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=win32"
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -APPCONTAINER"
   WIN_VER="0x0A00"
@@ -261,9 +263,9 @@ setup_mingw_env() {
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --cross-prefix=${arch}-w64-mingw32- --target-os=mingw32 --arch=$arch"
   }
   enable_libmfx
-  enable_opt dxva2 && FEATURE_OPT="$FEATURE_OPT $dxva2_opt"
+  enable_opt dxva2
+  disable iconv
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -static-libgcc -Wl,-Bstatic"
-  FEATURE_OPT="--disable-iconv $FEATURE_OPT"
   $gcc -dumpmachine |grep -iq x86_64 && INSTALL_DIR="${INSTALL_DIR}-mingw-x64" || INSTALL_DIR="${INSTALL_DIR}-mingw-x86"
 }
 
@@ -275,7 +277,7 @@ setup_wince_env() {
 setup_android_env() {
   ENC_OPT=$ENC_OPT_MOBILE
   MUX_OPT=$MUX_OPT_MOBILE
-  disable_if v4l2_m2m
+  disable_opt v4l2_m2m
   local ANDROID_ARCH=$1
   test -n "$ANDROID_ARCH" || ANDROID_ARCH=arm
   local ANDROID_TOOLCHAIN_PREFIX="${ANDROID_ARCH}-linux-android"
@@ -400,9 +402,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   #test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-$API_LEVEL --toolchain=$TOOLCHAIN --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE\""
   INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}-${USE_TOOLCHAIN:-gcc}
-  enable_opt mediacodec
-  enable_opt jni
-  FEATURE_OPT="$mediacodec_opt --enable-jni $FEATURE_OPT $v4l2_m2m_opt"
+  enable_opt jni mediacodec
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
 export PATH=$ANDROID_TOOLCHAIN_DIR/bin:$ANDROID_LLVM_DIR/bin:$PATH
@@ -414,7 +414,7 @@ EOF
 setup_ios_env() {
   ENC_OPT=$ENC_OPT_MOBILE
   MUX_OPT=$MUX_OPT_MOBILE
-  enable_opt videotoolbox && FEATURE_OPT="$FEATURE_OPT $videotoolbox_opt"
+  enable_opt videotoolbox
   LIB_OPT= #static only
 # TODO: multi arch (Xarch+arch)
 # clang -arch i386 -arch x86_64
@@ -460,7 +460,7 @@ setup_ios_env() {
   ios_ver=${2##ios}
   : ${ios_ver:=$ios_min}
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --arch=$IOS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
-  FEATURE_OPT="$FEATURE_OPT --disable-programs" #FEATURE_OPT
+  disable_opt programs
   EXTRA_CFLAGS="$EXTRA_CFLAGS -arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver $BITCODE_FLAGS" # -fvisibility=hidden -fvisibility-inlines-hidden"
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver -Wl,-dead_strip" # -fvisibility=hidden -fvisibility-inlines-hidden" #No bitcode flags for iOS < 6.0. we always build static libs. but config test will try to create exe
   if $FFGIT; then
@@ -484,10 +484,8 @@ setup_macos_env(){
     ARCH_FLAG="-arch $1"
     [ -n "$2" ] && MACOS_VER=${2##macos}
   fi
-  enable_opt videotoolbox
-  enable_opt vda
-  FEATURE_OPT="$FEATURE_OPT $vda_opt $videotoolbox_opt"
-  version_compare $MACOS_VER "<" 10.7 && FEATURE_OPT="$FEATURE_OPT --disable-lzma --disable-avdevice" #avfoundation is not supported on 10.6
+  enable_opt videotoolbox vda
+  version_compare $MACOS_VER "<" 10.7 && disable_opt lzma avdevice #avfoundation is not supported on 10.6
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --install_name_dir=@rpath"
   # 10.6: ld: warning: target OS does not support re-exporting symbol _av_gettime from libavutil/libavutil.dylib
   EXTRA_CFLAGS="$EXTRA_CFLAGS $ARCH_FLAG -mmacosx-version-min=$MACOS_VER"
@@ -594,9 +592,7 @@ config1(){
           . config-rpi.sh
         else
           enable_libmfx
-          enable_opt vaapi
-          enable_opt vdpau
-          FEATURE_OPT="$FEATURE_OPT $vaapi_opt $vdpau_opt"
+          enable_opt vaapi vdpau
         fi
         add_librt
       elif host_is Darwin; then
