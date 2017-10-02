@@ -148,6 +148,14 @@ enable_libmfx(){
   fi
 }
 
+disable_if() {
+  local OPT=$1
+  # grep -m1
+  if grep -q "\-\-disable\-$OPT" $FFSRC/configure; then
+    eval ${OPT}_opt="--disable-$OPT"
+  fi
+}
+
 # warnings are used by ffmpeg developer, some are enabled by configure: -Wl,--warn-shared-textrel
 
 setup_vc_env(){
@@ -267,6 +275,7 @@ setup_wince_env() {
 setup_android_env() {
   ENC_OPT=$ENC_OPT_MOBILE
   MUX_OPT=$MUX_OPT_MOBILE
+  disable_if v4l2_m2m
   local ANDROID_ARCH=$1
   test -n "$ANDROID_ARCH" || ANDROID_ARCH=arm
   local ANDROID_TOOLCHAIN_PREFIX="${ANDROID_ARCH}-linux-android"
@@ -392,7 +401,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}-${USE_TOOLCHAIN:-gcc}
   enable_opt mediacodec
   enable_opt jni
-  FEATURE_OPT="$mediacodec_opt --enable-jni $FEATURE_OPT"
+  FEATURE_OPT="$mediacodec_opt --enable-jni $FEATURE_OPT $v4l2_m2m_opt"
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
 export PATH=$ANDROID_TOOLCHAIN_DIR/bin:$ANDROID_LLVM_DIR/bin:$PATH
