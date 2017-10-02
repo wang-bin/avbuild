@@ -371,6 +371,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   local ANDROID_SYSROOT_LIB="$NDK_ROOT/platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
   local ANDROID_SYSROOT_LIB_REL="platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
   if [ -d "$UNIFIED_SYSROOT" ]; then
+    [ $API_LEVEL -lt 21 ] && PATCH_MMAP="void* mmap(void*, size_t, int, int, int, __kernel_off_t);"
     ANDROID_SYSROOT_REL=sysroot
     EXTRA_CFLAGS="$EXTRA_CFLAGS -D__ANDROID_API__=$API_LEVEL --sysroot \$NDK_ROOT/$ANDROID_SYSROOT_REL"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS --sysroot \$NDK_ROOT/$ANDROID_SYSROOT_LIB_REL" # linker need crt objects in platform-$API_LEVEL dir, must set the dir as sysroot. but --sysroot in extra-ldflags comes before configure --sysroot= and has no effect
@@ -687,6 +688,12 @@ config1(){
         sed -i '/SetDllDirectory("")/i #if (_WIN32_WINNT+0) >= 0x0502  \/\/SETDLLDIRECTORY_PATCHED' $FFSRC/cmdutils.c
         sed -i '/SetDllDirectory("")/a #endif' $FFSRC/cmdutils.c
       fi
+    fi
+    if [ -n "$PATCH_MMAP" ] && `grep -q 'HAVE_MMAP 1' config.h` ; then
+      #sed -i $sed_bak "/#define FFMPEG_CONFIG_H/a\\
+      #$PATCH_MMAP \/\*MMAP_PATCHED\*\/\\
+      #" config.h
+      sed -i $sed_bak 's/\(#define HAVE_MMAP\) .*/\1 0/' config.h
     fi
   else
     tail config.log || tail avbuild/config.log #libav moves config.log to avbuild dir
