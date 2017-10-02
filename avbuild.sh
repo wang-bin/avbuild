@@ -281,7 +281,7 @@ setup_android_env() {
   local ANDROID_TOOLCHAIN_PREFIX="${ANDROID_ARCH}-linux-android"
   local CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
   local FFARCH=$ANDROID_ARCH
-  local API_LEVEL=9 #ensure do not use log2f in libm
+  local API_LEVEL=14 #ensure do not use log2f in libm
   local UNIFIED_SYSROOT="$NDK_ROOT/sysroot"
   [ -d "$UNIFIED_SYSROOT" ] || UNIFIED_SYSROOT=
   # -Wl,-z,noexecstack -Wl,--as-needed is added by configure
