@@ -69,7 +69,13 @@ echo FFSRC=$FFSRC
   FFSRC=`which configure`
   FFSRC=${FFSRC%/configure}
 }
-
+FFSRC_TOOLS=$FFSRC/fftools
+if ! [ -d "$FFSRC_TOOLS" ]; then
+  FFSRC_TOOLS=$FFSRC_TOOLS/avtools
+  if ! [ -d "$FFSRC_TOOLS" ]; then
+    FFSRC_TOOLS=$FFSRC
+  fi
+fi
 #avr >= ffmpeg0.11
 #FFMAJOR=`pwd |sed 's,.*-\(.*\)\..*\..*,\1,'`
 #FFMINOR=`pwd |sed 's,.*\.\(.*\)\..*,\1,'`
@@ -115,7 +121,7 @@ target_arch_is() {
   test "$TAGET_ARCH_FLAG" = "$1" && return 0 || return 1
 }
 is_libav() {
-  test -f "$FFSRC/avconv.c" && return 0 || return 1
+  test -f "$FFSRC_TOOLS/avconv.c" && return 0 || return 1
 }
 
 android_arch(){
@@ -677,12 +683,12 @@ config1(){
     fi
     if $VC_BUILD; then # check ffmpeg version?
       # ffmpeg.c includes compat/atomics/win32/stdatomic.h which includes winsock.h (from windows.h), os_support.h includes winsock2.h later and then have duplicated definations. winsock2,h defines _WINSOCKAPI_ to prevent inclusion of winsock.h in windows.h
-      if ! `grep -q WINSOCK_PATCHED $FFSRC/ffmpeg.c`; then
-        sed -i '/#include "config.h"/a #include "libavformat/os_support.h"  \/\/WINSOCK_PATCHED' $FFSRC/ffmpeg.c
+      if ! `grep -q WINSOCK_PATCHED $FFSRC_TOOLS/ffmpeg.c`; then
+        sed -i '/#include "config.h"/a #include "libavformat/os_support.h"  \/\/WINSOCK_PATCHED' $FFSRC_TOOLS/ffmpeg.c
       fi
-      if ! `grep -q SETDLLDIRECTORY_PATCHED $FFSRC/cmdutils.c`; then
-        sed -i '/SetDllDirectory("")/i #if (_WIN32_WINNT+0) >= 0x0502  \/\/SETDLLDIRECTORY_PATCHED' $FFSRC/cmdutils.c
-        sed -i '/SetDllDirectory("")/a #endif' $FFSRC/cmdutils.c
+      if ! `grep -q SETDLLDIRECTORY_PATCHED $FFSRC_TOOLS/cmdutils.c`; then
+        sed -i '/SetDllDirectory("")/i #if (_WIN32_WINNT+0) >= 0x0502  \/\/SETDLLDIRECTORY_PATCHED' $FFSRC_TOOLS/cmdutils.c
+        sed -i '/SetDllDirectory("")/a #endif' $FFSRC_TOOLS/cmdutils.c
       fi
     fi
     if [ -n "$PATCH_MMAP" ] && `grep -q 'HAVE_MMAP 1' config.h` ; then
