@@ -296,8 +296,7 @@ setup_android_env() {
   EXTRA_CFLAGS="$EXTRA_CFLAGS -ffast-math -fstrict-aliasing -fdata-sections -ffunction-sections -fstack-protector-strong" # " #-funwind-tables need libunwind.a for libc++?
 # -no-canonical-prefixes: results in "-mcpu= ", why?
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,-z,relro -Wl,-z,now -Wl,--gc-sections"
-  # TODO: clang use -arch like iOS?
-  # TODO: clang lto in r14 (gcc?)
+  # TODO: clang lto in r14 (gcc?) except aarch64
   if [ "$ANDROID_ARCH" = "x86" -o "$ANDROID_ARCH" = "i686" ]; then
     ANDROID_ARCH=x86
     ANDROID_TOOLCHAIN_PREFIX=x86
@@ -576,6 +575,7 @@ config1(){
     vc)         setup_vc_desktop_env ;;
     winstore|winpc|winphone|winrt) setup_winrt_env ;;
     maemo*)     setup_maemo_env ${1##maemo} ;;
+    rpi)        ;;
     x86)
       add_librt
       if [ "`uname -m`" = "x86_64" ]; then
