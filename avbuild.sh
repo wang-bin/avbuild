@@ -270,7 +270,7 @@ setup_mingw_env() {
   }
   enable_libmfx
   enable_opt dxva2
-  disable iconv
+  disable_opt iconv
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -static-libgcc -Wl,-Bstatic"
   $gcc -dumpmachine |grep -iq x86_64 && INSTALL_DIR="${INSTALL_DIR}-mingw-x64" || INSTALL_DIR="${INSTALL_DIR}-mingw-x86"
 }
@@ -575,7 +575,7 @@ config1(){
     vc)         setup_vc_desktop_env ;;
     winstore|winpc|winphone|winrt) setup_winrt_env ;;
     maemo*)     setup_maemo_env ${1##maemo} ;;
-    rpi)        ;;
+    rpi*)        INSTALL_DIR=sdk-$1 ;;
     x86)
       add_librt
       if [ "`uname -m`" = "x86_64" ]; then
