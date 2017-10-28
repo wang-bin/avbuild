@@ -6,7 +6,8 @@
 # Unify gcc/clang(elf?) flags(like android): -Wl,-z,now -Wl,-z,-relro -Bsymbolic ...
 # https://wiki.debian.org/Hardening#DEB_BUILD_HARDENING_RELRO_.28ld_-z_relro.29
 # remove sdl2 in modules
-
+# onecore for store apps. CreateMutex undefined in win8.1 store
+ 
 #set -x
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2017"
@@ -165,6 +166,12 @@ enable_libmfx(){
 
 enable_opt hwaccels
 
+add_elf_flags() {
+  # -Wl,-z,noexecstack -Wl,--as-needed is added by configure
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -fdata-sections -ffunction-sections -fstack-protector-strong"
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--gc-sections" # -Wl,-z,relro -Wl,-z,now
+}
+
 # warnings are used by ffmpeg developer, some are enabled by configure: -Wl,--warn-shared-textrel
 
 setup_vc_env(){
@@ -292,10 +299,10 @@ setup_android_env() {
   local API_LEVEL=14 #ensure do not use log2f in libm
   local UNIFIED_SYSROOT="$NDK_ROOT/sysroot"
   [ -d "$UNIFIED_SYSROOT" ] || UNIFIED_SYSROOT=
-  # -Wl,-z,noexecstack -Wl,--as-needed is added by configure
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -ffast-math -fstrict-aliasing -fdata-sections -ffunction-sections -fstack-protector-strong" # " #-funwind-tables need libunwind.a for libc++?
+  add_elf_flags
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -ffast-math -fstrict-aliasing" # " #-funwind-tables need libunwind.a for libc++?
 # -no-canonical-prefixes: results in "-mcpu= ", why?
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,-z,relro -Wl,-z,now -Wl,--gc-sections"
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,-z,relro -Wl,-z,now"
   # TODO: clang lto in r14 (gcc?) except aarch64
   if [ "$ANDROID_ARCH" = "x86" -o "$ANDROID_ARCH" = "i686" ]; then
     ANDROID_ARCH=x86
@@ -547,6 +554,39 @@ setup_maemo_env() {
   INSTALL_DIR=sdk-maemo
 }
 
+# TODO: clang
+setup_rpi_env() {
+  INSTALL_DIR=sdk-$1
+  : ${CROSS_PREFIX:=arm-linux-gnueabihf-}
+  uname -a |grep armv && {
+    echo "rpi host build"
+    SYSROOT_CC=`gcc -print-sysroot`
+    #TOOLCHAIN_OPT="--cpu=armv6"
+  } || {
+    echo "rpi cross build"
+    TOOLCHAIN_OPT="--enable-cross-compile --cross-prefix=$CROSS_PREFIX --target-os=linux --arch=arm"
+    SYSROOT_CC=`${CROSS_PREFIX}gcc -print-sysroot`
+    [ -d "$SYSROOT_CC/opt/vc" ] || SYSROOT_CC=
+  }
+  : ${SYSROOT:=${SYSROOT_CC}}
+  USER_OPT="--enable-omx-rpi --enable-mmal $USER_OPT"
+  # https://github.com/carlonluca/pot/blob/master/piomxtextures_tools/compile_ffmpeg.sh
+  # -funsafe-math-optimizations -mno-apcs-stack-check -mstructure-size-boundary=32 -mno-sched-prolog
+  # not only rpi vc libs, but also gcc headers and libs in sysroot may be required by some toolchains
+  #[ ! "$SYSROOT" = "$SYSROOT_CC" -a -n "$SYSROOT" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\$SYSROOT"
+  #COMMON_FLAGS='-isystem=/opt/vc/include -isystem=/opt/vc/include/IL'
+  COMMOM_FLAGS='-isystem\$SYSROOT/opt/vc/include -isystem\$SYSROOT/opt/vc/include/IL'
+  EXTRA_CFLAGS_rpi="-march=armv6 -mfpu=vfp"
+  EXTRA_CFLAGS_rpi2="-march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4" #vfpv3-d16"
+  EXTRA_CFLAGS_rpi3="-march=armv8-a -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8"
+  eval EXTRA_CFLAGS_RPI='${EXTRA_CFLAGS_'$1'}'
+  EXTRA_CFLAGS="$EXTRA_CFLAGS_RPI -mfloat-abi=hard -isystem\\\$SYSROOT/opt/vc/include -isystem\\\$SYSROOT/opt/vc/include/IL $EXTRA_CFLAGS"
+  EXTRA_LDFLAGS="-L\\\$SYSROOT/opt/vc/lib $EXTRA_LDFLAGS"
+  #-lrt: clock_gettime in glibc2.17
+  [ "`${CROSS_PREFIX}gcc -print-file-name=librt.so`" = "librt.so" ] || EXTRA_LDFLAGS="$EXTRA_LDFLAGS -lrt"
+  test -f /bin/sh.exe || EXTRA_LDFLAGS="-Wl,-rpath-link,\\\$SYSROOT/opt/vc/lib $EXTRA_LDFLAGS"
+}
+
 # 1 target os & 1 target arch
 config1(){
   local TAGET_FLAG=$1
@@ -575,8 +615,9 @@ config1(){
     vc)         setup_vc_desktop_env ;;
     winstore|winpc|winphone|winrt) setup_winrt_env ;;
     maemo*)     setup_maemo_env ${1##maemo} ;;
-    rpi*)        INSTALL_DIR=sdk-$1 ;;
+    rpi*)       add_elf_flags && setup_rpi_env $1 ;;
     x86)
+      add_elf_flags
       add_librt
       if [ "`uname -m`" = "x86_64" ]; then
         #TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=$(tolower $(uname -s)) --arch=x86"
@@ -592,10 +633,9 @@ config1(){
       elif host_is MinGW || host_is MSYS; then
         setup_mingw_env
       elif host_is Linux; then
-        EXTRA_CFLAGS="$EXTRA_CFLAGS -fdata-sections -ffunction-sections"
-        EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--gc-sections"
-        if [ -f /opt/vc/include/bcm_host.h ]; then
-          . config-rpi.sh
+        add_elf_flags
+        if [ -c /dev/vchiq ]; then
+          setup_rpi_env rpi
         else
           enable_libmfx
           enable_opt vaapi vdpau
