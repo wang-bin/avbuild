@@ -217,7 +217,24 @@ setup_vc_desktop_env() {
 }
 
 setup_winrt_env() {
-  grep -q HAVE_WINRT $FFSRC/compat/w32dlfcn.h && patch -p1 <patches/0001-winrt-use-LoadPackagedLibrary.patch
+  if [ -f "$FFSRC/compat/w32dlfcn.h" ]; then
+    grep -q HAVE_WINRT "$FFSRC/compat/w32dlfcn.h" || {
+      echo "Patching LoadPackagedLibrary..."
+      cp -af patches/0001-winrt-use-LoadPackagedLibrary.patch "$FFSRC/tmp.patch"
+      cd "$FFSRC"
+      patch -p1 <"tmp.patch"
+      cd -
+    }
+  fi
+  if [ -f "$FFSRC/libavutil/hwcontext_d3d11va.c" ]; then
+    if ! `grep -q CreateMutexEx "$FFSRC/libavutil/hwcontext_d3d11va.c"`; then
+      echo "Patching CreateMutex..."
+      cp -af patches/0001-use-CreateMutexEx-instead-of-CreateMutex-to-fix-win8.patch "$FFSRC/tmp.patch"
+      cd "$FFSRC"
+      patch -p1 <"tmp.patch"
+      cd -
+    fi
+  fi
   #http://fate.libav.org/arm-msvc-14-wp
   disable_opt programs
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=win32"
@@ -267,7 +284,7 @@ setup_mingw_env() {
   enable_lto=false
   local gcc=gcc
   host_is MinGW || host_is MSYS && {
-    echo "install msys2 packages: pacman -Sy --needed diffutils gawk pkg-config mingw-w64-i686-gcc mingw-w64-x86_64-gcc"
+    echo "install msys2 packages: pacman -Sy --needed diffutils gawk patch pkg-config mingw-w64-i686-gcc mingw-w64-x86_64-gcc"
   } || {
     echo "mingw cross build"
     local arch=$1
