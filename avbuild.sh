@@ -571,20 +571,35 @@ setup_maemo_env() {
   INSTALL_DIR=sdk-maemo
 }
 
-# TODO: clang
-setup_rpi_env() {
+setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in bus error if asm is enabled
+  if `grep -q 'check_arm_arch 6ZK;' "$FFSRC/configure"`; then
+    echo "patching armv6zk probe..."
+    sed -i 's/\(.* \)6ZK;\(.*\)/\16KZ 6ZK;\2/' "$FFSRC/configure"
+  fi
   INSTALL_DIR=sdk-$1
   : ${CROSS_PREFIX:=arm-linux-gnueabihf-}
   uname -a |grep armv && {
     echo "rpi host build"
     SYSROOT_CC=`gcc -print-sysroot`
-    #TOOLCHAIN_OPT="--cpu=armv6"
   } || {
     echo "rpi cross build"
     TOOLCHAIN_OPT="--enable-cross-compile --cross-prefix=$CROSS_PREFIX --target-os=linux --arch=arm"
     SYSROOT_CC=`${CROSS_PREFIX}gcc -print-sysroot`
     [ -d "$SYSROOT_CC/opt/vc" ] || SYSROOT_CC=
   }
+  if [ -n "$USE_TOOLCHAIN" ]; then
+    TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN $TOOLCHAIN_OPT"
+    if [ "${USE_TOOLCHAIN%%-*}" = "clang" ]; then
+      if [ -n "$CROSS_PREFIX" ]; then
+      # TODO: add -lvcos for mmal
+        TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\\\$SYSROOT" # search host by default, so sysroot is required
+        CLANG_TARGET=${CROSS_PREFIX%%-}
+        CLANG_TARGET=${CLANG_TARGET##*/}
+        CLANG_FLAGS="-target $CLANG_TARGET" # gcc cross prefix, clang use target value to find binutils, and set host triple
+        #CLANG_FLAGS="-fno-integrated-as $CLANG_FLAGS" # libswscale/arm/rgb2yuv_neon_{16,32}.o error. but using arm-linux-gnueabihf-gcc-7 asm from ubuntu results in bus error
+      fi
+    fi
+  fi
   : ${SYSROOT:=${SYSROOT_CC}}
   USER_OPT="--enable-omx-rpi --enable-mmal $USER_OPT"
   # https://github.com/carlonluca/pot/blob/master/piomxtextures_tools/compile_ffmpeg.sh
@@ -592,13 +607,14 @@ setup_rpi_env() {
   # not only rpi vc libs, but also gcc headers and libs in sysroot may be required by some toolchains
   #[ ! "$SYSROOT" = "$SYSROOT_CC" -a -n "$SYSROOT" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\$SYSROOT"
   #COMMON_FLAGS='-isystem=/opt/vc/include -isystem=/opt/vc/include/IL'
-  COMMOM_FLAGS='-isystem\$SYSROOT/opt/vc/include -isystem\$SYSROOT/opt/vc/include/IL'
-  EXTRA_CFLAGS_rpi="-march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp"
-  EXTRA_CFLAGS_rpi2="-march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mthumb-interwork" #vfpv3-d16"
+  #COMMOM_FLAGS='-isystem\$SYSROOT/opt/vc/include -isystem\$SYSROOT/opt/vc/include/IL'
+  # armv6zk, armv6kz, armv6z: https://reviews.llvm.org/D14568
+  EXTRA_CFLAGS_rpi="-march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp" # no thumb support. armv6kz is not supported by some compilers, but zk is.
+  EXTRA_CFLAGS_rpi2="-march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mthumb" # -mthumb-interwork vfpv3-d16"
   EXTRA_CFLAGS_rpi3="-march=armv8-a -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8"
   eval EXTRA_CFLAGS_RPI='${EXTRA_CFLAGS_'$1'}'
-  EXTRA_CFLAGS="$EXTRA_CFLAGS_RPI -mfloat-abi=hard -isystem\\\$SYSROOT/opt/vc/include -isystem\\\$SYSROOT/opt/vc/include/IL $EXTRA_CFLAGS"
-  EXTRA_LDFLAGS="-L\\\$SYSROOT/opt/vc/lib $EXTRA_LDFLAGS"
+  EXTRA_CFLAGS="$CLANG_FLAGS $EXTRA_CFLAGS_RPI -mfloat-abi=hard -isystem\\\$SYSROOT/opt/vc/include -isystem\\\$SYSROOT/opt/vc/include/IL $EXTRA_CFLAGS"
+  EXTRA_LDFLAGS="$CLANG_FLAGS -L\\\$SYSROOT/opt/vc/lib $EXTRA_LDFLAGS"
   #-lrt: clock_gettime in glibc2.17
   [ "`${CROSS_PREFIX}gcc -print-file-name=librt.so`" = "librt.so" ] || EXTRA_LDFLAGS="$EXTRA_LDFLAGS -lrt"
   test -f /bin/sh.exe || EXTRA_LDFLAGS="-Wl,-rpath-link,\\\$SYSROOT/opt/vc/lib $EXTRA_LDFLAGS"
