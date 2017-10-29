@@ -593,8 +593,8 @@ setup_rpi_env() {
   #[ ! "$SYSROOT" = "$SYSROOT_CC" -a -n "$SYSROOT" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\$SYSROOT"
   #COMMON_FLAGS='-isystem=/opt/vc/include -isystem=/opt/vc/include/IL'
   COMMOM_FLAGS='-isystem\$SYSROOT/opt/vc/include -isystem\$SYSROOT/opt/vc/include/IL'
-  EXTRA_CFLAGS_rpi="-march=armv6 -mfpu=vfp"
-  EXTRA_CFLAGS_rpi2="-march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4" #vfpv3-d16"
+  EXTRA_CFLAGS_rpi="-march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp"
+  EXTRA_CFLAGS_rpi2="-march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mthumb-interwork" #vfpv3-d16"
   EXTRA_CFLAGS_rpi3="-march=armv8-a -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8"
   eval EXTRA_CFLAGS_RPI='${EXTRA_CFLAGS_'$1'}'
   EXTRA_CFLAGS="$EXTRA_CFLAGS_RPI -mfloat-abi=hard -isystem\\\$SYSROOT/opt/vc/include -isystem\\\$SYSROOT/opt/vc/include/IL $EXTRA_CFLAGS"
