@@ -804,6 +804,13 @@ build_all(){
           arch=${arch%-*}
         else
           USE_TOOLCHAIN=$USE_TOOLCHAIN0
+          CC_WITH_SUFFIX="${arch##*_}"
+          if [ "${CC_WITH_SUFFIX%%-*}" == "clang" -o "${CC_WITH_SUFFIX%%-*}" == "gcc" ]; then
+            USE_TOOLCHAIN=$CC_WITH_SUFFIX
+            arch=${arch%_*}
+          else
+            USE_TOOLCHAIN=$USE_TOOLCHAIN0
+          fi
         fi
         CONFIG_JOBS=(${CONFIG_JOBS[@]} %$((${#CONFIG_JOBS[@]}+1)))
         config1 $os $arch &
