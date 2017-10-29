@@ -49,15 +49,15 @@ matrix:
       compiler: clang
       env:
         - TARGET=host
-        - _CC=clang-4.0 #--cc=$_CC
+        - _CC=clang-5.0 #--cc=$_CC
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
-            - llvm-toolchain-trusty-4.0
+            - llvm-toolchain-trusty-5.0
             - ubuntu-toolchain-r-test #libstdc++
           packages:
-            - clang-4.0
-            - libstdc++-6-dev #libmfx
+            - clang-5.0
+            - libstdc++-7-dev #libmfx
             - p7zip-full
             - yasm
             - libva-dev
