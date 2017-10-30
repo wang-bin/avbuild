@@ -750,10 +750,6 @@ config1(){
     [ -f .env.sh ] && . .env.sh && cat .env.sh
     echo configuration changes
     time eval $CONFIGURE
-    if $VC_BUILD && [ ${VisualStudioVersion:0:2} -gt 14 ] && `echo $LANG |grep -q zh`; then  # check ffmpeg version?
-      iconv -t "UTF-8" -f "GBK" config.h > config-utf8.h
-      cp -f config{-utf8,}.h
-    fi
   fi
   if [ $? -eq 0 ]; then
     echo $CONFIGURE >config.txt
@@ -784,6 +780,10 @@ config1(){
       fi
     fi
     if $VC_BUILD; then # check ffmpeg version?
+      if [ ${VisualStudioVersion:0:2} -gt 14 ] && `echo $LANG |grep -q zh`; then  # check ffmpeg version?
+        iconv -t "UTF-8" -f "GBK" config.h > config-utf8.h
+        cp -f config{-utf8,}.h
+      fi
       # ffmpeg.c includes compat/atomics/win32/stdatomic.h which includes winsock.h (from windows.h), os_support.h includes winsock2.h later and then have duplicated definations. winsock2,h defines _WINSOCKAPI_ to prevent inclusion of winsock.h in windows.h
       if ! `grep -q WINSOCK_PATCHED $FFSRC_TOOLS/ffmpeg.c`; then
         sed -i '/#include "config.h"/a #include "libavformat/os_support.h"  \/\/WINSOCK_PATCHED' $FFSRC_TOOLS/ffmpeg.c
@@ -800,7 +800,7 @@ config1(){
       sed -i $sed_bak 's/\(#define HAVE_MMAP\) .*/\1 0/' config.h
     fi
   else
-    tail config.log || tail avbuild/config.log #libav moves config.log to avbuild dir
+    tail -n 20 ffbuild/config.log 2>/dev/null || tail -n 20 avbuild/config.log 2>/dev/null || tail -n 20 config.log 2>/dev/null #libav moves config.log to avbuild dir
     exit 1
   fi
   touch $THIS_DIR/.dir/$INSTALL_DIR
