@@ -614,7 +614,7 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
     rpi_cross=true
     echo "rpi cross build"
     TOOLCHAIN_OPT="--enable-cross-compile --target-os=linux --arch=arm"
-    SYSROOT_CC=`${CROSS_PREFIX}gcc -print-sysroot`
+    SYSROOT_CC=`${CROSS_PREFIX}gcc -print-sysroot` # TODO: not for clang
     [ -d "$SYSROOT_CC/opt/vc" ] || SYSROOT_CC=
   }
   if $use_clang; then
