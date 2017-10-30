@@ -33,6 +33,7 @@ matrix:
       env:
         - TARGET=raspberry-pi
         - _CC=clang-5.0 #--cc=$_CC
+        - USER_OPT=--disable-swscale
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
@@ -128,7 +129,7 @@ install:
 script:
   - export FFSRC=$PWD/ffmpeg-${FF_VERSION}
   - export ANDROID_NDK=$PWD/android-ndk-${NDK_VERSION}
-  - if [ -n "$_CC" ]; then export USER_OPT=--cc=$_CC; fi
+  - if [ -n "$_CC" ]; then export USER_OPT="$USER_OPT --cc=$_CC"; fi
   - if [ -n "${CONFIG_SUFFIX}" ]; then ln -sf config{${CONFIG_SUFFIX},}.sh; fi
   - USE_TOOLCHAIN=$CC ./avbuild.sh $TARGET  # CC(gcc/clang) is set by travis depending on compiler
 
@@ -138,6 +139,7 @@ after_success:
   - TARGET_OS=${TARGET_OS/#osx/macOS}
   - SUFFIX=${TARGET_OS/%android/$TARGET_OS-$CC}
   - SUFFIX=${SUFFIX/%linux/$SUFFIX-$CC}
+  - SUFFIX=${SUFFIX/%raspberry-pi/$SUFFIX-$CC}
   - SUFFIX=${SUFFIX}${CONFIG_SUFFIX}
   - mv sdk* ffmpeg-${FF_VERSION}-${SUFFIX}
   - tar Jcf ffmpeg-${FF_VERSION}-${SUFFIX}{.tar.xz,}
