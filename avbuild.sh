@@ -574,6 +574,19 @@ setup_maemo_env() {
 
 # TODO: clang+lld without gcc
 setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in bus error if asm is enabled
+  echo "setup_rpi_env $@"
+  rpi_os=rpi
+  if [ "${1:0:3}" = "rpi" ]; then
+    rpi_os=$1
+  else
+    if [ "${1:0:5}" = "armv6" ]; then
+      rpi_os=rpi
+    elif [ "${1:0:5}" = "armv7" ]; then
+      rpi_os=rpi2
+    elif [ "${1:0:5}" = "armv8" ]; then
+      rpi_os=rpi3
+    fi
+  fi
   local sed_bak=
   host_is Darwin && sed_bak=".bak"
   if `grep -q 'check_arm_arch 6ZK;' "$FFSRC/configure"`; then
@@ -584,7 +597,7 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
     echo "patching mmal probing..."
     sed -i $sed_bak 's/-lbcm_host/-lbcm_host -lvcos -lpthread/g' "$FFSRC/configure"
   fi
-  INSTALL_DIR=sdk-$1
+  INSTALL_DIR=sdk-$rpi_os-gcc
   : ${CROSS_PREFIX:=arm-linux-gnueabihf-}
   uname -a |grep armv && {
     echo "rpi host build"
@@ -607,6 +620,7 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
         CLANG_FLAGS="-target $CLANG_TARGET" # gcc cross prefix, clang use target value to find binutils, and set host triple
         #CLANG_FLAGS="-fno-integrated-as $CLANG_FLAGS" # libswscale/arm/rgb2yuv_neon_{16,32}.o error. but using arm-linux-gnueabihf-gcc-7 asm from ubuntu results in bus error
       fi
+      INSTALL_DIR=sdk-$rpi_os-clang
     fi
   fi
   : ${SYSROOT:=${SYSROOT_CC}}
@@ -621,7 +635,7 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   EXTRA_CFLAGS_rpi="-march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp" # no thumb support. armv6kz is not supported by some compilers, but zk is.
   EXTRA_CFLAGS_rpi2="-march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mthumb" # -mthumb-interwork vfpv3-d16"
   EXTRA_CFLAGS_rpi3="-march=armv8-a -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8"
-  eval EXTRA_CFLAGS_RPI='${EXTRA_CFLAGS_'$1'}'
+  eval EXTRA_CFLAGS_RPI='${EXTRA_CFLAGS_'$rpi_os'}'
   EXTRA_CFLAGS="$CLANG_FLAGS $EXTRA_CFLAGS_RPI -mfloat-abi=hard -isystem\\\$SYSROOT/opt/vc/include -isystem\\\$SYSROOT/opt/vc/include/IL $EXTRA_CFLAGS"
   EXTRA_LDFLAGS="$CLANG_FLAGS -L\\\$SYSROOT/opt/vc/lib $EXTRA_LDFLAGS"
   #-lrt: clock_gettime in glibc2.17
@@ -657,7 +671,7 @@ config1(){
     vc)         setup_vc_desktop_env ;;
     winstore|winpc|winphone|winrt) setup_winrt_env ;;
     maemo*)     setup_maemo_env ${1##maemo} ;;
-    rpi*)       add_elf_flags && setup_rpi_env $1 ;;
+    rpi*|raspberry*) add_elf_flags && setup_rpi_env $TAGET_ARCH_FLAG $1 ;;
     x86)
       add_elf_flags
       add_librt
@@ -677,7 +691,7 @@ config1(){
       elif host_is Linux; then
         add_elf_flags
         if [ -c /dev/vchiq ]; then
-          setup_rpi_env rpi
+          setup_rpi_env armv6zk rpi
         else
           enable_libmfx
           enable_opt vaapi vdpau
@@ -815,6 +829,7 @@ build_all(){
       echo ">>>>>no arch is set. setting default archs..."
       [ "${os:0:3}" == "ios" ] && archs=(armv7 arm64 x86 x86_64)
       [ "$os" == "android" ] && archs=(armv5 armv7 arm64 x86)
+      [ "${os:0:3}" == "rpi" -o "${os:0:9}" == "raspberry" ] && archs=(armv6zk armv7-a)
       #[ "${os:0:5}" == "macos" ] && archs=(x86_64 i386)
     }
     echo ">>>>>archs: ${archs[@]}"
