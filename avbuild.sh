@@ -577,6 +577,8 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   local rpi_cc=gcc
   local rpi_os=rpi
   local rpi_arch=armv6zk
+  local use_lld=false
+  local rpi_cross=false
   if [ "${1:0:3}" = "rpi" ]; then
     rpi_os=$1
   else
@@ -604,12 +606,13 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
     sed -i $sed_bak 's/-lbcm_host/-lbcm_host -lvcos -lpthread/g' "$FFSRC/configure"
   fi
   : ${CROSS_PREFIX:=arm-linux-gnueabihf-}
-  uname -a |grep armv && {
+  [ -c /dev/vchiq ] && {
     echo "rpi host build"
     SYSROOT_CC=`gcc -print-sysroot`
   } || {
+    rpi_cross=true
     echo "rpi cross build"
-    TOOLCHAIN_OPT="--enable-cross-compile --cross-prefix=$CROSS_PREFIX --target-os=linux --arch=arm"
+    TOOLCHAIN_OPT="--enable-cross-compile --target-os=linux --arch=arm"
     SYSROOT_CC=`${CROSS_PREFIX}gcc -print-sysroot`
     [ -d "$SYSROOT_CC/opt/vc" ] || SYSROOT_CC=
   }
@@ -618,6 +621,9 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
     TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN $TOOLCHAIN_OPT"
     if [ "${USE_TOOLCHAIN%%-*}" = "clang" ]; then
       rpi_cc=clang
+      $USE_TOOLCHAIN -fuse-ld=lld -x c -<<EOF && use_lld=true
+int main(){}
+EOF
       if [ -n "$CROSS_PREFIX" ]; then
       # TODO: add -lvcos for mmal
         TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\\\$SYSROOT" # search host by default, so sysroot is required
@@ -628,6 +634,14 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
       fi
     fi
   fi
+  # cross-prefix is used by binutils (strip, but host ar, ranlib, nm can be used for cross build)
+  $use_lld && {
+    echo "using lld as linker..."
+    EXTRA_LDFLAGS="-s -fuse-ld=lld $EXTRA_LDFLAGS" # -s: strip flag passing to lld
+    USER_OPT="--disable-stripping $USER_OPT"; # disable strip command because cross gcc may be not installed
+  } || {
+    $rpi_cross && TOOLCHAIN_OPT="--cross-prefix=$CROSS_PREFIX $TOOLCHAIN_OPT"
+  }
   : ${SYSROOT:=${SYSROOT_CC}}
   USER_OPT="--enable-omx-rpi --enable-mmal $USER_OPT"
   # https://github.com/carlonluca/pot/blob/master/piomxtextures_tools/compile_ffmpeg.sh
@@ -637,16 +651,17 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   #COMMON_FLAGS='-isystem=/opt/vc/include -isystem=/opt/vc/include/IL'
   #COMMOM_FLAGS='-isystem\$SYSROOT/opt/vc/include -isystem\$SYSROOT/opt/vc/include/IL'
   # armv6zk, armv6kz, armv6z: https://reviews.llvm.org/D14568
-  EXTRA_CFLAGS_rpi="-march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp" # no thumb support. armv6kz is not supported by some compilers, but zk is.
+  EXTRA_CFLAGS_rpi="-march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -marm" # no thumb support, so must set -marm. armv6kz is not supported by some compilers, but zk is.
   EXTRA_CFLAGS_rpi2="-march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mthumb" # -mthumb-interwork vfpv3-d16"
   EXTRA_CFLAGS_rpi3="-march=armv8-a -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8"
   eval EXTRA_CFLAGS_RPI='${EXTRA_CFLAGS_'$rpi_os'}'
   EXTRA_CFLAGS="$CLANG_FLAGS $EXTRA_CFLAGS_RPI -mfloat-abi=hard -isystem\\\$SYSROOT/opt/vc/include -isystem\\\$SYSROOT/opt/vc/include/IL $EXTRA_CFLAGS"
   EXTRA_LDFLAGS="$CLANG_FLAGS -L\\\$SYSROOT/opt/vc/lib $EXTRA_LDFLAGS"
   #-lrt: clock_gettime in glibc2.17
-  [ "`${CROSS_PREFIX}gcc -print-file-name=librt.so`" = "librt.so" ] || EXTRA_LDFLAGS="$EXTRA_LDFLAGS -lrt"
+  #[ "`${CROSS_PREFIX}gcc -print-file-name=librt.so`" = "librt.so" ] || EXTRA_LDFLAGS="$EXTRA_LDFLAGS -lrt"
+  EXTRALIBS="$EXTRALIBS -lrt"
   test -f /bin/sh.exe || EXTRA_LDFLAGS="-Wl,-rpath-link,\\\$SYSROOT/opt/vc/lib $EXTRA_LDFLAGS"
-  INSTALL_DIR=sdk-raspberry-pi-${rpi_arch}-${rpi_cc}
+  INSTALL_DIR=sdk-$2-${rpi_arch}-${rpi_cc}
 }
 
 # 1 target os & 1 target arch
@@ -918,11 +933,11 @@ make_universal()
       [ ! "$USE_TOOLCHAIN" == "gcc" -a ! "$USE_TOOLCHAIN" == "clang" ] && USE_TOOLCHAIN=gcc
       OUT_DIR=sdk-$os-${USE_TOOLCHAIN}
       arch=${d%-*}
-      arch=${arch#sdk-$os-}
+      arch=${arch#sdk-$os-} # FIXME: rpi raspberry-pi
       arch="$($get_arch $arch)"
 
       mkdir -p $OUT_DIR/lib
-      cp -af $d/include $OUT_DIR
+      cp -af $d/{bin,include} $OUT_DIR
       cp -af $d/lib $OUT_DIR/lib/$arch
       cat $d/config.txt >$OUT_DIR/config-$arch.txt
       echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt

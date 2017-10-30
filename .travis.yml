@@ -40,7 +40,7 @@ matrix:
             - llvm-toolchain-trusty-5.0
           packages:
             - clang-5.0
-            - gcc-arm-linux-gnueabihf
+            - lld-5.0
             - sshpass
     - os: linux
       compiler: gcc
