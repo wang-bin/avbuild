@@ -574,17 +574,21 @@ setup_maemo_env() {
 
 # TODO: clang+lld without gcc
 setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in bus error if asm is enabled
-  echo "setup_rpi_env $@"
-  rpi_os=rpi
+  local rpi_cc=gcc
+  local rpi_os=rpi
+  local rpi_arch=armv6zk
   if [ "${1:0:3}" = "rpi" ]; then
     rpi_os=$1
   else
     if [ "${1:0:5}" = "armv6" ]; then
       rpi_os=rpi
+      rpi_arch=armv6zk
     elif [ "${1:0:5}" = "armv7" ]; then
       rpi_os=rpi2
+      rpi_arch=armv7-a
     elif [ "${1:0:5}" = "armv8" ]; then
       rpi_os=rpi3
+      rpi_arch=armv8-a
     fi
   fi
   local sed_bak=
@@ -599,7 +603,6 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
     echo "patching mmal probing..."
     sed -i $sed_bak 's/-lbcm_host/-lbcm_host -lvcos -lpthread/g' "$FFSRC/configure"
   fi
-  INSTALL_DIR=sdk-$rpi_os-gcc
   : ${CROSS_PREFIX:=arm-linux-gnueabihf-}
   uname -a |grep armv && {
     echo "rpi host build"
@@ -614,6 +617,7 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
     # TODO: apple clang invoke ld64. --ld=${CROSS_PREFIX}ld ldflags are different from cc ld flags
     TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN $TOOLCHAIN_OPT"
     if [ "${USE_TOOLCHAIN%%-*}" = "clang" ]; then
+      rpi_cc=clang
       if [ -n "$CROSS_PREFIX" ]; then
       # TODO: add -lvcos for mmal
         TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\\\$SYSROOT" # search host by default, so sysroot is required
@@ -622,7 +626,6 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
         CLANG_FLAGS="-target $CLANG_TARGET" # gcc cross prefix, clang use target value to find binutils, and set host triple
         #CLANG_FLAGS="-fno-integrated-as $CLANG_FLAGS" # libswscale/arm/rgb2yuv_neon_{16,32}.o error. but using arm-linux-gnueabihf-gcc-7 asm from ubuntu results in bus error
       fi
-      INSTALL_DIR=sdk-$rpi_os-clang
     fi
   fi
   : ${SYSROOT:=${SYSROOT_CC}}
@@ -643,6 +646,7 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   #-lrt: clock_gettime in glibc2.17
   [ "`${CROSS_PREFIX}gcc -print-file-name=librt.so`" = "librt.so" ] || EXTRA_LDFLAGS="$EXTRA_LDFLAGS -lrt"
   test -f /bin/sh.exe || EXTRA_LDFLAGS="-Wl,-rpath-link,\\\$SYSROOT/opt/vc/lib $EXTRA_LDFLAGS"
+  INSTALL_DIR=sdk-raspberry-pi-${rpi_arch}-${rpi_cc}
 }
 
 # 1 target os & 1 target arch
@@ -841,18 +845,12 @@ build_all(){
       local CONFIG_JOBS=()
       USE_TOOLCHAIN0=$USE_TOOLCHAIN
       for arch in ${archs[@]}; do
-        if [ "${arch##*-}" == "clang" -o "${arch##*-}" == "gcc" ]; then
-          USE_TOOLCHAIN=${arch##*-}
-          arch=${arch%-*}
-        else
-          USE_TOOLCHAIN=$USE_TOOLCHAIN0
-          CC_WITH_SUFFIX="${arch##*_}"
-          if [ "${CC_WITH_SUFFIX%%-*}" == "clang" -o "${CC_WITH_SUFFIX%%-*}" == "gcc" ]; then
-            USE_TOOLCHAIN=$CC_WITH_SUFFIX
-            arch=${arch%_*}
-          else
-            USE_TOOLCHAIN=$USE_TOOLCHAIN0
-          fi
+        if [ ! "${arch/clang/}" = "$arch" ]; then
+          USE_TOOLCHAIN="clang${arch##*clang}"
+          arch=${arch%%?clang*}
+        elif [ ! "${arch/gcc/}" = "$arch" ]; then
+          USE_TOOLCHAIN="gcc${arch##*gcc}"
+          arch=${arch%%?gcc*}
         fi
         CONFIG_JOBS=(${CONFIG_JOBS[@]} %$((${#CONFIG_JOBS[@]}+1)))
         config1 $os $arch &
@@ -909,7 +907,11 @@ make_universal()
     cat build_sdk-${os}-*/config.txt >$OUT_DIR/config.txt
     echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
     rm -rf ${dirs[@]}
-  elif [ "$os" == "android" ]; then
+  else
+    local get_arch=echo
+    if [ "$os" == "android" ]; then
+      arch=android_arch
+    fi
     rm -rf sdk-$os-{gcc,clang}
     for d in ${dirs[@]}; do
       USE_TOOLCHAIN=${d##*-}
@@ -917,7 +919,7 @@ make_universal()
       OUT_DIR=sdk-$os-${USE_TOOLCHAIN}
       arch=${d%-*}
       arch=${arch#sdk-$os-}
-      arch=$(android_arch $arch)
+      arch="$($get_arch $arch)"
 
       mkdir -p $OUT_DIR/lib
       cp -af $d/include $OUT_DIR
