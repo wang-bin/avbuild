@@ -29,6 +29,19 @@ matrix:
       env:
         - TARGET=iOS
     - os: linux
+      compiler: clang
+      env:
+        - TARGET=raspberry-pi
+        - _CC=clang-5.0 #--cc=$_CC
+      addons: #can be used in matrix, but required by every combination
+        apt:
+          sources:
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - clang-5.0
+            - gcc-arm-linux-gnueabihf
+            - sshpass
+    - os: linux
       compiler: gcc
       env:
         - TARGET=host
@@ -105,30 +118,31 @@ install:
         7z x -y libmfx.7z -otools &>/dev/null
         export PKG_CONFIG_PATH_EXT=$PWD/tools/linux64-gcc/lib/pkgconfig
       fi
+  - |
+      if [ "$TARGET" == "raspberry-pi" ]; then
+        wget https://sourceforge.net/projects/avbuild/files/raspberry-pi/rpi-sysroot.tar.xz/download -O rpi-sysroot.tar.xz
+        tar Jxf rpi-sysroot.tar.xz
+        export SYSROOT=$PWD/sysroot
+      fi
 
 script:
   - export FFSRC=$PWD/ffmpeg-${FF_VERSION}
   - export ANDROID_NDK=$PWD/android-ndk-${NDK_VERSION}
   - if [ -n "$_CC" ]; then export USER_OPT=--cc=$_CC; fi
   - if [ -n "${CONFIG_SUFFIX}" ]; then ln -sf config{${CONFIG_SUFFIX},}.sh; fi
-  - |
-      if [ "${TARGET/-/}" == "$TARGET" ]; then
-        USE_TOOLCHAIN=$CC ./avbuild.sh $TARGET  # CC(gcc/clang) is set by travis depending on compiler
-      else # for TARGET=android-armv5 etc.
-        USE_TOOLCHAIN=$CC ./avbuild.sh ${TARGET%%-*} "${TARGET#*-}"
-      fi
+  - USE_TOOLCHAIN=$CC ./avbuild.sh $TARGET  # CC(gcc/clang) is set by travis depending on compiler
 
 after_success:
-  - SUFFIX=${TARGET}
-  - SUFFIX=${SUFFIX/#host/${TRAVIS_OS_NAME}}
-  - SUFFIX=${SUFFIX/#osx/macOS}
-  - SUFFIX=${SUFFIX/%android/$SUFFIX-$CC}
+  - TARGET_OS=${TARGET}
+  - TARGET_OS=${TARGET_OS/#host/${TRAVIS_OS_NAME}}
+  - TARGET_OS=${TARGET_OS/#osx/macOS}
+  - SUFFIX=${TARGET_OS/%android/$TARGET_OS-$CC}
   - SUFFIX=${SUFFIX/%linux/$SUFFIX-$CC}
   - SUFFIX=${SUFFIX}${CONFIG_SUFFIX}
   - mv sdk* ffmpeg-${FF_VERSION}-${SUFFIX}
   - tar Jcf ffmpeg-${FF_VERSION}-${SUFFIX}{.tar.xz,}
   - ls -hl ffmpeg-${FF_VERSION}-${SUFFIX}.tar.xz
-  - sshpass -p $SF_PW scp -o StrictHostKeyChecking=no ffmpeg-${FF_VERSION}-${SUFFIX}.tar.xz $SF_USER,avbuild@frs.sourceforge.net:/home/frs/project/a/av/avbuild/${SUFFIX%%-*}
+  - sshpass -p $SF_PW scp -o StrictHostKeyChecking=no ffmpeg-${FF_VERSION}-${SUFFIX}.tar.xz $SF_USER,avbuild@frs.sourceforge.net:/home/frs/project/a/av/avbuild/${TARGET_OS}
 
 branches:
   only:
