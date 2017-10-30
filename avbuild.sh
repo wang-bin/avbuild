@@ -589,9 +589,11 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   fi
   local sed_bak=
   host_is Darwin && sed_bak=".bak"
-  if `grep -q 'check_arm_arch 6ZK;' "$FFSRC/configure"`; then
+  if ! `grep -q 'check_arm_arch 6KZ;' "$FFSRC/configure"`; then
     echo "patching armv6zk probe..."
-    sed -i $sed_bak 's/\(.* \)6ZK;\(.*\)/\16KZ 6ZK;\2/' "$FFSRC/configure"
+    sed -i $sed_bak "/then echo armv6zk/a\\
+\        elif check_arm_arch 6KZ;      then echo armv6zk\\
+" "$FFSRC/configure"
   fi
   if ! `grep -q '\-lvcos' "$FFSRC/configure"`; then
     echo "patching mmal probing..."
