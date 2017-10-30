@@ -131,7 +131,7 @@ script:
   - export ANDROID_NDK=$PWD/android-ndk-${NDK_VERSION}
   - if [ -n "$_CC" ]; then export USER_OPT="$USER_OPT --cc=$_CC"; fi
   - if [ -n "${CONFIG_SUFFIX}" ]; then ln -sf config{${CONFIG_SUFFIX},}.sh; fi
-  - USE_TOOLCHAIN=$CC ./avbuild.sh $TARGET  # CC(gcc/clang) is set by travis depending on compiler
+  - USE_TOOLCHAIN=${_CC:-$CC} ./avbuild.sh $TARGET  # CC(gcc/clang) is set by travis depending on compiler
 
 after_success:
   - TARGET_OS=${TARGET}

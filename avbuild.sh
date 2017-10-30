@@ -330,7 +330,7 @@ setup_android_env() {
     CLANG_FLAGS="-target i686-none-linux-android"
     # from ndk: x86 devices have stack alignment issues.
     # clang error: inline assembly requires more registers than available ("movzbl "statep"    , "ret")
-    [ "$USE_TOOLCHAIN" == "clang" ] || EXTRA_CFLAGS="$EXTRA_CFLAGS -mstackrealign"
+    $use_clang || EXTRA_CFLAGS="$EXTRA_CFLAGS -mstackrealign"
     enable_lto=false
   elif [ "$ANDROID_ARCH" = "x86_64" -o "$ANDROID_ARCH" = "x64" ]; then
     API_LEVEL=21
@@ -368,7 +368,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
 '
 # -msoft-float == -mfloat-abi=soft https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/ARM-Options.html
       EXTRA_CFLAGS="$EXTRA_CFLAGS -mtune=xscale -msoft-float"
-      if [ ! "$USE_TOOLCHAIN" = "clang" ]; then
+      if ! $use_clang ; then
         EXTRA_CFLAGS="$EXTRA_CFLAGS -mthumb-interwork"
       fi
     else
@@ -407,7 +407,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
     ANDROID_SYSROOT_REL=sysroot
     EXTRA_CFLAGS="$EXTRA_CFLAGS -D__ANDROID_API__=$API_LEVEL --sysroot \$NDK_ROOT/$ANDROID_SYSROOT_REL"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS --sysroot \$NDK_ROOT/$ANDROID_SYSROOT_LIB_REL" # linker need crt objects in platform-$API_LEVEL dir, must set the dir as sysroot. but --sysroot in extra-ldflags comes before configure --sysroot= and has no effect
-    if [ "$USE_TOOLCHAIN" = "clang" ]; then
+    if $use_clang ; then
       EXTRA_CFLAGS="$EXTRA_CFLAGS -iwithsysroot /usr/include/$ANDROID_HEADER_TRIPLE"
     else
       EXTRA_CFLAGS="$EXTRA_CFLAGS -isystem=/usr/include/$ANDROID_HEADER_TRIPLE"
@@ -417,7 +417,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\$NDK_ROOT/$ANDROID_SYSROOT_REL"
   fi
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --target-os=android --arch=${FFARCH} --enable-cross-compile --cross-prefix=$CROSS_PREFIX"
-  if [ "$USE_TOOLCHAIN" = "clang" ]; then
+  if $use_clang ; then
     enable_lto=false # clang -flto will generate llvm ir bitcode instead of object file. TODO: ndk-r14 supports clang lto
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=clang"
     EXTRA_CFLAGS="$EXTRA_CFLAGS $CLANG_FLAGS"
@@ -431,7 +431,8 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   fi
   #test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-$API_LEVEL --toolchain=$TOOLCHAIN --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE\""
-  INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}-${USE_TOOLCHAIN:-gcc}
+  INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}
+  $use_clang && INSTALL_DIR="${INSTALL_DIR}-clang" || INSTALL_DIR="${INSTALL_DIR}-gcc"
   enable_opt jni mediacodec
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
@@ -616,22 +617,20 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
     SYSROOT_CC=`${CROSS_PREFIX}gcc -print-sysroot`
     [ -d "$SYSROOT_CC/opt/vc" ] || SYSROOT_CC=
   }
-  if [ -n "$USE_TOOLCHAIN" ]; then
+  if $use_clang; then
     # TODO: apple clang invoke ld64. --ld=${CROSS_PREFIX}ld ldflags are different from cc ld flags
     TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN $TOOLCHAIN_OPT"
-    if [ "${USE_TOOLCHAIN%%-*}" = "clang" ]; then
-      rpi_cc=clang
-      $USE_TOOLCHAIN -fuse-ld=lld -x c -<<EOF && use_lld=true
+    rpi_cc=clang
+    $USE_TOOLCHAIN -fuse-ld=lld -x c -<<EOF && use_lld=true
 int main(){}
 EOF
-      if [ -n "$CROSS_PREFIX" ]; then
+    if [ -n "$CROSS_PREFIX" ]; then
       # TODO: add -lvcos for mmal
-        TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\\\$SYSROOT" # search host by default, so sysroot is required
-        CLANG_TARGET=${CROSS_PREFIX%%-}
-        CLANG_TARGET=${CLANG_TARGET##*/}
-        CLANG_FLAGS="-target $CLANG_TARGET" # gcc cross prefix, clang use target value to find binutils, and set host triple
-        #CLANG_FLAGS="-fno-integrated-as $CLANG_FLAGS" # libswscale/arm/rgb2yuv_neon_{16,32}.o error. but using arm-linux-gnueabihf-gcc-7 asm from ubuntu results in bus error
-      fi
+      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\\\$SYSROOT" # search host by default, so sysroot is required
+      CLANG_TARGET=${CROSS_PREFIX%%-}
+      CLANG_TARGET=${CLANG_TARGET##*/}
+      CLANG_FLAGS="-target $CLANG_TARGET" # gcc cross prefix, clang use target value to find binutils, and set host triple
+      #CLANG_FLAGS="-fno-integrated-as $CLANG_FLAGS" # libswscale/arm/rgb2yuv_neon_{16,32}.o error. but using arm-linux-gnueabihf-gcc-7 asm from ubuntu results in bus error
     fi
   fi
   # cross-prefix is used by binutils (strip, but host ar, ranlib, nm can be used for cross build)
@@ -677,6 +676,7 @@ config1(){
   local patch_clock_gettime=0
   local enable_pic=true
   local enable_lto=true
+  : ${VC_BUILD:=false} #global is fine because no parallel configure now
   add_librt(){
   # clock_gettime in librt instead of glibc>=2.17
     grep -q "LIBRT" $FFSRC/configure && {
@@ -704,7 +704,6 @@ config1(){
       fi
       ;;
     *) # assume host build. use "") ?
-      : ${VC_BUILD:=false} #global is fine because no parallel configure now
       if $VC_BUILD; then
         setup_vc_env
       elif host_is MinGW || host_is MSYS; then
@@ -795,7 +794,7 @@ config1(){
       fi
     fi
     if $VC_BUILD; then # check ffmpeg version?
-      if [ ${VisualStudioVersion:0:2} -gt 14 ] && `echo $LANG |grep -q zh`; then  # check ffmpeg version?
+      if [ "${VisualStudioVersion:0:2}" -gt 14 ] && `echo $LANG |grep -q zh`; then  # check ffmpeg version?
         iconv -t "UTF-8" -f "GBK" config.h > config-utf8.h
         cp -f config{-utf8,}.h
       fi
@@ -842,6 +841,8 @@ build1(){
 build_all(){
   local os=`tolower $1`
   local USE_TOOLCHAIN=$USE_TOOLCHAIN
+  local use_clang=false
+  [ "${USE_TOOLCHAIN/clang/}" = "$USE_TOOLCHAIN" ] || use_clang=true
   [ -z "$os" ] && {
     config1 $@
   } || {
@@ -861,13 +862,16 @@ build_all(){
       USE_TOOLCHAIN0=$USE_TOOLCHAIN
       for arch in ${archs[@]}; do
         if [ ! "${arch/clang/}" = "$arch" ]; then
+          use_clang=true
           USE_TOOLCHAIN="clang${arch##*clang}"
           arch=${arch%%?clang*}
         elif [ ! "${arch/gcc/}" = "$arch" ]; then
+          use_clang=false
           USE_TOOLCHAIN="gcc${arch##*gcc}"
           arch=${arch%%?gcc*}
         fi
         CONFIG_JOBS=(${CONFIG_JOBS[@]} %$((${#CONFIG_JOBS[@]}+1)))
+        # TODO: will vars (use_clang, arch, USE_TOOLCHAIN) in sub process be modified by other process?
         config1 $os $arch &
       done
       [ ${#CONFIG_JOBS[@]} -gt 0 ] && {
@@ -925,7 +929,7 @@ make_universal()
   else
     local get_arch=echo
     if [ "$os" == "android" ]; then
-      arch=android_arch
+      get_arch=android_arch
     fi
     rm -rf sdk-$os-{gcc,clang}
     for d in ${dirs[@]}; do
