@@ -6,7 +6,8 @@
 # Unify gcc/clang(elf?) flags(like android): -Wl,-z,now -Wl,-z,-relro -Bsymbolic ...
 # https://wiki.debian.org/Hardening#DEB_BUILD_HARDENING_RELRO_.28ld_-z_relro.29
 # remove sdl2 in modules
-# onecore for store apps. CreateMutex undefined in win8.1 store
+# onecore for store apps
+# http://clang.llvm.org/docs/CrossCompilation.html
  
 #set -x
 echo
@@ -571,10 +572,17 @@ setup_maemo_env() {
   INSTALL_DIR=sdk-maemo
 }
 
+# TODO: clang+lld without gcc
 setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in bus error if asm is enabled
+  local sed_bak=
+  host_is Darwin && sed_bak=".bak"
   if `grep -q 'check_arm_arch 6ZK;' "$FFSRC/configure"`; then
     echo "patching armv6zk probe..."
-    sed -i 's/\(.* \)6ZK;\(.*\)/\16KZ 6ZK;\2/' "$FFSRC/configure"
+    sed -i $sed_bak 's/\(.* \)6ZK;\(.*\)/\16KZ 6ZK;\2/' "$FFSRC/configure"
+  fi
+  if ! `grep -q '\-lvcos' "$FFSRC/configure"`; then
+    echo "patching mmal probing..."
+    sed -i $sed_bak 's/-lbcm_host/-lbcm_host -lvcos -lpthread/g' "$FFSRC/configure"
   fi
   INSTALL_DIR=sdk-$1
   : ${CROSS_PREFIX:=arm-linux-gnueabihf-}
@@ -588,6 +596,7 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
     [ -d "$SYSROOT_CC/opt/vc" ] || SYSROOT_CC=
   }
   if [ -n "$USE_TOOLCHAIN" ]; then
+    # TODO: apple clang invoke ld64. --ld=${CROSS_PREFIX}ld ldflags are different from cc ld flags
     TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN $TOOLCHAIN_OPT"
     if [ "${USE_TOOLCHAIN%%-*}" = "clang" ]; then
       if [ -n "$CROSS_PREFIX" ]; then
