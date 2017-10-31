@@ -1,11 +1,9 @@
 #!/bin/bash
 # TODO: -flto=nb_cpus. lto with static build (except android)
-# android ndk unified headers
 # MXE cross toolchain
 # enable cuda
 # Unify gcc/clang(elf?) flags(like android): -Wl,-z,now -Wl,-z,-relro -Bsymbolic ...
 # https://wiki.debian.org/Hardening#DEB_BUILD_HARDENING_RELRO_.28ld_-z_relro.29
-# remove sdl2 in modules
 # onecore for store apps
 # http://clang.llvm.org/docs/CrossCompilation.html
  
@@ -16,23 +14,23 @@ echo "https://github.com/wang-bin/avbuild"
 
 THIS_NAME=${0##*/}
 THIS_DIR=$PWD
-PLATFORMS="ios|android|maemo|vc|x86|winstore|winpc|winphone|mingw64"
+PLATFORMS="ios|android|maemo|rpi|vc|x86|winstore|winpc|winphone|mingw64"
 echo "Usage:"
 test -d $PWD/ffmpeg || echo "  export FFSRC=/path/to/ffmpeg"
 cat<<HELP
-./$THIS_NAME [target_platform [target_architecture]]
+./$THIS_NAME [target_platform [target_architecture[-clang*/gcc*]]]
 target_platform can be: ${PLATFORMS}
 target_architecture can be:
- ios(x.y)|  android  |  mingw64
-         |   armv5   |
-  armv7  |   armv7   |
-  arm64  |   arm64   |
-x86/i366 |  x86/i686 |  x86/i686
- x86_64  |   x86_64  |   x86_64
+ ios(x.y)|  android  | mingw64  |  rpi
+         |   armv5   |          | armv6
+  armv7  |   armv7   |          | armv7
+  arm64  |   arm64   |          | armv8
+x86/i366 |  x86/i686 | x86/i686 |
+ x86_64  |   x86_64  |  x86_64  |
 If no parameter is passed, build for the host platform compiler.
 Use a shortcut in winstore to build for WinRT target.
 (Optional) set var in config-xxx.sh, xxx is ${PLATFORMS//\|/, }
-var can be: USER_OPT, ANDROID_NDK, MAEMO_SYSROOT
+var can be: USER_OPT, ANDROID_NDK, SYSROOT
 config.sh will be automatically included.
 config-lite.sh is default options to build smaller libraries.
 HELP
@@ -171,6 +169,7 @@ add_elf_flags() {
   # -Wl,-z,noexecstack -Wl,--as-needed is added by configure
   EXTRA_CFLAGS="$EXTRA_CFLAGS -fdata-sections -ffunction-sections -fstack-protector-strong"
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--gc-sections" # -Wl,-z,relro -Wl,-z,now
+  # rpath
 }
 
 # warnings are used by ffmpeg developer, some are enabled by configure: -Wl,--warn-shared-textrel
@@ -622,26 +621,28 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
     echo "rpi sysroot is not found!"
     exit 1
   }
-  local EXTRA_CFLAGS_rpi="-march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -marm" # no thumb support, so must set -marm. armv6kz is not supported by some compilers, but zk is.
+  $rpi_cross && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\\\$SYSROOT" # clang searchs host by default, so sysroot is required
+  local EXTRA_CFLAGS_rpi="-march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -marm" # no thumb support, set -marm for clang or -mthumb-interwork for gcc. armv6kz is not supported by some compilers, but zk is.
   local EXTRA_CFLAGS_rpi2="-march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mthumb" # -mthumb-interwork vfpv3-d16"
   local EXTRA_CFLAGS_rpi3="-march=armv8-a -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8"
 
   if $use_clang; then
     rpi_cc=clang
     if [ -n "$CROSS_PREFIX" ]; then
-      # TODO: add -lvcos for mmal
-      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\\\$SYSROOT" # search host by default, so sysroot is required
       CLANG_TARGET=${CROSS_PREFIX%%-}
       CLANG_TARGET=${CLANG_TARGET##*/}
       CLANG_FLAGS="-target $CLANG_TARGET" # gcc cross prefix, clang use target value to find binutils, and set host triple
       #CLANG_FLAGS="-fno-integrated-as $CLANG_FLAGS" # libswscale/arm/rgb2yuv_neon_{16,32}.o error. but using arm-linux-gnueabihf-gcc-7 asm from ubuntu results in bus error
     fi
-
+    #EXTRA_LDFLAGS="$EXTRA_LDFLAGS -nodefaultlibs"; EXTRALIBS="$EXTRALIBS -lc -lgcc_s"
     # TODO: apple clang invoke ld64. --ld=${CROSS_PREFIX}ld ldflags are different from cc ld flags
     TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN $TOOLCHAIN_OPT"
-    $USE_TOOLCHAIN -v $CLANG_FLAGS --sysroot=$SYSROOT $EXTRA_CFLAGS_rpi -fuse-ld=lld -x c -<<EOF && use_lld=true
+    $USE_TOOLCHAIN $CLANG_FLAGS --sysroot=$SYSROOT $EXTRA_CFLAGS_rpi -fuse-ld=lld -x c -<<EOF &>/dev/null && use_lld=true
 int main(){}
 EOF
+    EXTRA_CFLAGS="-iwithsysroot /opt/vc/include -iwithsysroot /opt/vc/include/IL $EXTRA_CFLAGS"
+  else
+    EXTRA_CFLAGS="-isystem=/opt/vc/include -isystem=/opt/vc/include/IL $EXTRA_CFLAGS"
   fi
   # cross-prefix is used by binutils (strip, but host ar, ranlib, nm can be used for cross build)
   $use_lld && {
@@ -660,7 +661,7 @@ EOF
   #COMMOM_FLAGS='-isystem\$SYSROOT/opt/vc/include -isystem\$SYSROOT/opt/vc/include/IL'
   # armv6zk, armv6kz, armv6z: https://reviews.llvm.org/D14568
   eval EXTRA_CFLAGS_RPI='${EXTRA_CFLAGS_'$rpi_os'}'
-  EXTRA_CFLAGS="$CLANG_FLAGS $EXTRA_CFLAGS_RPI -mfloat-abi=hard -isystem\\\$SYSROOT/opt/vc/include -isystem\\\$SYSROOT/opt/vc/include/IL $EXTRA_CFLAGS"
+  EXTRA_CFLAGS="$CLANG_FLAGS $EXTRA_CFLAGS_RPI -mfloat-abi=hard $EXTRA_CFLAGS"
   EXTRA_LDFLAGS="$CLANG_FLAGS -L\\\$SYSROOT/opt/vc/lib $EXTRA_LDFLAGS"
   #-lrt: clock_gettime in glibc2.17
   #[ "`${CROSS_PREFIX}gcc -print-file-name=librt.so`" = "librt.so" ] || EXTRA_LDFLAGS="$EXTRA_LDFLAGS -lrt"
@@ -958,5 +959,4 @@ make_universal()
 mkdir -p .dir
 
 build_all "$@"
-# --enable-openssl  --enable-hardcoded-tables  --enable-librtmp --enable-zlib
 echo ${SECONDS}s elapsed
