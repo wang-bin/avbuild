@@ -617,13 +617,17 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
     SYSROOT_CC=`${CROSS_PREFIX}gcc -print-sysroot` # TODO: not for clang
     [ -d "$SYSROOT_CC/opt/vc" ] || SYSROOT_CC=
   }
+  : ${SYSROOT:=${SYSROOT_CC}}
+  [ -d "$SYSROOT/opt/vc" ] || {
+    echo "rpi sysroot is not found!"
+    exit 1
+  }
+  local EXTRA_CFLAGS_rpi="-march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -marm" # no thumb support, so must set -marm. armv6kz is not supported by some compilers, but zk is.
+  local EXTRA_CFLAGS_rpi2="-march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mthumb" # -mthumb-interwork vfpv3-d16"
+  local EXTRA_CFLAGS_rpi3="-march=armv8-a -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8"
+
   if $use_clang; then
-    # TODO: apple clang invoke ld64. --ld=${CROSS_PREFIX}ld ldflags are different from cc ld flags
-    TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN $TOOLCHAIN_OPT"
     rpi_cc=clang
-    $USE_TOOLCHAIN -fuse-ld=lld -x c -<<EOF && use_lld=true
-int main(){}
-EOF
     if [ -n "$CROSS_PREFIX" ]; then
       # TODO: add -lvcos for mmal
       TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\\\$SYSROOT" # search host by default, so sysroot is required
@@ -632,6 +636,12 @@ EOF
       CLANG_FLAGS="-target $CLANG_TARGET" # gcc cross prefix, clang use target value to find binutils, and set host triple
       #CLANG_FLAGS="-fno-integrated-as $CLANG_FLAGS" # libswscale/arm/rgb2yuv_neon_{16,32}.o error. but using arm-linux-gnueabihf-gcc-7 asm from ubuntu results in bus error
     fi
+
+    # TODO: apple clang invoke ld64. --ld=${CROSS_PREFIX}ld ldflags are different from cc ld flags
+    TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN $TOOLCHAIN_OPT"
+    $USE_TOOLCHAIN -v $CLANG_FLAGS --sysroot=$SYSROOT $EXTRA_CFLAGS_rpi -fuse-ld=lld -x c -<<EOF && use_lld=true
+int main(){}
+EOF
   fi
   # cross-prefix is used by binutils (strip, but host ar, ranlib, nm can be used for cross build)
   $use_lld && {
@@ -641,7 +651,6 @@ EOF
   } || {
     $rpi_cross && TOOLCHAIN_OPT="--cross-prefix=$CROSS_PREFIX $TOOLCHAIN_OPT"
   }
-  : ${SYSROOT:=${SYSROOT_CC}}
   USER_OPT="--enable-omx-rpi --enable-mmal $USER_OPT"
   # https://github.com/carlonluca/pot/blob/master/piomxtextures_tools/compile_ffmpeg.sh
   # -funsafe-math-optimizations -mno-apcs-stack-check -mstructure-size-boundary=32 -mno-sched-prolog
@@ -650,9 +659,6 @@ EOF
   #COMMON_FLAGS='-isystem=/opt/vc/include -isystem=/opt/vc/include/IL'
   #COMMOM_FLAGS='-isystem\$SYSROOT/opt/vc/include -isystem\$SYSROOT/opt/vc/include/IL'
   # armv6zk, armv6kz, armv6z: https://reviews.llvm.org/D14568
-  EXTRA_CFLAGS_rpi="-march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -marm" # no thumb support, so must set -marm. armv6kz is not supported by some compilers, but zk is.
-  EXTRA_CFLAGS_rpi2="-march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mthumb" # -mthumb-interwork vfpv3-d16"
-  EXTRA_CFLAGS_rpi3="-march=armv8-a -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8"
   eval EXTRA_CFLAGS_RPI='${EXTRA_CFLAGS_'$rpi_os'}'
   EXTRA_CFLAGS="$CLANG_FLAGS $EXTRA_CFLAGS_RPI -mfloat-abi=hard -isystem\\\$SYSROOT/opt/vc/include -isystem\\\$SYSROOT/opt/vc/include/IL $EXTRA_CFLAGS"
   EXTRA_LDFLAGS="$CLANG_FLAGS -L\\\$SYSROOT/opt/vc/lib $EXTRA_LDFLAGS"
