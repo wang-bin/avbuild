@@ -410,7 +410,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
     if $use_clang ; then
       EXTRA_CFLAGS="$EXTRA_CFLAGS -iwithsysroot /usr/include/$ANDROID_HEADER_TRIPLE"
     else
-      EXTRA_CFLAGS="$EXTRA_CFLAGS -isystem=/usr/include/$ANDROID_HEADER_TRIPLE"
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -isystem \$NDK_ROOT/$ANDROID_SYSROOT_REL/usr/include/$ANDROID_HEADER_TRIPLE"
     fi
   else
     ANDROID_SYSROOT_REL=${ANDROID_SYSROOT_LIB_REL}
