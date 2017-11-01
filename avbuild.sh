@@ -605,6 +605,12 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
     echo "patching mmal probing..."
     sed -i $sed_bak 's/-lbcm_host/-lbcm_host -lvcos -lpthread/g' "$FFSRC/configure"
   fi
+  if ! `grep -q MMAL_PARAMETER_ZERO_COPY "$FFSRC/libavcodec/mmaldec.c"` && [ -f "$FFSRC/libavcodec/mmaldec.c" ]; then
+    cp -af patches/0002-mmal-enable-0-copy-for-egl-interop.patch "$FFSRC/tmp.patch"
+    cd "$FFSRC"
+    patch -p1 <"tmp.patch"
+    cd -
+  fi
   : ${CROSS_PREFIX:=arm-linux-gnueabihf-}
   [ -c /dev/vchiq ] && {
     echo "rpi host build"

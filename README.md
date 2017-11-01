@@ -18,7 +18,7 @@ windows mingw, vs2013/vs2015/vs2017, desktop/store/phone: [![appveyor_ci](https:
 | CC/H?X/OS | Linux  |  Android  |   macOS  |   iOS   |    RPi    |  Win32  |  WinStore  | WinPhone |
 |-----------|---------|-----------|----------|---------|-----------|---------|------------|----------|
 |   Clang   |    H    |     X     |     H    |    X    |    H+X    |    ?    |      ?     |     ?    |
-| Clang+LLD |    ?    |     ?     |     ?    |         |    ?+X    |    ?    |      ?     |     ?    |
+| Clang+LLD |    ?    |     ?     |     ?    |         |    H+X    |    ?    |      ?     |     ?    |
 |    GCC    |    H    |     X     |     ?    |         |    H+X    |   H+X   |      ?     |     ?    |
 |  VS2013   |         |           |          |         |           |    H    |      H     |     X    |
 |  VS2015   |         |           |          |         |           |    H    |      H     |     X    |
