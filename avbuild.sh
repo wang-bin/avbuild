@@ -6,7 +6,9 @@
 # https://wiki.debian.org/Hardening#DEB_BUILD_HARDENING_RELRO_.28ld_-z_relro.29
 # onecore for store apps
 # http://clang.llvm.org/docs/CrossCompilation.html
- 
+# iosurface
+# apple: remove opengl properties
+
 #set -x
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2017"
@@ -21,7 +23,7 @@ cat<<HELP
 ./$THIS_NAME [target_platform [target_architecture[-clang*/gcc*]]]
 target_platform can be: ${PLATFORMS}
 target_architecture can be:
- ios(x.y)|  android  | mingw64  |  rpi
+ ios[x.y]| android[x]| mingw64  |  rpi
          |   armv5   |          | armv6
   armv7  |   armv7   |          | armv7
   arm64  |   arm64   |          | armv8
@@ -313,7 +315,8 @@ setup_android_env() {
   local ANDROID_TOOLCHAIN_PREFIX="${ANDROID_ARCH}-linux-android"
   local CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
   local FFARCH=$ANDROID_ARCH
-  local API_LEVEL=14 #ensure do not use log2f in libm
+  local API_LEVEL=${2#android}
+  [ -z "$API_LEVEL" ] && API_LEVEL=14 #api9: ensure do not use log2f in libm
   local UNIFIED_SYSROOT="$NDK_ROOT/sysroot"
   [ -d "$UNIFIED_SYSROOT" ] || UNIFIED_SYSROOT=
   add_elf_flags
@@ -332,7 +335,7 @@ setup_android_env() {
     $use_clang || EXTRA_CFLAGS="$EXTRA_CFLAGS -mstackrealign"
     enable_lto=false
   elif [ "$ANDROID_ARCH" = "x86_64" -o "$ANDROID_ARCH" = "x64" ]; then
-    API_LEVEL=21
+    [ $API_LEVEL -lt 21 ] && API_LEVEL=21
     ANDROID_ARCH=x86_64
     ANDROID_TOOLCHAIN_PREFIX=x86_64
     ANDROID_HEADER_TRIPLE=x86_64-linux-android
@@ -340,7 +343,7 @@ setup_android_env() {
     CLANG_FLAGS="-target x86_64-none-linux-android"
     enable_lto=false
   elif [ "$ANDROID_ARCH" = "aarch64" -o "$ANDROID_ARCH" = "arm64" ]; then
-    API_LEVEL=21
+    [ $API_LEVEL -lt 21 ] && API_LEVEL=21
     ANDROID_ARCH=arm64
     ANDROID_TOOLCHAIN_PREFIX=aarch64-linux-android
     ANDROID_HEADER_TRIPLE=aarch64-linux-android
@@ -698,7 +701,7 @@ config1(){
     }
   }
   case $1 in
-    android)    setup_android_env $TAGET_ARCH_FLAG ;;
+    android*)    setup_android_env $TAGET_ARCH_FLAG $1 ;;
     ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
     macos*)     setup_macos_env $TAGET_ARCH_FLAG $1 ;;
     mingw*)     setup_mingw_env $TAGET_ARCH_FLAG ;;
@@ -948,9 +951,10 @@ make_universal()
     for d in ${dirs[@]}; do
       USE_TOOLCHAIN=${d##*-}
       [ ! "$USE_TOOLCHAIN" == "gcc" -a ! "$USE_TOOLCHAIN" == "clang" ] && USE_TOOLCHAIN=gcc
+      # TODO: msvc
       OUT_DIR=sdk-$os-${USE_TOOLCHAIN}
       arch=${d%-*}
-      arch=${arch#sdk-$os-} # FIXME: rpi raspberry-pi
+      arch=${arch#sdk-$os-} # FIXME: host build macOS is sdk
       arch="$($get_arch $arch)"
 
       mkdir -p $OUT_DIR/lib
