@@ -8,6 +8,7 @@
 # http://clang.llvm.org/docs/CrossCompilation.html
 # iosurface
 # apple: remove opengl properties
+# unify out dir. multiarch build for all (mingw, msvc, linux)
 
 #set -x
 echo
@@ -512,11 +513,17 @@ setup_macos_env(){
   local MACOS_ARCH=
   if [ "${1:0:5}" == "macos" ]; then
     MACOS_VER=${1##macos}
+  elif [ "${1:0:3}" == "osx" ]; then
+    MACOS_VER=${1##osx}
   elif [ -n "$1" ]; then
     MACOS_ARCH=$1
     ARCH_FLAG="-arch $1"
-    [ -n "$2" ] && MACOS_VER=${2##macos}
+    [ -n "$2" ] && {
+      MACOS_VER=${2##macos}
+      MACOS_VER=${MACOS_VER##osx}
+    }
   fi
+  [ -z "$MACOS_VER" ] && MACOS_VER=10.7
   enable_opt videotoolbox vda
   version_compare $MACOS_VER "<" 10.7 && disable_opt lzma avdevice #avfoundation is not supported on 10.6
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --install_name_dir=@rpath"
@@ -703,7 +710,7 @@ config1(){
   case $1 in
     android*)    setup_android_env $TAGET_ARCH_FLAG $1 ;;
     ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
-    macos*)     setup_macos_env $TAGET_ARCH_FLAG $1 ;;
+    osx*|macos*)     setup_macos_env $TAGET_ARCH_FLAG $1 ;;
     mingw*)     setup_mingw_env $TAGET_ARCH_FLAG ;;
     vc)         setup_vc_desktop_env ;;
     winstore|winpc|winphone|winrt) setup_winrt_env ;;
@@ -951,15 +958,15 @@ make_universal()
     for d in ${dirs[@]}; do
       USE_TOOLCHAIN=${d##*-}
       [ ! "$USE_TOOLCHAIN" == "gcc" -a ! "$USE_TOOLCHAIN" == "clang" ] && USE_TOOLCHAIN=gcc
-      # TODO: msvc
       OUT_DIR=sdk-$os-${USE_TOOLCHAIN}
       arch=${d%-*}
-      arch=${arch#sdk-$os-} # FIXME: host build macOS is sdk
+      arch=${arch#sdk-$os-}
       arch="$($get_arch $arch)"
+      [ "${arch:0:3}" == "sdk" ] && arch=  # single arch build
 
       mkdir -p $OUT_DIR/lib
       cp -af $d/{bin,include} $OUT_DIR
-      cp -af $d/lib $OUT_DIR/lib/$arch
+      cp -af $d/lib/* $OUT_DIR/lib/$arch
       cat $d/config.txt >$OUT_DIR/config-$arch.txt
       echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
       rm -rf $d
