@@ -537,6 +537,9 @@ setup_macos_env(){
   else
     apple_sdk_version ">=" macos 10.12 && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
   fi
+  [ "${USE_TOOLCHAIN/gcc/}" == "${USE_TOOLCHAIN}" -a "${USE_TOOLCHAIN/clang/}" == "$USE_TOOLCHAIN" ] && USE_TOOLCHAIN=clang
+  TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN $TOOLCHAIN_OPT"
+  INSTALL_DIR=sdk-macOS${MACOS_VER}${MACOS_ARCH}-$USE_TOOLCHAIN
 }
 
 # version_compare v1 "op" v2, e.g. version_compare 10.6 "<" 10.7
@@ -957,13 +960,13 @@ make_universal()
     rm -rf sdk-$os-{gcc,clang}
     for d in ${dirs[@]}; do
       USE_TOOLCHAIN=${d##*-}
-      [ ! "$USE_TOOLCHAIN" == "gcc" -a ! "$USE_TOOLCHAIN" == "clang" ] && USE_TOOLCHAIN=gcc
+      [ "${USE_TOOLCHAIN/gcc/}" == "${USE_TOOLCHAIN}" -a "${USE_TOOLCHAIN/clang/}" == "$USE_TOOLCHAIN" ] && USE_TOOLCHAIN=gcc
       OUT_DIR=sdk-$os-${USE_TOOLCHAIN}
       arch=${d%-*}
       arch=${arch#sdk-$os-}
+      arch=${arch#sdk-$os}
       arch="$($get_arch $arch)"
       [ "${arch:0:3}" == "sdk" ] && arch=  # single arch build
-
       mkdir -p $OUT_DIR/{bin,lib}/$arch
       cp -af $d/include $OUT_DIR
       cp -af $d/bin/* $OUT_DIR/bin/$arch
