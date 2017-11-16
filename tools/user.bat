@@ -1,8 +1,10 @@
+::set PKG_CONFIG_PATH_EXT=%CD%\VS2015x64\lib\pkgconfig
 if [%MSYSTEM%] == [] goto SetupMSYS2
 
 :SetupAV
 set CPP_DIR=
-if "%ARCH%" == "arm" (
+:: Platform is defined by vcvarsall.bat. use %ARCH% is fine too
+if /i "%Platform%" == "arm" (
   set CPP_DIR=%MSYS2_DIR%\mingw64\bin
   if not exist %CPP_DIR%\cpp.exe set CPP_DIR=%MSYS2_DIR%\mingw32\bin
 )
