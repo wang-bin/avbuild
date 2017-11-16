@@ -300,6 +300,7 @@ setup_mingw_env() {
   disable_opt iconv
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -static-libgcc -Wl,-Bstatic"
   $gcc -dumpmachine |grep -iq x86_64 && INSTALL_DIR="${INSTALL_DIR}-mingw-x64" || INSTALL_DIR="${INSTALL_DIR}-mingw-x86"
+  INSTALL_DIR=${INSTALL_DIR}-gcc
 }
 
 setup_wince_env() {
@@ -536,7 +537,6 @@ setup_macos_env(){
   else
     apple_sdk_version ">=" macos 10.12 && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
   fi
-  INSTALL_DIR=sdk-macOS${MACOS_VER}${MACOS_ARCH}
 }
 
 # version_compare v1 "op" v2, e.g. version_compare 10.6 "<" 10.7
@@ -964,8 +964,9 @@ make_universal()
       arch="$($get_arch $arch)"
       [ "${arch:0:3}" == "sdk" ] && arch=  # single arch build
 
-      mkdir -p $OUT_DIR/lib
-      cp -af $d/{bin,include} $OUT_DIR
+      mkdir -p $OUT_DIR/{bin,lib}/$arch
+      cp -af $d/include $OUT_DIR
+      cp -af $d/bin/* $OUT_DIR/bin/$arch
       cp -af $d/lib/* $OUT_DIR/lib/$arch
       cat $d/config.txt >$OUT_DIR/config-$arch.txt
       echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
