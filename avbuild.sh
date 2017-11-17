@@ -24,7 +24,7 @@ cat<<HELP
 ./$THIS_NAME [target_platform [target_architecture[-clang*/gcc*]]]
 target_platform can be: ${PLATFORMS}
 target_architecture can be:
- ios[x.y]| android[x]| mingw64  |  rpi
+ ios[x.y]| android[x]|  mingw   |  rpi
          |   armv5   |          | armv6
   armv7  |   armv7   |          | armv7
   arm64  |   arm64   |          | armv8
@@ -286,21 +286,59 @@ setup_mingw_env() {
   LIB_OPT="$LIB_OPT --disable-static"
   enable_lto=false
   local gcc=gcc
-  host_is MinGW || host_is MSYS && {
-    echo "install msys2 packages: pacman -Sy --needed diffutils gawk patch pkg-config mingw-w64-i686-gcc mingw-w64-x86_64-gcc"
+  local arch=$1
+  local native_build=false # use gcc instead of ${arch}-w64-mingw32-gcc
+  if [ -n "$arch" ]; then
+    if [ "$arch" = "x86_64" ]; then
+      arch=x86_64
+      MINGW_SUFFIX=64
+    else
+      arch=i686
+      MINGW_SUFFIX=32
+    fi
+  fi
+  host_is MinGW || host_is MSYS && echo "install msys2 packages: pacman -Sy --needed diffutils gawk patch pkg-config mingw-w64-i686-gcc mingw-w64-x86_64-gcc nasm yasm"
+  # msys2 /usr/bin/gcc is x86_64-pc-msys
+  $gcc -dumpmachine |grep -iq mingw && {
+    if [ -n "$arch" ]; then
+      $gcc -dumpmachine |grep -iq "$arch" && native_build=true
+    else
+      native_build=true
+    fi
+  }
+  $native_build && {
+    echo "mingw$MINGW_SUFFIX host native build"
   } || {
-    echo "mingw cross build"
-    local arch=$1
-    [ "$arch" = "x86" ] && arch=i686
+    echo "mingw host build for $arch"
     gcc=${arch}-w64-mingw32-gcc
-    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --cross-prefix=${arch}-w64-mingw32- --target-os=mingw32 --arch=$arch"
+    host_is MinGW || host_is MSYS && {
+      local MINGW_BIN=/mingw${MINGW_SUFFIX}/bin
+      # mingw-w64-cross-gcc package has broken old mingw compilers with the same prefix, so prefer compilers in $MINGW_BIN
+      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=$gcc --target-os=mingw$MINGW_SUFFIX" # set target os recognized by configure. msys and mingw without 32/64 are rejected by configure
+      [ -d $MINGW_BIN ] && {
+        export PATH=$MINGW_BIN:$PATH
+        TOOLCHAIN_OPT="$TOOLCHAIN_OPT --pkgconfigdir=/mingw${MINGW_SUFFIX}/lib/pkgconfig"
+      }
+    } || {
+      echo "mingw${MINGW_SUFFIX} cross build for $arch"
+      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --cross-prefix=${arch}-w64-mingw32- --target-os=mingw$MINGW_SUFFIX --arch=$arch"
+    }
   }
   enable_libmfx
   enable_opt dxva2
   disable_opt iconv
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -static-libgcc -Wl,-Bstatic"
+  which $gcc
+  $gcc -dumpmachine
   $gcc -dumpmachine |grep -iq x86_64 && INSTALL_DIR="${INSTALL_DIR}-mingw-x64" || INSTALL_DIR="${INSTALL_DIR}-mingw-x86"
   INSTALL_DIR=${INSTALL_DIR}-gcc
+  rm -rf $THIS_DIR/build_$INSTALL_DIR/.env.sh
+  [ -d "$MINGW_BIN" ] && cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
+export PATH=$MINGW_BIN:$PATH
+shopt -s expand_aliases
+#alias ${arch}-w64-mingw32-strip=$MINGW_BIN/strip # seems not work in sh used by ffmpeg
+#alias ${arch}-w64-mingw32-nm=$MINGW_BIN/nm
+EOF
 }
 
 setup_wince_env() {
