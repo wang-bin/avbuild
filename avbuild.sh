@@ -63,7 +63,10 @@ fi
 
 echo FFSRC=$FFSRC
 [ -f $FFSRC/configure ] && {
-  export PATH=$PATH:$FFSRC
+  cd $FFSRC
+  export PATH=$PWD:$PATH
+  cd -
+  echo "PATH: $PATH"
 } || {
   which configure &>/dev/null || {
     echo 'ffmpeg configure script can not be found in "$PATH"'
@@ -325,7 +328,6 @@ setup_mingw_env() {
       TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=$gcc --target-os=mingw$MINGW_SUFFIX" # set target os recognized by configure. msys and mingw without 32/64 are rejected by configure
       [ -d $MINGW_BIN ] && {
         export PATH=$MINGW_BIN:$PATH
-        TOOLCHAIN_OPT="$TOOLCHAIN_OPT --pkgconfigdir=/mingw${MINGW_SUFFIX}/lib/pkgconfig"
       }
     } || {
       echo "mingw${MINGW_SUFFIX} cross build for $arch"
@@ -333,8 +335,10 @@ setup_mingw_env() {
     }
   }
   if [ -n "$PKG_CONFIG_PATH_EXT" -a ! -d "$PKG_CONFIG_PATH_EXT" ]; then
-    PKG_CONFIG_PATH_EXT="${PKG_CONFIG_PATH_EXT/\/lib/${MINGW_SUFFIX}\/lib}"
+    PKG_CONFIG_PATH_EXT="${PKG_CONFIG_PATH_EXT/MINGW/MINGW${MINGW_SUFFIX}}"
+    echo "PKG_CONFIG_PATH_EXT: $PKG_CONFIG_PATH_EXT"
     [ -d "$PKG_CONFIG_PATH_EXT" ] && {
+      # FIXME: mingw32/64 has own PKG_CONFIG_PATH. use ${PKG_CONFIG_PATH%%:*} in libmfx.pc?
       export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_EXT # $PKG_CONFIG_PATH/../.. is used in libmfx.pc, so no ":" separated list
       echo ">>>PKG_CONFIG_PATH=$PKG_CONFIG_PATH<<<"
     }
@@ -348,6 +352,7 @@ setup_mingw_env() {
   $gcc -dumpmachine |grep -iq x86_64 && INSTALL_DIR="${INSTALL_DIR}-mingw-x64" || INSTALL_DIR="${INSTALL_DIR}-mingw-x86"
   INSTALL_DIR=${INSTALL_DIR}-gcc
   rm -rf $THIS_DIR/build_$INSTALL_DIR/.env.sh
+  mkdir -p $THIS_DIR/build_$INSTALL_DIR
   [ -d "$MINGW_BIN" ] && cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
 export PATH=$MINGW_BIN:$PATH
 shopt -s expand_aliases

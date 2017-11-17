@@ -47,8 +47,8 @@ matrix:
   fast_finish: false
 
 cache:
-  - C:\%_CACHE%\var\cache\pacman\pkg -> appveyor.yml
   - ffmpeg-%FF_VERSION%
+#  - C:\%_CACHE%\var\cache\pacman\pkg -> appveyor.yml
 
 init:
   - echo NUMBER_OF_PROCESSORS=%NUMBER_OF_PROCESSORS%
@@ -62,7 +62,6 @@ install:
 # can not starts with %
   - if /i [%_ARCH%]==[arm] git submodule update --init
   - if /i %_CC%==MinGW (
-      C:\msys64\usr\bin\pacman -Rsc --noconfirm bsdcpio bsdtar gcc gdb gperf mpc python2 scons swig subversion mingw-w64-x86_64-ncurses mingw-w64-i686-crt-git mingw-w64-i686-gdb mingw-w64-i686-gcc-ada mingw-w64-i686-gcc-fortran mingw-w64-i686-gcc-objc  mingw-w64-x86_64-crt-git mingw-w64-x86_64-gcc-ada mingw-w64-x86_64-gcc-fortran mingw-w64-x86_64-gcc-objc &&
       C:\msys64\usr\bin\pacman -Syyuu --noconfirm &&
       C:\msys64\usr\bin\pacman -Suu --noconfirm   &&
       C:\msys64\usr\bin\pacman -S --noconfirm --needed mingw-w64-i686-gcc mingw-w64-x86_64-gcc &&
@@ -90,6 +89,7 @@ build_script:
   - if /i not %_CC%==MinGW if /i not %_PLATFORM%==store set V=1
   - if /i %_CC%==MinGW (
       set VC_BUILD=false&&
+      set MSYS2_PATH_TYPE=&&
       C:\msys64\usr\bin\bash.exe --login avbuild.sh mingw
     ) else (
       set BUILD_NOW=true&&
