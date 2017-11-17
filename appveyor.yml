@@ -10,6 +10,14 @@ branches:
 # APPVEYOR_BUILD_WORKER_IMAGE is used in environment matrix, image is not
 environment:
   matrix:
+  - _ARCH: 32
+    _CC: MINGW
+    _PLATFORM: desktop
+    _CACHE: msys64
+  - _ARCH: 64
+    _CC: MINGW
+    _PLATFORM: desktop
+    _CACHE: msys64
   - _ARCH: x64
     _CC: VS2017
     _PLATFORM: desktop
@@ -39,14 +47,6 @@ environment:
     _CC: VS2015
     _PLATFORM: store
     APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-  - _ARCH: 32
-    _CC: MINGW
-    _PLATFORM: desktop
-    _CACHE: msys64
-  - _ARCH: 64
-    _CC: MINGW
-    _PLATFORM: desktop
-    _CACHE: msys64
 
 matrix:
   fast_finish: false
