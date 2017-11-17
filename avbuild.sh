@@ -56,7 +56,7 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 trap "kill -- -$$; rm -rf $THIS_DIR/.dir exit 3" SIGTERM SIGINT SIGKILL
 
 export PATH=$PWD/tools/gas-preprocessor:$PATH
-if [ -n "$PKG_CONFIG_PATH_EXT" ]; then
+if [ -n "$PKG_CONFIG_PATH_EXT" -a -d "$PKG_CONFIG_PATH_EXT" ]; then
   export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_EXT # $PKG_CONFIG_PATH/../.. is used in libmfx.pc, so no ":" separated list
   echo ">>>PKG_CONFIG_PATH=$PKG_CONFIG_PATH<<<"
 fi
@@ -307,6 +307,14 @@ setup_mingw_env() {
     fi
   }
   $native_build && {
+    # arch is not set. probe using gcc
+    $gcc -dumpmachine |grep -iq "x86_64" && {
+      arch=x86_64
+      MINGW_SUFFIX=64
+    } || {
+      arch=i686
+      MINGW_SUFFIX=32
+    }
     echo "mingw$MINGW_SUFFIX host native build"
   } || {
     echo "mingw host build for $arch"
@@ -324,6 +332,13 @@ setup_mingw_env() {
       TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --cross-prefix=${arch}-w64-mingw32- --target-os=mingw$MINGW_SUFFIX --arch=$arch"
     }
   }
+  if [ -n "$PKG_CONFIG_PATH_EXT" -a ! -d "$PKG_CONFIG_PATH_EXT" ]; then
+    PKG_CONFIG_PATH_EXT="${PKG_CONFIG_PATH_EXT/\/lib/${MINGW_SUFFIX}\/lib}"
+    [ -d "$PKG_CONFIG_PATH_EXT" ] && {
+      export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_EXT # $PKG_CONFIG_PATH/../.. is used in libmfx.pc, so no ":" separated list
+      echo ">>>PKG_CONFIG_PATH=$PKG_CONFIG_PATH<<<"
+    }
+  fi
   enable_libmfx
   enable_opt dxva2
   disable_opt iconv
@@ -916,6 +931,7 @@ build_all(){
       [ "${os:0:3}" == "ios" ] && archs=(armv7 arm64 x86 x86_64)
       [ "$os" == "android" ] && archs=(armv5 armv7 arm64 x86)
       [ "${os:0:3}" == "rpi" -o "${os:0:9}" == "raspberry" ] && archs=(armv6zk armv7-a)
+      [ "${os:0:5}" == "mingw" ] && archs=(x86 x86_64)
       #[ "${os:0:5}" == "macos" ] && archs=(x86_64 i386)
     }
     echo ">>>>>archs: ${archs[@]}"
