@@ -10,12 +10,7 @@ branches:
 # APPVEYOR_BUILD_WORKER_IMAGE is used in environment matrix, image is not
 environment:
   matrix:
-  - _ARCH: 32
-    _CC: MINGW
-    _PLATFORM: desktop
-    _CACHE: msys64
-  - _ARCH: 64
-    _CC: MINGW
+  - _CC: MINGW
     _PLATFORM: desktop
     _CACHE: msys64
   - _ARCH: x64
@@ -26,12 +21,13 @@ environment:
     _CC: VS2017
     _PLATFORM: desktop
     APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-  - _ARCH: x86
-    _CC: VS2013
-    _PLATFORM: desktop
+  - _ARCH: arm
+    _CC: VS2017
+    _PLATFORM: store
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
   - _ARCH: x64
-    _CC: VS2015
-    _PLATFORM: desktop
+    _CC: VS2017
+    _PLATFORM: store
     APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
   - _ARCH: arm
     _CC: VS2013
@@ -39,13 +35,12 @@ environment:
   - _ARCH: x86
     _CC: VS2013
     _PLATFORM: store
-  - _ARCH: arm
-    _CC: VS2015
-    _PLATFORM: store
-    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+  - _ARCH: x86
+    _CC: VS2013
+    _PLATFORM: desktop
   - _ARCH: x64
     _CC: VS2015
-    _PLATFORM: store
+    _PLATFORM: desktop
     APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
 
 matrix:
@@ -65,14 +60,12 @@ init:
 
 install:
 # can not starts with %
-  - if /i %_ARCH%==arm git submodule update --init
-  - if /i %_ARCH%==32 set _ARCH2=i686
-  - if /i %_ARCH%==64 set _ARCH2=x86_64
+  - if /i [%_ARCH%]==[arm] git submodule update --init
   - if /i %_CC%==MinGW (
       C:\msys64\usr\bin\pacman -Rsc --noconfirm bsdcpio bsdtar gcc gdb gperf mpc python2 scons swig subversion mingw-w64-x86_64-ncurses mingw-w64-i686-crt-git mingw-w64-i686-gdb mingw-w64-i686-gcc-ada mingw-w64-i686-gcc-fortran mingw-w64-i686-gcc-objc  mingw-w64-x86_64-crt-git mingw-w64-x86_64-gcc-ada mingw-w64-x86_64-gcc-fortran mingw-w64-x86_64-gcc-objc &&
       C:\msys64\usr\bin\pacman -Syyuu --noconfirm &&
       C:\msys64\usr\bin\pacman -Suu --noconfirm   &&
-      C:\msys64\usr\bin\pacman -S --noconfirm --needed mingw-w64-%_ARCH2%-gcc &&
+      C:\msys64\usr\bin\pacman -S --noconfirm --needed mingw-w64-i686-gcc mingw-w64-x86_64-gcc &&
       C:\msys64\usr\bin\pacman -Sc --noconfirm
     )
   - C:\msys64\usr\bin\pacman -S --noconfirm --needed diffutils patch pkg-config yasm
@@ -97,7 +90,7 @@ build_script:
   - if /i not %_CC%==MinGW if /i not %_PLATFORM%==store set V=1
   - if /i %_CC%==MinGW (
       set VC_BUILD=false&&
-      C:\msys64\usr\bin\bash.exe --login avbuild.sh
+      C:\msys64\usr\bin\bash.exe --login avbuild.sh mingw
     ) else (
       set BUILD_NOW=true&&
       tools\vcbuild.bat %_CC% %_PLATFORM% %_ARCH%
