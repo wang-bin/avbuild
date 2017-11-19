@@ -711,9 +711,14 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
       CLANG_FLAGS="-target $CLANG_TARGET" # gcc cross prefix, clang use target value to find binutils, and set host triple
       #CLANG_FLAGS="-fno-integrated-as $CLANG_FLAGS" # libswscale/arm/rgb2yuv_neon_{16,32}.o error. but using arm-linux-gnueabihf-gcc-7 asm from ubuntu results in bus error
     fi
+    # use llvm-ar/ranlib, host ar/ranlib may not work(e.g. macOS)
+    local clang_dir=${USE_TOOLCHAIN%clang*}
+    local clang_name=${USE_TOOLCHAIN##*/}
+    local llvm_ar=$clang_dir${clang_name/clang/llvm-ar}
+    local llvm_ranlib=$clang_dir${clang_name/clang/llvm-ranlib}
     #EXTRA_LDFLAGS="$EXTRA_LDFLAGS -nodefaultlibs"; EXTRALIBS="$EXTRALIBS -lc -lgcc_s"
     # TODO: apple clang invoke ld64. --ld=${CROSS_PREFIX}ld ldflags are different from cc ld flags
-    TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN $TOOLCHAIN_OPT"
+    TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN --ar=$llvm_ar --ranlib=$llvm_ranlib $TOOLCHAIN_OPT"
     $USE_TOOLCHAIN $CLANG_FLAGS --sysroot=$SYSROOT $EXTRA_CFLAGS_rpi -fuse-ld=lld -x c -<<EOF &>/dev/null && use_lld=true
 int main(){}
 EOF
