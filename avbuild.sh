@@ -719,9 +719,15 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
     #EXTRA_LDFLAGS="$EXTRA_LDFLAGS -nodefaultlibs"; EXTRALIBS="$EXTRALIBS -lc -lgcc_s"
     # TODO: apple clang invoke ld64. --ld=${CROSS_PREFIX}ld ldflags are different from cc ld flags
     TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN --ar=$llvm_ar --ranlib=$llvm_ranlib $TOOLCHAIN_OPT"
+    local use_apple_clang=false
+    $USE_TOOLCHAIN -dM -E -</dev/null |grep -q __apple_build_version__ && use_apple_clang=true
     $USE_TOOLCHAIN $CLANG_FLAGS --sysroot=$SYSROOT $EXTRA_CFLAGS_rpi -fuse-ld=lld -x c -<<EOF &>/dev/null && use_lld=true
 int main(){}
 EOF
+    $use_apple_clang && {
+      use_lld=true
+      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --ld=/usr/local/opt/llvm/bin/clang"
+    }
     EXTRA_CFLAGS="-iwithsysroot /opt/vc/include -iwithsysroot /opt/vc/include/IL $EXTRA_CFLAGS"
   else
     EXTRA_CFLAGS="-isystem=/opt/vc/include -isystem=/opt/vc/include/IL $EXTRA_CFLAGS"
