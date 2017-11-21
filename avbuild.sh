@@ -595,9 +595,15 @@ setup_macos_env(){
   else
     apple_sdk_version ">=" macos 10.12 && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
   fi
-  [ "${USE_TOOLCHAIN/gcc/}" == "${USE_TOOLCHAIN}" -a "${USE_TOOLCHAIN/clang/}" == "$USE_TOOLCHAIN" ] && USE_TOOLCHAIN=clang
+  [ -z "$USE_TOOLCHAIN" ] && USE_TOOLCHAIN=clang
+  local use_apple_clang=false
+  $USE_TOOLCHAIN -dM -E -</dev/null |grep -q __apple_build_version__ && use_apple_clang=true
   TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN $TOOLCHAIN_OPT"
-  INSTALL_DIR=sdk-macOS${MACOS_VER}${MACOS_ARCH}-$USE_TOOLCHAIN
+  use_apple_clang || {
+    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\$(xcrun --sdk macosx --show-sdk-path)"
+  }
+  [ "${USE_TOOLCHAIN/gcc/}" == "${USE_TOOLCHAIN}" -a "${USE_TOOLCHAIN/clang/}" == "$USE_TOOLCHAIN" ] && USE_TOOLCHAIN=clang
+  INSTALL_DIR=sdk-macOS${MACOS_VER}${MACOS_ARCH}-${USE_TOOLCHAIN##*/}
 }
 
 # version_compare v1 "op" v2, e.g. version_compare 10.6 "<" 10.7
