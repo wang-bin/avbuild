@@ -43,6 +43,26 @@ matrix:
             - lld-5.0
             - sshpass
     - os: linux
+      compiler: gcc # host compiler is not used, just to tell build script to use which compiler to use from ndk. env: CC/CXX
+      env:
+        - TARGET=android
+      addons: #can be used in matrix, but required by every combination
+        apt:
+          packages:
+            - p7zip-full
+            - yasm
+            - sshpass
+    - os: linux
+      compiler: clang # host compiler is not used, just to tell build script to use which compiler to use from ndk. env: CC/CXX
+      env:
+        - TARGET=android
+      addons: #can be used in matrix, but required by every combination
+        apt:
+          packages:
+            - p7zip-full
+            - yasm
+            - sshpass
+    - os: linux
       compiler: gcc
       env:
         - TARGET=host
@@ -77,26 +97,6 @@ matrix:
             - libva-dev
             - libvdpau-dev
             - sshpass
-    - os: linux
-      compiler: gcc # host compiler is not used, just to tell build script to use which compiler to use from ndk. env: CC/CXX
-      env:
-        - TARGET=android
-      addons: #can be used in matrix, but required by every combination
-        apt:
-          packages:
-            - p7zip-full
-            - yasm
-            - sshpass
-    - os: linux
-      compiler: clang # host compiler is not used, just to tell build script to use which compiler to use from ndk. env: CC/CXX
-      env:
-        - TARGET=android
-      addons: #can be used in matrix, but required by every combination
-        apt:
-          packages:
-            - p7zip-full
-            - yasm
-            - sshpass
 # TODO: mingw64 cross build
 
 before_install:
@@ -110,7 +110,7 @@ install:
       fi
   - |
       if [ "${TARGET:0:7}" == "android" -a ! -d android-ndk-${NDK_VERSION} ]; then
-        wget https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux-x86_64.zip
+        wget https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux-x86_64.zip 2>/dev/null
         7z x -y android-ndk-${NDK_VERSION}-linux-x86_64.zip >/dev/null
       fi
   - |
