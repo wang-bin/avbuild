@@ -2,16 +2,20 @@ It's a tool to build ffmpeg for almost all platforms.
 
 How: https://github.com/wang-bin/avbuild/wiki
 
+***Download prebuilt packages:*** https://sourceforge.net/projects/avbuild/files
+
+***Build Details:***
 
 Linux x86+x64, android, macOS, iOS, raspberry pi: [![travis_ci](https://travis-ci.org/wang-bin/avbuild.svg?branch=master)](https://travis-ci.org/wang-bin/avbuild)
 
-windows mingw, vs2013/vs2015/vs2017, desktop/store/phone: [![appveyor_ci](https://ci.appveyor.com/api/projects/status/github/wang-bin/avbuild?branch=master&svg=true)](https://ci.appveyor.com/project/wang-bin/avbuild)
+windows mingw, vs2013/vs2015/vs2017, desktop(supports XP)/store/phone: [![appveyor_ci](https://ci.appveyor.com/api/projects/status/github/wang-bin/avbuild?branch=master&svg=true)](https://ci.appveyor.com/project/wang-bin/avbuild)
 
 ## Features
 
 - multiple targets build and configure simultaneously
 - ffmpeg patches
 - morden toolchain support: clang+lld
+- supports windows xp with latest vs and win sdk (vs2017+win10 sdk)
 
 ## Build Matrix
 
