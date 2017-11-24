@@ -9,6 +9,8 @@
 # iosurface
 # apple: remove opengl properties
 # unify out dir. multiarch build for all (mingw, msvc, linux)
+# copy: ffmpeg*/LICENSE.md ffmpeg*/COPYING.* README.md
+# push patchs to ff repo.
 
 #set -x
 echo
@@ -64,7 +66,7 @@ fi
 echo FFSRC=$FFSRC
 [ -f $FFSRC/configure ] && {
   cd $FFSRC
-  export PATH=$PWD:$PATH
+  export PATH=$PWD:$PATH # convert win path to unix path
   cd -
   echo "PATH: $PATH"
 } || {
@@ -178,6 +180,73 @@ add_elf_flags() {
   # rpath
 }
 
+
+
+CFLAG_IWITHSYSROOT_GCC="-isystem=" # not work for win dir
+CFLAG_IWITHSYSROOT_CLANG="-iwithsysroot "
+CFLAG_IWITHSYSROOT=$CFLAG_IWITHSYSROOT_GCC
+IS_CLANG=false
+IS_APPLE_CLANG=false
+IS_CLANG_CL=false
+IS_LLD=false
+HAVE_LLD=false
+
+is_apple_clang() {
+  $1 -dM -E -</dev/null |grep -q __apple_build_version__ && return 0 || return 1
+}
+use_clang() {
+  CFLAG_IWITHSYSROOT=$CFLAG_IWITHSYSROOT_CLANG
+  if [ -n "$CROSS_PREFIX" ]; then # TODO: "$CROSS_PREFIX" != $TARGET_TRIPLE
+    CLANG_TARGET=${CROSS_PREFIX%%-}
+    CLANG_TARGET=${CLANG_TARGET##*/}
+    CLANG_FLAGS="-target $CLANG_TARGET" # apple clang uses -arch, but also supports -target. gcc cross prefix, clang use target value to find binutils, and set host triple
+    #CLANG_FLAGS="-fno-integrated-as $CLANG_FLAGS" # libswscale/arm/rgb2yuv_neon_{16,32}.o error. but using arm-linux-gnueabihf-gcc-7 asm from ubuntu results in bus error
+  fi
+  # -nostdlib?
+  $USE_TOOLCHAIN $CLANG_FLAGS -nostdlib -fuse-ld=lld -x c -<<EOF &>/dev/null && HAVE_LLD=true
+int main(){}
+EOF
+
+  # TODO: add clang c/ld flags
+}
+
+probe_cc() {
+  local cc=$1
+  echo cc=$cc
+  $cc -dM -E -</dev/null |grep -q __clang__ && IS_CLANG=true
+  $cc -dM -E -</dev/null |grep -q __apple_build_version__ && IS_APPLE_CLANG=true
+  echo "compiler is clang: $IS_CLANG, apple clang: $IS_APPLE_CLANG"
+}
+
+setup_cc() {
+  probe_cc $@
+  $IS_CLANG && use_clang
+  TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN $TOOLCHAIN_OPT"
+}
+
+use_llvm_ar_ranlib() {
+  # use llvm-ar/ranlib, host ar/ranlib may not work for non-mac target(e.g. macOS)
+  local clang_dir=${USE_TOOLCHAIN%clang*}
+  local clang_name=${USE_TOOLCHAIN##*/}
+  # TODO: -print-prog-name
+  local llvm_ar=$clang_dir${clang_name/clang/llvm-ar}
+  local llvm_ranlib=$clang_dir${clang_name/clang/llvm-ranlib}
+  #EXTRA_LDFLAGS="$EXTRA_LDFLAGS -nodefaultlibs"; EXTRALIBS="$EXTRALIBS -lc -lgcc_s"
+  # TODO: apple clang invoke ld64. --ld=${CROSS_PREFIX}ld ldflags are different from cc ld flags
+  TOOLCHAIN_OPT="--ar=$llvm_ar --ranlib=$llvm_ranlib $TOOLCHAIN_OPT"
+}
+
+use_lld() {
+  echo "using lld as linker..."
+  EXTRA_LDFLAGS="-s -fuse-ld=lld $EXTRA_LDFLAGS" # -s: strip flag passing to lld
+  USER_OPT="--disable-stripping $USER_OPT"; # disable strip command because cross gcc may be not installed
+}
+
+# or simply call "${CFLAG_IWITHSYSROOT}{dir1,dir2,...}"
+include_with_sysroot() {
+  local dirs=($@)
+  EXTRA_CFLAGS="${dirs[@]/#/${CFLAG_IWITHSYSROOT}} $EXTRA_CFLAGS"
+}
 # warnings are used by ffmpeg developer, some are enabled by configure: -Wl,--warn-shared-textrel
 
 setup_vc_env(){
@@ -392,7 +461,7 @@ setup_android_env() {
     CLANG_FLAGS="-target i686-none-linux-android"
     # from ndk: x86 devices have stack alignment issues.
     # clang error: inline assembly requires more registers than available ("movzbl "statep"    , "ret")
-    $use_clang || EXTRA_CFLAGS="$EXTRA_CFLAGS -mstackrealign"
+    $IS_CLANG || EXTRA_CFLAGS="$EXTRA_CFLAGS -mstackrealign"
     enable_lto=false
   elif [ "$ANDROID_ARCH" = "x86_64" -o "$ANDROID_ARCH" = "x64" ]; then
     [ $API_LEVEL -lt 21 ] && API_LEVEL=21
@@ -430,7 +499,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
 '
 # -msoft-float == -mfloat-abi=soft https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/ARM-Options.html
       EXTRA_CFLAGS="$EXTRA_CFLAGS -mtune=xscale -msoft-float"
-      if ! $use_clang ; then
+      if ! $IS_CLANG ; then
         EXTRA_CFLAGS="$EXTRA_CFLAGS -mthumb-interwork"
       fi
     else
@@ -469,7 +538,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
     ANDROID_SYSROOT_REL=sysroot
     EXTRA_CFLAGS="$EXTRA_CFLAGS -D__ANDROID_API__=$API_LEVEL --sysroot \$NDK_ROOT/$ANDROID_SYSROOT_REL"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS --sysroot \$NDK_ROOT/$ANDROID_SYSROOT_LIB_REL" # linker need crt objects in platform-$API_LEVEL dir, must set the dir as sysroot. but --sysroot in extra-ldflags comes before configure --sysroot= and has no effect
-    if $use_clang ; then
+    if $IS_CLANG ; then
       EXTRA_CFLAGS="$EXTRA_CFLAGS -iwithsysroot /usr/include/$ANDROID_HEADER_TRIPLE"
     else
       EXTRA_CFLAGS="$EXTRA_CFLAGS -isystem \$NDK_ROOT/$ANDROID_SYSROOT_REL/usr/include/$ANDROID_HEADER_TRIPLE"
@@ -479,7 +548,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\$NDK_ROOT/$ANDROID_SYSROOT_REL"
   fi
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --target-os=android --arch=${FFARCH} --enable-cross-compile --cross-prefix=$CROSS_PREFIX"
-  if $use_clang ; then
+  if $IS_CLANG ; then
     enable_lto=false # clang -flto will generate llvm ir bitcode instead of object file. TODO: ndk-r14 supports clang lto
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=clang"
     EXTRA_CFLAGS="$EXTRA_CFLAGS $CLANG_FLAGS"
@@ -494,7 +563,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   #test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-$API_LEVEL --toolchain=$TOOLCHAIN --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE\""
   INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}
-  $use_clang && INSTALL_DIR="${INSTALL_DIR}-clang" || INSTALL_DIR="${INSTALL_DIR}-gcc"
+  $IS_CLANG && INSTALL_DIR="${INSTALL_DIR}-clang" || INSTALL_DIR="${INSTALL_DIR}-gcc"
   enable_opt jni mediacodec
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
@@ -595,14 +664,10 @@ setup_macos_env(){
   else
     apple_sdk_version ">=" macos 10.12 && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
   fi
-  [ -z "$USE_TOOLCHAIN" ] && USE_TOOLCHAIN=clang
-  local use_apple_clang=false
-  $USE_TOOLCHAIN -dM -E -</dev/null |grep -q __apple_build_version__ && use_apple_clang=true
-  TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN $TOOLCHAIN_OPT"
-  use_apple_clang || {
+  setup_cc ${USE_TOOLCHAIN:=clang}
+  $IS_APPLE_CLANG || {
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\$(xcrun --sdk macosx --show-sdk-path)"
   }
-  [ "${USE_TOOLCHAIN/gcc/}" == "${USE_TOOLCHAIN}" -a "${USE_TOOLCHAIN/clang/}" == "$USE_TOOLCHAIN" ] && USE_TOOLCHAIN=clang
   INSTALL_DIR=sdk-macOS${MACOS_VER}${MACOS_ARCH}-${USE_TOOLCHAIN##*/}
 }
 
@@ -649,12 +714,10 @@ setup_maemo_env() {
   INSTALL_DIR=sdk-maemo
 }
 
-# TODO: clang+lld without gcc
 setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in bus error if asm is enabled
   local rpi_cc=gcc
   local rpi_os=rpi
   local rpi_arch=armv6zk
-  local use_lld=false
   local rpi_cross=false
   if [ "${1:0:3}" = "rpi" ]; then
     rpi_os=$1
@@ -709,50 +772,26 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   local EXTRA_CFLAGS_rpi2="-march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mthumb" # -mthumb-interwork vfpv3-d16"
   local EXTRA_CFLAGS_rpi3="-march=armv8-a -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8"
 
-  if $use_clang; then
+  setup_cc $USE_TOOLCHAIN
+  if $IS_CLANG; then
     rpi_cc=clang
-    if [ -n "$CROSS_PREFIX" ]; then
-      CLANG_TARGET=${CROSS_PREFIX%%-}
-      CLANG_TARGET=${CLANG_TARGET##*/}
-      CLANG_FLAGS="-target $CLANG_TARGET" # gcc cross prefix, clang use target value to find binutils, and set host triple
-      #CLANG_FLAGS="-fno-integrated-as $CLANG_FLAGS" # libswscale/arm/rgb2yuv_neon_{16,32}.o error. but using arm-linux-gnueabihf-gcc-7 asm from ubuntu results in bus error
-    fi
-    # use llvm-ar/ranlib, host ar/ranlib may not work(e.g. macOS)
-    local clang_dir=${USE_TOOLCHAIN%clang*}
-    local clang_name=${USE_TOOLCHAIN##*/}
-    local llvm_ar=$clang_dir${clang_name/clang/llvm-ar}
-    local llvm_ranlib=$clang_dir${clang_name/clang/llvm-ranlib}
-    #EXTRA_LDFLAGS="$EXTRA_LDFLAGS -nodefaultlibs"; EXTRALIBS="$EXTRALIBS -lc -lgcc_s"
-    # TODO: apple clang invoke ld64. --ld=${CROSS_PREFIX}ld ldflags are different from cc ld flags
-    TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN --ar=$llvm_ar --ranlib=$llvm_ranlib $TOOLCHAIN_OPT"
-    local use_apple_clang=false
-    $USE_TOOLCHAIN -dM -E -</dev/null |grep -q __apple_build_version__ && use_apple_clang=true
-    $USE_TOOLCHAIN $CLANG_FLAGS --sysroot=$SYSROOT $EXTRA_CFLAGS_rpi -fuse-ld=lld -x c -<<EOF &>/dev/null && use_lld=true
-int main(){}
-EOF
-    $use_apple_clang && {
-      use_lld=true
+    use_llvm_ar_ranlib
+    $IS_APPLE_CLANG && {
+      IS_LLD=true
       TOOLCHAIN_OPT="$TOOLCHAIN_OPT --ld=/usr/local/opt/llvm/bin/clang"
     }
-    EXTRA_CFLAGS="-iwithsysroot /opt/vc/include -iwithsysroot /opt/vc/include/IL $EXTRA_CFLAGS"
-  else
-    EXTRA_CFLAGS="-isystem=/opt/vc/include -isystem=/opt/vc/include/IL $EXTRA_CFLAGS"
   fi
-  # cross-prefix is used by binutils (strip, but host ar, ranlib, nm can be used for cross build)
-  $use_lld && {
-    echo "using lld as linker..."
-    EXTRA_LDFLAGS="-s -fuse-ld=lld $EXTRA_LDFLAGS" # -s: strip flag passing to lld
-    USER_OPT="--disable-stripping $USER_OPT"; # disable strip command because cross gcc may be not installed
+  # --cross-prefix is used by binutils (strip, but linux host ar, ranlib, nm can be used for cross build)
+  $HAVE_LLD || $IS_APPLE_CLANG && {
+    use_lld
   } || {
     $rpi_cross && TOOLCHAIN_OPT="--cross-prefix=$CROSS_PREFIX $TOOLCHAIN_OPT"
   }
   USER_OPT="--enable-omx-rpi --enable-mmal $USER_OPT"
+  include_with_sysroot "/opt/vc/include" "/opt/vc/include/IL"
   # https://github.com/carlonluca/pot/blob/master/piomxtextures_tools/compile_ffmpeg.sh
   # -funsafe-math-optimizations -mno-apcs-stack-check -mstructure-size-boundary=32 -mno-sched-prolog
-  # not only rpi vc libs, but also gcc headers and libs in sysroot may be required by some toolchains
-  #[ ! "$SYSROOT" = "$SYSROOT_CC" -a -n "$SYSROOT" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\$SYSROOT"
-  #COMMON_FLAGS='-isystem=/opt/vc/include -isystem=/opt/vc/include/IL'
-  #COMMOM_FLAGS='-isystem\$SYSROOT/opt/vc/include -isystem\$SYSROOT/opt/vc/include/IL'
+  # not only rpi vc libs, but also gcc headers and libs in sysroot may be required by some toolchains, so simply set --sysroot= may not work
   # armv6zk, armv6kz, armv6z: https://reviews.llvm.org/D14568
   eval EXTRA_CFLAGS_RPI='${EXTRA_CFLAGS_'$rpi_os'}'
   EXTRA_CFLAGS="$CLANG_FLAGS $EXTRA_CFLAGS_RPI -mfloat-abi=hard $EXTRA_CFLAGS"
@@ -942,8 +981,7 @@ build1(){
 build_all(){
   local os=`tolower $1`
   local USE_TOOLCHAIN=$USE_TOOLCHAIN
-  local use_clang=false
-  [ "${USE_TOOLCHAIN/clang/}" = "$USE_TOOLCHAIN" ] || use_clang=true
+  [ "${USE_TOOLCHAIN/clang/}" = "$USE_TOOLCHAIN" ] || IS_CLANG=true
   [ -z "$os" ] && {
     config1 $@
   } || {
@@ -964,16 +1002,16 @@ build_all(){
       USE_TOOLCHAIN0=$USE_TOOLCHAIN
       for arch in ${archs[@]}; do
         if [ ! "${arch/clang/}" = "$arch" ]; then
-          use_clang=true
+          IS_CLANG=true
           USE_TOOLCHAIN="clang${arch##*clang}"
           arch=${arch%%?clang*}
         elif [ ! "${arch/gcc/}" = "$arch" ]; then
-          use_clang=false
+          IS_CLANG=false
           USE_TOOLCHAIN="gcc${arch##*gcc}"
           arch=${arch%%?gcc*}
         fi
         CONFIG_JOBS=(${CONFIG_JOBS[@]} %$((${#CONFIG_JOBS[@]}+1)))
-        # TODO: will vars (use_clang, arch, USE_TOOLCHAIN) in sub process be modified by other process?
+        # TODO: will vars (IS_CLANG, arch, USE_TOOLCHAIN) in sub process be modified by other process?
         config1 $os $arch &
       done
       [ ${#CONFIG_JOBS[@]} -gt 0 ] && {
