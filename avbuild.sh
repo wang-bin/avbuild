@@ -379,10 +379,10 @@ setup_mingw_env() {
   if [ -n "$arch" ]; then
     if [ "$arch" = "x86_64" ]; then
       arch=x86_64
-      MINGW_SUFFIX=64
+      BIT=64
     else
       arch=i686
-      MINGW_SUFFIX=32
+      BIT=32
     fi
   fi
   host_is MinGW || host_is MSYS && echo "install msys2 packages: pacman -Sy --needed diffutils gawk patch pkg-config mingw-w64-i686-gcc mingw-w64-x86_64-gcc nasm yasm"
@@ -398,29 +398,29 @@ setup_mingw_env() {
     # arch is not set. probe using gcc
     $gcc -dumpmachine |grep -iq "x86_64" && {
       arch=x86_64
-      MINGW_SUFFIX=64
+      BIT=64
     } || {
       arch=i686
-      MINGW_SUFFIX=32
+      BIT=32
     }
-    echo "mingw$MINGW_SUFFIX host native build"
+    echo "mingw$BIT host native build"
   } || {
     echo "mingw host build for $arch"
     gcc=${arch}-w64-mingw32-gcc
     host_is MinGW || host_is MSYS && {
-      local MINGW_BIN=/mingw${MINGW_SUFFIX}/bin
+      local MINGW_BIN=/mingw${BIT}/bin
       # mingw-w64-cross-gcc package has broken old mingw compilers with the same prefix, so prefer compilers in $MINGW_BIN
-      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=$gcc --target-os=mingw$MINGW_SUFFIX" # set target os recognized by configure. msys and mingw without 32/64 are rejected by configure
+      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=$gcc --target-os=mingw$BIT" # set target os recognized by configure. msys and mingw without 32/64 are rejected by configure
       [ -d $MINGW_BIN ] && {
         export PATH=$MINGW_BIN:$PATH
       }
     } || {
-      echo "mingw${MINGW_SUFFIX} cross build for $arch"
-      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --cross-prefix=${arch}-w64-mingw32- --target-os=mingw$MINGW_SUFFIX --arch=$arch"
+      echo "mingw${BIT} cross build for $arch"
+      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --cross-prefix=${arch}-w64-mingw32- --target-os=mingw$BIT --arch=$arch"
     }
   }
   if [ -n "$PKG_CONFIG_PATH_EXT" -a ! -d "$PKG_CONFIG_PATH_EXT" ]; then
-    PKG_CONFIG_PATH_EXT="${PKG_CONFIG_PATH_EXT/MINGW/MINGW${MINGW_SUFFIX}}"
+    PKG_CONFIG_PATH_EXT="${PKG_CONFIG_PATH_EXT/MINGW/MINGW${BIT}}"
     echo "PKG_CONFIG_PATH_EXT: $PKG_CONFIG_PATH_EXT"
     [ -d "$PKG_CONFIG_PATH_EXT" ] && {
       # FIXME: mingw32/64 has own PKG_CONFIG_PATH. use ${PKG_CONFIG_PATH%%:*} in libmfx.pc?
@@ -432,8 +432,6 @@ setup_mingw_env() {
   enable_opt dxva2
   disable_opt iconv
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -static-libgcc -Wl,-Bstatic"
-  which $gcc
-  $gcc -dumpmachine
   $gcc -dumpmachine |grep -iq x86_64 && INSTALL_DIR="${INSTALL_DIR}-mingw-x64" || INSTALL_DIR="${INSTALL_DIR}-mingw-x86"
   INSTALL_DIR=${INSTALL_DIR}-gcc
   rm -rf $THIS_DIR/build_$INSTALL_DIR/.env.sh
@@ -832,9 +830,7 @@ setup_linux_env() {
   add_elf_flags
   enable_libmfx
   enable_opt vaapi vdpau
-  if [ -z "$ARCH" ]; then
-    ARCH=$CC_ARCH
-  fi
+  [ -z "$ARCH" -o "$ARCH" == "linux" ] && ARCH=$CC_ARCH
   [ "${ARCH/64/}" == "$ARCH" ] && BIT=32
   [ $BIT -ne $CC_BIT ] && {
     EXTRA_CFLAGS="-m$BIT $EXTRA_CFLAGS"
@@ -886,6 +882,7 @@ config1(){
     rpi*|raspberry*) setup_rpi_env $TAGET_ARCH_FLAG $1 ;;
     linux*)
       setup_linux_env $TAGET_ARCH_FLAG $1
+      add_librt
       ;;
     *) # assume host build. use "") ?
       if $VC_BUILD; then
@@ -896,7 +893,7 @@ config1(){
         if [ -c /dev/vchiq ]; then
           setup_rpi_env armv6zk rpi
         else
-          setup_linux_env $@
+          setup_linux_env $TAGET_ARCH_FLAG
         fi
         add_librt
       elif host_is Darwin; then
@@ -1034,7 +1031,6 @@ build_all(){
       [ "$os" == "android" ] && archs=(armv5 armv7 arm64 x86)
       [ "${os:0:3}" == "rpi" -o "${os:0:9}" == "raspberry" ] && archs=(armv6zk armv7-a)
       [ "${os:0:5}" == "mingw" ] && archs=(x86 x86_64)
-      [ "${os:0:5}" == "linux" ] && archs=(x86 x86_64)
       #[ "${os:0:5}" == "macos" ] && archs=(x86_64 i386)
     }
     echo ">>>>>archs: ${archs[@]}"
@@ -1061,11 +1057,7 @@ build_all(){
       [ ${#CONFIG_JOBS[@]} -gt 0 ] && {
         echo "waiting for all configure jobs(${#CONFIG_JOBS[@]}) finished..."
         wait ${CONFIG_JOBS[@]}
-        if [ $? == 0 ]; then
-          echo all configuration are finished
-        else
-          exit 1
-        fi
+        [ $? == 0 ] && echo "all configuration are finished" || exit 1
       }
     }
   }
@@ -1087,10 +1079,8 @@ make_universal()
   local os=$1
   local dirs=($2)
   [ -z "$dirs" ] && return 0
+  [ ${#dirs[@]} -le 1 ] && return 0
   if [ "${os:0:3}" == ios ]; then
-    if [ ${#dirs[@]} -le 1 ]; then
-      return 0
-    fi
     local OUT_DIR=sdk-$os
     rm -rf $OUT_DIR
     cd $THIS_DIR
@@ -1112,9 +1102,7 @@ make_universal()
     rm -rf ${dirs[@]}
   else
     local get_arch=echo
-    if [ "$os" == "android" ]; then
-      get_arch=android_arch
-    fi
+    [ "$os" == "android" ] && get_arch=android_arch
     rm -rf sdk-$os-{gcc,clang}
     for d in ${dirs[@]}; do
       USE_TOOLCHAIN=${d##*-}
