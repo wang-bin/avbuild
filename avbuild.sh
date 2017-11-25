@@ -1054,6 +1054,7 @@ build_all(){
         CONFIG_JOBS=(${CONFIG_JOBS[@]} %$((${#CONFIG_JOBS[@]}+1)))
         # TODO: will vars (IS_CLANG, arch, USE_TOOLCHAIN) in sub process be modified by other process?
         config1 $os $arch &
+        USE_TOOLCHAIN=$USE_TOOLCHAIN0
       done
       [ ${#CONFIG_JOBS[@]} -gt 0 ] && {
         echo "waiting for all configure jobs(${#CONFIG_JOBS[@]}) finished..."
