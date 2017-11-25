@@ -12,6 +12,9 @@
 # copy: ffmpeg*/LICENSE.md ffmpeg*/COPYING.* README.md
 # push patchs to ff repo.
 # TODO: os arch-cc(e.g. winxp x86-gcc, winstore10 x86, win10 x64-clang, gcc is mingw or cygwin etc. depending on host env)
+# lld supports win res files? https://github.com/llvm-mirror/lld/blob/master/docs/windows_support.rst
+# clang for win lower case: Windows.h WinBase.h WinDef.h
+# https://msdn.microsoft.com/en-us/library/windows/desktop/aa383751(v=vs.85).aspx
 
 #set -x
 echo
@@ -200,7 +203,7 @@ use_clang() {
   if [ -n "$CROSS_PREFIX" ]; then # TODO: "$CROSS_PREFIX" != $TARGET_TRIPLE
     CLANG_TARGET=${CROSS_PREFIX%%-}
     CLANG_TARGET=${CLANG_TARGET##*/}
-    CLANG_FLAGS="-target $CLANG_TARGET" # apple clang uses -arch, but also supports -target. gcc cross prefix, clang use target value to find binutils, and set host triple
+    CLANG_FLAGS="--target=$CLANG_TARGET" # apple clang uses -arch, but also supports -target. gcc cross prefix, clang use target value to find binutils, and set host triple
     #CLANG_FLAGS="-fno-integrated-as $CLANG_FLAGS" # libswscale/arm/rgb2yuv_neon_{16,32}.o error. but using arm-linux-gnueabihf-gcc-7 asm from ubuntu results in bus error
   fi
   # TODO: add clang c/ld flags
@@ -469,7 +472,7 @@ setup_android_env() {
     ANDROID_ARCH=x86
     TRIPLE_ARCH=i686
     ANDROID_TOOLCHAIN_PREFIX=$ANDROID_ARCH
-    CLANG_FLAGS="-target i686-none-linux-android"
+    CLANG_FLAGS="--target=i686-none-linux-android"
     # from ndk: x86 devices have stack alignment issues.
     # clang error: inline assembly requires more registers than available ("movzbl "statep"    , "ret")
     CFLAGS_GCC="$CFLAGS_GCC -mstackrealign"
@@ -479,14 +482,14 @@ setup_android_env() {
     ANDROID_ARCH=x86_64
     TRIPLE_ARCH=$ANDROID_ARCH
     ANDROID_TOOLCHAIN_PREFIX=$ANDROID_ARCH
-    CLANG_FLAGS="-target x86_64-none-linux-android"
+    CLANG_FLAGS="--target=x86_64-none-linux-android"
     enable_lto=false
   elif [ "$ANDROID_ARCH" = "aarch64" -o "$ANDROID_ARCH" = "arm64" ]; then
     [ $API_LEVEL -lt 21 ] && API_LEVEL=21
     ANDROID_ARCH=arm64
     TRIPLE_ARCH=aarch64
     ANDROID_TOOLCHAIN_PREFIX=${TRIPLE_ARCH}-linux-android
-    CLANG_FLAGS="-target aarch64-none-linux-android"
+    CLANG_FLAGS="--target=aarch64-none-linux-android"
   elif [ ! "${ANDROID_ARCH/arm/}" = "${ANDROID_ARCH}" ]; then
 #https://wiki.debian.org/ArmHardFloatPort/VfpComparison
     TRIPLE_ARCH=arm
@@ -496,7 +499,7 @@ setup_android_env() {
       echo "armv5"
       TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cpu=armv5te"
       #EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv5te -mtune=arm9tdmi -msoft-float"
-      CLANG_FLAGS="-target armv5te-none-linux-androideabi"
+      CLANG_FLAGS="--target=armv5te-none-linux-androideabi"
 : '
 -mthumb error
 selected processor does not support Thumb mode `itt gt
@@ -512,7 +515,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
       TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-thumb --enable-neon"
       EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mtune=cortex-a8 -mfloat-abi=softfp" #-mcpu= is deprecated in gcc 3, use -mtune=cortex-a8 instead
       EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--fix-cortex-a8"
-      CLANG_FLAGS="-target armv7-none-linux-androideabi"
+      CLANG_FLAGS="--target=armv7-none-linux-androideabi"
       if [ ! "${ANDROID_ARCH/neon/}" = "$ANDROID_ARCH" ]; then
         enable_lto=false
         echo "neon. can not run on Marvell and nVidia"
@@ -713,8 +716,8 @@ setup_maemo_env() {
   echo "MAEMO_SYSROOT=$MAEMO_SYSROOT"
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=linux --arch=armv7-a --sysroot=$MAEMO_SYSROOT"
   if [ -n "$CLANG" ]; then
-    CLANG_CFLAGS="-target arm-none-linux-gnueabi"
-    CLANG_LFLAGS="-target arm-none-linux-gnueabi"
+    CLANG_CFLAGS="--target=arm-none-linux-gnueabi"
+    CLANG_LFLAGS="--target=arm-none-linux-gnueabi"
     HOSTCC=clang
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --host-cc=$HOSTCC --cc=$HOSTCC"
   else
