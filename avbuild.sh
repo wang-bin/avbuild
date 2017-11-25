@@ -233,9 +233,11 @@ use_llvm_ar_ranlib() {
   # use llvm-ar/ranlib, host ar/ranlib may not work for non-mac target(e.g. macOS)
   local clang_dir=${USE_TOOLCHAIN%clang*}
   local clang_name=${USE_TOOLCHAIN##*/}
-  # TODO: -print-prog-name
-  local llvm_ar=$clang_dir${clang_name/clang/llvm-ar}
-  local llvm_ranlib=$clang_dir${clang_name/clang/llvm-ranlib}
+  local clang=$USE_TOOLCHAIN
+  which "`$clang -print-prog-name=llvm-ar`" 2>/dev/null || clang=clang-5.0
+  which "`$clang -print-prog-name=llvm-ranlib`" 2>/dev/null || clang=clang-5.0
+  local llvm_ar="\$($clang -print-prog-name=llvm-ar)" #$clang_dir${clang_name/clang/llvm-ar}
+  local llvm_ranlib="\$($clang -print-prog-name=llvm-ranlib)" #$clang_dir${clang_name/clang/llvm-ranlib}
   #EXTRA_LDFLAGS="$EXTRA_LDFLAGS -nodefaultlibs"; EXTRALIBS="$EXTRALIBS -lc -lgcc_s"
   # TODO: apple clang invoke ld64. --ld=${CROSS_PREFIX}ld ldflags are different from cc ld flags
   TOOLCHAIN_OPT="--ar=$llvm_ar --ranlib=$llvm_ranlib $TOOLCHAIN_OPT"
