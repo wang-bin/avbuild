@@ -22,7 +22,7 @@ windows mingw, vs2013/vs2015/vs2017, desktop(supports XP)/store/phone: [![appvey
 | CC/H?X/OS |  Linux  |  Android  |  macOS  |   iOS   |    RPi    |  Win32  |  WinStore  | WinPhone |
 |-----------|---------|-----------|---------|---------|-----------|---------|------------|----------|
 |   Clang   |    H    |     X     |   A+H   |   A+X   |    H+X    |    ?    |      ?     |     ?    |
-| Clang+LLD |    ?    |     ?     |    ?    |         |   A+H+X   |    ?    |      ?     |     ?    |
+| Clang+LLD |    H    |     ?     |    ?    |         |   A+H+X   |    ?    |      ?     |     ?    |
 |    GCC    |    H    |     X     |    H    |         |    H+X    |   H+X   |      ?     |     ?    |
 |  VS2013   |         |           |         |         |           |    H    |      H     |     X    |
 |  VS2015   |         |           |         |         |           |    H    |      H     |     X    |

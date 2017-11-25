@@ -11,6 +11,7 @@
 # unify out dir. multiarch build for all (mingw, msvc, linux)
 # copy: ffmpeg*/LICENSE.md ffmpeg*/COPYING.* README.md
 # push patchs to ff repo.
+# TODO: os arch-cc(e.g. winxp x86-gcc, winstore10 x86, win10 x64-clang, gcc is mingw or cygwin etc. depending on host env)
 
 #set -x
 echo
@@ -175,7 +176,7 @@ enable_opt hwaccels
 
 add_elf_flags() {
   # -Wl,-z,noexecstack -Wl,--as-needed is added by configure
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -fdata-sections -ffunction-sections -fstack-protector-strong"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -fdata-sections -ffunction-sections -fstack-protector-strong" # TODO: check -fstack-protector-strong
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--gc-sections" # -Wl,-z,relro -Wl,-z,now
   # rpath
 }
@@ -207,16 +208,16 @@ use_clang() {
 
 probe_cc() {
   local cc=$1
-  echo cc=$cc
   $cc -dM -E -</dev/null |grep -q __clang__ && IS_CLANG=true
   $cc -dM -E -</dev/null |grep -q __apple_build_version__ && IS_APPLE_CLANG=true
-  echo "compiler is clang: $IS_CLANG, apple clang: $IS_APPLE_CLANG"
   $IS_CLANG && {
     CFLAG_IWITHSYSROOT=$CFLAG_IWITHSYSROOT_CLANG
     $USE_TOOLCHAIN $CLANG_FLAGS -nostdlib -fuse-ld=lld -x c -<<EOF &>/dev/null && HAVE_LLD=true
 int main(){}
 EOF
   }
+  $IS_CLANG_CL && HAVE_LLD=true
+  echo "compiler is clang: $IS_CLANG, apple clang: $IS_APPLE_CLANG, have lld: $HAVE_LLD"
 }
 
 setup_cc() {
@@ -724,6 +725,7 @@ setup_maemo_env() {
 }
 
 setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in bus error if asm is enabled
+  add_elf_flags
   local rpi_cc=gcc
   local rpi_os=rpi
   local rpi_arch=armv6zk
@@ -812,6 +814,29 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   INSTALL_DIR=sdk-$2-${rpi_arch}-${rpi_cc}
 }
 
+# TODO: generic linux for all archs
+setup_linux_env() {
+  local ARCH=$1
+  probe_cc ${USE_TOOLCHAIN:=gcc}
+  add_elf_flags
+  enable_libmfx
+  enable_opt vaapi vdpau
+  if [ -z "$ARCH" ]; then
+    ARCH=`$USE_TOOLCHAIN -dumpmachine`
+    ARCH=${ARCH%%-*}
+  fi
+  $IS_CLANG && {
+    EXTRA_CFLAGS="$CFLAGS_CLANG $CLANG_FLAGS $EXTRA_CFLAGS"
+    EXTRA_LDFLAGS="$LFLAGS_CLANG $CLANG_FLAGS $EXTRA_LDFLAGS"
+    use_lld
+  } || {
+    EXTRA_CFLAGS="$CFLAGS_GCC $GCC_FLAGS $EXTRA_CFLAGS"
+    EXTRA_LDFLAGS="$LFLAGS_GCC $GCC_FLAGS $EXTRA_LDFLAGS"
+  }
+  [ "$USE_TOOLCHAIN" == "gcc" ] || TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN $TOOLCHAIN_OPT"
+  INSTALL_DIR=sdk-linux-${ARCH}-${USE_TOOLCHAIN##*/}
+}
+
 # 1 target os & 1 target arch
 config1(){
   local TAGET_FLAG=$1
@@ -841,7 +866,7 @@ config1(){
     vc)         setup_vc_desktop_env ;;
     winstore|winpc|winphone|winrt) setup_winrt_env ;;
     maemo*)     setup_maemo_env ${1##maemo} ;;
-    rpi*|raspberry*) add_elf_flags && setup_rpi_env $TAGET_ARCH_FLAG $1 ;;
+    rpi*|raspberry*) setup_rpi_env $TAGET_ARCH_FLAG $1 ;;
     x86)
       add_elf_flags
       add_librt
@@ -858,12 +883,10 @@ config1(){
       elif host_is MinGW || host_is MSYS; then
         setup_mingw_env
       elif host_is Linux; then
-        add_elf_flags
         if [ -c /dev/vchiq ]; then
           setup_rpi_env armv6zk rpi
         else
-          enable_libmfx
-          enable_opt vaapi vdpau
+          setup_linux_env
         fi
         add_librt
       elif host_is Darwin; then
