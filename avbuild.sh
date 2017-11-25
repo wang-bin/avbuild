@@ -843,13 +843,15 @@ setup_linux_env() {
   $IS_CLANG && {
     EXTRA_CFLAGS="$CFLAGS_CLANG $CLANG_FLAGS $EXTRA_CFLAGS"
     EXTRA_LDFLAGS="$LFLAGS_CLANG $CLANG_FLAGS $EXTRA_LDFLAGS"
-    $HAVE_LLD && use_lld
+    $HAVE_LLD && [ $BIT -eq 64 ] && use_lld # 32bit error: can't create dynamic relocation R_386_32 against local symbol in readonly segment   libavutil/x86/float_dsp.o
   } || {
     EXTRA_CFLAGS="$CFLAGS_GCC $GCC_FLAGS $EXTRA_CFLAGS"
     EXTRA_LDFLAGS="$LFLAGS_GCC $GCC_FLAGS $EXTRA_LDFLAGS"
   }
   [ "$USE_TOOLCHAIN" == "gcc" ] || TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN $TOOLCHAIN_OPT"
-  INSTALL_DIR=sdk-linux-${ARCH}-${USE_TOOLCHAIN##*/}
+  INSTALL_DIR=${USE_TOOLCHAIN##*/}
+  INSTALL_DIR=${INSTALL_DIR%%-*}
+  INSTALL_DIR=sdk-linux-${ARCH}-${INSTALL_DIR}
 }
 
 # 1 target os & 1 target arch
