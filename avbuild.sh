@@ -843,7 +843,7 @@ setup_linux_env() {
   $IS_CLANG && {
     EXTRA_CFLAGS="$CFLAGS_CLANG $CLANG_FLAGS $EXTRA_CFLAGS"
     EXTRA_LDFLAGS="$LFLAGS_CLANG $CLANG_FLAGS $EXTRA_LDFLAGS"
-    use_lld
+    $HAVE_LLD && use_lld
   } || {
     EXTRA_CFLAGS="$CFLAGS_GCC $GCC_FLAGS $EXTRA_CFLAGS"
     EXTRA_LDFLAGS="$LFLAGS_GCC $GCC_FLAGS $EXTRA_LDFLAGS"
@@ -882,6 +882,9 @@ config1(){
     winstore|winpc|winphone|winrt) setup_winrt_env ;;
     maemo*)     setup_maemo_env ${1##maemo} ;;
     rpi*|raspberry*) setup_rpi_env $TAGET_ARCH_FLAG $1 ;;
+    linux*)
+      setup_linux_env $TAGET_ARCH_FLAG $1
+      ;;
     *) # assume host build. use "") ?
       if $VC_BUILD; then
         setup_vc_env
@@ -1029,6 +1032,7 @@ build_all(){
       [ "$os" == "android" ] && archs=(armv5 armv7 arm64 x86)
       [ "${os:0:3}" == "rpi" -o "${os:0:9}" == "raspberry" ] && archs=(armv6zk armv7-a)
       [ "${os:0:5}" == "mingw" ] && archs=(x86 x86_64)
+      [ "${os:0:5}" == "linux" ] && archs=(x86 x86_64)
       #[ "${os:0:5}" == "macos" ] && archs=(x86_64 i386)
     }
     echo ">>>>>archs: ${archs[@]}"
