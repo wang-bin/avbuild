@@ -821,15 +821,25 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
 
 # TODO: generic linux for all archs
 setup_linux_env() {
+  : ${USE_TOOLCHAIN:=gcc}
   local ARCH=$1
-  probe_cc ${USE_TOOLCHAIN:=gcc}
+  local CC_ARCH=`$USE_TOOLCHAIN -dumpmachine`
+  CC_ARCH=${CC_ARCH%%-*}
+  local BIT=64
+  local CC_BIT=64
+  [ "${CC_ARCH/64/}" == "$CC_ARCH" ] && CC_BIT=32
+  probe_cc $USE_TOOLCHAIN
   add_elf_flags
   enable_libmfx
   enable_opt vaapi vdpau
   if [ -z "$ARCH" ]; then
-    ARCH=`$USE_TOOLCHAIN -dumpmachine`
-    ARCH=${ARCH%%-*}
+    ARCH=$CC_ARCH
   fi
+  [ "${ARCH/64/}" == "$ARCH" ] && BIT=32
+  [ $BIT -ne $CC_BIT ] && {
+    EXTRA_CFLAGS="-m$BIT $EXTRA_CFLAGS"
+    EXTRA_LDFLAGS="-m$BIT $EXTRA_LDFLAGS"
+  }
   $IS_CLANG && {
     EXTRA_CFLAGS="$CFLAGS_CLANG $CLANG_FLAGS $EXTRA_CFLAGS"
     EXTRA_LDFLAGS="$LFLAGS_CLANG $CLANG_FLAGS $EXTRA_LDFLAGS"
@@ -872,16 +882,6 @@ config1(){
     winstore|winpc|winphone|winrt) setup_winrt_env ;;
     maemo*)     setup_maemo_env ${1##maemo} ;;
     rpi*|raspberry*) setup_rpi_env $TAGET_ARCH_FLAG $1 ;;
-    x86)
-      add_elf_flags
-      add_librt
-      if [ "`uname -m`" = "x86_64" ]; then
-        #TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=$(tolower $(uname -s)) --arch=x86"
-        EXTRA_LDFLAGS="$EXTRA_LDFLAGS -m32"
-        EXTRA_CFLAGS="$EXTRA_CFLAGS -m32"
-        INSTALL_DIR=sdk-x86
-      fi
-      ;;
     *) # assume host build. use "") ?
       if $VC_BUILD; then
         setup_vc_env
@@ -891,7 +891,7 @@ config1(){
         if [ -c /dev/vchiq ]; then
           setup_rpi_env armv6zk rpi
         else
-          setup_linux_env
+          setup_linux_env $@
         fi
         add_librt
       elif host_is Darwin; then
