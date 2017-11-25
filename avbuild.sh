@@ -211,11 +211,12 @@ use_clang() {
 
 probe_cc() {
   local cc=$1
+  local flags=$2
   $cc -dM -E -</dev/null |grep -q __clang__ && IS_CLANG=true
   $cc -dM -E -</dev/null |grep -q __apple_build_version__ && IS_APPLE_CLANG=true
   $IS_CLANG && {
     CFLAG_IWITHSYSROOT=$CFLAG_IWITHSYSROOT_CLANG
-    $USE_TOOLCHAIN $CLANG_FLAGS -nostdlib -fuse-ld=lld -x c -<<EOF &>/dev/null && HAVE_LLD=true
+    $USE_TOOLCHAIN $flags $CLANG_FLAGS -fuse-ld=lld -nostdlib -x c -v -<<EOF &>/dev/null && HAVE_LLD=true
 int main(){}
 EOF
   }
@@ -786,7 +787,7 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   local EXTRA_CFLAGS_rpi2="-march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mthumb" # -mthumb-interwork vfpv3-d16"
   local EXTRA_CFLAGS_rpi3="-march=armv8-a -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8"
 
-  setup_cc $USE_TOOLCHAIN
+  setup_cc $USE_TOOLCHAIN "--target=arm-linux-gnueabihf" # clang on mac(apple or opensource) will use apple flags w/o --target= 
   if $IS_CLANG; then
     rpi_cc=clang
     use_llvm_ar_ranlib
