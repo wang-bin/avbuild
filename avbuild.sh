@@ -184,6 +184,10 @@ add_elf_flags() {
 
 CFLAG_IWITHSYSROOT_GCC="-isystem=" # not work for win dir
 CFLAG_IWITHSYSROOT_CLANG="-iwithsysroot "
+CFLAGS_CLANG=
+LFLAGS_CLANG=
+CFLAGS_GCC=
+LFLAGS_GCC=
 CFLAG_IWITHSYSROOT=$CFLAG_IWITHSYSROOT_GCC
 IS_CLANG=false
 IS_APPLE_CLANG=false
@@ -191,22 +195,13 @@ IS_CLANG_CL=false
 IS_LLD=false
 HAVE_LLD=false
 
-is_apple_clang() {
-  $1 -dM -E -</dev/null |grep -q __apple_build_version__ && return 0 || return 1
-}
 use_clang() {
-  CFLAG_IWITHSYSROOT=$CFLAG_IWITHSYSROOT_CLANG
   if [ -n "$CROSS_PREFIX" ]; then # TODO: "$CROSS_PREFIX" != $TARGET_TRIPLE
     CLANG_TARGET=${CROSS_PREFIX%%-}
     CLANG_TARGET=${CLANG_TARGET##*/}
     CLANG_FLAGS="-target $CLANG_TARGET" # apple clang uses -arch, but also supports -target. gcc cross prefix, clang use target value to find binutils, and set host triple
     #CLANG_FLAGS="-fno-integrated-as $CLANG_FLAGS" # libswscale/arm/rgb2yuv_neon_{16,32}.o error. but using arm-linux-gnueabihf-gcc-7 asm from ubuntu results in bus error
   fi
-  # -nostdlib?
-  $USE_TOOLCHAIN $CLANG_FLAGS -nostdlib -fuse-ld=lld -x c -<<EOF &>/dev/null && HAVE_LLD=true
-int main(){}
-EOF
-
   # TODO: add clang c/ld flags
 }
 
@@ -216,6 +211,12 @@ probe_cc() {
   $cc -dM -E -</dev/null |grep -q __clang__ && IS_CLANG=true
   $cc -dM -E -</dev/null |grep -q __apple_build_version__ && IS_APPLE_CLANG=true
   echo "compiler is clang: $IS_CLANG, apple clang: $IS_APPLE_CLANG"
+  $IS_CLANG && {
+    CFLAG_IWITHSYSROOT=$CFLAG_IWITHSYSROOT_CLANG
+    $USE_TOOLCHAIN $CLANG_FLAGS -nostdlib -fuse-ld=lld -x c -<<EOF &>/dev/null && HAVE_LLD=true
+int main(){}
+EOF
+  }
 }
 
 setup_cc() {
@@ -246,6 +247,15 @@ use_lld() {
 include_with_sysroot() {
   local dirs=($@)
   EXTRA_CFLAGS="${dirs[@]/#/${CFLAG_IWITHSYSROOT}} $EXTRA_CFLAGS"
+}
+# compat for windows path (e.g. android gcc toolchain can not recognize dir in -isystem=), assume clang is fine(to be tested)
+include_with_sysroot_compat() {
+  $IS_CLANG && {
+    include_with_sysroot $@
+    return 0
+  }
+  local dirs=($@)
+  EXTRA_CFLAGS="${dirs[@]/#/-isystem \$SYSROOT} $EXTRA_CFLAGS"
 }
 # warnings are used by ffmpeg developer, some are enabled by configure: -Wl,--warn-shared-textrel
 
@@ -441,6 +451,7 @@ setup_android_env() {
   disable_opt v4l2_m2m
   local ANDROID_ARCH=$1
   test -n "$ANDROID_ARCH" || ANDROID_ARCH=arm
+  TRIPLE_ARCH=$ANDROID_ARCH
   local ANDROID_TOOLCHAIN_PREFIX="${ANDROID_ARCH}-linux-android"
   local CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
   local FFARCH=$ANDROID_ARCH
@@ -455,34 +466,30 @@ setup_android_env() {
   # TODO: clang lto in r14 (gcc?) except aarch64
   if [ "$ANDROID_ARCH" = "x86" -o "$ANDROID_ARCH" = "i686" ]; then
     ANDROID_ARCH=x86
-    ANDROID_TOOLCHAIN_PREFIX=x86
-    ANDROID_HEADER_TRIPLE=i686-linux-android
-    CROSS_PREFIX=i686-linux-android-
+    TRIPLE_ARCH=i686
+    ANDROID_TOOLCHAIN_PREFIX=$ANDROID_ARCH
     CLANG_FLAGS="-target i686-none-linux-android"
     # from ndk: x86 devices have stack alignment issues.
     # clang error: inline assembly requires more registers than available ("movzbl "statep"    , "ret")
-    $IS_CLANG || EXTRA_CFLAGS="$EXTRA_CFLAGS -mstackrealign"
+    CFLAGS_GCC="$CFLAGS_GCC -mstackrealign"
     enable_lto=false
   elif [ "$ANDROID_ARCH" = "x86_64" -o "$ANDROID_ARCH" = "x64" ]; then
     [ $API_LEVEL -lt 21 ] && API_LEVEL=21
     ANDROID_ARCH=x86_64
-    ANDROID_TOOLCHAIN_PREFIX=x86_64
-    ANDROID_HEADER_TRIPLE=x86_64-linux-android
-    CROSS_PREFIX=x86_64-linux-android-
+    TRIPLE_ARCH=$ANDROID_ARCH
+    ANDROID_TOOLCHAIN_PREFIX=$ANDROID_ARCH
     CLANG_FLAGS="-target x86_64-none-linux-android"
     enable_lto=false
   elif [ "$ANDROID_ARCH" = "aarch64" -o "$ANDROID_ARCH" = "arm64" ]; then
     [ $API_LEVEL -lt 21 ] && API_LEVEL=21
     ANDROID_ARCH=arm64
-    ANDROID_TOOLCHAIN_PREFIX=aarch64-linux-android
-    ANDROID_HEADER_TRIPLE=aarch64-linux-android
-    CROSS_PREFIX=aarch64-linux-android-
+    TRIPLE_ARCH=aarch64
+    ANDROID_TOOLCHAIN_PREFIX=${TRIPLE_ARCH}-linux-android
     CLANG_FLAGS="-target aarch64-none-linux-android"
   elif [ ! "${ANDROID_ARCH/arm/}" = "${ANDROID_ARCH}" ]; then
 #https://wiki.debian.org/ArmHardFloatPort/VfpComparison
-    ANDROID_TOOLCHAIN_PREFIX=arm-linux-androideabi
-    ANDROID_HEADER_TRIPLE=arm-linux-androideabi
-    CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
+    TRIPLE_ARCH=arm
+    ANDROID_TOOLCHAIN_PREFIX=${TRIPLE_ARCH}-linux-androideabi
     FFARCH=arm
     if [ ! "${ANDROID_ARCH/armv5/}" = "$ANDROID_ARCH" ]; then
       echo "armv5"
@@ -499,9 +506,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
 '
 # -msoft-float == -mfloat-abi=soft https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/ARM-Options.html
       EXTRA_CFLAGS="$EXTRA_CFLAGS -mtune=xscale -msoft-float"
-      if ! $IS_CLANG ; then
-        EXTRA_CFLAGS="$EXTRA_CFLAGS -mthumb-interwork"
-      fi
+      CFLAGS_GCC="$CFLAGS_GCC -mthumb-interwork"
     else
       TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-thumb --enable-neon"
       EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mtune=cortex-a8 -mfloat-abi=softfp" #-mcpu= is deprecated in gcc 3, use -mtune=cortex-a8 instead
@@ -510,14 +515,17 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
       if [ ! "${ANDROID_ARCH/neon/}" = "$ANDROID_ARCH" ]; then
         enable_lto=false
         echo "neon. can not run on Marvell and nVidia"
-        EXTRA_CFLAGS="$EXTRA_CFLAGS -mfpu=neon -mvectorize-with-neon-quad"
+        EXTRA_CFLAGS="$EXTRA_CFLAGS -mfpu=neon"
+        CFLAGS_GCC="$CFLAGS_GCC -mvectorize-with-neon-quad"
       else
         EXTRA_CFLAGS="$EXTRA_CFLAGS -mfpu=vfpv3-d16"
       fi
     fi
-    CLANG_FLAGS="-fno-integrated-as $CLANG_FLAGS" # Disable integrated-as for better compatibility. from ndk cmake
     ANDROID_ARCH=arm
   fi
+  ANDROID_HEADER_TRIPLE=${TRIPLE_ARCH}-linux-android
+  [ "$ANDROID_ARCH" == "arm" ] && ANDROID_HEADER_TRIPLE=${ANDROID_HEADER_TRIPLE}eabi
+  CROSS_PREFIX=${ANDROID_HEADER_TRIPLE}-
   local TOOLCHAIN=${ANDROID_TOOLCHAIN_PREFIX}-4.9
   [ -d $NDK_ROOT/toolchains/${TOOLCHAIN} ] || TOOLCHAIN=${ANDROID_TOOLCHAIN_PREFIX}-4.8
   local ANDROID_TOOLCHAIN_DIR="$NDK_ROOT/toolchains/${TOOLCHAIN}"
@@ -525,24 +533,23 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   clangxxs=(`find $NDK_ROOT/toolchains/llvm/prebuilt -name "clang++*"`) # can not be "clang*": clang-tidy
   clangxx=${clangxxs[0]}
   echo "g++: $gxx, clang++: $clangxx"
+  $IS_CLANG && probe_cc $clangxx || probe_cc $gxx
   ANDROID_TOOLCHAIN_DIR=${gxx%bin*}
   local ANDROID_LLVM_DIR=${clangxx%bin*}
   echo "ANDROID_TOOLCHAIN_DIR=${ANDROID_TOOLCHAIN_DIR}"
   echo "ANDROID_LLVM_DIR=${ANDROID_LLVM_DIR}"
   ANDROID_TOOLCHAIN_DIR_REL=${ANDROID_TOOLCHAIN_DIR#$NDK_ROOT}
-  CLANG_FLAGS="$CLANG_FLAGS -gcc-toolchain \$NDK_ROOT/$ANDROID_TOOLCHAIN_DIR_REL"
+  LFLAGS_CLANG="$LFLAGS_CLANG -gcc-toolchain \$NDK_ROOT/$ANDROID_TOOLCHAIN_DIR_REL" # ld from gcc toolchain. TODO: lld?
+  [ "$ANDROID_ARCH" == "arm" ] && CFLAGS_CLANG="-fno-integrated-as -gcc-toolchain \$NDK_ROOT/$ANDROID_TOOLCHAIN_DIR_REL $CFLAGS_CLANG" # Disable integrated-as for better compatibility, but need as from gcc toolchain. from ndk cmake
   local ANDROID_SYSROOT_LIB="$NDK_ROOT/platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
   local ANDROID_SYSROOT_LIB_REL="platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
   if [ -d "$UNIFIED_SYSROOT" ]; then
     [ $API_LEVEL -lt 21 ] && PATCH_MMAP="void* mmap(void*, size_t, int, int, int, __kernel_off_t);"
     ANDROID_SYSROOT_REL=sysroot
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -D__ANDROID_API__=$API_LEVEL --sysroot \$NDK_ROOT/$ANDROID_SYSROOT_REL"
+    SYSROOT=$NDK_ROOT/$ANDROID_SYSROOT_REL
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -D__ANDROID_API__=$API_LEVEL --sysroot \$SYSROOT"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS --sysroot \$NDK_ROOT/$ANDROID_SYSROOT_LIB_REL" # linker need crt objects in platform-$API_LEVEL dir, must set the dir as sysroot. but --sysroot in extra-ldflags comes before configure --sysroot= and has no effect
-    if $IS_CLANG ; then
-      EXTRA_CFLAGS="$EXTRA_CFLAGS -iwithsysroot /usr/include/$ANDROID_HEADER_TRIPLE"
-    else
-      EXTRA_CFLAGS="$EXTRA_CFLAGS -isystem \$NDK_ROOT/$ANDROID_SYSROOT_REL/usr/include/$ANDROID_HEADER_TRIPLE"
-    fi
+    include_with_sysroot_compat /usr/include/$ANDROID_HEADER_TRIPLE
   else
     ANDROID_SYSROOT_REL=${ANDROID_SYSROOT_LIB_REL}
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\$NDK_ROOT/$ANDROID_SYSROOT_REL"
@@ -551,9 +558,11 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   if $IS_CLANG ; then
     enable_lto=false # clang -flto will generate llvm ir bitcode instead of object file. TODO: ndk-r14 supports clang lto
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=clang"
-    EXTRA_CFLAGS="$EXTRA_CFLAGS $CLANG_FLAGS"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS $CLANG_FLAGS" # -Qunused-arguments is added by ffmpeg configure
+    EXTRA_CFLAGS="$EXTRA_CFLAGS $CFLAGS_CLANG $CLANG_FLAGS"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS $LFLAGS_CLANG $CLANG_FLAGS" # -Qunused-arguments is added by ffmpeg configure
   else
+    EXTRA_CFLAGS="$EXTRA_CFLAGS $CFLAGS_GCC $GCC_FLAGS"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS $LFLAGS_GCC $GCC_FLAGS"
     if $enable_lto; then
       if [ $FORCE_LTO ]; then
         TOOLCHAIN_OPT="$TOOLCHAIN_OPT --ar=${CROSS_PREFIX}gcc-ar --ranlib=${CROSS_PREFIX}gcc-ranlib"
@@ -794,8 +803,8 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   # not only rpi vc libs, but also gcc headers and libs in sysroot may be required by some toolchains, so simply set --sysroot= may not work
   # armv6zk, armv6kz, armv6z: https://reviews.llvm.org/D14568
   eval EXTRA_CFLAGS_RPI='${EXTRA_CFLAGS_'$rpi_os'}'
-  EXTRA_CFLAGS="$CLANG_FLAGS $EXTRA_CFLAGS_RPI -mfloat-abi=hard $EXTRA_CFLAGS"
-  EXTRA_LDFLAGS="$CLANG_FLAGS -L\\\$SYSROOT/opt/vc/lib $EXTRA_LDFLAGS"
+  EXTRA_CFLAGS="$CFLAGS_CLANG $CLANG_FLAGS $EXTRA_CFLAGS_RPI -mfloat-abi=hard $EXTRA_CFLAGS"
+  EXTRA_LDFLAGS="$LFLAGS_CLANG $CLANG_FLAGS -L\\\$SYSROOT/opt/vc/lib $EXTRA_LDFLAGS"
   #-lrt: clock_gettime in glibc2.17
   #[ "`${CROSS_PREFIX}gcc -print-file-name=librt.so`" = "librt.so" ] || EXTRA_LDFLAGS="$EXTRA_LDFLAGS -lrt"
   EXTRALIBS="$EXTRALIBS -lrt"
