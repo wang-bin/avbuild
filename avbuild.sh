@@ -1012,6 +1012,8 @@ build1(){
   [ $? -eq 0 ] || exit 2
   cd $THIS_DIR/$INSTALL_DIR
   echo "https://github.com/wang-bin/avbuild" > README.txt
+  cp -af $FFSRC/{Changelog,RELEASE_NOTES} .
+  [ -f "$FFSRC/$LICENSE_FILE" ] && cp -af "$FFSRC/$LICENSE_FILE" . || touch $LICENSE_FILE
   if [ -f bin/avutil.lib ]; then
     mv bin/*.lib lib
   fi
@@ -1067,6 +1069,11 @@ build_all(){
   for d in $dirs; do
     cd build_$d
     local INSTALL_DIR=$d
+    CONFIGURE=`cat config-new.txt`
+    [ -z "${CONFIGURE/*--enable-gpl*/}" ] && LICENSE=GPL || LICENSE=LGPL
+    [ -z "${CONFIGURE/*--enable-version3*/}" ] && LICENSE=${LICENSE}v3 || LICENSE=${LICENSE}v2.1
+    [ -z "${CONFIGURE/*--enable-nonfree*/}" ] && LICENSE=nonfree
+    LICENSE_FILE=COPYING.$LICENSE
     echo building $d...
     build1
     cd $THIS_DIR
@@ -1098,6 +1105,8 @@ make_universal()
       }
     done
     cat build_sdk-${os}-*/config.txt >$OUT_DIR/config.txt
+    cp -af $FFSRC/{Changelog,RELEASE_NOTES} $OUT_DIR
+    [ -f "$FFSRC/$LICENSE_FILE" ] && cp -af "$FFSRC/$LICENSE_FILE" $OUT_DIR || touch $OUT_DIR/$LICENSE_FILE
     echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
     rm -rf ${dirs[@]}
   else
@@ -1118,6 +1127,8 @@ make_universal()
       cp -af $d/bin/* $OUT_DIR/bin/$arch
       cp -af $d/lib/* $OUT_DIR/lib/$arch
       cat $d/config.txt >$OUT_DIR/config-$arch.txt
+      cp -af $FFSRC/{Changelog,RELEASE_NOTES} $OUT_DIR
+      [ -f "$FFSRC/$LICENSE_FILE" ] && cp -af "$FFSRC/$LICENSE_FILE" $OUT_DIR || touch $OUT_DIR/$LICENSE_FILE
       echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
       rm -rf $d
     done
