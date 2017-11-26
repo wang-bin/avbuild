@@ -1,15 +1,10 @@
 #!/bin/bash
 # TODO: -flto=nb_cpus. lto with static build (except android)
-# MXE cross toolchain
-# enable cuda
 # Unify gcc/clang(elf?) flags(like android): -Wl,-z,now -Wl,-z,-relro -Bsymbolic ...
 # https://wiki.debian.org/Hardening#DEB_BUILD_HARDENING_RELRO_.28ld_-z_relro.29
 # onecore for store apps
-# http://clang.llvm.org/docs/CrossCompilation.html
 # iosurface
 # apple: remove opengl properties
-# unify out dir. multiarch build for all (mingw, msvc, linux)
-# copy: ffmpeg*/LICENSE.md ffmpeg*/COPYING.* README.md
 # push patchs to ff repo.
 # TODO: os arch-cc(e.g. winxp x86-gcc, winstore10 x86, win10 x64-clang, gcc is mingw or cygwin etc. depending on host env)
 # lld supports win res files? https://github.com/llvm-mirror/lld/blob/master/docs/windows_support.rst
@@ -23,7 +18,7 @@ echo "https://github.com/wang-bin/avbuild"
 
 THIS_NAME=${0##*/}
 THIS_DIR=$PWD
-PLATFORMS="ios|android|maemo|rpi|vc|x86|winstore|winpc|winphone|mingw64"
+PLATFORMS="ios|android|rpi|vc|x86|winstore|winpc|winphone|mingw64"
 echo "Usage:"
 test -d $PWD/ffmpeg || echo "  export FFSRC=/path/to/ffmpeg"
 cat<<HELP
@@ -36,12 +31,10 @@ target_architecture can be:
   arm64  |   arm64   |          | armv8
 x86/i366 |  x86/i686 | x86/i686 |
  x86_64  |   x86_64  |  x86_64  |
-If no parameter is passed, build for the host platform compiler.
-Use a shortcut in winstore to build for WinRT target.
-(Optional) set var in config-xxx.sh, xxx is ${PLATFORMS//\|/, }
-var can be: USER_OPT, ANDROID_NDK, SYSROOT
-config.sh will be automatically included.
-config-lite.sh is default options to build smaller libraries.
+Build for host if no parameter is set.
+Use a shortcut in winstore to build for WinRT/WinStore/MSVC target.
+(Optional) set USER_OPT, ANDROID_NDK, SYSROOT in config-${target_platform}.sh 
+config.sh is automatically included. config-lite.sh is for building smaller libraries.
 HELP
 
 test -f config.sh && . config.sh
@@ -84,13 +77,8 @@ echo FFSRC=$FFSRC
 FFSRC_TOOLS=$FFSRC/fftools
 if ! [ -d "$FFSRC_TOOLS" ]; then
   FFSRC_TOOLS=$FFSRC_TOOLS/avtools
-  if ! [ -d "$FFSRC_TOOLS" ]; then
-    FFSRC_TOOLS=$FFSRC
-  fi
+  [ -d "$FFSRC_TOOLS" ] || FFSRC_TOOLS=$FFSRC
 fi
-#avr >= ffmpeg0.11
-#FFMAJOR=`pwd |sed 's,.*-\(.*\)\..*\..*,\1,'`
-#FFMINOR=`pwd |sed 's,.*\.\(.*\)\..*,\1,'`
 # n1.2.8, 2.5.1, 2.5
 cd $FFSRC
 VER_SH=version.sh
@@ -153,26 +141,19 @@ android_arch(){
 enable_opt() {
   # grep -m1
   for OPT in $@; do
-    if grep -q "\-\-enable\-$OPT" $FFSRC/configure; then
-      FEATURE_OPT="--enable-$OPT $FEATURE_OPT" # prepend to support override
-    fi
+    grep -q "\-\-enable\-$OPT" $FFSRC/configure && FEATURE_OPT="--enable-$OPT $FEATURE_OPT" # prepend to support override
   done
 }
 
 disable_opt() {
   # grep -m1
   for OPT in $@; do
-   if grep -q "\-\-disable\-$OPT" $FFSRC/configure; then
-      FEATURE_OPT="--disable-$OPT $FEATURE_OPT" # prepend to support override
-    fi
+    grep -q "\-\-disable\-$OPT" $FFSRC/configure && FEATURE_OPT="--disable-$OPT $FEATURE_OPT" # prepend to support override
   done
 }
 
-enable_libmfx(){
-  # TODO: which pkg-config to use for cross build
-  if pkg-config --libs libmfx ; then
-    enable_opt libmfx
-  fi
+enable_libmfx(){ # TODO: which pkg-config to use for cross build
+  pkg-config --libs libmfx && enable_opt libmfx
 }
 
 enable_opt hwaccels
@@ -183,7 +164,6 @@ add_elf_flags() {
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--gc-sections" # -Wl,-z,relro -Wl,-z,now
   # rpath
 }
-
 
 
 CFLAG_IWITHSYSROOT_GCC="-isystem=" # not work for win dir
@@ -281,6 +261,7 @@ setup_vc_env(){
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --toolchain=msvc"
   VS_VER=${VisualStudioVersion:0:2}
+  : ${Platform:=x86} #Platform is empty(native) or x86(cross using 64bit toolchain)
   echo "VS version: $VS_VER, platform: $Platform" # Platform is from vsvarsall.bat
   FAMILY=
   WIN_VER=
@@ -308,7 +289,7 @@ setup_vc_desktop_env() {
   elif [ "`tolower $Platform`" = "arm" ]; then
     echo "use scripts in winstore dir instead"
     exit 1
-  else #Platform is empty(native) or x86(cross)
+  else
     WIN_VER="0x0501"
     [ $VS_VER -gt 10 ] && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.01'"
   fi
@@ -434,11 +415,7 @@ shopt -s expand_aliases
 EOF
 }
 
-setup_wince_env() {
-  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --cross-prefix=arm-mingw32ce- --target-os=mingw32ce --arch=arm --cpu=arm"
-  echo "wince is not supported"
-  exit 1
-}
+# TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --cross-prefix=arm-mingw32ce- --target-os=mingw32ce --arch=arm --cpu=arm"
 
 setup_android_env() {
   ENC_OPT=$ENC_OPT_MOBILE
@@ -691,13 +668,9 @@ apple_sdk_version(){
   version_compare $sdk_ver $1 $3
 }
 
-setup_maemo_env() {
-  : ${MAEMO5_SYSROOT:=/opt/QtSDK/Maemo/4.6.2/sysroots/fremantle-arm-sysroot-20.2010.36-2-slim}
-  : ${MAEMO6_SYSROOT:=/opt/QtSDK/Madde/sysroots/harmattan_sysroot_10.2011.34-1_slim}
+#  : ${MAEMO5_SYSROOT:=/opt/QtSDK/Maemo/4.6.2/sysroots/fremantle-arm-sysroot-20.2010.36-2-slim}
+#  : ${MAEMO6_SYSROOT:=/opt/QtSDK/Madde/sysroots/harmattan_sysroot_10.2011.34-1_slim}
 # armv7l, --target=arm-none-linux-gnueabi
-  echo "maemo is no longer supported"
-  exit 1
-}
 
 setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in bus error if asm is enabled
   add_elf_flags
@@ -745,7 +718,7 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   local EXTRA_CFLAGS_armv7="-march=$SUBARCH -mtune=cortex-a7 -mfpu=neon-vfpv4 -mthumb" # -mthumb-interwork vfpv3-d16"
   local EXTRA_CFLAGS_armv8="-march=$SUBARCH -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8"
 
-  setup_cc $USE_TOOLCHAIN "--target=arm-linux-gnueabihf" # clang on mac(apple or opensource) will use apple flags w/o --target= 
+  setup_cc ${USE_TOOLCHAIN:=gcc} "--target=arm-linux-gnueabihf" # clang on mac(apple or opensource) will use apple flags w/o --target= 
   if $IS_CLANG; then
     rpi_cc=clang
     use_llvm_ar_ranlib
@@ -833,7 +806,6 @@ config1(){
     mingw*)     setup_mingw_env $TAGET_ARCH_FLAG ;;
     vc)         setup_vc_desktop_env ;;
     winstore|winpc|winphone|winrt) setup_winrt_env ;;
-    maemo*)     setup_maemo_env ${1##maemo} ;;
     rpi*|raspberry*) setup_rpi_env $TAGET_ARCH_FLAG $1 ;;
     linux*)
       setup_linux_env $TAGET_ARCH_FLAG $1
@@ -997,11 +969,11 @@ build_all(){
       local CONFIG_JOBS=()
       USE_TOOLCHAIN0=$USE_TOOLCHAIN
       for arch in ${archs[@]}; do
-        if [ ! "${arch/clang/}" = "$arch" ]; then
+        if [ -z "${arch/*clang*/}" ]; then
           IS_CLANG=true
           USE_TOOLCHAIN="clang${arch##*clang}"
           arch=${arch%%?clang*}
-        elif [ ! "${arch/gcc/}" = "$arch" ]; then
+        elif [ -z "${arch/*gcc*/}" ]; then
           IS_CLANG=false
           USE_TOOLCHAIN="gcc${arch##*gcc}"
           arch=${arch%%?gcc*}
