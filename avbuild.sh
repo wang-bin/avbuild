@@ -15,7 +15,7 @@
 # lld supports win res files? https://github.com/llvm-mirror/lld/blob/master/docs/windows_support.rst
 # clang for win lower case: Windows.h WinBase.h WinDef.h
 # https://msdn.microsoft.com/en-us/library/windows/desktop/aa383751(v=vs.85).aspx
-
+# ios: -fomit-frame-pointer  is not supported for target 'armv7'. check_cflags -Werror 
 #set -x
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2017"
@@ -196,7 +196,6 @@ CFLAG_IWITHSYSROOT=$CFLAG_IWITHSYSROOT_GCC
 IS_CLANG=false
 IS_APPLE_CLANG=false
 IS_CLANG_CL=false
-IS_LLD=false
 HAVE_LLD=false
 
 use_clang() {
@@ -221,6 +220,7 @@ int main(){}
 EOF
   }
   $IS_CLANG_CL && HAVE_LLD=true
+  $IS_APPLE_CLANG && [ -f /usr/local/opt/llvm/bin/lld ] && HAVE_LLD=true
   echo "compiler is clang: $IS_CLANG, apple clang: $IS_APPLE_CLANG, have lld: $HAVE_LLD"
 }
 
@@ -264,6 +264,12 @@ include_with_sysroot_compat() {
   local dirs=($@)
   EXTRA_CFLAGS="${dirs[@]/#/-isystem \$SYSROOT} $EXTRA_CFLAGS"
 }
+
+check_cross_build() {
+  IS_CROSS=
+  IS_HOST=
+  IS_NATIVE=
+}
 # warnings are used by ffmpeg developer, some are enabled by configure: -Wl,--warn-shared-textrel
 
 setup_vc_env(){
@@ -296,15 +302,15 @@ setup_vc_desktop_env() {
   # can not use -luser32 because extralibs will not be filter -l to .lib (ldflags_filter is not ready, ffmpeg bug)
   # TODO: check dxva2_extralibs="-luser32" in configure
   EXTRALIBS="$EXTRALIBS user32.lib" # ffmpeg 3.x bug: hwcontext_dxva2 GetDesktopWindow()
-  if [ "`tolower $Platform`" = "x64" ]; then
+  if [ -z "${Platform/*64/}" ]; then
     WIN_VER="0x0502"
-    test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.02'"
+    [ $VS_VER -gt 10 ] && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.02'"
   elif [ "`tolower $Platform`" = "arm" ]; then
     echo "use scripts in winstore dir instead"
     exit 1
   else #Platform is empty(native) or x86(cross)
     WIN_VER="0x0501"
-    test $VS_VER -gt 10 && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.01'"
+    [ $VS_VER -gt 10 ] && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.01'"
   fi
 }
 
@@ -351,10 +357,8 @@ setup_winrt_env() {
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS -MACHINE:ARM"
     arch="arm"
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT $ASM_OPT"
-  elif [ "`tolower $Platform`" = "x64" ]; then
-    arch=x86_64
   else
-    arch=x86
+    [ -z "${Platform/*64/}" ] && arch=x86_64 || arch=x86
   fi
   : ${WINPHONE:=false}
   target_is winphone && WINPHONE=true
@@ -376,47 +380,34 @@ setup_mingw_env() {
   enable_lto=false
   local gcc=gcc
   local arch=$1
-  local native_build=false # use gcc instead of ${arch}-w64-mingw32-gcc
+  local native_build=false # native build: use gcc instead of ${arch}-w64-mingw32-gcc
   if [ -n "$arch" ]; then
-    if [ "$arch" = "x86_64" ]; then
-      arch=x86_64
-      BIT=64
-    else
-      arch=i686
-      BIT=32
-    fi
+    [ -z "${arch/*64*/}" ] && BIT=64 || BIT=32
+    arch=x86_$BIT
+    arch=${arch/*_32/i686}
   fi
   host_is MinGW || host_is MSYS && echo "install msys2 packages: pacman -Sy --needed diffutils gawk patch pkg-config mingw-w64-i686-gcc mingw-w64-x86_64-gcc nasm yasm"
   # msys2 /usr/bin/gcc is x86_64-pc-msys
   $gcc -dumpmachine |grep -iq mingw && {
-    if [ -n "$arch" ]; then
+    [ -z "$arch" ] && native_build=true || {
       $gcc -dumpmachine |grep -iq "$arch" && native_build=true
-    else
-      native_build=true
-    fi
-  }
-  $native_build && {
-    # arch is not set. probe using gcc
-    $gcc -dumpmachine |grep -iq "x86_64" && {
-      arch=x86_64
-      BIT=64
-    } || {
-      arch=i686
-      BIT=32
     }
-    echo "mingw$BIT host native build"
+  }
+  $native_build && { # arch is not set. probe using gcc
+    $gcc -dumpmachine |grep -iq "x86_64" && BIT=64 || BIT=32
+    arch=x86_$BIT
+    arch=${arch/*_32/i686}
+    echo "mingw $arch host native build"
   } || {
-    echo "mingw host build for $arch"
     gcc=${arch}-w64-mingw32-gcc
     host_is MinGW || host_is MSYS && {
-      local MINGW_BIN=/mingw${BIT}/bin
+      echo "mingw host build for $arch" # TODO: -m32/64?
       # mingw-w64-cross-gcc package has broken old mingw compilers with the same prefix, so prefer compilers in $MINGW_BIN
       TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=$gcc --target-os=mingw$BIT" # set target os recognized by configure. msys and mingw without 32/64 are rejected by configure
-      [ -d $MINGW_BIN ] && {
-        export PATH=$MINGW_BIN:$PATH
-      }
+      local MINGW_BIN=/mingw${BIT}/bin
+      [ -d $MINGW_BIN ] && export PATH=$MINGW_BIN:$PATH
     } || {
-      echo "mingw${BIT} cross build for $arch"
+      echo "mingw cross build for $arch"
       TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --cross-prefix=${arch}-w64-mingw32- --target-os=mingw$BIT --arch=$arch"
     }
   }
@@ -426,15 +417,13 @@ setup_mingw_env() {
     [ -d "$PKG_CONFIG_PATH_EXT" ] && {
       # FIXME: mingw32/64 has own PKG_CONFIG_PATH. use ${PKG_CONFIG_PATH%%:*} in libmfx.pc?
       export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_EXT # $PKG_CONFIG_PATH/../.. is used in libmfx.pc, so no ":" separated list
-      echo ">>>PKG_CONFIG_PATH=$PKG_CONFIG_PATH<<<"
     }
   fi
   enable_libmfx
   enable_opt dxva2
   disable_opt iconv
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -static-libgcc -Wl,-Bstatic"
-  $gcc -dumpmachine |grep -iq x86_64 && INSTALL_DIR="${INSTALL_DIR}-mingw-x64" || INSTALL_DIR="${INSTALL_DIR}-mingw-x86"
-  INSTALL_DIR=${INSTALL_DIR}-gcc
+  INSTALL_DIR="${INSTALL_DIR}-mingw-x${BIT/32/86}-gcc"
   rm -rf $THIS_DIR/build_$INSTALL_DIR/.env.sh
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   [ -d "$MINGW_BIN" ] && cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
@@ -447,7 +436,8 @@ EOF
 
 setup_wince_env() {
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --cross-prefix=arm-mingw32ce- --target-os=mingw32ce --arch=arm --cpu=arm"
-  INSTALL_DIR=sdk-wince
+  echo "wince is not supported"
+  exit 1
 }
 
 setup_android_env() {
@@ -465,66 +455,62 @@ setup_android_env() {
   local UNIFIED_SYSROOT="$NDK_ROOT/sysroot"
   [ -d "$UNIFIED_SYSROOT" ] || UNIFIED_SYSROOT=
   add_elf_flags
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -ffast-math -fstrict-aliasing" # " #-funwind-tables need libunwind.a for libc++?
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -ffast-math -fstrict-aliasing"
 # -no-canonical-prefixes: results in "-mcpu= ", why?
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,-z,relro -Wl,-z,now"
   # TODO: clang lto in r14 (gcc?) except aarch64
-  if [ "$ANDROID_ARCH" = "x86" -o "$ANDROID_ARCH" = "i686" ]; then
+  if [ -z "${ANDROID_ARCH/*86/}" ]; then
     ANDROID_ARCH=x86
     TRIPLE_ARCH=i686
     ANDROID_TOOLCHAIN_PREFIX=$ANDROID_ARCH
-    CLANG_FLAGS="--target=i686-none-linux-android"
+    CLANG_FLAGS="$CLANG_FLAGS --target=i686-none-linux-android"
     # from ndk: x86 devices have stack alignment issues.
     # clang error: inline assembly requires more registers than available ("movzbl "statep"    , "ret")
     CFLAGS_GCC="$CFLAGS_GCC -mstackrealign"
     enable_lto=false
-  elif [ "$ANDROID_ARCH" = "x86_64" -o "$ANDROID_ARCH" = "x64" ]; then
+  elif [ -z "${ANDROID_ARCH/x*64/}" ]; then
     [ $API_LEVEL -lt 21 ] && API_LEVEL=21
     ANDROID_ARCH=x86_64
     TRIPLE_ARCH=$ANDROID_ARCH
     ANDROID_TOOLCHAIN_PREFIX=$ANDROID_ARCH
-    CLANG_FLAGS="--target=x86_64-none-linux-android"
+    CLANG_FLAGS="$CLANG_FLAGS --target=x86_64-none-linux-android"
     enable_lto=false
-  elif [ "$ANDROID_ARCH" = "aarch64" -o "$ANDROID_ARCH" = "arm64" ]; then
+  elif [ -z "${ANDROID_ARCH/a*r*64/}" ]; then
     [ $API_LEVEL -lt 21 ] && API_LEVEL=21
     ANDROID_ARCH=arm64
     TRIPLE_ARCH=aarch64
     ANDROID_TOOLCHAIN_PREFIX=${TRIPLE_ARCH}-linux-android
-    CLANG_FLAGS="--target=aarch64-none-linux-android"
-  elif [ ! "${ANDROID_ARCH/arm/}" = "${ANDROID_ARCH}" ]; then
+    CLANG_FLAGS="$CLANG_FLAGS --target=aarch64-none-linux-android"
+  elif [ -z "${ANDROID_ARCH/*arm*/}" ]; then
 #https://wiki.debian.org/ArmHardFloatPort/VfpComparison
     TRIPLE_ARCH=arm
     ANDROID_TOOLCHAIN_PREFIX=${TRIPLE_ARCH}-linux-androideabi
     FFARCH=arm
-    if [ ! "${ANDROID_ARCH/armv5/}" = "$ANDROID_ARCH" ]; then
+    if [ -z "${ANDROID_ARCH/armv5*/}" ]; then
       echo "armv5"
       TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cpu=armv5te"
-      #EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv5te -mtune=arm9tdmi -msoft-float"
-      CLANG_FLAGS="--target=armv5te-none-linux-androideabi"
+      CLANG_FLAGS="$CLANG_FLAGS --target=armv5te-none-linux-androideabi"
 : '
 -mthumb error
 selected processor does not support Thumb mode `itt gt
-D:\msys2\tmp\ccXOcbBA.s:262: Error: instruction not supported in Thumb16 mode -- adds r3,r1,r0,lsr#31
-D:\msys2\tmp\ccXOcbBA.s:263: Error: selected processor does not support Thumb mode itet ne
-D:\msys2\tmp\ccXOcbBA.s:264: Error: Thumb does not support conditional execution
+D:\msys2\tmp\ccXOcbBA.s:262: Error: instruction not supported in Thumb16 mode -- adds r3,r1,r0,lsr#31 
 use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/ARM-Options.html
 '
 # -msoft-float == -mfloat-abi=soft https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/ARM-Options.html
-      EXTRA_CFLAGS="$EXTRA_CFLAGS -mtune=xscale -msoft-float"
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -mtune=xscale -msoft-float" # -march=armv5te
       CFLAGS_GCC="$CFLAGS_GCC -mthumb-interwork"
     else
       TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-thumb --enable-neon"
-      EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mtune=cortex-a8 -mfloat-abi=softfp" #-mcpu= is deprecated in gcc 3, use -mtune=cortex-a8 instead
-      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--fix-cortex-a8"
-      CLANG_FLAGS="--target=armv7-none-linux-androideabi"
-      if [ ! "${ANDROID_ARCH/neon/}" = "$ANDROID_ARCH" ]; then
+      EXTRA_CFLAGS_FPU="-mfpu=vfpv3-d16"
+      if [ -z "${ANDROID_ARCH/*neon*/}" ]; then
         enable_lto=false
         echo "neon. can not run on Marvell and nVidia"
-        EXTRA_CFLAGS="$EXTRA_CFLAGS -mfpu=neon"
+        EXTRA_CFLAGS_FPU="-mfpu=neon"
         CFLAGS_GCC="$CFLAGS_GCC -mvectorize-with-neon-quad"
-      else
-        EXTRA_CFLAGS="$EXTRA_CFLAGS -mfpu=vfpv3-d16"
       fi
+      CLANG_FLAGS="$CLANG_FLAGS --target=armv7-none-linux-androideabi"
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mtune=cortex-a8 -mfloat-abi=softfp $EXTRA_CFLAGS_FPU" #-mcpu= is deprecated in gcc 3, use -mtune=cortex-a8 instead
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--fix-cortex-a8"
     fi
     ANDROID_ARCH=arm
   fi
@@ -561,7 +547,6 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   fi
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --target-os=android --arch=${FFARCH} --enable-cross-compile --cross-prefix=$CROSS_PREFIX"
   if $IS_CLANG ; then
-    enable_lto=false # clang -flto will generate llvm ir bitcode instead of object file. TODO: ndk-r14 supports clang lto
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=clang"
     EXTRA_CFLAGS="$EXTRA_CFLAGS $CFLAGS_CLANG $CLANG_FLAGS"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS $LFLAGS_CLANG $CLANG_FLAGS" # -Qunused-arguments is added by ffmpeg configure
@@ -709,45 +694,16 @@ apple_sdk_version(){
 setup_maemo_env() {
   : ${MAEMO5_SYSROOT:=/opt/QtSDK/Maemo/4.6.2/sysroots/fremantle-arm-sysroot-20.2010.36-2-slim}
   : ${MAEMO6_SYSROOT:=/opt/QtSDK/Madde/sysroots/harmattan_sysroot_10.2011.34-1_slim}
-#--arch=armv7l --cpu=armv7l
-#CLANG=clang
-  if [ -z "$MAEMO_SYSROOT" ]; then
-    test $1 = 5 && MAEMO_SYSROOT=$MAEMO5_SYSROOT || MAEMO_SYSROOT=$MAEMO6_SYSROOT
-  fi
-  echo "MAEMO_SYSROOT=$MAEMO_SYSROOT"
-  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=linux --arch=armv7-a --sysroot=$MAEMO_SYSROOT"
-  if [ -n "$CLANG" ]; then
-    CLANG_CFLAGS="--target=arm-none-linux-gnueabi"
-    CLANG_LFLAGS="--target=arm-none-linux-gnueabi"
-    HOSTCC=clang
-    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --host-cc=$HOSTCC --cc=$HOSTCC"
-  else
-    HOSTCC=gcc
-    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --host-cc=gcc --cross-prefix=arm-none-linux-gnueabi-"
-  fi
-  INSTALL_DIR=sdk-maemo
+# armv7l, --target=arm-none-linux-gnueabi
+  echo "maemo is no longer supported"
+  exit 1
 }
 
 setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in bus error if asm is enabled
   add_elf_flags
   local rpi_cc=gcc
-  local rpi_os=rpi
-  local rpi_arch=armv6zk
+  local ARCH=${1:0:5}
   local rpi_cross=false
-  if [ "${1:0:3}" = "rpi" ]; then
-    rpi_os=$1
-  else
-    if [ "${1:0:5}" = "armv6" ]; then
-      rpi_os=rpi
-      rpi_arch=armv6zk
-    elif [ "${1:0:5}" = "armv7" ]; then
-      rpi_os=rpi2
-      rpi_arch=armv7-a
-    elif [ "${1:0:5}" = "armv8" ]; then
-      rpi_os=rpi3
-      rpi_arch=armv8-a
-    fi
-  fi
   local sed_bak=
   host_is Darwin && sed_bak=".bak"
   if ! `grep -q 'check_arm_arch 6KZ;' "$FFSRC/configure"`; then
@@ -783,21 +739,20 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
     exit 1
   }
   $rpi_cross && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\\\$SYSROOT" # clang searchs host by default, so sysroot is required
-  local EXTRA_CFLAGS_rpi="-march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -marm" # no thumb support, set -marm for clang or -mthumb-interwork for gcc. armv6kz is not supported by some compilers, but zk is.
-  local EXTRA_CFLAGS_rpi2="-march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mthumb" # -mthumb-interwork vfpv3-d16"
-  local EXTRA_CFLAGS_rpi3="-march=armv8-a -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8"
+  local SUBARCH=${ARCH}-a
+  SUBARCH=${SUBARCH/6-a/6zk} # armv6kz is not supported by some compilers, but zk is.
+  local EXTRA_CFLAGS_armv6="-march=$SUBARCH -mtune=arm1176jzf-s -mfpu=vfp -marm" # no thumb support, set -marm for clang or -mthumb-interwork for gcc
+  local EXTRA_CFLAGS_armv7="-march=$SUBARCH -mtune=cortex-a7 -mfpu=neon-vfpv4 -mthumb" # -mthumb-interwork vfpv3-d16"
+  local EXTRA_CFLAGS_armv8="-march=$SUBARCH -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8"
 
   setup_cc $USE_TOOLCHAIN "--target=arm-linux-gnueabihf" # clang on mac(apple or opensource) will use apple flags w/o --target= 
   if $IS_CLANG; then
     rpi_cc=clang
     use_llvm_ar_ranlib
-    $IS_APPLE_CLANG && {
-      IS_LLD=true
-      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --ld=/usr/local/opt/llvm/bin/clang"
-    }
+    $IS_APPLE_CLANG && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --ld=/usr/local/opt/llvm/bin/clang"
   fi
   # --cross-prefix is used by binutils (strip, but linux host ar, ranlib, nm can be used for cross build)
-  $HAVE_LLD || $IS_APPLE_CLANG && {
+  $HAVE_LLD && {
     use_lld
   } || {
     $rpi_cross && TOOLCHAIN_OPT="--cross-prefix=$CROSS_PREFIX $TOOLCHAIN_OPT"
@@ -808,31 +763,30 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   # -funsafe-math-optimizations -mno-apcs-stack-check -mstructure-size-boundary=32 -mno-sched-prolog
   # not only rpi vc libs, but also gcc headers and libs in sysroot may be required by some toolchains, so simply set --sysroot= may not work
   # armv6zk, armv6kz, armv6z: https://reviews.llvm.org/D14568
-  eval EXTRA_CFLAGS_RPI='${EXTRA_CFLAGS_'$rpi_os'}'
+  eval EXTRA_CFLAGS_RPI='${EXTRA_CFLAGS_'$ARCH'}'
   EXTRA_CFLAGS="$CFLAGS_CLANG $CLANG_FLAGS $EXTRA_CFLAGS_RPI -mfloat-abi=hard $EXTRA_CFLAGS"
   EXTRA_LDFLAGS="$LFLAGS_CLANG $CLANG_FLAGS -L\\\$SYSROOT/opt/vc/lib $EXTRA_LDFLAGS"
   #-lrt: clock_gettime in glibc2.17
-  #[ "`${CROSS_PREFIX}gcc -print-file-name=librt.so`" = "librt.so" ] || EXTRA_LDFLAGS="$EXTRA_LDFLAGS -lrt"
   EXTRALIBS="$EXTRALIBS -lrt"
   test -f /bin/sh.exe || EXTRA_LDFLAGS="-Wl,-rpath-link,\\\$SYSROOT/opt/vc/lib $EXTRA_LDFLAGS"
-  INSTALL_DIR=sdk-$2-${rpi_arch}-${rpi_cc}
+  INSTALL_DIR=sdk-$2-${ARCH}-${rpi_cc}
 }
 
 # TODO: generic linux for all archs
 setup_linux_env() {
   : ${USE_TOOLCHAIN:=gcc}
-  local ARCH=$1
-  local CC_ARCH=`$USE_TOOLCHAIN -dumpmachine`
-  CC_ARCH=${CC_ARCH%%-*}
-  local BIT=64
-  local CC_BIT=64
-  [ "${CC_ARCH/64/}" == "$CC_ARCH" ] && CC_BIT=32
   probe_cc $USE_TOOLCHAIN
   add_elf_flags
   enable_libmfx
   enable_opt vaapi vdpau
+  local CC_ARCH=`$USE_TOOLCHAIN -dumpmachine`
+  CC_ARCH=${CC_ARCH%%-*}
+  local CC_BIT=64
+  [ -n "${CC_ARCH/*64/}" ] && CC_BIT=32
+  local ARCH=$1
+  local BIT=64
   [ -z "$ARCH" -o "$ARCH" == "linux" ] && ARCH=$CC_ARCH
-  [ "${ARCH/64/}" == "$ARCH" ] && BIT=32
+  [ -n "${ARCH/*64/}" ] && BIT=32
   [ $BIT -ne $CC_BIT ] && {
     EXTRA_CFLAGS="-m$BIT $EXTRA_CFLAGS"
     EXTRA_LDFLAGS="-m$BIT $EXTRA_LDFLAGS"
@@ -1023,7 +977,7 @@ build1(){
 build_all(){
   local os=`tolower $1`
   local USE_TOOLCHAIN=$USE_TOOLCHAIN
-  [ "${USE_TOOLCHAIN/clang/}" = "$USE_TOOLCHAIN" ] || IS_CLANG=true
+  [ -z "${USE_TOOLCHAIN/*clang*/}" ] || IS_CLANG=true
   [ -z "$os" ] && {
     config1 $@
   } || {
