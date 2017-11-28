@@ -949,7 +949,7 @@ build1(){
 build_all(){
   local os=`tolower $1`
   local USE_TOOLCHAIN=$USE_TOOLCHAIN
-  [ -z "${USE_TOOLCHAIN/*clang*/}" ] || IS_CLANG=true
+  [ -z "${USE_TOOLCHAIN/*clang*/}" ] && IS_CLANG=true
   [ -z "$os" ] && {
     config1 $@
   } || {
