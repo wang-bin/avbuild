@@ -421,8 +421,7 @@ setup_android_env() {
   ENC_OPT=$ENC_OPT_MOBILE
   MUX_OPT=$MUX_OPT_MOBILE
   disable_opt v4l2_m2m
-  local ANDROID_ARCH=$1
-  test -n "$ANDROID_ARCH" || ANDROID_ARCH=arm
+  local ANDROID_ARCH=${1:=arm}
   TRIPLE_ARCH=$ANDROID_ARCH
   local ANDROID_TOOLCHAIN_PREFIX="${ANDROID_ARCH}-linux-android"
   local CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
@@ -500,7 +499,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   gxx=`find ${ANDROID_TOOLCHAIN_DIR} -name "*g++*"` # can not use "*-gcc*": can be -gcc-ar, stdint-gcc.h
   clangxxs=(`find $NDK_ROOT/toolchains/llvm/prebuilt -name "clang++*"`) # can not be "clang*": clang-tidy
   clangxx=${clangxxs[0]}
-  echo "g++: $gxx, clang++: $clangxx"
+  echo "g++: $gxx, clang++: $clangxx IS_CLANG:$IS_CLANG"
   $IS_CLANG && probe_cc $clangxx || probe_cc $gxx
   ANDROID_TOOLCHAIN_DIR=${gxx%bin*}
   local ANDROID_LLVM_DIR=${clangxx%bin*}
@@ -627,7 +626,6 @@ setup_macos_env(){
       MACOS_VER=${MACOS_VER##osx}
     }
   fi
-  [ -z "$MACOS_VER" ] && MACOS_VER=10.7
   enable_opt videotoolbox vda
   version_compare $MACOS_VER "<" 10.7 && disable_opt lzma avdevice #avfoundation is not supported on 10.6
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --install_name_dir=@rpath"
@@ -949,7 +947,7 @@ build1(){
 build_all(){
   local os=`tolower $1`
   local USE_TOOLCHAIN=$USE_TOOLCHAIN
-  [ -z "${USE_TOOLCHAIN/*clang*/}" ] && IS_CLANG=true
+  [ ! "${USE_TOOLCHAIN/clang/}" = "${USE_TOOLCHAIN}" ] && IS_CLANG=true
   [ -z "$os" ] && {
     config1 $@
   } || {
@@ -997,6 +995,7 @@ build_all(){
     cd build_$d
     local INSTALL_DIR=$d
     CONFIGURE=`cat config-new.txt`
+    # "$CONFIGURE" is not empty, so check -z is enough
     [ -z "${CONFIGURE/*--enable-gpl*/}" ] && LICENSE=GPL || LICENSE=LGPL
     [ -z "${CONFIGURE/*--enable-version3*/}" ] && LICENSE=${LICENSE}v3 || LICENSE=${LICENSE}v2.1
     [ -z "${CONFIGURE/*--enable-nonfree*/}" ] && LICENSE=nonfree
