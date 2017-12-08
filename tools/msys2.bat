@@ -23,7 +23,7 @@ if exist %~dp0user.bat call %~dp0user.bat
 goto end
 
 :NoBash
-echo "Please setup your environment var MSYS2_DIR. For example C:\msys64"
+echo "Please setup your environment var MSYS2_DIR in avbuild\tools\msys2.bat. For example C:\msys64"
 goto end
 
 :end

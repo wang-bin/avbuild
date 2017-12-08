@@ -16,7 +16,6 @@ if [%WINRT%] == [true] set TARGET_PARAM=winstore
 @echo Now you can run:
 @echo export FFSRC=/path/to/ffmpeg
 @echo ./avbuild.sh
-if not [%TARGET_PARAM%] == [] @echo or ./avbuild %TARGET_PARAM%
 
 :: --login -x is verbose
 if [%BUILD_NOW%] == [] goto StartBash
