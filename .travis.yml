@@ -50,6 +50,7 @@ matrix:
         apt:
           packages:
             - p7zip-full
+            - nasm
             - yasm
             - sshpass
     - os: linux
@@ -60,6 +61,7 @@ matrix:
         apt:
           packages:
             - p7zip-full
+            - nasm
             - yasm
             - sshpass
     - os: linux
@@ -72,9 +74,10 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-7
+            - gcc-7 # gcc-7-multilib
             - libstdc++-7-dev #libmfx
             - p7zip-full
+            - nasm
             - yasm
             - libva-dev
             - libvdpau-dev
@@ -83,7 +86,7 @@ matrix:
       compiler: clang
       env:
         - TARGET=host
-        - _CC=clang-5.0 #--cc=$_CC
+        - _CC=clang-5.0 #--cc=$_CC TODO: override CC
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
@@ -91,8 +94,10 @@ matrix:
             - ubuntu-toolchain-r-test #libstdc++
           packages:
             - clang-5.0
+            - lld-5.0
             - libstdc++-7-dev #libmfx
             - p7zip-full
+            - nasm
             - yasm
             - libva-dev
             - libvdpau-dev
@@ -102,7 +107,7 @@ matrix:
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update --all; fi
 install:
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install yasm perl hudochenkov/sshpass/sshpass xz; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install nasm yasm perl hudochenkov/sshpass/sshpass xz; fi
   - |
       if [ ! -d ffmpeg-${FF_VERSION} ]; then
         wget http://ffmpeg.org/releases/ffmpeg-${FF_VERSION}.tar.bz2
@@ -129,7 +134,7 @@ install:
 script:
   - export FFSRC=$PWD/ffmpeg-${FF_VERSION}
   - export ANDROID_NDK=$PWD/android-ndk-${NDK_VERSION}
-  - if [ -n "$_CC" ]; then export USER_OPT="$USER_OPT --cc=$_CC"; fi
+  - if [ -n "$_CC" ]; then export USER_OPT="$USER_OPT --cc=$_CC"; fi  # host build
   - if [ -n "${CONFIG_SUFFIX}" ]; then ln -sf config{${CONFIG_SUFFIX},}.sh; fi
   - USE_TOOLCHAIN=${_CC:-$CC} ./avbuild.sh $TARGET  # CC(gcc/clang) is set by travis depending on compiler
 
