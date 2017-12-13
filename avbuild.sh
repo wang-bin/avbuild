@@ -252,6 +252,32 @@ check_cross_build() {
 }
 # warnings are used by ffmpeg developer, some are enabled by configure: -Wl,--warn-shared-textrel
 
+setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang. TODO: clang-cl
+  #LIB_OPT="$LIB_OPT --disable-static"
+  USE_TOOLCHAIN=clang
+  setup_cc clang
+  #use_lld # --target=i386-pc-windows-msvc19.11.0 -fuse-ld=lld: must use with -Wl,
+  enable_libmfx
+  enable_opt dxva2
+  if [ -z "${Platform/*64/}" ]; then
+    arch=x86_64
+    WIN_VER="0x0502"
+    WIN_VER_LD="5.02"
+  elif [ "`tolower $Platform`" = "arm" ]; then
+    arch=arm
+  else
+    arch=x86
+    WIN_VER="0x0501"
+    WIN_VER_LD="5.01"
+  fi
+  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --ld=lld-link --ar=llvm-ar --ranlib=llvm-ranlib --enable-cross-compile --arch=$arch --target-os=win32"
+  [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS --target=i386-pc-windows-msvc19.11.0 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
+  EXTRALIBS="$EXTRALIBS oldnames.lib" # fdopen, tempnam, close used in file_open.c
+  INSTALL_DIR="sdk-win-$arch-clang"
+}
+
 setup_vc_env(){
   echo Call "set MSYS2_PATH_TYPE=inherit" before msys2 sh.exe if cl.exe is not found!
   enable_lto=false # ffmpeg requires DCE, while vc with LTCG (-GL) does not support DCE
@@ -808,6 +834,9 @@ config1(){
     linux*)
       setup_linux_env $TAGET_ARCH_FLAG $1
       add_librt
+      ;;
+    clang*)
+      setup_win_clang $TAGET_ARCH_FLAG $1
       ;;
     *) # assume host build. use "") ?
       if $VC_BUILD; then
