@@ -10,7 +10,9 @@
 # lld supports win res files? https://github.com/llvm-mirror/lld/blob/master/docs/windows_support.rst
 # clang for win lower case: Windows.h WinBase.h WinDef.h
 # https://msdn.microsoft.com/en-us/library/windows/desktop/aa383751(v=vs.85).aspx
-# ios: -fomit-frame-pointer  is not supported for target 'armv7'. check_cflags -Werror 
+# ios: -fomit-frame-pointer  is not supported for target 'armv7'. check_cflags -Werror
+# https://git.videolan.org/git/ffmpeg/nv-codec-headers.git
+
 #set -x
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2017"
@@ -270,10 +272,11 @@ setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang.
     WIN_VER="0x0501"
     WIN_VER_LD="5.01"
   fi
+  # environment var LIB is used by lld-link, in windows style, i.e. export LIB=dir1;dir2;...
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --ld=lld-link --ar=llvm-ar --ranlib=llvm-ranlib --enable-cross-compile --arch=$arch --target-os=win32"
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
-  EXTRA_CFLAGS="$EXTRA_CFLAGS --target=i386-pc-windows-msvc19.11.0 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS --target=i386-pc-windows-msvc19.11.0 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
   EXTRALIBS="$EXTRALIBS oldnames.lib" # fdopen, tempnam, close used in file_open.c
   INSTALL_DIR="sdk-win-$arch-clang"
 }
@@ -284,7 +287,7 @@ setup_vc_env(){
   LIB_OPT="$LIB_OPT --disable-static"
   # dylink crt
   EXTRA_CFLAGS="$EXTRA_CFLAGS -MD"
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
   TOOLCHAIN_OPT="$TOOLCHAIN_OPT --toolchain=msvc"
   VS_VER=${VisualStudioVersion:0:2}
   : ${Platform:=x86} #Platform is empty(native) or x86(cross using 64bit toolchain)
@@ -373,7 +376,7 @@ setup_winrt_env() {
   # export dirs (lib, include)
     FAMILY=_PHONE
     # phone ldflags only for win8.1?
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -opt:ref WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib -NODEFAULTLIB:kernel32.lib -NODEFAULTLIB:ole32.lib"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib -NODEFAULTLIB:kernel32.lib -NODEFAULTLIB:ole32.lib"
   fi
   if [ $WIN_VER_DEC  -gt ${WIN81_VER_DEC} ]; then
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS WindowsApp.lib"
