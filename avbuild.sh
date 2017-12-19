@@ -12,6 +12,7 @@
 # https://msdn.microsoft.com/en-us/library/windows/desktop/aa383751(v=vs.85).aspx
 # ios: -fomit-frame-pointer  is not supported for target 'armv7'. check_cflags -Werror
 # https://git.videolan.org/git/ffmpeg/nv-codec-headers.git
+# vc/lld: -WX to check ld warnings
 
 #set -x
 echo
@@ -273,7 +274,8 @@ setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang.
     WIN_VER_LD="5.01"
   fi
   # environment var LIB is used by lld-link, in windows style, i.e. export LIB=dir1;dir2;...
-  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --ld=lld-link --ar=llvm-ar --ranlib=llvm-ranlib --enable-cross-compile --arch=$arch --target-os=win32"
+  # makedef: define env AR=llvm-ar, NM=? dumpbin1
+  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --ld=lld-link --ar=llvm-ar --ranlib=llvm-ranlib --nm=llvm-nm --enable-cross-compile --arch=$arch --target-os=win32"
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
   EXTRA_CFLAGS="$EXTRA_CFLAGS --target=i386-pc-windows-msvc19.11.0 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
@@ -929,6 +931,14 @@ config1(){
         sed -i $sed_bak 's/\(#define MAX_SLICES\) .*/\1 64/' $FFSRC/libavcodec/h264dec.h
       fi
     fi
+    if ! `grep -q SETDLLDIRECTORY_PATCHED $FFSRC_TOOLS/cmdutils.c`; then # cl, clang and clang-cl
+      sed -i $sed_bak "/SetDllDirectory(\"\")/i\\
+\#if (_WIN32_WINNT+0) >= 0x0502  \/\/SETDLLDIRECTORY_PATCHED\\
+" "$FFSRC_TOOLS/cmdutils.c"
+      sed -i $sed_bak "/SetDllDirectory(\"\")/a\\
+\#endif\\
+" "$FFSRC_TOOLS/cmdutils.c"
+    fi
     if $VC_BUILD; then # check ffmpeg version?
       if [ "${VisualStudioVersion:0:2}" -gt 14 ] && `echo $LANG |grep -q zh`; then  # check ffmpeg version?
         iconv -t "UTF-8" -f "GBK" config.h > config-utf8.h
@@ -937,10 +947,6 @@ config1(){
       # ffmpeg.c includes compat/atomics/win32/stdatomic.h which includes winsock.h (from windows.h), os_support.h includes winsock2.h later and then have duplicated definations. winsock2,h defines _WINSOCKAPI_ to prevent inclusion of winsock.h in windows.h
       if ! `grep -q WINSOCK_PATCHED $FFSRC_TOOLS/ffmpeg.c`; then
         sed -i '/#include "config.h"/a #include "libavformat/os_support.h"  \/\/WINSOCK_PATCHED' $FFSRC_TOOLS/ffmpeg.c
-      fi
-      if ! `grep -q SETDLLDIRECTORY_PATCHED $FFSRC_TOOLS/cmdutils.c`; then
-        sed -i '/SetDllDirectory("")/i #if (_WIN32_WINNT+0) >= 0x0502  \/\/SETDLLDIRECTORY_PATCHED' $FFSRC_TOOLS/cmdutils.c
-        sed -i '/SetDllDirectory("")/a #endif' $FFSRC_TOOLS/cmdutils.c
       fi
     fi
     if [ -n "$PATCH_MMAP" ] && `grep -q 'HAVE_MMAP 1' config.h` ; then
