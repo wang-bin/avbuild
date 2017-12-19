@@ -12,7 +12,7 @@
 # https://msdn.microsoft.com/en-us/library/windows/desktop/aa383751(v=vs.85).aspx
 # ios: -fomit-frame-pointer  is not supported for target 'armv7'. check_cflags -Werror
 # https://git.videolan.org/git/ffmpeg/nv-codec-headers.git
-# vc/lld: -WX to check ld warnings
+# TODO: link warning as error when checking ld flags. vc/lld-link: -WX
 
 #set -x
 echo
@@ -229,8 +229,14 @@ use_llvm_ar_ranlib() {
 
 use_lld() {
   echo "using lld as linker..."
-  EXTRA_LDFLAGS="-s -fuse-ld=lld $EXTRA_LDFLAGS" # -s: strip flag passing to lld
-  USER_OPT="--disable-stripping $USER_OPT"; # disable strip command because cross gcc may be not installed
+  $IS_APPLE_CLANG && {
+    # -flavor is passed in arguments and must be the 1st argument. configure will prepend flags before extra-ldflags.
+    # apple clang+lld can build for non-apple targets
+    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --ld=\"$USE_LD $@\"" # TODO: what if host strip does not supported target? -s may be not supported, e.g. -flavor darwin
+  } || {
+    EXTRA_LDFLAGS="-s -fuse-ld=lld $EXTRA_LDFLAGS" # -s: strip flag passing to lld
+    USER_OPT="--disable-stripping $USER_OPT"; # disable strip command because cross gcc may be not installed
+  }
 }
 
 # or simply call "${CFLAG_IWITHSYSROOT}{dir1,dir2,...}"
@@ -660,9 +666,6 @@ setup_macos_env(){
   enable_opt videotoolbox vda
   version_compare $MACOS_VER "<" 10.7 && disable_opt lzma avdevice #avfoundation is not supported on 10.6
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --install_name_dir=@rpath"
-  # 10.6: ld: warning: target OS does not support re-exporting symbol _av_gettime from libavutil/libavutil.dylib
-  EXTRA_CFLAGS="$EXTRA_CFLAGS $ARCH_FLAG -mmacosx-version-min=$MACOS_VER"
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS $ARCH_FLAG -mmacosx-version-min=$MACOS_VER -flat_namespace -Wl,-dead_strip -Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../Frameworks -Wl,-rpath,@loader_path/lib -Wl,-rpath,@loader_path/../lib"
   if $FFGIT; then
     patch_clock_gettime=1
     [ -d $FFSRC/ffbuild ] && patch_clock_gettime=0 # since 3.3
@@ -670,9 +673,30 @@ setup_macos_env(){
     apple_sdk_version ">=" macos 10.12 && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
   fi
   setup_cc ${USE_TOOLCHAIN:=clang}
+  local LFLAG_PRE="-Wl,"
+  local LFLAG_VERSION_MIN="-mmacosx-version-min=" # used by clang, "-macosx_version_min " is passed to ld
+  [ "${USE_LD##*/}" == "lld" ] && {
+    use_lld -flavor darwin
+    LFLAG_PRE=
+    LFLAG_VERSION_MIN="-macosx_version_min "
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -demangle -dynamic"
+    EXTRA_LDSOFLAGS="$EXTRA_LDSOFLAGS -dylib" # via "clang -dynamiclib"
+    EXTRALIBS="$EXTRALIBS -lSystem" # from clang to ld. set -sdk_version anyversion to kill warnings
+    version_compare $MACOS_VER "<" 10.8 && EXTRALIBS="$EXTRALIBS -lcrt1.10.6.o"
+  }
   $IS_APPLE_CLANG || {
     TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\$(xcrun --sdk macosx --show-sdk-path)"
   }
+  local rpath_dirs=(@loader_path @loader_path/../Frameworks @loader_path/lib @loader_path/../lib)
+  local rpath_flags=
+  [ -n "$LFLAG_PRE" ] && {
+    rpath_flags=${rpath_dirs[@]/#/${LFLAG_PRE}-rpath,}
+  } || {
+    rpath_flags=${rpath_dirs[@]/#/-rpath }
+  }
+  # 10.6: ld: warning: target OS does not support re-exporting symbol _av_gettime from libavutil/libavutil.dylib
+  EXTRA_CFLAGS="$EXTRA_CFLAGS $ARCH_FLAG -mmacosx-version-min=$MACOS_VER"
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS $ARCH_FLAG $LFLAG_VERSION_MIN$MACOS_VER -flat_namespace ${LFLAG_PRE}-dead_strip $rpath_flags"
   INSTALL_DIR=sdk-macOS${MACOS_VER}${MACOS_ARCH}-${USE_TOOLCHAIN##*/}
 }
 
@@ -875,9 +899,11 @@ config1(){
   $enable_pic && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-pic"
   EXTRA_CFLAGS=$(trim2 $EXTRA_CFLAGS)
   EXTRA_LDFLAGS=$(trim2 $EXTRA_LDFLAGS)
+  EXTRA_LDSOFLAGS=$(trim2 $EXTRA_LDSOFLAGS)
   EXTRALIBS=$(trim2 $EXTRALIBS)
   test -n "$EXTRA_CFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-cflags=\"$EXTRA_CFLAGS\""
   test -n "$EXTRA_LDFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"$EXTRA_LDFLAGS\""
+  test -n "$EXTRA_LDSOFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldsoflags=\"$EXTRA_LDSOFLAGS\""
   test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
   echo INSTALL_DIR: $INSTALL_DIR
   is_libav || FEATURE_OPT="$FEATURE_OPT --enable-avresample --disable-postproc"
@@ -918,10 +944,17 @@ config1(){
     CONFIG_MAK=config.mak
     [ -f $CONFIG_MAK ] || CONFIG_MAK=ffbuild/config.mak
     [ -f $CONFIG_MAK ] || CONFIG_MAK=avbuild/config.mak
-    host_is darwin && {
+    LLD_AS_LD=false
+    grep -q "lld -flavor" $CONFIG_MAK && LLD_AS_LD=true # check lld-link?
+    $LLD_AS_LD && { # remove -Wl flags add by configure. they are not supported by lld, but lld only reports warnings
+      echo "patching lld flags..."
+      sed -i $sed_bak '/SHFLAGS=/s/-Wl,//g;/SHFLAGS=/s/,/ /g;/SHFLAGS=/s/-dynamiclib//g;/SHFLAGS=/s/-Bsymbolic//g' $CONFIG_MAK
+      sed -i $sed_bak -e '/LDFLAGS=/s/-Wl,//g;/LDFLAGS=/s/,/ /g' $CONFIG_MAK
+      sed -i $sed_bak -e '/LDFLAGS=/s/--as-needed//g;/LDFLAGS=/s/-z noexecstack//g;/LDFLAGS=/s/--warn-common//g;/LDFLAGS=/s/-rpath-link=.*//g' $CONFIG_MAK
+    }
+    host_is darwin && ! $LLD_AS_LD && { # lld does not support weak_framework
       echo "patching weak frameworks for old macOS/iOS"
-      sed -i $sed_bak 's/-framework VideoToolbox/-weak_framework VideoToolbox/g' $CONFIG_MAK
-      sed -i $sed_bak 's/-framework CoreMedia/-weak_framework CoreMedia/g' $CONFIG_MAK
+      sed -i $sed_bak 's/-framework VideoToolbox/-weak_framework VideoToolbox/g;s/-framework CoreMedia/-weak_framework CoreMedia/g' $CONFIG_MAK
     }
     local MAX_SLICES=`grep '#define MAX_SLICES' $FFSRC/libavcodec/h264dec.h 2>/dev/null`
     if [ -n "$MAX_SLICES" ]; then
