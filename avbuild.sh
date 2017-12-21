@@ -779,7 +779,8 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   fi
   # --cross-prefix is used by binutils (strip, but linux host ar, ranlib, nm can be used for cross build)
   $HAVE_LLD && {
-    use_lld
+    USE_LD=lld
+    use_lld -flavor gnu
   } || {
     $rpi_cross && TOOLCHAIN_OPT="--cross-prefix=$CROSS_PREFIX $TOOLCHAIN_OPT"
   }
