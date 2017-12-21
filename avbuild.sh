@@ -13,6 +13,7 @@
 # ios: -fomit-frame-pointer  is not supported for target 'armv7'. check_cflags -Werror
 # https://git.videolan.org/git/ffmpeg/nv-codec-headers.git
 # TODO: link warning as error when checking ld flags. vc/lld-link: -WX
+# remove -Wl, if LD_IS_LLD
 
 #set -x
 echo
@@ -36,8 +37,8 @@ x86/i366 |  x86/i686 | x86/i686 |
  x86_64  |   x86_64  |  x86_64  |
 Build for host if no parameter is set.
 Use a shortcut in winstore to build for WinRT/WinStore/MSVC target.
-(Optional) set USER_OPT, ANDROID_NDK, SYSROOT in config-${target_platform}.sh 
-config.sh is automatically included. config-lite.sh is for building smaller libraries.
+Environment vars: USE_TOOLCHAIN(clang, gcc etc.), USE_LD(clang, lld etc.), USER_OPT, ANDROID_NDK, SYSROOT  
+config.sh and config-${target_platform}.sh is automatically included. config-lite.sh is for building smaller libraries.
 HELP
 
 test -f config.sh && . config.sh
@@ -179,6 +180,7 @@ CFLAG_IWITHSYSROOT=$CFLAG_IWITHSYSROOT_GCC
 IS_CLANG=false
 IS_APPLE_CLANG=false
 IS_CLANG_CL=false
+LD_IS_LLD=false
 HAVE_LLD=false
 
 use_clang() {
@@ -228,13 +230,16 @@ use_llvm_ar_ranlib() {
 }
 
 use_lld() {
-  echo "using lld as linker..."
-  $IS_APPLE_CLANG && {
-    # -flavor is passed in arguments and must be the 1st argument. configure will prepend flags before extra-ldflags.
-    # apple clang+lld can build for non-apple targets
-    TOOLCHAIN_OPT+=" --ld=\"$USE_LD $@\"" # TODO: what if host strip does not supported target? -s may be not supported, e.g. -flavor darwin
-  } || {
-    EXTRA_LDFLAGS="-s -fuse-ld=lld $EXTRA_LDFLAGS" # -s: strip flag passing to lld
+  echo "using (clang)lld as linker..."
+  $IS_APPLE_CLANG && : ${USE_LD:="/usr/local/opt/llvm/bin/clang"}
+  [[ "$USE_LD" == *lld ]] && LD_IS_LLD=true
+  # -flavor is passed in arguments and must be the 1st argument. configure will prepend flags before extra-ldflags.
+  # apple clang+lld can build for non-apple targets
+  [ -n "$USE_LD" ] && TOOLCHAIN_OPT+=" --ld=\"$USE_LD $@\"" # TODO: what if host strip does not supported target? -s may be not supported, e.g. -flavor darwin
+  $LD_IS_LLD || {
+    FUSE_LD="${USE_LD:=lld}"
+    [[ "${USE_LD##*/}" == *lld* ]] || FUSE_LD=lld # not lld or lld-link
+    EXTRA_LDFLAGS="-s -fuse-ld=$FUSE_LD $EXTRA_LDFLAGS" # -s: strip flag passing to lld
     USER_OPT="--disable-stripping $USER_OPT"; # disable strip command because cross gcc may be not installed
   }
 }
@@ -562,7 +567,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   if $IS_CLANG ; then
     TOOLCHAIN_OPT+=" --cc=clang"
     EXTRA_CFLAGS+=" $CFLAGS_CLANG $CLANG_FLAGS"
-    EXTRA_LDFLAGS+=" $LFLAGS_CLANG $CLANG_FLAGS" # -Qunused-arguments is added by ffmpeg configure
+    $LD_IS_LLD || EXTRA_LDFLAGS+=" $LFLAGS_CLANG $CLANG_FLAGS" # -Qunused-arguments is added by ffmpeg configure
   else
     EXTRA_CFLAGS+=" $CFLAGS_GCC $GCC_FLAGS"
     EXTRA_LDFLAGS+=" $LFLAGS_GCC $GCC_FLAGS"
@@ -684,7 +689,7 @@ setup_macos_env(){
     EXTRALIBS+=" -lSystem" # from clang to ld. set -sdk_version anyversion to kill warnings
     version_compare $MACOS_VER "<" 10.8 && EXTRALIBS+=" -lcrt1.10.6.o"
   }
-  $IS_APPLE_CLANG || {
+  $IS_APPLE_CLANG || $LD_IS_LLD || {
     TOOLCHAIN_OPT+=" --sysroot=\$(xcrun --sdk macosx --show-sdk-path)"
   }
   local rpath_dirs=(@loader_path @loader_path/../Frameworks @loader_path/lib @loader_path/../lib)
@@ -775,12 +780,15 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   if $IS_CLANG; then
     rpi_cc=clang
     use_llvm_ar_ranlib
-    $IS_APPLE_CLANG && TOOLCHAIN_OPT+=" --ld=/usr/local/opt/llvm/bin/clang"
+    $IS_APPLE_CLANG && : ${USE_LD:="/usr/local/opt/llvm/bin/clang"}
   fi
   # --cross-prefix is used by binutils (strip, but linux host ar, ranlib, nm can be used for cross build)
   $HAVE_LLD && {
-    USE_LD=lld
-    use_lld -flavor gnu
+    [[ "${USE_LD##*/}" == "lld" ]] && {
+      use_lld -flavor gnu
+    } || {
+      use_lld 
+    }
   } || {
     $rpi_cross && TOOLCHAIN_OPT="--cross-prefix=$CROSS_PREFIX $TOOLCHAIN_OPT"
   }
@@ -792,7 +800,8 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   # armv6zk, armv6kz, armv6z: https://reviews.llvm.org/D14568
   eval EXTRA_CFLAGS_RPI='${EXTRA_CFLAGS_'$ARCH'}'
   EXTRA_CFLAGS+=" $CFLAGS_CLANG $CLANG_FLAGS $EXTRA_CFLAGS_RPI -mfloat-abi=hard"
-  EXTRA_LDFLAGS+=" $LFLAGS_CLANG $CLANG_FLAGS -L\\\$SYSROOT/opt/vc/lib"
+  $LD_IS_LLD || EXTRA_LDFLAGS+=" $LFLAGS_CLANG $CLANG_FLAGS"
+  EXTRA_LDFLAGS+=" -L\\\$SYSROOT/opt/vc/lib"
   #-lrt: clock_gettime in glibc2.17
   EXTRALIBS+=" -lrt"
   test -f /bin/sh.exe || EXTRA_LDFLAGS+=" -Wl,-rpath-link,\\\$SYSROOT/opt/vc/lib"
