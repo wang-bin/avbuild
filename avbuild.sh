@@ -163,8 +163,8 @@ enable_opt hwaccels
 
 add_elf_flags() {
   # -Wl,-z,noexecstack -Wl,--as-needed is added by configure
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -fdata-sections -ffunction-sections -fstack-protector-strong" # TODO: check -fstack-protector-strong
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--gc-sections" # -Wl,-z,relro -Wl,-z,now
+  EXTRA_CFLAGS+=" -fdata-sections -ffunction-sections -fstack-protector-strong" # TODO: check -fstack-protector-strong
+  EXTRA_LDFLAGS+=" -Wl,--gc-sections" # -Wl,-z,relro -Wl,-z,now
   # rpath
 }
 
@@ -210,7 +210,7 @@ EOF
 setup_cc() {
   probe_cc $@
   $IS_CLANG && use_clang
-  TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN $TOOLCHAIN_OPT"
+  TOOLCHAIN_OPT+=" --cc=$USE_TOOLCHAIN"
 }
 
 use_llvm_ar_ranlib() {
@@ -222,7 +222,7 @@ use_llvm_ar_ranlib() {
   which "`$clang -print-prog-name=llvm-ranlib`" 2>/dev/null || clang=clang-5.0
   local llvm_ar="\$($clang -print-prog-name=llvm-ar)" #$clang_dir${clang_name/clang/llvm-ar}
   local llvm_ranlib="\$($clang -print-prog-name=llvm-ranlib)" #$clang_dir${clang_name/clang/llvm-ranlib}
-  #EXTRA_LDFLAGS="$EXTRA_LDFLAGS -nodefaultlibs"; EXTRALIBS="$EXTRALIBS -lc -lgcc_s"
+  #EXTRA_LDFLAGS+=" -nodefaultlibs"; EXTRALIBS+=" -lc -lgcc_s"
   # TODO: apple clang invoke ld64. --ld=${CROSS_PREFIX}ld ldflags are different from cc ld flags
   TOOLCHAIN_OPT="--ar=$llvm_ar --ranlib=$llvm_ranlib $TOOLCHAIN_OPT"
 }
@@ -232,7 +232,7 @@ use_lld() {
   $IS_APPLE_CLANG && {
     # -flavor is passed in arguments and must be the 1st argument. configure will prepend flags before extra-ldflags.
     # apple clang+lld can build for non-apple targets
-    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --ld=\"$USE_LD $@\"" # TODO: what if host strip does not supported target? -s may be not supported, e.g. -flavor darwin
+    TOOLCHAIN_OPT+=" --ld=\"$USE_LD $@\"" # TODO: what if host strip does not supported target? -s may be not supported, e.g. -flavor darwin
   } || {
     EXTRA_LDFLAGS="-s -fuse-ld=lld $EXTRA_LDFLAGS" # -s: strip flag passing to lld
     USER_OPT="--disable-stripping $USER_OPT"; # disable strip command because cross gcc may be not installed
@@ -242,7 +242,7 @@ use_lld() {
 # or simply call "${CFLAG_IWITHSYSROOT}{dir1,dir2,...}"
 include_with_sysroot() {
   local dirs=($@)
-  EXTRA_CFLAGS="${dirs[@]/#/${CFLAG_IWITHSYSROOT}} $EXTRA_CFLAGS"
+  EXTRA_CFLAGS+=" ${dirs[@]/#/${CFLAG_IWITHSYSROOT}}"
 }
 # compat for windows path (e.g. android gcc toolchain can not recognize dir in -isystem=), assume clang is fine(to be tested)
 include_with_sysroot_compat() {
@@ -251,7 +251,7 @@ include_with_sysroot_compat() {
     return 0
   }
   local dirs=($@)
-  EXTRA_CFLAGS="${dirs[@]/#/-isystem \$SYSROOT} $EXTRA_CFLAGS"
+  EXTRA_CFLAGS+=" ${dirs[@]/#/-isystem \$SYSROOT}"
 }
 
 check_cross_build() {
@@ -262,7 +262,7 @@ check_cross_build() {
 # warnings are used by ffmpeg developer, some are enabled by configure: -Wl,--warn-shared-textrel
 
 setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang. TODO: clang-cl
-  #LIB_OPT="$LIB_OPT --disable-static"
+  #LIB_OPT+=" --disable-static"
   USE_TOOLCHAIN=clang
   setup_cc clang
   #use_lld # --target=i386-pc-windows-msvc19.11.0 -fuse-ld=lld: must use with -Wl,
@@ -281,22 +281,22 @@ setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang.
   fi
   # environment var LIB is used by lld-link, in windows style, i.e. export LIB=dir1;dir2;...
   # makedef: define env AR=llvm-ar, NM=? dumpbin1
-  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --ld=lld-link --ar=llvm-ar --ranlib=llvm-ranlib --nm=llvm-nm --enable-cross-compile --arch=$arch --target-os=win32"
-  [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
-  EXTRA_CFLAGS="$EXTRA_CFLAGS --target=i386-pc-windows-msvc19.11.0 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
-  EXTRALIBS="$EXTRALIBS oldnames.lib" # fdopen, tempnam, close used in file_open.c
+  TOOLCHAIN_OPT+=" --ld=lld-link --ar=llvm-ar --ranlib=llvm-ranlib --nm=llvm-nm --enable-cross-compile --arch=$arch --target-os=win32"
+  [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
+  EXTRA_CFLAGS+=" --target=i386-pc-windows-msvc19.11.0 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
+  EXTRA_LDFLAGS+=" -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
+  EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
   INSTALL_DIR="sdk-win-$arch-clang"
 }
 
 setup_vc_env(){
   echo Call "set MSYS2_PATH_TYPE=inherit" before msys2 sh.exe if cl.exe is not found!
   enable_lto=false # ffmpeg requires DCE, while vc with LTCG (-GL) does not support DCE
-  LIB_OPT="$LIB_OPT --disable-static"
+  LIB_OPT+=" --disable-static"
   # dylink crt
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -MD"
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
-  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --toolchain=msvc"
+  EXTRA_CFLAGS+=" -MD"
+  EXTRA_LDFLAGS+=" -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
+  TOOLCHAIN_OPT+=" --toolchain=msvc"
   VS_VER=${VisualStudioVersion:0:2}
   : ${Platform:=x86} #Platform is empty(native) or x86(cross using 64bit toolchain)
   echo "VS version: $VS_VER, platform: $Platform" # Platform is from vsvarsall.bat
@@ -308,7 +308,7 @@ setup_vc_env(){
     FAMILY=_DESKTOP
     setup_vc_desktop_env
   fi
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -D_WIN32_WINNT=$WIN_VER" #  -DWINAPI_FAMILY=WINAPI_FAMILY${FAMILY}_APP is not required for desktop
+  EXTRA_CFLAGS+=" -D_WIN32_WINNT=$WIN_VER" #  -DWINAPI_FAMILY=WINAPI_FAMILY${FAMILY}_APP is not required for desktop
   INSTALL_DIR="`tolower sdk-vc${VS_VER}$Platform${FAMILY}`"
 }
 
@@ -319,16 +319,16 @@ setup_vc_desktop_env() {
   # ldflags prepends flags. extralibs appends libs and add to pkg-config
   # can not use -luser32 because extralibs will not be filter -l to .lib (ldflags_filter is not ready, ffmpeg bug)
   # TODO: check dxva2_extralibs="-luser32" in configure
-  EXTRALIBS="$EXTRALIBS user32.lib" # ffmpeg 3.x bug: hwcontext_dxva2 GetDesktopWindow()
+  EXTRALIBS+=" user32.lib" # ffmpeg 3.x bug: hwcontext_dxva2 GetDesktopWindow()
   if [ -z "${Platform/*64/}" ]; then
     WIN_VER="0x0502"
-    [ $VS_VER -gt 10 ] && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.02'"
+    [ $VS_VER -gt 10 ] && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.02'"
   elif [ "`tolower $Platform`" = "arm" ]; then
     echo "use scripts in winstore dir instead"
     exit 1
   else
     WIN_VER="0x0501"
-    [ $VS_VER -gt 10 ] && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.01'"
+    [ $VS_VER -gt 10 ] && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.01'"
   fi
 }
 
@@ -353,8 +353,8 @@ setup_winrt_env() {
   fi
   #http://fate.libav.org/arm-msvc-14-wp
   disable_opt programs
-  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --target-os=win32"
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -APPCONTAINER"
+  TOOLCHAIN_OPT+=" --enable-cross-compile --target-os=win32"
+  EXTRA_LDFLAGS+=" -APPCONTAINER"
   WIN_VER="0x0A00"
   test $VS_VER -lt 14 && WIN_VER="0x0603" #FIXME: vc can support multiple target (and sdk)
   WIN10_VER_DEC=`printf "%d" 0x0A00`
@@ -371,10 +371,10 @@ setup_winrt_env() {
       enable_pic=true # not tested
     }
     #gas-preprocessor.pl change open(INPUT, "-|", @preprocess_c_cmd) || die "Error running preprocessor"; to open(INPUT, "@preprocess_c_cmd|") || die "Error running preprocessor";
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -D__ARM_PCS_VFP"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -MACHINE:ARM"
+    EXTRA_CFLAGS+=" -D__ARM_PCS_VFP"
+    EXTRA_LDFLAGS+=" -MACHINE:ARM"
     arch="arm"
-    TOOLCHAIN_OPT="$TOOLCHAIN_OPT $ASM_OPT"
+    TOOLCHAIN_OPT+=" $ASM_OPT"
   else
     [ -z "${Platform/*64/}" ] && arch=x86_64 || arch=x86
   fi
@@ -384,17 +384,17 @@ setup_winrt_env() {
   # export dirs (lib, include)
     FAMILY=_PHONE
     # phone ldflags only for win8.1?
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib -NODEFAULTLIB:kernel32.lib -NODEFAULTLIB:ole32.lib"
+    EXTRA_LDFLAGS+=" WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib -NODEFAULTLIB:kernel32.lib -NODEFAULTLIB:ole32.lib"
   fi
   if [ $WIN_VER_DEC  -gt ${WIN81_VER_DEC} ]; then
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS WindowsApp.lib"
+    EXTRA_LDFLAGS+=" WindowsApp.lib"
   fi
-  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --arch=$arch"
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -DWINAPI_FAMILY=WINAPI_FAMILY${FAMILY}_APP"
+  TOOLCHAIN_OPT+=" --arch=$arch"
+  EXTRA_CFLAGS+=" -DWINAPI_FAMILY=WINAPI_FAMILY${FAMILY}_APP"
 }
 
 setup_mingw_env() {
-  LIB_OPT="$LIB_OPT --disable-static"
+  LIB_OPT+=" --disable-static"
   enable_lto=false
   local gcc=gcc
   local arch=$1
@@ -421,12 +421,12 @@ setup_mingw_env() {
     host_is MinGW || host_is MSYS && {
       echo "mingw host build for $arch" # TODO: -m32/64?
       # mingw-w64-cross-gcc package has broken old mingw compilers with the same prefix, so prefer compilers in $MINGW_BIN
-      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=$gcc --target-os=mingw$BIT" # set target os recognized by configure. msys and mingw without 32/64 are rejected by configure
+      TOOLCHAIN_OPT+=" --cc=$gcc --target-os=mingw$BIT" # set target os recognized by configure. msys and mingw without 32/64 are rejected by configure
       local MINGW_BIN=/mingw${BIT}/bin
       [ -d $MINGW_BIN ] && export PATH=$MINGW_BIN:$PATH
     } || {
       echo "mingw cross build for $arch"
-      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --cross-prefix=${arch}-w64-mingw32- --target-os=mingw$BIT --arch=$arch"
+      TOOLCHAIN_OPT+=" --enable-cross-compile --cross-prefix=${arch}-w64-mingw32- --target-os=mingw$BIT --arch=$arch"
     }
   }
   if [ -n "$PKG_CONFIG_PATH_EXT" -a ! -d "$PKG_CONFIG_PATH_EXT" ]; then
@@ -440,7 +440,7 @@ setup_mingw_env() {
   enable_libmfx
   enable_opt dxva2
   disable_opt iconv
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -static-libgcc -Wl,-Bstatic"
+  EXTRA_LDFLAGS+=" -static-libgcc -Wl,-Bstatic"
   INSTALL_DIR="${INSTALL_DIR}-mingw-x${BIT/32/86}-gcc"
   rm -rf $THIS_DIR/build_$INSTALL_DIR/.env.sh
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
@@ -452,7 +452,7 @@ shopt -s expand_aliases
 EOF
 }
 
-# TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --cross-prefix=arm-mingw32ce- --target-os=mingw32ce --arch=arm --cpu=arm"
+# TOOLCHAIN_OPT+=" --enable-cross-compile --cross-prefix=arm-mingw32ce- --target-os=mingw32ce --arch=arm --cpu=arm"
 
 setup_android_env() {
   ENC_OPT=$ENC_OPT_MOBILE
@@ -468,32 +468,32 @@ setup_android_env() {
   local UNIFIED_SYSROOT="$NDK_ROOT/sysroot"
   [ -d "$UNIFIED_SYSROOT" ] || UNIFIED_SYSROOT=
   add_elf_flags
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -ffast-math -fstrict-aliasing"
+  EXTRA_CFLAGS+=" -ffast-math -fstrict-aliasing"
 # -no-canonical-prefixes: results in "-mcpu= ", why?
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,-z,relro -Wl,-z,now"
+  EXTRA_LDFLAGS+=" -Wl,-z,relro -Wl,-z,now"
   # TODO: clang lto in r14 (gcc?) except aarch64
   if [ -z "${ANDROID_ARCH/*86/}" ]; then
     ANDROID_ARCH=x86
     TRIPLE_ARCH=i686
     ANDROID_TOOLCHAIN_PREFIX=$ANDROID_ARCH
-    CLANG_FLAGS="$CLANG_FLAGS --target=i686-none-linux-android"
+    CLANG_FLAGS+=" --target=i686-none-linux-android"
     # from ndk: x86 devices have stack alignment issues.
     # clang error: inline assembly requires more registers than available ("movzbl "statep"    , "ret")
-    CFLAGS_GCC="$CFLAGS_GCC -mstackrealign"
+    CFLAGS_GCC+=" -mstackrealign"
     enable_lto=false
   elif [ -z "${ANDROID_ARCH/x*64/}" ]; then
     [ $API_LEVEL -lt 21 ] && API_LEVEL=21
     ANDROID_ARCH=x86_64
     TRIPLE_ARCH=$ANDROID_ARCH
     ANDROID_TOOLCHAIN_PREFIX=$ANDROID_ARCH
-    CLANG_FLAGS="$CLANG_FLAGS --target=x86_64-none-linux-android"
+    CLANG_FLAGS+=" --target=x86_64-none-linux-android"
     enable_lto=false
   elif [ -z "${ANDROID_ARCH/a*r*64/}" ]; then
     [ $API_LEVEL -lt 21 ] && API_LEVEL=21
     ANDROID_ARCH=arm64
     TRIPLE_ARCH=aarch64
     ANDROID_TOOLCHAIN_PREFIX=${TRIPLE_ARCH}-linux-android
-    CLANG_FLAGS="$CLANG_FLAGS --target=aarch64-none-linux-android"
+    CLANG_FLAGS+=" --target=aarch64-none-linux-android"
   elif [ -z "${ANDROID_ARCH/*arm*/}" ]; then
 #https://wiki.debian.org/ArmHardFloatPort/VfpComparison
     TRIPLE_ARCH=arm
@@ -501,8 +501,8 @@ setup_android_env() {
     FFARCH=arm
     if [ -z "${ANDROID_ARCH/armv5*/}" ]; then
       echo "armv5"
-      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cpu=armv5te"
-      CLANG_FLAGS="$CLANG_FLAGS --target=armv5te-none-linux-androideabi"
+      TOOLCHAIN_OPT+=" --cpu=armv5te"
+      CLANG_FLAGS+=" --target=armv5te-none-linux-androideabi"
 : '
 -mthumb error
 selected processor does not support Thumb mode `itt gt
@@ -510,20 +510,20 @@ D:\msys2\tmp\ccXOcbBA.s:262: Error: instruction not supported in Thumb16 mode --
 use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/ARM-Options.html
 '
 # -msoft-float == -mfloat-abi=soft https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/ARM-Options.html
-      EXTRA_CFLAGS="$EXTRA_CFLAGS -mtune=xscale -msoft-float" # -march=armv5te
-      CFLAGS_GCC="$CFLAGS_GCC -mthumb-interwork"
+      EXTRA_CFLAGS+=" -mtune=xscale -msoft-float" # -march=armv5te
+      CFLAGS_GCC+=" -mthumb-interwork"
     else
-      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-thumb --enable-neon"
+      TOOLCHAIN_OPT+=" --enable-thumb --enable-neon"
       EXTRA_CFLAGS_FPU="-mfpu=vfpv3-d16"
       if [ -z "${ANDROID_ARCH/*neon*/}" ]; then
         enable_lto=false
         echo "neon. can not run on Marvell and nVidia"
         EXTRA_CFLAGS_FPU="-mfpu=neon"
-        CFLAGS_GCC="$CFLAGS_GCC -mvectorize-with-neon-quad"
+        CFLAGS_GCC+=" -mvectorize-with-neon-quad"
       fi
-      CLANG_FLAGS="$CLANG_FLAGS --target=armv7-none-linux-androideabi"
-      EXTRA_CFLAGS="$EXTRA_CFLAGS -march=armv7-a -mtune=cortex-a8 -mfloat-abi=softfp $EXTRA_CFLAGS_FPU" #-mcpu= is deprecated in gcc 3, use -mtune=cortex-a8 instead
-      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--fix-cortex-a8"
+      CLANG_FLAGS+=" --target=armv7-none-linux-androideabi"
+      EXTRA_CFLAGS+=" -march=armv7-a -mtune=cortex-a8 -mfloat-abi=softfp $EXTRA_CFLAGS_FPU" #-mcpu= is deprecated in gcc 3, use -mtune=cortex-a8 instead
+      EXTRA_LDFLAGS+=" -Wl,--fix-cortex-a8"
     fi
     ANDROID_ARCH=arm
   fi
@@ -543,7 +543,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   echo "ANDROID_TOOLCHAIN_DIR=${ANDROID_TOOLCHAIN_DIR}"
   echo "ANDROID_LLVM_DIR=${ANDROID_LLVM_DIR}"
   ANDROID_TOOLCHAIN_DIR_REL=${ANDROID_TOOLCHAIN_DIR#$NDK_ROOT}
-  LFLAGS_CLANG="$LFLAGS_CLANG -gcc-toolchain \$NDK_ROOT/$ANDROID_TOOLCHAIN_DIR_REL" # ld from gcc toolchain. TODO: lld?
+  LFLAGS_CLANG+=" -gcc-toolchain \$NDK_ROOT/$ANDROID_TOOLCHAIN_DIR_REL" # ld from gcc toolchain. TODO: lld?
   [ "$ANDROID_ARCH" == "arm" ] && CFLAGS_CLANG="-fno-integrated-as -gcc-toolchain \$NDK_ROOT/$ANDROID_TOOLCHAIN_DIR_REL $CFLAGS_CLANG" # Disable integrated-as for better compatibility, but need as from gcc toolchain. from ndk cmake
   local ANDROID_SYSROOT_LIB="$NDK_ROOT/platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
   local ANDROID_SYSROOT_LIB_REL="platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
@@ -551,29 +551,29 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
     [ $API_LEVEL -lt 21 ] && PATCH_MMAP="void* mmap(void*, size_t, int, int, int, __kernel_off_t);"
     ANDROID_SYSROOT_REL=sysroot
     SYSROOT=$NDK_ROOT/$ANDROID_SYSROOT_REL
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -D__ANDROID_API__=$API_LEVEL --sysroot \$SYSROOT"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS --sysroot \$NDK_ROOT/$ANDROID_SYSROOT_LIB_REL" # linker need crt objects in platform-$API_LEVEL dir, must set the dir as sysroot. but --sysroot in extra-ldflags comes before configure --sysroot= and has no effect
+    EXTRA_CFLAGS+=" -D__ANDROID_API__=$API_LEVEL --sysroot \$SYSROOT"
+    EXTRA_LDFLAGS+=" --sysroot \$NDK_ROOT/$ANDROID_SYSROOT_LIB_REL" # linker need crt objects in platform-$API_LEVEL dir, must set the dir as sysroot. but --sysroot in extra-ldflags comes before configure --sysroot= and has no effect
     include_with_sysroot_compat /usr/include/$ANDROID_HEADER_TRIPLE
   else
     ANDROID_SYSROOT_REL=${ANDROID_SYSROOT_LIB_REL}
-    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\$NDK_ROOT/$ANDROID_SYSROOT_REL"
+    TOOLCHAIN_OPT+=" --sysroot=\$NDK_ROOT/$ANDROID_SYSROOT_REL"
   fi
-  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --target-os=android --arch=${FFARCH} --enable-cross-compile --cross-prefix=$CROSS_PREFIX"
+  TOOLCHAIN_OPT+=" --target-os=android --arch=${FFARCH} --enable-cross-compile --cross-prefix=$CROSS_PREFIX"
   if $IS_CLANG ; then
-    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --cc=clang"
-    EXTRA_CFLAGS="$EXTRA_CFLAGS $CFLAGS_CLANG $CLANG_FLAGS"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS $LFLAGS_CLANG $CLANG_FLAGS" # -Qunused-arguments is added by ffmpeg configure
+    TOOLCHAIN_OPT+=" --cc=clang"
+    EXTRA_CFLAGS+=" $CFLAGS_CLANG $CLANG_FLAGS"
+    EXTRA_LDFLAGS+=" $LFLAGS_CLANG $CLANG_FLAGS" # -Qunused-arguments is added by ffmpeg configure
   else
-    EXTRA_CFLAGS="$EXTRA_CFLAGS $CFLAGS_GCC $GCC_FLAGS"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS $LFLAGS_GCC $GCC_FLAGS"
+    EXTRA_CFLAGS+=" $CFLAGS_GCC $GCC_FLAGS"
+    EXTRA_LDFLAGS+=" $LFLAGS_GCC $GCC_FLAGS"
     if $enable_lto; then
       if [ $FORCE_LTO ]; then
-        TOOLCHAIN_OPT="$TOOLCHAIN_OPT --ar=${CROSS_PREFIX}gcc-ar --ranlib=${CROSS_PREFIX}gcc-ranlib"
+        TOOLCHAIN_OPT+=" --ar=${CROSS_PREFIX}gcc-ar --ranlib=${CROSS_PREFIX}gcc-ranlib"
       fi
     fi
   fi
   #test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-$API_LEVEL --toolchain=$TOOLCHAIN --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
-  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE\""
+  TOOLCHAIN_OPT+=" --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE\""
   INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}
   $IS_CLANG && INSTALL_DIR="${INSTALL_DIR}-clang" || INSTALL_DIR="${INSTALL_DIR}-gcc"
   enable_opt jni mediacodec
@@ -621,7 +621,7 @@ setup_ios_env() {
         ios_min=6.0
       fi
     fi
-    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-thumb"
+    TOOLCHAIN_OPT+=" --enable-thumb"
   else
     SYSROOT_SDK=iphonesimulator
     VER_OS=ios-simulator
@@ -633,10 +633,10 @@ setup_ios_env() {
   fi
   ios_ver=${2##ios}
   : ${ios_ver:=$ios_min}
-  TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-cross-compile --arch=$IOS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
+  TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$IOS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
   disable_opt programs
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver $BITCODE_FLAGS" # -fvisibility=hidden -fvisibility-inlines-hidden"
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver -Wl,-dead_strip" # -fvisibility=hidden -fvisibility-inlines-hidden" #No bitcode flags for iOS < 6.0. we always build static libs. but config test will try to create exe
+  EXTRA_CFLAGS+=" -arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver $BITCODE_FLAGS" # -fvisibility=hidden -fvisibility-inlines-hidden"
+  EXTRA_LDFLAGS+=" -arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver -Wl,-dead_strip" # -fvisibility=hidden -fvisibility-inlines-hidden" #No bitcode flags for iOS < 6.0. we always build static libs. but config test will try to create exe
   if $FFGIT; then
     patch_clock_gettime=1
     [ -d $FFSRC/ffbuild ] && patch_clock_gettime=0 # since 3.3
@@ -665,7 +665,7 @@ setup_macos_env(){
   fi
   enable_opt videotoolbox vda
   version_compare $MACOS_VER "<" 10.7 && disable_opt lzma avdevice #avfoundation is not supported on 10.6
-  grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --install_name_dir=@rpath"
+  grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
   if $FFGIT; then
     patch_clock_gettime=1
     [ -d $FFSRC/ffbuild ] && patch_clock_gettime=0 # since 3.3
@@ -679,13 +679,13 @@ setup_macos_env(){
     use_lld -flavor darwin
     LFLAG_PRE=
     LFLAG_VERSION_MIN="-macosx_version_min "
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -demangle -dynamic"
-    EXTRA_LDSOFLAGS="$EXTRA_LDSOFLAGS -dylib" # via "clang -dynamiclib"
-    EXTRALIBS="$EXTRALIBS -lSystem" # from clang to ld. set -sdk_version anyversion to kill warnings
-    version_compare $MACOS_VER "<" 10.8 && EXTRALIBS="$EXTRALIBS -lcrt1.10.6.o"
+    EXTRA_LDFLAGS+=" -demangle -dynamic"
+    EXTRA_LDSOFLAGS+=" -dylib" # via "clang -dynamiclib"
+    EXTRALIBS+=" -lSystem" # from clang to ld. set -sdk_version anyversion to kill warnings
+    version_compare $MACOS_VER "<" 10.8 && EXTRALIBS+=" -lcrt1.10.6.o"
   }
   $IS_APPLE_CLANG || {
-    TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\$(xcrun --sdk macosx --show-sdk-path)"
+    TOOLCHAIN_OPT+=" --sysroot=\$(xcrun --sdk macosx --show-sdk-path)"
   }
   local rpath_dirs=(@loader_path @loader_path/../Frameworks @loader_path/lib @loader_path/../lib)
   local rpath_flags=
@@ -695,8 +695,8 @@ setup_macos_env(){
     rpath_flags=${rpath_dirs[@]/#/-rpath }
   }
   # 10.6: ld: warning: target OS does not support re-exporting symbol _av_gettime from libavutil/libavutil.dylib
-  EXTRA_CFLAGS="$EXTRA_CFLAGS $ARCH_FLAG -mmacosx-version-min=$MACOS_VER"
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS $ARCH_FLAG $LFLAG_VERSION_MIN$MACOS_VER -flat_namespace ${LFLAG_PRE}-dead_strip $rpath_flags"
+  EXTRA_CFLAGS+=" $ARCH_FLAG -mmacosx-version-min=$MACOS_VER"
+  EXTRA_LDFLAGS+=" $ARCH_FLAG $LFLAG_VERSION_MIN$MACOS_VER -flat_namespace ${LFLAG_PRE}-dead_strip $rpath_flags"
   INSTALL_DIR=sdk-macOS${MACOS_VER}${MACOS_ARCH}-${USE_TOOLCHAIN##*/}
 }
 
@@ -764,7 +764,7 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
     echo "rpi sysroot is not found!"
     exit 1
   }
-  $rpi_cross && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --sysroot=\\\$SYSROOT" # clang searchs host by default, so sysroot is required
+  $rpi_cross && TOOLCHAIN_OPT+=" --sysroot=\\\$SYSROOT" # clang searchs host by default, so sysroot is required
   local SUBARCH=${ARCH}-a
   SUBARCH=${SUBARCH/6-a/6zk} # armv6kz is not supported by some compilers, but zk is.
   local EXTRA_CFLAGS_armv6="-march=$SUBARCH -mtune=arm1176jzf-s -mfpu=vfp -marm" # no thumb support, set -marm for clang or -mthumb-interwork for gcc
@@ -775,7 +775,7 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   if $IS_CLANG; then
     rpi_cc=clang
     use_llvm_ar_ranlib
-    $IS_APPLE_CLANG && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --ld=/usr/local/opt/llvm/bin/clang"
+    $IS_APPLE_CLANG && TOOLCHAIN_OPT+=" --ld=/usr/local/opt/llvm/bin/clang"
   fi
   # --cross-prefix is used by binutils (strip, but linux host ar, ranlib, nm can be used for cross build)
   $HAVE_LLD && {
@@ -790,11 +790,11 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   # not only rpi vc libs, but also gcc headers and libs in sysroot may be required by some toolchains, so simply set --sysroot= may not work
   # armv6zk, armv6kz, armv6z: https://reviews.llvm.org/D14568
   eval EXTRA_CFLAGS_RPI='${EXTRA_CFLAGS_'$ARCH'}'
-  EXTRA_CFLAGS="$CFLAGS_CLANG $CLANG_FLAGS $EXTRA_CFLAGS_RPI -mfloat-abi=hard $EXTRA_CFLAGS"
-  EXTRA_LDFLAGS="$LFLAGS_CLANG $CLANG_FLAGS -L\\\$SYSROOT/opt/vc/lib $EXTRA_LDFLAGS"
+  EXTRA_CFLAGS+=" $CFLAGS_CLANG $CLANG_FLAGS $EXTRA_CFLAGS_RPI -mfloat-abi=hard"
+  EXTRA_LDFLAGS+=" $LFLAGS_CLANG $CLANG_FLAGS -L\\\$SYSROOT/opt/vc/lib"
   #-lrt: clock_gettime in glibc2.17
-  EXTRALIBS="$EXTRALIBS -lrt"
-  test -f /bin/sh.exe || EXTRA_LDFLAGS="-Wl,-rpath-link,\\\$SYSROOT/opt/vc/lib $EXTRA_LDFLAGS"
+  EXTRALIBS+=" -lrt"
+  test -f /bin/sh.exe || EXTRA_LDFLAGS+=" -Wl,-rpath-link,\\\$SYSROOT/opt/vc/lib"
   INSTALL_DIR=sdk-$2-${ARCH}-${rpi_cc}
 }
 
@@ -818,12 +818,12 @@ setup_linux_env() {
     EXTRA_LDFLAGS="-m$BIT $EXTRA_LDFLAGS"
   }
   $IS_CLANG && {
-    EXTRA_CFLAGS="$CFLAGS_CLANG $CLANG_FLAGS $EXTRA_CFLAGS"
-    EXTRA_LDFLAGS="$LFLAGS_CLANG $CLANG_FLAGS $EXTRA_LDFLAGS"
+    EXTRA_CFLAGS+=" $CFLAGS_CLANG $CLANG_FLAGS"
+    EXTRA_LDFLAGS+=" $LFLAGS_CLANG $CLANG_FLAGS"
     $HAVE_LLD && [ $BIT -eq 64 ] && use_lld # 32bit error: can't create dynamic relocation R_386_32 against local symbol in readonly segment   libavutil/x86/float_dsp.o
   } || {
-    EXTRA_CFLAGS="$CFLAGS_GCC $GCC_FLAGS $EXTRA_CFLAGS"
-    EXTRA_LDFLAGS="$LFLAGS_GCC $GCC_FLAGS $EXTRA_LDFLAGS"
+    EXTRA_CFLAGS+=" $CFLAGS_GCC $GCC_FLAGS"
+    EXTRA_LDFLAGS+=" $LFLAGS_GCC $GCC_FLAGS"
   }
   [ "$USE_TOOLCHAIN" == "gcc" ] || TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN $TOOLCHAIN_OPT"
   INSTALL_DIR=${USE_TOOLCHAIN##*/}
@@ -849,7 +849,7 @@ config1(){
   # clock_gettime in librt instead of glibc>=2.17
     grep -q "LIBRT" $FFSRC/configure && {
       # TODO: cc test
-      host_is Linux && ! target_is android && ! echo $EXTRALIBS |grep -q '\-lrt' && ! echo $EXTRA_LDFLAGS |grep -q '\-lrt' && EXTRALIBS="$EXTRALIBS -lrt"
+      host_is Linux && ! target_is android && ! echo $EXTRALIBS |grep -q '\-lrt' && ! echo $EXTRA_LDFLAGS |grep -q '\-lrt' && EXTRALIBS+=" -lrt"
     }
   }
   case $1 in
@@ -893,24 +893,24 @@ config1(){
       echo "lto is disabled when build static libs to get better compatibility"
     else
       echo "lto is enabled"
-      TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-lto"
+      TOOLCHAIN_OPT+=" --enable-lto"
     fi
   fi
-  $enable_pic && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --enable-pic"
+  $enable_pic && TOOLCHAIN_OPT+=" --enable-pic"
   EXTRA_CFLAGS=$(trim2 $EXTRA_CFLAGS)
   EXTRA_LDFLAGS=$(trim2 $EXTRA_LDFLAGS)
   EXTRA_LDSOFLAGS=$(trim2 $EXTRA_LDSOFLAGS)
   EXTRALIBS=$(trim2 $EXTRALIBS)
-  test -n "$EXTRA_CFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-cflags=\"$EXTRA_CFLAGS\""
-  test -n "$EXTRA_LDFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldflags=\"$EXTRA_LDFLAGS\""
-  test -n "$EXTRA_LDSOFLAGS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-ldsoflags=\"$EXTRA_LDSOFLAGS\""
-  test -n "$EXTRALIBS" && TOOLCHAIN_OPT="$TOOLCHAIN_OPT --extra-libs=\"$EXTRALIBS\""
+  test -n "$EXTRA_CFLAGS" && TOOLCHAIN_OPT+=" --extra-cflags=\"$EXTRA_CFLAGS\""
+  test -n "$EXTRA_LDFLAGS" && TOOLCHAIN_OPT+=" --extra-ldflags=\"$EXTRA_LDFLAGS\""
+  test -n "$EXTRA_LDSOFLAGS" && TOOLCHAIN_OPT+=" --extra-ldsoflags=\"$EXTRA_LDSOFLAGS\""
+  test -n "$EXTRALIBS" && TOOLCHAIN_OPT+=" --extra-libs=\"$EXTRALIBS\""
   echo INSTALL_DIR: $INSTALL_DIR
-  is_libav || FEATURE_OPT="$FEATURE_OPT --enable-avresample --disable-postproc"
+  is_libav || FEATURE_OPT+=" --enable-avresample --disable-postproc"
   local CONFIGURE="configure --extra-version=QtAV --disable-doc ${DEBUG_OPT} $LIB_OPT --enable-runtime-cpudetect $FEATURE_OPT $TOOLCHAIN_OPT $USER_OPT"
   : ${NO_ENC=false}
   if ! $NO_ENC && [ -n "$ENC_OPT" ]; then
-    CONFIGURE="$CONFIGURE $ENC_OPT $MUX_OPT"
+    CONFIGURE+=" $ENC_OPT $MUX_OPT"
   fi
   CONFIGURE=`trim2 $CONFIGURE`
   # http://ffmpeg.org/platform.html
@@ -1093,7 +1093,7 @@ make_universal()
     for a in libavutil libavformat libavcodec libavfilter libavresample libavdevice libswscale libswresample; do
       libs=
       for d in ${dirs[@]}; do
-        [ -f $d/lib/${a}.a ] && libs="$libs $d/lib/${a}.a"
+        [ -f $d/lib/${a}.a ] && libs+=" $d/lib/${a}.a"
       done
       echo "lipo -create $libs -o $OUT_DIR/lib/${a}.a"
       test -n "$libs" && {
