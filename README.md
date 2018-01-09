@@ -15,7 +15,8 @@ windows mingw, vs2013/vs2015/vs2017, desktop(supports XP)/store/phone: [![appvey
 - multiple targets build and configure simultaneously
 - ffmpeg patches
 - morden toolchain support: clang+lld
-- supports windows xp with latest vs and win sdk (vs2017+win10 sdk)
+- support windows xp with latest vs and win sdk (vs2017+win10 sdk) if ffmpeg <= 3.4
+- support SSL for macOS & iOS
 
 ## Build Matrix
 
@@ -34,4 +35,6 @@ windows mingw, vs2013/vs2015/vs2017, desktop(supports XP)/store/phone: [![appvey
 - X: cross build (for example, build win32 from linux/macOS using mingw, build rpi from windows/linux/macOS using gcc and clang)
 - ?: in plan
 - Empty: won't support
+
+clang+lld to cross build for windows is currently impossible, see https://github.com/wang-bin/avbuild/wiki/Using-Clang---LLD
 

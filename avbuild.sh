@@ -17,7 +17,7 @@
 
 #set -x
 echo
-echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2017"
+echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2018"
 echo "https://github.com/wang-bin/avbuild"
 
 THIS_NAME=${0##*/}
@@ -170,6 +170,9 @@ add_elf_flags() {
 }
 
 
+sed_bak=
+host_is darwin && sed_bak=".bak"
+
 CFLAG_IWITHSYSROOT_GCC="-isystem=" # not work for win dir
 CFLAG_IWITHSYSROOT_CLANG="-iwithsysroot "
 CFLAGS_CLANG=
@@ -266,7 +269,7 @@ check_cross_build() {
 }
 # warnings are used by ffmpeg developer, some are enabled by configure: -Wl,--warn-shared-textrel
 
-setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang. TODO: clang-cl
+setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang. TODO: clang-cl, see putty
   #LIB_OPT+=" --disable-static"
   USE_TOOLCHAIN=clang
   setup_cc clang
@@ -651,6 +654,7 @@ setup_ios_env() {
   INSTALL_DIR=sdk-ios-$IOS_ARCH
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   [ -n "$ios5_lib_dir" ] && echo "export LIBRARY_PATH=$ios5_lib_dir" >$THIS_DIR/build_$INSTALL_DIR/.env.sh
+  sed -i $sed_bak '/check_cflags -Werror=partial-availability/d' "$FFSRC/configure" # for SSL, VT
 }
 
 setup_macos_env(){
@@ -703,6 +707,7 @@ setup_macos_env(){
   EXTRA_CFLAGS+=" $ARCH_FLAG -mmacosx-version-min=$MACOS_VER"
   EXTRA_LDFLAGS+=" $ARCH_FLAG $LFLAG_VERSION_MIN$MACOS_VER -flat_namespace ${LFLAG_PRE}-dead_strip $rpath_flags"
   INSTALL_DIR=sdk-macOS${MACOS_VER}${MACOS_ARCH}-${USE_TOOLCHAIN##*/}
+  sed -i $sed_bak '/check_cflags -Werror=partial-availability/d' "$FFSRC/configure" # for SSL, VT
 }
 
 # version_compare v1 "op" v2, e.g. version_compare 10.6 "<" 10.7
@@ -735,8 +740,6 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   local rpi_cc=gcc
   local ARCH=${1:0:5}
   local rpi_cross=false
-  local sed_bak=
-  host_is Darwin && sed_bak=".bak"
   if ! `grep -q 'check_arm_arch 6KZ;' "$FFSRC/configure"`; then
     echo "patching armv6zk probe..."
     sed -i $sed_bak "/then echo armv6zk/a\\
@@ -942,8 +945,6 @@ config1(){
   if [ $? -eq 0 ]; then
     echo $CONFIGURE >config.txt
     echo $FFVERSION_FULL >>config.txt
-    sed_bak=
-    host_is darwin && sed_bak=".bak"
     if [ $patch_clock_gettime == 1 ]; then
       # modify only if HAVE_CLOCK_GETTIME is 1 to avoid rebuild
       if grep 'HAVE_CLOCK_GETTIME 1' config.h; then
