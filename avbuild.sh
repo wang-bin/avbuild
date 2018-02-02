@@ -773,13 +773,14 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
     exit 1
   }
   $rpi_cross && TOOLCHAIN_OPT+=" --sysroot=\\\$SYSROOT" # clang searchs host by default, so sysroot is required
+  # probe compiler first
+  setup_cc ${USE_TOOLCHAIN:=gcc} "--target=arm-linux-gnueabihf" # clang on mac(apple or opensource) will use apple flags w/o --target= 
   local SUBARCH=${ARCH}-a
-  SUBARCH=${SUBARCH/6-a/6zk} # armv6kz is not supported by some compilers, but zk is.
+  $IS_APPLE_CLANG && SUBARCH=${SUBARCH/6-a/6t2} || SUBARCH=${SUBARCH/6-a/6zk} # armv6kz is not supported by some compilers, but zk is.
   local EXTRA_CFLAGS_armv6="-march=$SUBARCH -mtune=arm1176jzf-s -mfpu=vfp -marm" # no thumb support, set -marm for clang or -mthumb-interwork for gcc
   local EXTRA_CFLAGS_armv7="-march=$SUBARCH -mtune=cortex-a7 -mfpu=neon-vfpv4 -mthumb" # -mthumb-interwork vfpv3-d16"
   local EXTRA_CFLAGS_armv8="-march=$SUBARCH -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8"
 
-  setup_cc ${USE_TOOLCHAIN:=gcc} "--target=arm-linux-gnueabihf" # clang on mac(apple or opensource) will use apple flags w/o --target= 
   if $IS_CLANG; then
     rpi_cc=clang
     use_llvm_ar_ranlib
@@ -965,6 +966,7 @@ config1(){
     }
     host_is darwin && ! $LLD_AS_LD && { # lld does not support weak_framework
       echo "patching weak frameworks for old macOS/iOS"
+      # TODO: remove -weak_framework because ld can recognize weak symbols
       sed -i $sed_bak 's/-framework VideoToolbox/-weak_framework VideoToolbox/g;s/-framework CoreMedia/-weak_framework CoreMedia/g' $CONFIG_MAK
     }
     local MAX_SLICES=`grep '#define MAX_SLICES' $FFSRC/libavcodec/h264dec.h 2>/dev/null`
