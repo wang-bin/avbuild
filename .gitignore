@@ -1,3 +1,5 @@
+/ffmpeg*
+/libav*
 build_*/
 sdk-*/
 sysroot
