@@ -22,6 +22,12 @@ matrix:
       compiler: clang
       osx_image: xcode9.2
       env:
+        - TARGET=raspberry-pi
+        - CC_VENDOR=apple
+    - os: osx
+      compiler: clang
+      osx_image: xcode9.2
+      env:
         - TARGET=host
     - os: osx
       compiler: clang
@@ -107,7 +113,8 @@ matrix:
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update --all; fi
 install:
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install nasm yasm perl hudochenkov/sshpass/sshpass xz; fi
+  - if [ "$TARGET" == "raspberry-pi" ]; then EXTRA_BREW=llvm; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install ${EXTRA_BREW} nasm yasm perl hudochenkov/sshpass/sshpass xz; fi
   - |
       if [ ! -d ffmpeg-${FF_VERSION} ]; then
         wget http://ffmpeg.org/releases/ffmpeg-${FF_VERSION}.tar.bz2
@@ -142,9 +149,9 @@ after_success:
   - TARGET_OS=${TARGET}
   - TARGET_OS=${TARGET_OS/#host/${TRAVIS_OS_NAME}}
   - TARGET_OS=${TARGET_OS/#osx/macOS}
-  - SUFFIX=${TARGET_OS/%android/$TARGET_OS-$CC}
-  - SUFFIX=${SUFFIX/%linux/$SUFFIX-$CC}
-  - SUFFIX=${SUFFIX/%raspberry-pi/$SUFFIX-$CC}
+  - SUFFIX=${TARGET_OS/%android/$TARGET_OS-$CC_VENDOR$CC}
+  - SUFFIX=${SUFFIX/%linux/$SUFFIX-$CC_VENDOR$CC}
+  - SUFFIX=${SUFFIX/%raspberry-pi/$SUFFIX-$CC_VENDOR$CC}
   - SUFFIX=${SUFFIX}${CONFIG_SUFFIX}
   - mv sdk* ffmpeg-${FF_VERSION}-${SUFFIX}
   - tar Jcf ffmpeg-${FF_VERSION}-${SUFFIX}{.tar.xz,}

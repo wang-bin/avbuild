@@ -223,8 +223,10 @@ use_llvm_ar_ranlib() {
   local clang_dir=${USE_TOOLCHAIN%clang*}
   local clang_name=${USE_TOOLCHAIN##*/}
   local clang=$USE_TOOLCHAIN
-  which "`$clang -print-prog-name=llvm-ar`" 2>/dev/null || clang=clang-5.0
-  which "`$clang -print-prog-name=llvm-ranlib`" 2>/dev/null || clang=clang-5.0
+  local CLANG_FALLBACK=clang-5.0
+  $IS_APPLE_CLANG && CLANG_FALLBACK=/usr/local/opt/llvm/bin/clang
+  which "`$clang -print-prog-name=llvm-ar`" 2>/dev/null || clang=$CLANG_FALLBACK
+  which "`$clang -print-prog-name=llvm-ranlib`" 2>/dev/null || clang=$CLANG_FALLBACK
   local llvm_ar="\$($clang -print-prog-name=llvm-ar)" #$clang_dir${clang_name/clang/llvm-ar}
   local llvm_ranlib="\$($clang -print-prog-name=llvm-ranlib)" #$clang_dir${clang_name/clang/llvm-ranlib}
   #EXTRA_LDFLAGS+=" -nodefaultlibs"; EXTRALIBS+=" -lc -lgcc_s"
