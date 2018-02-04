@@ -29,6 +29,10 @@ environment:
     _CC: VS2017
     _PLATFORM: store
     APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+  - _ARCH: x86
+    _CC: VS2017
+    _PLATFORM: store
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
   - _ARCH: arm
     _CC: VS2013
     _PLATFORM: phone
@@ -45,10 +49,6 @@ environment:
 
 matrix:
   fast_finish: false
-
-cache:
-  - ffmpeg-%FF_VERSION%
-#  - C:\%_CACHE%\var\cache\pacman\pkg -> appveyor.yml
 
 init:
   - echo NUMBER_OF_PROCESSORS=%NUMBER_OF_PROCESSORS%

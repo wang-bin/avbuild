@@ -10,15 +10,15 @@ Lite build
 
 [Raspberry Pi](https://sourceforge.net/projects/avbuild/files/raspberry-pi/ffmpeg-3.4.1-raspberry-pi-appleclang-lite.tar.xz/download), [Android](https://sourceforge.net/projects/avbuild/files/android/ffmpeg-3.4.1-android-clang-lite.tar.xz/download), [iOS](https://sourceforge.net/projects/avbuild/files/iOS/ffmpeg-3.4.1-iOS-lite.tar.xz/download), [macOS](https://sourceforge.net/projects/avbuild/files/macOS/ffmpeg-3.4.1-macOS-lite.tar.xz/download), [Linux](https://sourceforge.net/projects/avbuild/files/linux/ffmpeg-3.4.1-linux-gcc-lite.tar.xz/download), 
 
-Windows Desktop [MinGW](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-3.4.1-desktop-MINGW-lite.7z/download), VS2017[x86](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-3.4.1-desktop-VS2017x86-lite.7z/download)/[x64](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-3.4.1-desktop-VS2017x64-lite.7z/download), UWP[x86](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-3.4.1-store-VS2013x86-lite.7z/download)/[x64](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-3.4.1-store-VS2017x64-lite.7z/download)/[arm](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-3.4.1-store-VS2017arm-lite.7z/download)
+Windows Desktop [MinGW](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-3.4.1-desktop-MINGW-lite.7z/download), VS2017[x86](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-3.4.1-desktop-VS2017x86-lite.7z/download)/[x64](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-3.4.1-desktop-VS2017x64-lite.7z/download), UWP[x86](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-3.4.1-store-VS2017x86-lite.7z/download)/[x64](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-3.4.1-store-VS2017x64-lite.7z/download)/[arm](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-3.4.1-store-VS2017arm-lite.7z/download)
 
 
 
 ***Build Details:***
 
-Linux x86+x64, android, macOS, iOS, raspberry pi: [![travis_ci](https://travis-ci.org/wang-bin/avbuild.svg?branch=master)](https://travis-ci.org/wang-bin/avbuild)
+Linux, android, macOS, iOS, raspberry pi: [![travis_ci](https://travis-ci.org/wang-bin/avbuild.svg?branch=master)](https://travis-ci.org/wang-bin/avbuild)
 
-windows mingw, vs2013/vs2015/vs2017, desktop(supports XP)/store/phone: [![appveyor_ci](https://ci.appveyor.com/api/projects/status/github/wang-bin/avbuild?branch=master&svg=true)](https://ci.appveyor.com/project/wang-bin/avbuild)
+windows mingw, vs2013~2017, desktop/store/phone: [![appveyor_ci](https://ci.appveyor.com/api/projects/status/github/wang-bin/avbuild?branch=master&svg=true)](https://ci.appveyor.com/project/wang-bin/avbuild)
 
 ## Features
 
