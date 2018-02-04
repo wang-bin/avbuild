@@ -594,7 +594,6 @@ EOF
 }
 #  --toolchain=hardened : https://wiki.debian.org/Hardening
 
-# TODO: Security framework
 setup_ios_env() {
   ENC_OPT=$ENC_OPT_MOBILE
   MUX_OPT=$MUX_OPT_MOBILE
@@ -965,11 +964,6 @@ config1(){
       sed -i $sed_bak '/SHFLAGS=/s/-Wl,//g;/SHFLAGS=/s/,/ /g;/SHFLAGS=/s/-dynamiclib//g;/SHFLAGS=/s/-Bsymbolic//g' $CONFIG_MAK
       sed -i $sed_bak -e '/LDFLAGS=/s/-Wl,//g;/LDFLAGS=/s/,/ /g' $CONFIG_MAK
       sed -i $sed_bak -e '/LDFLAGS=/s/--as-needed//g;/LDFLAGS=/s/-z noexecstack//g;/LDFLAGS=/s/--warn-common//g;/LDFLAGS=/s/-rpath-link=.*//g' $CONFIG_MAK
-    }
-    host_is darwin && ! $LLD_AS_LD && { # lld does not support weak_framework
-      echo "patching weak frameworks for old macOS/iOS"
-      # TODO: remove -weak_framework because ld can recognize weak symbols
-      sed -i $sed_bak 's/-framework VideoToolbox/-weak_framework VideoToolbox/g;s/-framework CoreMedia/-weak_framework CoreMedia/g' $CONFIG_MAK
     }
     local MAX_SLICES=`grep '#define MAX_SLICES' $FFSRC/libavcodec/h264dec.h 2>/dev/null`
     if [ -n "$MAX_SLICES" ]; then
