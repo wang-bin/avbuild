@@ -1,5 +1,5 @@
 :: this file only contains vc environemnt settings
-:: Copyright (c) 2017 wang bin <wbsecg1 at gmail.com>
+:: Copyright (c) 2017-2018 wang bin <wbsecg1 at gmail.com>
 
 :: vcbuild <msvc_ver|vs_ver|cl_ver> <desktop|phone|store> <version(5.1,6.1,6.2,10)/sdk_version(8.1,10.0.15063.0)> <arch>
 :: vcbuild <msvc_ver|vs_ver|cl_ver> <xp|vista|win7|win8,win8.1|win10|winphone8.1|winstore10> <arch>
@@ -9,6 +9,7 @@
 
 @echo off
 set MSYS2_PATH_TYPE=inherit
+set PATH_CLEAN=%PATH%
 set VC_BUILD=true
 set VS_CL=%1
 if [%VS_CL%] == [] set /P VS_CL="VS CL name, e.g. vs2017 vs2015, vs140, cl1900: "
@@ -104,9 +105,50 @@ set /p VS_TOOLS_VERSION=<%VS_TOOLS%
 set VS_TOOLS_VERSION=%VS_TOOLS_VERSION: =%
 echo Using tools version %VS_TOOLS_VERSION%
 
-if [%WINRT%] == [true] set ARG=%ARG% store
+if [%WINRT%] == [true] set EXTRA_ARGS=store
 :: TODO: sdk version, or pass all vcvarsall.bat parameters to support old windows target, onecore etc
-call "%VS_INSTALL_DIR%\VC\Auxiliary\Build\vcvarsall.bat" %ARG%
+if not [%ARCH%] == [all] (
+    call "%VS_INSTALL_DIR%\VC\Auxiliary\Build\vcvarsall.bat" %ARG% %EXTRA_ARGS%
+    goto end
+)
+:: after vcvarsall.bat, main paths are %VCINSTALLDIR%\Tools\MSVC\%VS_TOOLS_VERSION%\bin\HostX86\x86;%WindowsSdkVerBinPath%\x86;%WindowsSdkBinPath%
+:: args can be x64, x86_x64, amd64, x86_amd64, amd64_arm64, or simply %HOSTARCH%_x64
+call "%VS_INSTALL_DIR%\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64 %EXTRA_ARGS%
+set PATH_x64=%PATH%
+set LIBPATH_x64=%LIBPATH%
+set LIB_x64=%LIB%
+set INCLUDE_x64=%INCLUDE%
+set PATH=%PATH_CLEAN%
+set LIB=
+set LIBPATH=
+set INCLUDE=
+
+call "%VS_INSTALL_DIR%\VC\Auxiliary\Build\vcvarsall.bat" x86_arm %EXTRA_ARGS%
+set PATH_arm=%PATH%
+set LIBPATH_arm=%LIBPATH%
+set LIB_arm=%LIB%
+set INCLUDE_arm=%INCLUDE%
+set PATH=%PATH_CLEAN%
+set LIB=
+set LIBPATH=
+set INCLUDE=
+
+call "%VS_INSTALL_DIR%\VC\Auxiliary\Build\vcvarsall.bat" x86_arm64 %EXTRA_ARGS%
+set PATH_arm64=%PATH%
+set LIBPATH_arm64=%LIBPATH%
+set LIB_arm64=%LIB%
+set INCLUDE_arm64=%INCLUDE%
+set PATH=%PATH_CLEAN%
+set LIB=
+set LIBPATH=
+set INCLUDE=
+
+:: default is x86, no env reset
+call "%VS_INSTALL_DIR%\VC\Auxiliary\Build\vcvarsall.bat" x86 %EXTRA_ARGS%
+set PATH_x86=%PATH%
+set LIBPATH_x86=%LIBPATH%
+set LIB_x86=%LIB%
+set INCLUDE_x86=%INCLUDE%
 
 goto end
 
@@ -161,7 +203,7 @@ if [%VSVER%] == [140] goto SetEnv10DesktopSDK
 :SetEnv81DesktopSDK
 echo "win8.1 desktop sdk"
 SET LIB=%VSINSTALLDIR%VC\lib\%ARCH2%;%WindowsSdkDir%lib\winv6.3\um\%ARCH%;;
-SET LIBPATH=%WindowsSdkDir%References\CommonConfiguration\Neutral;%VSINSTALLDIR%VC\lib\%ARCH2%;
+SET LIBPATH=%VSINSTALLDIR%VC\lib\%ARCH2%;
 SET INCLUDE=%VSINSTALLDIR%VC\include;%WindowsSdkDir%Include\um;%WindowsSdkDir%Include\shared;%WindowsSdkDir%Include\winrt;
 goto end
 
