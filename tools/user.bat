@@ -8,6 +8,7 @@ if /i "%Platform%" == "arm" (
   set CPP_DIR=%MSYS2_DIR%\mingw64\bin
   if not exist %CPP_DIR%\cpp.exe set CPP_DIR=%MSYS2_DIR%\mingw32\bin
 )
+set PATH_CLEAN=%PATH_CLEAN%;%CPP_DIR%
 set PATH=%PATH%;%CPP_DIR%
 set HOME=%~dp0..
 set TARGET_PARAM=
@@ -20,7 +21,7 @@ if [%WINRT%] == [true] set TARGET_PARAM=winstore
 :: --login -x is verbose
 if [%BUILD_NOW%] == [] goto StartBash
 
-%MSYS2_DIR%\usr\bin\bash.exe --login avbuild.sh
+%MSYS2_DIR%\usr\bin\bash.exe --login avbuild.sh %TARGET_PARAM%
 goto end
 
 :StartBash

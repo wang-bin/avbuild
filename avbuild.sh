@@ -313,19 +313,43 @@ setup_vc_env() {
   TOOLCHAIN_OPT+=" --toolchain=msvc"
   VS_VER=${VisualStudioVersion:0:2}
   : ${Platform:=x86} #Platform is empty(native) or x86(cross using 64bit toolchain)
-  Platform=${arch-${Platform}}
+  Platform=${arch:-${Platform}} # arch is set, but may be null,  so :-
   echo "VS version: $VS_VER, platform: $Platform" # Platform is from vsvarsall.bat
   FAMILY=
   WIN_VER=
   if $WINRT; then
+    [ -z "$osver" ] && osver=winrt
     setup_vc_winrt_env $arch
   else
+    [ -z "$osver" ] && osver=win
     FAMILY=_DESKTOP
     setup_vc_desktop_env $arch
   fi
 
   EXTRA_CFLAGS+=" -D_WIN32_WINNT=$WIN_VER" #  -DWINAPI_FAMILY=WINAPI_FAMILY${FAMILY}_APP is not required for desktop
-  INSTALL_DIR="`tolower sdk-vc${VS_VER}$Platform${FAMILY}`"
+  INSTALL_DIR="`tolower sdk-$osver-$Platform-cl${VS_CL}`"
+
+  rm -rf $THIS_DIR/build_$INSTALL_DIR/.env.sh
+  mkdir -p $THIS_DIR/build_$INSTALL_DIR
+# get env vars for given arch, and export for build
+  local PATH_arch=PATH_$Platform
+  PATH_arch=${!PATH_arch}
+# LIB, LIBPATH, INCLUDE are used by vc compiler and linker only, so keep the original path style
+  local LIB_arch=LIB_$Platform
+  LIB_arch=$(echo ${!LIB_arch} |sed 's/\\/\\\\/g;s/(/\\\(/g;s/)/\\\)/g;s/ /\\ /g;s/\;/\\\;/g')
+  local LIBPATH_arch=LIBPATH_$Platform
+  LIBPATH_arch=$(echo ${!LIBPATH_arch} |sed 's/\\/\\\\/g;s/(/\\\(/g;s/)/\\\)/g;s/ /\\ /g;s/\;/\\\;/g')
+  local INCLUDE_arch=INCLUDE_$Platform
+  INCLUDE_arch=$(echo ${!INCLUDE_arch} |sed 's/\\/\\\\/g;s/(/\\\(/g;s/)/\\\)/g;s/ /\\ /g;s/\;/\\\;/g')
+  [ -n "$PATH_arch" ] && {
+  # msvc exes are used by script, so must be converted to posix paths
+    PATH_arch=$(cygpath -u "$PATH_arch" |sed 's/\([a-zA-Z]\):/\/\1/g;s/\;/:/g;s/(/\\\(/g;s/)/\\\)/g;s/ /\\ /g')
+  # PATH_arch is set before bash environment, so must manually add bash paths
+    echo "export PATH=$PATH_EXTRA:/usr/local/bin:/usr/bin:/bin:/opt/bin:$PATH_arch" >"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
+  }
+  [ -n "$LIB_arch" ] && echo "export LIB=$LIB_arch" >>"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
+  [ -n "$LIBPATH_arch" ] && echo "export LIBPATH=$LIBPATH_arch" >>"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
+  [ -n "$INCLUDE_arch" ] && echo "export INCLUDE=$INCLUDE_arch" >>"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
 }
 
 setup_vc_desktop_env() {
@@ -878,8 +902,8 @@ config1(){
     ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
     osx*|macos*)     setup_macos_env $TAGET_ARCH_FLAG $1 ;;
     mingw*)     setup_mingw_env $TAGET_ARCH_FLAG ;;
-    vc)         setup_vc_env $TAGET_ARCH_FLAG ;;
-    winstore|winpc|winphone|winrt) setup_vc_env $TAGET_ARCH_FLAG ;;
+    vc)         setup_vc_env $TAGET_ARCH_FLAG $1 ;;
+    win*)       setup_vc_env $TAGET_ARCH_FLAG $1 ;; # TODO: check cc
     rpi*|raspberry*) setup_rpi_env $TAGET_ARCH_FLAG $1 ;;
     linux*)
       setup_linux_env $TAGET_ARCH_FLAG $1
@@ -1044,6 +1068,8 @@ build_all(){
       [ "${os:0:7}" == "android" ] && archs=(armv5 armv7 arm64 x86)
       [ "${os:0:3}" == "rpi" -o "${os:0:9}" == "raspberry" ] && archs=(armv6zk armv7-a)
       [ "${os:0:5}" == "mingw" ] && archs=(x86 x86_64)
+      [ "${os:0:2}" == "vc" -o "${os:0:3}" == "win" ] && archs=(x86 x64)
+      [[ "${os:0:5}" == "winrt" || "${os:0:3}" == "uwp" || "${os:0:8}" == "winstore" ]] && archs=(x86 x64 arm)
       #[ "${os:0:5}" == "macos" ] && archs=(x86_64 i386)
     }
     echo ">>>>>archs: ${archs[@]}"
@@ -1124,10 +1150,10 @@ make_universal()
   else
     local get_arch=echo
     [ "$os" == "android" ] && get_arch=android_arch
-    rm -rf sdk-$os-{gcc,clang}
+    rm -rf sdk-$os-{gcc,clang,cl${VS_CL}}
     for d in ${dirs[@]}; do
       USE_TOOLCHAIN=${d##*-}
-      [ "${USE_TOOLCHAIN/gcc/}" == "${USE_TOOLCHAIN}" -a "${USE_TOOLCHAIN/clang/}" == "$USE_TOOLCHAIN" ] && USE_TOOLCHAIN=gcc
+      [ "${USE_TOOLCHAIN/gcc/}" == "${USE_TOOLCHAIN}" -a "${USE_TOOLCHAIN/clang/}" == "$USE_TOOLCHAIN" -a "${USE_TOOLCHAIN/cl/}" == "$USE_TOOLCHAIN" ] && USE_TOOLCHAIN=gcc
       OUT_DIR=sdk-$os-${USE_TOOLCHAIN}
       arch=${d%-*}
       arch=${arch#sdk-$os-}
