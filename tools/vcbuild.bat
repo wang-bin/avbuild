@@ -14,18 +14,28 @@ set VC_BUILD=true
 set VS_CL=%1
 if [%VS_CL%] == [] set /P VS_CL="VS CL name, e.g. vs2017 vs2015, vs140, cl1900: "
 
-set VSVER=140
+set VSVER=150
+set CL_VER=191
 if /i [%VS_CL:~0,2%] == [vs] (
     set VSVER=%VS_CL:~2%
-    if [%VS_CL:~2%] == [2017] set VSVER=150
     if [%VS_CL:~2%] == [2015] set VSVER=140
     if [%VS_CL:~2%] == [2013] set VSVER=120
     if [%VS_CL:~2%] == [2012] set VSVER=110
+    set VCRT_VER=$VSVER
+    if [%VS_CL:~2%] == [2017] (
+        set VSVER=150
+        set VCRT_VER=141
+    )
 )
 :: vs2017 cl1910
 if /i [%VS_CL:~0,2%] == [cl] (
-    if [%VS_CL:~2,2%] == [19] set VSVER=140
     if [%VS_CL:~2,2%] == [18] set VSVER=120
+    if [%VS_CL:~2,2%] == [19] set VSVER=140
+    set VCRT_VER=$VSVER
+    if [%VS_CL:~2,3%] == [191] (
+        set VSVER=150
+        set VCRT_VER=141
+    )
 )
 echo VS_CL=%VS_CL%
 echo VSVER=%VSVER%
@@ -103,37 +113,17 @@ echo Visual Studio installation found at %VS_INSTALL_DIR%
 set VS_TOOLS="%VS_INSTALL_DIR%\VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt"
 set /p VS_TOOLS_VERSION=<%VS_TOOLS%
 set VS_TOOLS_VERSION=%VS_TOOLS_VERSION: =%
+set VCVARSALL_BAT=%VS_INSTALL_DIR%\VC\Auxiliary\Build\vcvarsall.bat
 echo Using tools version %VS_TOOLS_VERSION%
 
 if [%WINRT%] == [true] set EXTRA_ARGS=store
 :: TODO: sdk version, or pass all vcvarsall.bat parameters to support old windows target, onecore etc
 if not [%ARCH%] == [all] (
-    call "%VS_INSTALL_DIR%\VC\Auxiliary\Build\vcvarsall.bat" %ARG% %EXTRA_ARGS%
+    call "%VCVARSALL_BAT%" %ARG% %EXTRA_ARGS%
     goto end
 )
-:: after vcvarsall.bat, main paths are %VCINSTALLDIR%\Tools\MSVC\%VS_TOOLS_VERSION%\bin\HostX86\x86;%WindowsSdkVerBinPath%\x86;%WindowsSdkBinPath%
-:: args can be x64, x86_x64, amd64, x86_amd64, amd64_arm64, or simply %HOSTARCH%_x64
-call "%VS_INSTALL_DIR%\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64 %EXTRA_ARGS%
-set PATH_x64=%PATH%
-set LIBPATH_x64=%LIBPATH%
-set LIB_x64=%LIB%
-set INCLUDE_x64=%INCLUDE%
-set PATH=%PATH_CLEAN%
-set LIB=
-set LIBPATH=
-set INCLUDE=
 
-call "%VS_INSTALL_DIR%\VC\Auxiliary\Build\vcvarsall.bat" x86_arm %EXTRA_ARGS%
-set PATH_arm=%PATH%
-set LIBPATH_arm=%LIBPATH%
-set LIB_arm=%LIB%
-set INCLUDE_arm=%INCLUDE%
-set PATH=%PATH_CLEAN%
-set LIB=
-set LIBPATH=
-set INCLUDE=
-
-call "%VS_INSTALL_DIR%\VC\Auxiliary\Build\vcvarsall.bat" x86_arm64 %EXTRA_ARGS%
+call "%VCVARSALL_BAT%" x86_arm64 %EXTRA_ARGS%
 set PATH_arm64=%PATH%
 set LIBPATH_arm64=%LIBPATH%
 set LIB_arm64=%LIB%
@@ -143,14 +133,8 @@ set LIB=
 set LIBPATH=
 set INCLUDE=
 
-:: default is x86, no env reset
-call "%VS_INSTALL_DIR%\VC\Auxiliary\Build\vcvarsall.bat" x86 %EXTRA_ARGS%
-set PATH_x86=%PATH%
-set LIBPATH_x86=%LIBPATH%
-set LIB_x86=%LIB%
-set INCLUDE_x86=%INCLUDE%
+goto SetMultiArch
 
-goto end
 
 :SetupVCEnvLegacy
 :: setlocal enableDelayedExpansion
@@ -158,7 +142,8 @@ goto end
 :: endlocal
 call set VCDIR=%%VS%VSVER%COMNTOOLS%%
 echo VCDIR VS%VSVER%COMNTOOLS=%VCDIR%
-call "%VCDIR%\..\..\VC\vcvarsall.bat" %ARG%
+set VCVARSALL_BAT=%VCDIR%\..\..\VC\vcvarsall.bat
+call "%VCVARSALL_BAT%" %ARG%
 
 :: default is win10 desktop sdk
 if [%WINRT%] == [false] (
@@ -171,6 +156,40 @@ if [%OS_VER%] == [10] (
 	set ARG=%ARG% store
 	goto SetEnv10SDK
 )
+
+
+:SetMultiArch
+:: TODO: vs2013 vcvarsall.bat does not set store env correctly
+:: after vcvarsall.bat, main paths are %VCINSTALLDIR%\Tools\MSVC\%VS_TOOLS_VERSION%\bin\HostX86\x86;%WindowsSdkVerBinPath%\x86;%WindowsSdkBinPath%
+:: args can be x64, x86_x64, amd64, x86_amd64, amd64_arm64, or simply %HOSTARCH%_x64
+call "%VCVARSALL_BAT%" x86_amd64 %EXTRA_ARGS%
+set PATH_x64=%PATH%
+set LIBPATH_x64=%LIBPATH%
+set LIB_x64=%LIB%
+set INCLUDE_x64=%INCLUDE%
+set PATH=%PATH_CLEAN%
+set LIB=
+set LIBPATH=
+set INCLUDE=
+
+call "%VCVARSALL_BAT%" x86_arm %EXTRA_ARGS%
+set PATH_arm=%PATH%
+set LIBPATH_arm=%LIBPATH%
+set LIB_arm=%LIB%
+set INCLUDE_arm=%INCLUDE%
+set PATH=%PATH_CLEAN%
+set LIB=
+set LIBPATH=
+set INCLUDE=
+
+:: default is x86, no env reset
+call "%VCVARSALL_BAT%" x86 %EXTRA_ARGS%
+set PATH_x86=%PATH%
+set LIBPATH_x86=%LIBPATH%
+set LIB_x86=%LIB%
+set INCLUDE_x86=%INCLUDE%
+
+goto end
 
 
 :SetEnv81SDK
