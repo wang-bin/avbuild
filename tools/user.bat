@@ -12,8 +12,8 @@ set PATH_CLEAN=%PATH_CLEAN%;%CPP_DIR%
 set PATH=%PATH%;%CPP_DIR%
 set HOME=%~dp0..
 set TARGET_PARAM=
-if [%VC_BUILD%] == [true] set TARGET_PARAM=vc
-if [%WINRT%] == [true] set TARGET_PARAM=winstore
+if [%VC_BUILD%] == [true] set TARGET_PARAM=vc %ARCH%
+if [%WINRT%] == [true] set TARGET_PARAM=winstore %ARCH%
 @echo Now you can run:
 @echo export FFSRC=/path/to/ffmpeg
 @echo ./avbuild.sh

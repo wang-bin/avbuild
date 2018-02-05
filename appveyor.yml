@@ -10,29 +10,15 @@ branches:
 # APPVEYOR_BUILD_WORKER_IMAGE is used in environment matrix, image is not
 environment:
   matrix:
+  - _CC: VS2017
+    _PLATFORM: desktop
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+  - _CC: VS2017
+    _PLATFORM: store
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
   - _CC: MINGW
     _PLATFORM: desktop
     _CACHE: msys64
-  - _ARCH: x64
-    _CC: VS2017
-    _PLATFORM: desktop
-    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-  - _ARCH: x86
-    _CC: VS2017
-    _PLATFORM: desktop
-    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-  - _ARCH: arm
-    _CC: VS2017
-    _PLATFORM: store
-    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-  - _ARCH: x64
-    _CC: VS2017
-    _PLATFORM: store
-    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-  - _ARCH: x86
-    _CC: VS2017
-    _PLATFORM: store
-    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
   - _ARCH: arm
     _CC: VS2013
     _PLATFORM: phone
@@ -42,10 +28,6 @@ environment:
   - _ARCH: x86
     _CC: VS2013
     _PLATFORM: desktop
-  - _ARCH: x64
-    _CC: VS2015
-    _PLATFORM: desktop
-    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
 
 matrix:
   fast_finish: false
@@ -93,7 +75,7 @@ build_script:
       C:\msys64\usr\bin\bash.exe --login avbuild.sh mingw
     ) else (
       set BUILD_NOW=true&&
-      tools\vcbuild.bat %_CC% %_PLATFORM% %_ARCH%
+      tools\vcbuild.bat %_CC% %_PLATFORM% %_ARCH% all
     )
 
 after_build:
