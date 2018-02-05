@@ -1,4 +1,4 @@
-::set PKG_CONFIG_PATH_EXT=%CD%\VS2015x64\lib\pkgconfig
+:: set PKG_CONFIG_PATH_EXT=%CD%\VS2017\lib\pkgconfig
 if [%MSYSTEM%] == [] goto SetupMSYS2
 
 :SetupAV
@@ -12,8 +12,9 @@ set PATH_CLEAN=%PATH_CLEAN%;%CPP_DIR%
 set PATH=%PATH%;%CPP_DIR%
 set HOME=%~dp0..
 set TARGET_PARAM=
-if [%VC_BUILD%] == [true] set TARGET_PARAM=vc %ARCH%
-if [%WINRT%] == [true] set TARGET_PARAM=winstore %ARCH%
+if [%VC_BUILD%] == [true] set TARGET_PARAM=vc
+if [%WINRT%] == [true] set TARGET_PARAM=winstore
+if /i not [%ARCH%] == [all] set TARGET_PARAM=%TARGET_PARAM% %ARCH%
 @echo Now you can run:
 @echo export FFSRC=/path/to/ffmpeg
 @echo ./avbuild.sh
