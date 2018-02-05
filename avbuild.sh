@@ -58,6 +58,7 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 
 trap "kill -- -$$; rm -rf $THIS_DIR/.dir exit 3" SIGTERM SIGINT SIGKILL
 
+export PATH_EXTRA="$PWD/tools/gas-preprocessor"
 export PATH=$PWD/tools/gas-preprocessor:$PATH
 if [ -n "$PKG_CONFIG_PATH_EXT" -a -d "$PKG_CONFIG_PATH_EXT" ]; then
   export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_EXT # $PKG_CONFIG_PATH/../.. is used in libmfx.pc, so no ":" separated list
@@ -68,6 +69,7 @@ echo FFSRC=$FFSRC
 [ -f $FFSRC/configure ] && {
   cd $FFSRC
   export PATH=$PWD:$PATH # convert win path to unix path
+  export PATH_EXTRA="$PWD:$PATH_EXTRA"
   cd -
   echo "PATH: $PATH"
 } || {
@@ -299,7 +301,9 @@ setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang.
   INSTALL_DIR="sdk-win-$arch-clang"
 }
 
-setup_vc_env(){
+setup_vc_env() {
+  local arch=$1
+  local osver=$2
   echo Call "set MSYS2_PATH_TYPE=inherit" before msys2 sh.exe if cl.exe is not found!
   enable_lto=false # ffmpeg requires DCE, while vc with LTCG (-GL) does not support DCE
   LIB_OPT+=" --disable-static"
@@ -309,15 +313,17 @@ setup_vc_env(){
   TOOLCHAIN_OPT+=" --toolchain=msvc"
   VS_VER=${VisualStudioVersion:0:2}
   : ${Platform:=x86} #Platform is empty(native) or x86(cross using 64bit toolchain)
+  Platform=${arch-${Platform}}
   echo "VS version: $VS_VER, platform: $Platform" # Platform is from vsvarsall.bat
   FAMILY=
   WIN_VER=
   if $WINRT; then
-    setup_winrt_env
+    setup_vc_winrt_env $arch
   else
     FAMILY=_DESKTOP
-    setup_vc_desktop_env
+    setup_vc_desktop_env $arch
   fi
+
   EXTRA_CFLAGS+=" -D_WIN32_WINNT=$WIN_VER" #  -DWINAPI_FAMILY=WINAPI_FAMILY${FAMILY}_APP is not required for desktop
   INSTALL_DIR="`tolower sdk-vc${VS_VER}$Platform${FAMILY}`"
 }
@@ -342,7 +348,7 @@ setup_vc_desktop_env() {
   fi
 }
 
-setup_winrt_env() {
+setup_vc_winrt_env() {
   if [ -f "$FFSRC/compat/w32dlfcn.h" ]; then
     grep -q HAVE_WINRT "$FFSRC/compat/w32dlfcn.h" || {
       echo "Patching LoadPackagedLibrary..."
@@ -872,8 +878,8 @@ config1(){
     ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
     osx*|macos*)     setup_macos_env $TAGET_ARCH_FLAG $1 ;;
     mingw*)     setup_mingw_env $TAGET_ARCH_FLAG ;;
-    vc)         setup_vc_desktop_env ;;
-    winstore|winpc|winphone|winrt) setup_winrt_env ;;
+    vc)         setup_vc_env $TAGET_ARCH_FLAG ;;
+    winstore|winpc|winphone|winrt) setup_vc_env $TAGET_ARCH_FLAG ;;
     rpi*|raspberry*) setup_rpi_env $TAGET_ARCH_FLAG $1 ;;
     linux*)
       setup_linux_env $TAGET_ARCH_FLAG $1
@@ -884,7 +890,7 @@ config1(){
       ;;
     *) # assume host build. use "") ?
       if $VC_BUILD; then
-        setup_vc_env
+        setup_vc_env $TAGET_ARCH_FLAG
       elif host_is MinGW || host_is MSYS; then
         setup_mingw_env
       elif host_is Linux; then
