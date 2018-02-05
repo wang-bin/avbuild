@@ -315,6 +315,12 @@ setup_vc_env() {
   : ${Platform:=x86} #Platform is empty(native) or x86(cross using 64bit toolchain)
   Platform=${arch:-${Platform}} # arch is set, but may be null,  so :-
   echo "VS version: $VS_VER, platform: $Platform" # Platform is from vsvarsall.bat
+
+  PKG_CONFIG_PATH_EXT_UNIX=$(cygpath -u "$PKG_CONFIG_PATH_EXT")
+  [ -d "$PKG_CONFIG_PATH_EXT_UNIX" ] || {
+    PKG_CONFIG_PATH_EXT_UNIX=${PKG_CONFIG_PATH_EXT_UNIX/\/lib\/pkgconfig/$Platform\/lib\/pkgconfig}
+    [ -d "$PKG_CONFIG_PATH_EXT_UNIX" ] && export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_EXT_UNIX
+  }
   FAMILY=
   WIN_VER=
   if $WINRT; then
@@ -346,6 +352,7 @@ setup_vc_env() {
     PATH_arch=$(cygpath -u "$PATH_arch" |sed 's/\([a-zA-Z]\):/\/\1/g;s/\;/:/g;s/(/\\\(/g;s/)/\\\)/g;s/ /\\ /g')
   # PATH_arch is set before bash environment, so must manually add bash paths
     echo "export PATH=$PATH_EXTRA:/usr/local/bin:/usr/bin:/bin:/opt/bin:$PATH_arch" >"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
+    [ -d "$PKG_CONFIG_PATH_EXT_UNIX" ] && echo "export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_EXT_UNIX" >> "$THIS_DIR/build_$INSTALL_DIR/.env.sh"
   }
   [ -n "$LIB_arch" ] && echo "export LIB=$LIB_arch" >>"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
   [ -n "$LIBPATH_arch" ] && echo "export LIBPATH=$LIBPATH_arch" >>"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
