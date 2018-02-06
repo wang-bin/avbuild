@@ -13,6 +13,7 @@
 # ios: -fomit-frame-pointer  is not supported for target 'armv7'. check_cflags -Werror
 # https://git.videolan.org/git/ffmpeg/nv-codec-headers.git
 # TODO: link warning as error when checking ld flags. vc/lld-link: -WX
+# TODO: cc_flags, linker_flags(linker only), os_flags, os_cc_flags, os_linker_flags, cc_linker_flags+=$(prepend_Wl linker_flags)
 # remove -Wl, if LD_IS_LLD
 
 #set -x
@@ -314,9 +315,10 @@ setup_vc_env() {
   VS_VER=${VisualStudioVersion:0:2}
   : ${Platform:=x86} #Platform is empty(native) or x86(cross using 64bit toolchain)
   Platform=${arch:-${Platform}} # arch is set, but may be null,  so :-
+  local platform=$(tolower $Platform)
   echo "VS version: $VS_VER, platform: $Platform" # Platform is from vsvarsall.bat
 
-  PKG_CONFIG_PATH_EXT_UNIX=$(cygpath -u "$PKG_CONFIG_PATH_EXT")
+  [ -n "$PKG_CONFIG_PATH_EXT" ] && PKG_CONFIG_PATH_EXT_UNIX=$(cygpath -u "$PKG_CONFIG_PATH_EXT")
   [ -d "$PKG_CONFIG_PATH_EXT_UNIX" ] || {
     PKG_CONFIG_PATH_EXT_UNIX=${PKG_CONFIG_PATH_EXT_UNIX/\/lib\/pkgconfig/$Platform\/lib\/pkgconfig}
     [ -d "$PKG_CONFIG_PATH_EXT_UNIX" ] && export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_EXT_UNIX
@@ -338,14 +340,14 @@ setup_vc_env() {
   rm -rf $THIS_DIR/build_$INSTALL_DIR/.env.sh
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
 # get env vars for given arch, and export for build
-  local PATH_arch=PATH_$Platform
+  local PATH_arch=PATH_$platform
   PATH_arch=${!PATH_arch}
 # LIB, LIBPATH, INCLUDE are used by vc compiler and linker only, so keep the original path style
-  local LIB_arch=LIB_$Platform
+  local LIB_arch=LIB_$platform
   LIB_arch=$(echo ${!LIB_arch} |sed 's/\\/\\\\/g;s/(/\\\(/g;s/)/\\\)/g;s/ /\\ /g;s/\;/\\\;/g')
-  local LIBPATH_arch=LIBPATH_$Platform
+  local LIBPATH_arch=LIBPATH_$platform
   LIBPATH_arch=$(echo ${!LIBPATH_arch} |sed 's/\\/\\\\/g;s/(/\\\(/g;s/)/\\\)/g;s/ /\\ /g;s/\;/\\\;/g')
-  local INCLUDE_arch=INCLUDE_$Platform
+  local INCLUDE_arch=INCLUDE_$platform
   INCLUDE_arch=$(echo ${!INCLUDE_arch} |sed 's/\\/\\\\/g;s/(/\\\(/g;s/)/\\\)/g;s/ /\\ /g;s/\;/\\\;/g')
   [ -n "$PATH_arch" ] && {
   # msvc exes are used by script, so must be converted to posix paths
@@ -408,19 +410,25 @@ setup_vc_winrt_env() {
   WIN81_VER_DEC=`printf "%d" 0x0603`
   WIN_VER_DEC=`printf "%d" $WIN_VER`
   local arch=x86_64 #used by configure --arch
-  if [ "`tolower $Platform`" = "arm" ]; then # TODO: arm64
+  if [ "${platform:0:3}" = "arm" ]; then # TODO: arm64
     enable_pic=false  # TODO: ffmpeg bug, should filter out -fPIC. armasm(gas) error (unsupported option) if pic is
     type -a gas-preprocessor.pl
-    ASM_OPT="--as=armasm --cpu=armv7-a --enable-thumb" # --arch
-    which cpp &>/dev/null || {
+    ASM_OPT="--enable-thumb"
+    # vc only arm64_neon.h
+    [ -z "${platform/*64*/}" ] && {
+      BIT=64
+      TOOLCHAIN_OPT+=" --disable-pic" # arm64 pic is enabled by: enabled spic && enable_weak pic
+    } || ASM_OPT+=" --cpu=armv7-a"
+    which cpp &>/dev/null && {
+      ASM_OPT+=" --as=armasm$BIT"
+    } || {
       echo "ASM is disabled: cpp is required by gas-preprocessor but it is missing. make sure (mingw) gcc is in your PATH"
       ASM_OPT=--disable-asm
-      enable_pic=true # not tested
     }
     #gas-preprocessor.pl change open(INPUT, "-|", @preprocess_c_cmd) || die "Error running preprocessor"; to open(INPUT, "@preprocess_c_cmd|") || die "Error running preprocessor";
-    EXTRA_CFLAGS+=" -D__ARM_PCS_VFP"
-    EXTRA_LDFLAGS+=" -MACHINE:ARM"
-    arch="arm"
+    #EXTRA_CFLAGS+=" -D__ARM_PCS_VFP" # for gcc, hard float
+    EXTRA_LDFLAGS+=" -MACHINE:$Platform"
+    arch="$platform"
     TOOLCHAIN_OPT+=" $ASM_OPT"
   else
     [ -z "${Platform/*64/}" ] && arch=x86_64 || arch=x86
@@ -434,6 +442,8 @@ setup_vc_winrt_env() {
     EXTRA_LDFLAGS+=" WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib -NODEFAULTLIB:kernel32.lib -NODEFAULTLIB:ole32.lib"
   fi
   if [ $WIN_VER_DEC  -gt ${WIN81_VER_DEC} ]; then
+  # store: can not use onecoreuap.lib, must use windowsapp.lib
+  # uwp: can use onecoreuap.lib
     EXTRA_LDFLAGS+=" WindowsApp.lib"
   fi
   TOOLCHAIN_OPT+=" --arch=$arch"
