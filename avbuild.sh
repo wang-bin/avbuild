@@ -15,7 +15,7 @@
 # TODO: link warning as error when checking ld flags. vc/lld-link: -WX
 # TODO: cc_flags, linker_flags(linker only), os_flags, os_cc_flags, os_linker_flags, cc_linker_flags+=$(prepend_Wl linker_flags)
 # remove -Wl, if LD_IS_LLD
-
+# TODO: dumpbin=>llvm-nm, dlltool=>llvm-dlltool, winres=>llvm-rc  https://github.com/mstorsjo/llvm-mingw/blob/master/Dockerfile
 #set -x
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2018"
@@ -824,7 +824,15 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   # probe compiler first
   setup_cc ${USE_TOOLCHAIN:=gcc} "--target=arm-linux-gnueabihf" # clang on mac(apple or opensource) will use apple flags w/o --target= 
   local SUBARCH=${ARCH}-a
-  $IS_APPLE_CLANG && SUBARCH=${SUBARCH/6-a/6t2} || SUBARCH=${SUBARCH/6-a/6zk} # armv6kz is not supported by some compilers, but zk is.
+# t.S: x .dn 0
+# gas-preprocessor.pl -arch arm -as-type clang -- clang --target=armv7-none-linux-androideabi -march=armv7-a -mfloat-abi=softfp t.S -v -c
+# clang -fintegrated-as --target=armv7-none-linux-androideabi -march=armv7-a -mfloat-abi=softfp -gcc-toolchain $ANDROID_NDK/toolchains/arm-linux-androideabi-4.9/prebuilt/darwin-x86_64/ t.S -v -c
+# host build can always use binutils, so only cross build uses gas-pp
+  $rpi_cross && $IS_CLANG && {
+  # gas-preprocessor is used by configure internally. armv6t2 is required
+    SUBARCH=${SUBARCH/6-a/6t2}
+    $IS_APPLE_CLANG || TOOLCHAIN_OPT+=" --as='gas-preprocessor.pl -as-type clang -arch arm -- $USE_TOOLCHAIN'" # clang searchs host by default, so sysroot is required
+  } || SUBARCH=${SUBARCH/6-a/6zk} # armv6kz is not supported by some compilers, but zk is.
   local EXTRA_CFLAGS_armv6="-march=$SUBARCH -mtune=arm1176jzf-s -mfpu=vfp -marm" # no thumb support, set -marm for clang or -mthumb-interwork for gcc
   local EXTRA_CFLAGS_armv7="-march=$SUBARCH -mtune=cortex-a7 -mfpu=neon-vfpv4 -mthumb" # -mthumb-interwork vfpv3-d16"
   local EXTRA_CFLAGS_armv8="-march=$SUBARCH -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8"
@@ -839,7 +847,7 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
     [[ "${USE_LD##*/}" == "lld" ]] && {
       use_lld -flavor gnu
     } || {
-      use_lld 
+      use_lld
     }
   } || {
     $rpi_cross && TOOLCHAIN_OPT="--cross-prefix=$CROSS_PREFIX $TOOLCHAIN_OPT"

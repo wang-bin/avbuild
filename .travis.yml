@@ -5,8 +5,7 @@ cache:
   apt: true
   directories:
     - ffmpeg-$FF_VERSION
-    - android-ndk-${NDK_VERSION}/platforms/android-{9,21}
-    - android-ndk-${NDK_VERSION}/sources/${llvm*,gnu-libstdc++,system}
+    - android-ndk-${NDK_VERSION}/platforms/android-{14,21}
     - android-ndk-${NDK_VERSION}/toolchains/llvm
     - android-ndk-${NDK_VERSION}/toolchains/aarch64-linux-android-4.9
     - android-ndk-${NDK_VERSION}/toolchains/arm-linux-androideabi-4.9
@@ -39,7 +38,6 @@ matrix:
       env:
         - TARGET=raspberry-pi
         - _CC=clang-5.0 #--cc=$_CC
-        - USER_OPT=--disable-swscale
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
@@ -116,12 +114,12 @@ install:
   - if [ "$TARGET" == "raspberry-pi" ]; then EXTRA_BREW=llvm; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install ${EXTRA_BREW} nasm yasm perl hudochenkov/sshpass/sshpass xz; fi
   - |
-      if [ ! -d ffmpeg-${FF_VERSION} ]; then
+      if [ ! -f ffmpeg-${FF_VERSION}/configure ]; then
         wget http://ffmpeg.org/releases/ffmpeg-${FF_VERSION}.tar.bz2
         tar jxf ffmpeg-${FF_VERSION}.tar.bz2
       fi
   - |
-      if [ "${TARGET:0:7}" == "android" -a ! -d android-ndk-${NDK_VERSION} ]; then
+      if [ "${TARGET:0:7}" == "android" -a ! -f android-ndk-${NDK_VERSION}/ndk-build ]; then
         wget https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux-x86_64.zip 2>/dev/null
         7z x -y android-ndk-${NDK_VERSION}-linux-x86_64.zip >/dev/null
       fi
