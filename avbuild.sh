@@ -275,6 +275,7 @@ check_cross_build() {
 # warnings are used by ffmpeg developer, some are enabled by configure: -Wl,--warn-shared-textrel
 
 setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang. TODO: clang-cl, see putty
+# -imsvc: add msvc system header path
   #LIB_OPT+=" --disable-static"
   USE_TOOLCHAIN=clang
   setup_cc clang
@@ -835,7 +836,7 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   } || SUBARCH=${SUBARCH/6-a/6zk} # armv6kz is not supported by some compilers, but zk is.
   local EXTRA_CFLAGS_armv6="-march=$SUBARCH -mtune=arm1176jzf-s -mfpu=vfp -marm" # no thumb support, set -marm for clang or -mthumb-interwork for gcc
   local EXTRA_CFLAGS_armv7="-march=$SUBARCH -mtune=cortex-a7 -mfpu=neon-vfpv4 -mthumb" # -mthumb-interwork vfpv3-d16"
-  local EXTRA_CFLAGS_armv8="-march=$SUBARCH -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8"
+  local EXTRA_CFLAGS_armv8="-march=$SUBARCH -mtune=cortex-a53 -mfpu=neon-fp-armv8" # crypto extensions is optional for armv8a, and do not exist on rpi3
 
   if $IS_CLANG; then
     rpi_cc=clang
