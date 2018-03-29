@@ -61,10 +61,6 @@ trap "kill -- -$$; rm -rf $THIS_DIR/.dir exit 3" SIGTERM SIGINT SIGKILL
 
 export PATH_EXTRA="$PWD/tools/gas-preprocessor"
 export PATH=$PWD/tools/gas-preprocessor:$PATH
-if [ -n "$PKG_CONFIG_PATH_EXT" -a -d "$PKG_CONFIG_PATH_EXT" ]; then
-  export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_EXT # $PKG_CONFIG_PATH/../.. is used in libmfx.pc, so no ":" separated list
-  echo ">>>PKG_CONFIG_PATH=$PKG_CONFIG_PATH<<<"
-fi
 
 echo FFSRC=$FFSRC
 [ -f $FFSRC/configure ] && {
@@ -172,6 +168,9 @@ add_elf_flags() {
   # rpath
 }
 
+if [ -n "$PKG_CONFIG_PATH_MFX" -a -d "$PKG_CONFIG_PATH_MFX" ]; then
+  host_is MinGW || host_is MSYS || export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX
+fi
 
 sed_bak=
 host_is darwin && sed_bak=".bak"
@@ -319,11 +318,10 @@ setup_vc_env() {
   local platform=$(tolower $Platform)
   echo "VS version: $VS_VER, platform: $Platform" # Platform is from vsvarsall.bat
 
-  [ -n "$PKG_CONFIG_PATH_EXT" ] && PKG_CONFIG_PATH_EXT_UNIX=$(cygpath -u "$PKG_CONFIG_PATH_EXT")
-  [ -d "$PKG_CONFIG_PATH_EXT_UNIX" ] || {
-    PKG_CONFIG_PATH_EXT_UNIX=${PKG_CONFIG_PATH_EXT_UNIX/\/lib\/pkgconfig/$Platform\/lib\/pkgconfig}
-    [ -d "$PKG_CONFIG_PATH_EXT_UNIX" ] && export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_EXT_UNIX
-  }
+  [ -n "$PKG_CONFIG_PATH_MFX" ] && PKG_CONFIG_PATH_MFX_UNIX=$(cygpath -u "$PKG_CONFIG_PATH_MFX")
+  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] || PKG_CONFIG_PATH_MFX_UNIX=${PKG_CONFIG_PATH_MFX_UNIX/\/lib\/pkgconfig/$Platform\/lib\/pkgconfig}
+  export PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
+  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
   FAMILY=
   WIN_VER=
   if $WINRT; then
@@ -355,11 +353,13 @@ setup_vc_env() {
     PATH_arch=$(cygpath -u "$PATH_arch" |sed 's/\([a-zA-Z]\):/\/\1/g;s/\;/:/g;s/(/\\\(/g;s/)/\\\)/g;s/ /\\ /g')
   # PATH_arch is set before bash environment, so must manually add bash paths
     echo "export PATH=$PATH_EXTRA:/usr/local/bin:/usr/bin:/bin:/opt/bin:$PATH_arch" >"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
-    [ -d "$PKG_CONFIG_PATH_EXT_UNIX" ] && echo "export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_EXT_UNIX" >> "$THIS_DIR/build_$INSTALL_DIR/.env.sh"
   }
   [ -n "$LIB_arch" ] && echo "export LIB=$LIB_arch" >>"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
   [ -n "$LIBPATH_arch" ] && echo "export LIBPATH=$LIBPATH_arch" >>"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
   [ -n "$INCLUDE_arch" ] && echo "export INCLUDE=$INCLUDE_arch" >>"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
+  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && cat >> "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX
+EOF
 }
 
 setup_vc_desktop_env() {
@@ -487,14 +487,11 @@ setup_mingw_env() {
       TOOLCHAIN_OPT+=" --enable-cross-compile --cross-prefix=${arch}-w64-mingw32- --target-os=mingw$BIT --arch=$arch"
     }
   }
-  if [ -n "$PKG_CONFIG_PATH_EXT" -a ! -d "$PKG_CONFIG_PATH_EXT" ]; then
-    PKG_CONFIG_PATH_EXT="${PKG_CONFIG_PATH_EXT/MINGW/MINGW${BIT}}"
-    echo "PKG_CONFIG_PATH_EXT: $PKG_CONFIG_PATH_EXT"
-    [ -d "$PKG_CONFIG_PATH_EXT" ] && {
-      # FIXME: mingw32/64 has own PKG_CONFIG_PATH. use ${PKG_CONFIG_PATH%%:*} in libmfx.pc?
-      export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_EXT # $PKG_CONFIG_PATH/../.. is used in libmfx.pc, so no ":" separated list
-    }
-  fi
+  [ -n "$PKG_CONFIG_PATH_MFX" ] && PKG_CONFIG_PATH_MFX_UNIX=$(cygpath -u "$PKG_CONFIG_PATH_MFX")
+  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] || PKG_CONFIG_PATH_MFX_UNIX=${PKG_CONFIG_PATH_MFX_UNIX/\/lib\/pkgconfig/$BIT\/lib\/pkgconfig}
+  export PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
+  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
+
   enable_libmfx
   enable_opt dxva2
   disable_opt iconv
@@ -507,6 +504,9 @@ export PATH=$MINGW_BIN:$PATH
 shopt -s expand_aliases
 #alias ${arch}-w64-mingw32-strip=$MINGW_BIN/strip # seems not work in sh used by ffmpeg
 #alias ${arch}-w64-mingw32-nm=$MINGW_BIN/nm
+EOF
+  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && cat >> "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX
 EOF
 }
 

@@ -127,7 +127,7 @@ install:
       if [ "$TRAVIS_OS_NAME" == "linux" -a "$TARGET" == "host" ]; then
         wget https://sourceforge.net/projects/avbuild/files/dep/libmfx.7z/download -O libmfx.7z
         7z x -y libmfx.7z -otools &>/dev/null
-        export PKG_CONFIG_PATH_EXT=$PWD/tools/linux64-gcc/lib/pkgconfig
+        export PKG_CONFIG_PATH_MFX=$PWD/tools/linux64-gcc/lib/pkgconfig
       fi
   - |
       if [ "$TARGET" == "raspberry-pi" ]; then
