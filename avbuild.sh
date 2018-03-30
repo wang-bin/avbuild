@@ -60,12 +60,10 @@ trap "kill -- -$$; rm -rf $THIS_DIR/.dir exit 3" SIGTERM SIGINT SIGKILL
 
 export PATH_EXTRA="$PWD/tools/gas-preprocessor"
 export PATH=$PWD/tools/gas-preprocessor:$PATH
-[ -f "$PWD/tools/nv-codec-headers/ffnvcodec.pc.in" -a ! -f "/usr/local/lib/pkgconfig/ffnvcodec.pc" ] && {
-  cd "$PWD/tools/nv-codec-headers"
-  make install
-  cd -
-}
-[ -f /usr/local/lib/pkgconfig/ffnvcodec.pc ] && export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig
+if [ -f "$PWD/tools/nv-codec-headers/ffnvcodec.pc.in" ]; then
+  sed 's/\(prefix=\).*/\1\${pcfiledir\}/' tools/nv-codec-headers/ffnvcodec.pc.in >tools/nv-codec-headers/ffnvcodec.pc
+  export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PWD/tools/nv-codec-headers
+fi
 
 echo FFSRC=$FFSRC
 [ -f $FFSRC/configure ] && {
