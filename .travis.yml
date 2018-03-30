@@ -114,6 +114,16 @@ install:
   - if [ "$TARGET" == "raspberry-pi" ]; then EXTRA_BREW=llvm; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install ${EXTRA_BREW} nasm yasm perl hudochenkov/sshpass/sshpass xz; fi
   - |
+      if [ "$FF_VERSION" == "git" ]; then
+        if [ -f ffmpeg-${FF_VERSION}/configure ]; then
+          cd ffmpeg-${FF_VERSION}
+          git pull origin wang
+          cd -
+        else
+          git clone --depth 1 --no-tags -b wang https://github.com/wang-bin/FFmpeg.git ffmpeg-${FF_VERSION}
+        fi
+      fi
+  - |
       if [ ! -f ffmpeg-${FF_VERSION}/configure ]; then
         wget http://ffmpeg.org/releases/ffmpeg-${FF_VERSION}.tar.bz2
         tar jxf ffmpeg-${FF_VERSION}.tar.bz2
