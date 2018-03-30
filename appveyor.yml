@@ -11,10 +11,10 @@ branches:
 environment:
   matrix:
   - _CC: VS2017
-    _PLATFORM: store
+    _PLATFORM: desktop
     APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
   - _CC: VS2017
-    _PLATFORM: desktop
+    _PLATFORM: store
     APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
   - _CC: MINGW
     _PLATFORM: desktop

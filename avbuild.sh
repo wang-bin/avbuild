@@ -11,7 +11,6 @@
 # clang for win lower case: Windows.h WinBase.h WinDef.h
 # https://msdn.microsoft.com/en-us/library/windows/desktop/aa383751(v=vs.85).aspx
 # ios: -fomit-frame-pointer  is not supported for target 'armv7'. check_cflags -Werror
-# https://git.videolan.org/git/ffmpeg/nv-codec-headers.git
 # TODO: link warning as error when checking ld flags. vc/lld-link: -WX
 # TODO: cc_flags, linker_flags(linker only), os_flags, os_cc_flags, os_linker_flags, cc_linker_flags+=$(prepend_Wl linker_flags)
 # remove -Wl, if LD_IS_LLD
@@ -61,6 +60,12 @@ trap "kill -- -$$; rm -rf $THIS_DIR/.dir exit 3" SIGTERM SIGINT SIGKILL
 
 export PATH_EXTRA="$PWD/tools/gas-preprocessor"
 export PATH=$PWD/tools/gas-preprocessor:$PATH
+[ -f "$PWD/tools/nv-codec-headers/ffnvcodec.pc.in" -a ! -f "/usr/local/lib/pkgconfig/ffnvcodec.pc" ] && {
+  cd "$PWD/tools/nv-codec-headers"
+  make install
+  cd -
+}
+[ -f /usr/local/lib/pkgconfig/ffnvcodec.pc ] && export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig
 
 echo FFSRC=$FFSRC
 [ -f $FFSRC/configure ] && {
@@ -358,7 +363,7 @@ setup_vc_env() {
   [ -n "$LIBPATH_arch" ] && echo "export LIBPATH=$LIBPATH_arch" >>"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
   [ -n "$INCLUDE_arch" ] && echo "export INCLUDE=$INCLUDE_arch" >>"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && cat >> "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
-export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH
 EOF
 }
 
@@ -506,7 +511,7 @@ shopt -s expand_aliases
 #alias ${arch}-w64-mingw32-nm=$MINGW_BIN/nm
 EOF
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && cat >> "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
-export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH
 EOF
 }
 
