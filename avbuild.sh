@@ -518,7 +518,7 @@ EOF
 setup_android_env() {
   ENC_OPT=$ENC_OPT_MOBILE
   MUX_OPT=$MUX_OPT_MOBILE
-  disable_opt v4l2_m2m
+  disable_opt v4l2_m2m v4l2-m2m
   local ANDROID_ARCH=${1:=arm}
   TRIPLE_ARCH=$ANDROID_ARCH
   local ANDROID_TOOLCHAIN_PREFIX="${ANDROID_ARCH}-linux-android"
