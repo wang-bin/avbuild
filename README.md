@@ -6,13 +6,16 @@ How: https://github.com/wang-bin/avbuild/wiki
 
 ALL: https://sourceforge.net/projects/avbuild/files
 
-Lite build
+Lite build of FFmpeg release(3.4.2):
 
-[Raspberry Pi](https://sourceforge.net/projects/avbuild/files/raspberry-pi/ffmpeg-3.4.1-raspberry-pi-appleclang-lite.tar.xz/download), [Android](https://sourceforge.net/projects/avbuild/files/android/ffmpeg-3.4.1-android-clang-lite.tar.xz/download), [iOS](https://sourceforge.net/projects/avbuild/files/iOS/ffmpeg-3.4.1-iOS-lite.tar.xz/download), [macOS](https://sourceforge.net/projects/avbuild/files/macOS/ffmpeg-3.4.1-macOS-lite.tar.xz/download), [Linux](https://sourceforge.net/projects/avbuild/files/linux/ffmpeg-3.4.1-linux-gcc-lite.tar.xz/download), 
+[Raspberry Pi](https://sourceforge.net/projects/avbuild/files/raspberry-pi/ffmpeg-3.4.2-raspberry-pi-clang-lite.tar.xz/download), [Android](https://sourceforge.net/projects/avbuild/files/android/ffmpeg-3.4.2-android-clang-lite.tar.xz/download), [iOS](https://sourceforge.net/projects/avbuild/files/iOS/ffmpeg-3.4.2-iOS-lite.tar.xz/download), [macOS](https://sourceforge.net/projects/avbuild/files/macOS/ffmpeg-3.4.2-macOS-lite.tar.xz/download), [Linux](https://sourceforge.net/projects/avbuild/files/linux/ffmpeg-3.4.2-linux-gcc-lite.tar.xz/download), 
+[MinGW](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-3.4.2-desktop-MINGW-lite.7z/download), [VS2017 Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-3.4.2-desktop-VS2017-lite.7z/download), [UWP](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-3.4.2-store-VS2017-lite.7z/download)
 
-Windows Desktop [MinGW](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-3.4.1-desktop-MINGW-lite.7z/download), [VS2017](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-3.4.1-desktop-VS2017-lite.7z/download), Windows Store [UWP](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-3.4.1-store-VS2017-lite.7z/download)
 
+Lite build of FFmpeg git:
 
+[Raspberry Pi](https://sourceforge.net/projects/avbuild/files/raspberry-pi/ffmpeg-git-raspberry-pi-clang-lite.tar.xz/download), [Android](https://sourceforge.net/projects/avbuild/files/android/ffmpeg-git-android-clang-lite.tar.xz/download), [iOS](https://sourceforge.net/projects/avbuild/files/iOS/ffmpeg-git-iOS-lite.tar.xz/download), [macOS](https://sourceforge.net/projects/avbuild/files/macOS/ffmpeg-git-macOS-lite.tar.xz/download), [Linux](https://sourceforge.net/projects/avbuild/files/linux/ffmpeg-git-linux-gcc-lite.tar.xz/download), 
+[MinGW](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-git-desktop-MINGW-lite.7z/download), [VS2017 Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-git-desktop-VS2017-lite.7z/download), [UWP](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-git-store-VS2017-lite.7z/download)
 
 ***Build Details:***
 
@@ -27,6 +30,7 @@ windows mingw, vs2013~2017, desktop/store/phone: [![appveyor_ci](https://ci.appv
 - morden toolchain support: clang+lld
 - support windows xp with latest vs and win sdk (vs2017+win10 sdk) if ffmpeg <= 3.4
 - support SSL for macOS & iOS
+- enable all gpu decoders and encoders if possible
 
 ## Build Matrix
 
