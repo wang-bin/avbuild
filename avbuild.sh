@@ -372,16 +372,19 @@ setup_vc_desktop_env() {
   # ldflags prepends flags. extralibs appends libs and add to pkg-config
   # can not use -luser32 because extralibs will not be filter -l to .lib (ldflags_filter is not ready, ffmpeg bug)
   # TODO: check dxva2_extralibs="-luser32" in configure
-  EXTRALIBS+=" user32.lib" # ffmpeg 3.x bug: hwcontext_dxva2 GetDesktopWindow()
-  if [ -z "${Platform/*64/}" ]; then
-    WIN_VER="0x0502"
-    [ $VS_VER -gt 10 ] && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.02'"
-  elif [ "`tolower $Platform`" = "arm" ]; then
-    echo "use scripts in winstore dir instead"
-    exit 1
+  grep -q " user32 " "$FFSRC/configure" || EXTRALIBS+=" user32.lib" # ffmpeg 3.x bug: hwcontext_dxva2 GetDesktopWindow()
+  if $FFGIT; then
+    WIN_VER="0x0600"
+  elif [ $FFMAJOR -gt 3 ]; then
+    WIN_VER="0x0600"
   else
-    WIN_VER="0x0501"
-    [ $VS_VER -gt 10 ] && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.01'"
+    if [ -z "${Platform/*64/}" ]; then
+      WIN_VER="0x0502"
+      [ $VS_VER -gt 10 ] && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.02'"
+    else
+      WIN_VER="0x0501"
+      [ $VS_VER -gt 10 ] && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.01'"
+    fi
   fi
 }
 
