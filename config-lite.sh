@@ -1,16 +1,16 @@
 USER_OPT="--enable-small --disable-avdevice --disable-avresample \
 --disable-filters \
---enable-filter=*fade,*format,*resample,aeval,all*,atempo,color*,convolution,draw*,eq*,framerate,hw*,null,volume \
+--enable-filter=*fade,*fifo,*format,*resample,aeval,all*,atempo,color*,convolution,draw*,eq*,framerate,hw*,null,volume \
 --disable-muxers \
 --disable-encoders \
 --disable-decoders \
 --enable-decoder=*sub*,*text*,*web*,aac*,ac3*,alac*,ape,ass,cc_dec,cook,eac3*,flv,flac,h264*,hevc*,mp[1-3]*,*peg*,mpl2,nellymoser,opus,pcm*,rawvideo,rv*,sami,srt,ssa,v210*,vc1*,vorbis,vp[6-9],wm*,wrapped_avframe \
 --disable-demuxers \
---enable-demuxer=*sub*,*text*,*ac3,*ac,*peg*,*web*,ape,ass,avi,concat,*dash*,*flv,hls,h264,hevc,matroska,mlv,mov,mp3,mxf,nsv,nut,ogg,pcm*,rawvideo,rt*p,srt,vc1,v210*,wav,*pipe \
+--enable-demuxer=*sub*,*text*,*ac3,*ac,*peg*,*web*,ape,ass,avi,concat,*dash*,*flv,hls,h264,hevc,matroska,mlv,mov,mp3,mxf,nsv,nut,ogg,pcm*,rawvideo,rt*p,spdif,srt,vc1,v210*,wav,*pipe \
 --disable-parsers --enable-parser=*sub*,aac*,ac3,cook,flac,h26[3-4],hevc,*peg*,opus,rv*,vc1,vorbis,vp[8-9] \
 $USER_OPT
 "
 ENC_OPT="--enable-encoder=aac,gif,h26[3-4]*,hevc*,mjpeg,mpeg[2-4]*,nellymoser,nvenc*,opus,pcm*,rawvideo,vorbis,vp*,wrapped_avframe"
-MUX_OPT="--enable-muxer=dash,fifo,gif,h264,hevc,hls,mjpeg,matroska*,mov,mp4,mpegts,nu*,og*,pcm*,rawvideo,wav,webm,*pipe"
+MUX_OPT="--enable-muxer=dash,fifo,gif,h264,hevc,hls,mjpeg,matroska*,mov,mp4,mpegts,nu*,og*,pcm*,rawvideo,spdif,wav,webm,*pipe"
 ENC_OPT_MOBILE="--enable-encoder=aac,gif,h264*,nellymoser,opus,pcm*"
 MUX_OPT_MOBILE="--enable-muxer=gif,hls,mov,mp4,mpegts,wav"
