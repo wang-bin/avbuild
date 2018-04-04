@@ -121,7 +121,9 @@ install:
       if [ "$FF_VERSION" == "git" ]; then
         if [ -f ffmpeg-${FF_VERSION}/configure ]; then
           cd ffmpeg-${FF_VERSION}
-          git pull origin wang
+          git reset --hard HEAD
+          git fetch
+          git checkout origin/wang
           cd -
         else
           git clone --depth 1 --no-tags -b wang https://github.com/wang-bin/FFmpeg.git ffmpeg-${FF_VERSION}
