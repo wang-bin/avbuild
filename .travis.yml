@@ -19,18 +19,18 @@ matrix:
   include:
     - os: osx
       compiler: clang
-      osx_image: xcode9.2
+      osx_image: xcode9.3beta
       env:
         - TARGET=raspberry-pi
         - CC_VENDOR=apple
     - os: osx
       compiler: clang
-      osx_image: xcode9.2
+      osx_image: xcode9.3beta
       env:
         - TARGET=host
     - os: osx
       compiler: clang
-      osx_image: xcode9.2
+      osx_image: xcode9.3beta
       env:
         - TARGET=iOS
     - os: linux
@@ -112,7 +112,11 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update --all; fi
 install:
   - if [ "$TARGET" == "raspberry-pi" ]; then EXTRA_BREW=llvm; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install ${EXTRA_BREW} nasm yasm perl hudochenkov/sshpass/sshpass xz; fi
+  - |
+      if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+        xcrun --show-sdk-version
+        brew install ${EXTRA_BREW} nasm yasm perl hudochenkov/sshpass/sshpass xz
+      fi
   - |
       if [ "$FF_VERSION" == "git" ]; then
         if [ -f ffmpeg-${FF_VERSION}/configure ]; then
