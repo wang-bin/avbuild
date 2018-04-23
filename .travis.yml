@@ -36,6 +36,23 @@ matrix:
     - os: linux
       compiler: clang
       env:
+        - TARGET=windows-desktop
+        - _CC=clang-6.0
+      addons: #can be used in matrix, but required by every combination
+        apt:
+          sources:
+            - llvm-toolchain-trusty-6.0
+            - ubuntu-toolchain-r-test # llvm6.0 dep
+          packages:
+            - clang-6.0
+            - lld-6.0
+            - sshpass
+            - p7zip-full
+            - nasm
+            - yasm
+    - os: linux
+      compiler: clang
+      env:
         - TARGET=raspberry-pi
         - _CC=clang-6.0 #--cc=$_CC
       addons: #can be used in matrix, but required by every combination
@@ -107,12 +124,23 @@ matrix:
             - libva-dev
             - libvdpau-dev
             - sshpass
-# TODO: mingw64 cross build
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update --all; fi
 install:
   - if [ "$TARGET" == "raspberry-pi" ]; then EXTRA_BREW=llvm; fi
+  - |
+      if [ "${TARGET:0:3}" == "win" ]; then
+        lld -flavor gnu -v
+        wget https://sourceforge.net/projects/avbuild/files/dep/msvcrt-dev.7z/download -O msvcrt-dev.7z
+        wget https://sourceforge.net/projects/avbuild/files/dep/winsdk.7z/download -O winsdk.7z
+        7z x msvcrt-dev.7z &>/dev/null
+        export VCDIR=$PWD/msvcrt-dev
+        7z x winsdk.7z &>/dev/null
+        ./winsdk/lowercase.sh
+        export WindowsSDKVersion=10.0.16299.0
+        export WindowsSdkDir=$PWD/winsdk
+      fi
   - |
       if [ "$TRAVIS_OS_NAME" == "osx" ]; then
         xcrun --show-sdk-version
@@ -158,7 +186,7 @@ script:
   - export ANDROID_NDK=$PWD/android-ndk-${NDK_VERSION}
   - if [ -n "$_CC" ]; then export USER_OPT="$USER_OPT --cc=$_CC"; fi  # host build
   - if [ -n "${CONFIG_SUFFIX}" ]; then ln -sf config{${CONFIG_SUFFIX},}.sh; fi
-  - USE_TOOLCHAIN=${_CC:-$CC} ./avbuild.sh $TARGET  # CC(gcc/clang) is set by travis depending on compiler
+  - USE_TOOLCHAIN=${_CC:-$CC} ./avbuild.sh $TARGET # CC(gcc/clang) is set by travis depending on compiler
 
 after_success:
   - TARGET_OS=${TARGET}

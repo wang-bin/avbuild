@@ -211,9 +211,9 @@ probe_cc() {
   $cc -dM -E -</dev/null |grep -q __apple_build_version__ && IS_APPLE_CLANG=true
   $IS_CLANG && {
     CFLAG_IWITHSYSROOT=$CFLAG_IWITHSYSROOT_CLANG
-    $USE_TOOLCHAIN $flags $CLANG_FLAGS -fuse-ld=lld -nostdlib -x c -v -<<EOF &>/dev/null && HAVE_LLD=true
-int main(){}
-EOF
+    # FIXME: requires flavor for lld-link
+    LLD=$($USE_TOOLCHAIN -print-prog-name=lld)
+    $LLD -flavor gnu -v >/dev/null && HAVE_LLD=true
   }
   $IS_CLANG_CL && HAVE_LLD=true
   $IS_APPLE_CLANG && [ -f /usr/local/opt/llvm/bin/lld ] && HAVE_LLD=true
@@ -246,7 +246,7 @@ use_llvm_binutils() {
 use_lld() {
   echo "using (clang)lld as linker..."
   $IS_APPLE_CLANG && : ${USE_LD:="/usr/local/opt/llvm/bin/clang"}
-  [[ "$USE_LD" == *lld ]] && LD_IS_LLD=true
+  [[ "${USE_LD##*/}" == *lld* ]] && LD_IS_LLD=true
   # -flavor is passed in arguments and must be the 1st argument. configure will prepend flags before extra-ldflags.
   # apple clang+lld can build for non-apple targets
   [ -n "$USE_LD" ] && TOOLCHAIN_OPT+=" --ld=\"$USE_LD $@\"" # TODO: what if host strip does not supported target? -s may be not supported, e.g. -flavor darwin
@@ -291,6 +291,7 @@ setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang.
   #LIB_OPT+=" --disable-static"
   : ${USE_TOOLCHAIN:=clang}
   setup_cc $USE_TOOLCHAIN
+  USE_LD=$($USE_TOOLCHAIN -print-prog-name=lld-link) use_lld # lld 6.0 fixes undefined __enclave_config in msvcrt14.12. `lld -flavor link` just warns --version-script and results in link error
   use_llvm_binutils
   #use_lld # --target=i386-pc-windows-msvc19.13.0 -fuse-ld=lld: must use with -Wl,
   enable_libmfx
@@ -309,7 +310,7 @@ setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang.
   # environment var LIB is used by lld-link, in windows style, i.e. export LIB=dir1;dir2;...
   # makedef: define env AR=llvm-ar, NM=llvm-nm
   # --windres=rc option is broken and not recognized
-  TOOLCHAIN_OPT+=" --ld=lld-link --enable-cross-compile --arch=$arch --target-os=win32"
+  TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$arch --target-os=win32"
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
   EXTRA_CFLAGS+=" --target=${target_tripple_arch}-pc-windows-msvc19.13.0 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
   EXTRA_LDFLAGS+=" -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
@@ -318,13 +319,13 @@ setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang.
 
 # vcrt and win sdk dirs
   win10inc=(shared ucrt um winrt)
-  win10inc=(${win10inc[@]/#/$WindowsSdkDir/Include/})
+  win10inc=(${win10inc[@]/#/$WindowsSdkDir/Include/$WindowsSDKVersion/})
   IFS=\; eval 'INCLUDE="${win10inc[*]}"'
 
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat > "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
 export INCLUDE="$VCDIR/include;$INCLUDE"
-export LIB="$VCDIR/lib/${arch/86_/};$WindowsSdkDir/Lib/ucrt/${arch/86_/};$WindowsSdkDir/Lib/um/${arch/86_/}"
+export LIB="$VCDIR/lib/${arch/86_/};$WindowsSdkDir/Lib/$WindowsSDKVersion/ucrt/${arch/86_/};$WindowsSdkDir/Lib/$WindowsSDKVersion/um/${arch/86_/}"
 export AR=$LLVM_AR
 export NM=$LLVM_NM
 export V=1 # FFmpeg BUG: AR is overriden in common.mak and becomes an invalid command in makedef(@printf is works in makefiles but not sh scripts)
