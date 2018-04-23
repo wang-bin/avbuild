@@ -233,11 +233,11 @@ use_llvm_binutils() {
   local clang=$USE_TOOLCHAIN
   local CLANG_FALLBACK=clang-6.0
   $IS_APPLE_CLANG && CLANG_FALLBACK=/usr/local/opt/llvm/bin/clang
-  which "`$clang -print-prog-name=llvm-ar`" 2>/dev/null || clang=$CLANG_FALLBACK
-  which "`$clang -print-prog-name=llvm-ranlib`" 2>/dev/null || clang=$CLANG_FALLBACK
-  which "$LLVM_AR" 2>/dev/null || LLVM_AR="\$($clang -print-prog-name=llvm-ar)" #$clang_dir${clang_name/clang/llvm-ar}
-  which "$LLVM_NM" 2>/dev/null || LLVM_NM="\$($clang -print-prog-name=llvm-nm)" #$clang_dir${clang_name/clang/llvm-ar}
-  which "$LLVM_RANLIB" 2>/dev/null || LLVM_RANLIB="\$($clang -print-prog-name=llvm-ranlib)" #$clang_dir${clang_name/clang/llvm-ranlib}
+  which "`$clang -print-prog-name=llvm-ar`" &>/dev/null || clang=$CLANG_FALLBACK
+  which "`$clang -print-prog-name=llvm-ranlib`" &>/dev/null || clang=$CLANG_FALLBACK
+  which "$LLVM_AR" &>/dev/null || LLVM_AR="\$($clang -print-prog-name=llvm-ar)" #$clang_dir${clang_name/clang/llvm-ar}
+  which "$LLVM_NM" &>/dev/null || LLVM_NM="\$($clang -print-prog-name=llvm-nm)" #$clang_dir${clang_name/clang/llvm-ar}
+  which "$LLVM_RANLIB" &>/dev/null || LLVM_RANLIB="\$($clang -print-prog-name=llvm-ranlib)" #$clang_dir${clang_name/clang/llvm-ranlib}
   #EXTRA_LDFLAGS+=" -nodefaultlibs"; EXTRALIBS+=" -lc -lgcc_s"
   # TODO: apple clang invoke ld64. --ld=${CROSS_PREFIX}ld ldflags are different from cc ld flags
   TOOLCHAIN_OPT="--ar=$LLVM_AR --nm=$LLVM_NM --ranlib=$LLVM_RANLIB $TOOLCHAIN_OPT"
@@ -316,8 +316,15 @@ setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang.
   EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
   INSTALL_DIR="sdk-win-$arch-clang"
 
+# vcrt and win sdk dirs
+  win10inc=(shared ucrt um winrt)
+  win10inc=(${win10inc[@]/#/$WindowsSdkDir/Include/})
+  IFS=\; eval 'INCLUDE="${win10inc[*]}"'
+
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat > "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
+export INCLUDE="$VCDIR/include;$INCLUDE"
+export LIB="$VCDIR/lib/${arch/86_/};$WindowsSdkDir/Lib/ucrt/${arch/86_/};$WindowsSdkDir/Lib/um/${arch/86_/}"
 export AR=$LLVM_AR
 export NM=$LLVM_NM
 export V=1 # FFmpeg BUG: AR is overriden in common.mak and becomes an invalid command in makedef(@printf is works in makefiles but not sh scripts)
