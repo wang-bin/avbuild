@@ -27,7 +27,7 @@ windows mingw, vs2013~2017, desktop/store/phone: [![appveyor_ci](https://ci.appv
 
 - multiple targets build and configure simultaneously
 - ffmpeg patches
-- morden toolchain support: clang+lld
+- morden toolchain support: clang+lld, cross build on any host OS
 - support windows xp with latest vs and win sdk (vs2017+win10 sdk) if ffmpeg <= 3.4
 - support SSL for macOS & iOS
 - enable all gpu decoders and encoders if possible
@@ -36,8 +36,8 @@ windows mingw, vs2013~2017, desktop/store/phone: [![appveyor_ci](https://ci.appv
 
 | CC/H?X/OS |  Linux  |  Android  |  macOS  |   iOS   |    RPi    |  Win32  |  WinStore  | WinPhone |
 |-----------|---------|-----------|---------|---------|-----------|---------|------------|----------|
-|   Clang   |    H    |     X     |   A+H   |   A+X   |    H+X    |    ?    |      ?     |     ?    |
-| Clang+LLD |    H    |     ?     |    ?    |         |   A+H+X   |    ?    |      ?     |     ?    |
+|   Clang   |    H    |     X     |   A+H   |   A+X   |    H+X    |         |            |          |
+| Clang+LLD |    H    |     ?     |    ?    |         |   A+H+X   |  A+H+X  |      ?     |     ?    |
 |    GCC    |    H    |     X     |    H    |         |    H+X    |   H+X   |      ?     |     ?    |
 |  VS2013   |         |           |         |         |           |    H    |      H     |     X    |
 |  VS2015   |         |           |         |         |           |    H    |      H     |     X    |
@@ -49,6 +49,3 @@ windows mingw, vs2013~2017, desktop/store/phone: [![appveyor_ci](https://ci.appv
 - X: cross build (for example, build win32 from linux/macOS using mingw, build rpi from windows/linux/macOS using gcc and clang)
 - ?: in plan
 - Empty: won't support
-
-clang+lld to cross build for windows is currently impossible, see https://github.com/wang-bin/avbuild/wiki/Using-Clang---LLD
-
