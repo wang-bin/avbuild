@@ -276,30 +276,36 @@ check_cross_build() {
 }
 # warnings are used by ffmpeg developer, some are enabled by configure: -Wl,--warn-shared-textrel
 
+setup_win(){
+  : ${USE_TOOLCHAIN:=cl}
+  probe_cc $USE_TOOLCHAIN
+  $IS_CLANG && setup_win_clang $@ || setup_vc_env $@
+}
+
 setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang. TODO: clang-cl, see putty
 # -imsvc: add msvc system header path
   #LIB_OPT+=" --disable-static"
-  USE_TOOLCHAIN=clang
-  setup_cc clang
-  #use_lld # --target=i386-pc-windows-msvc19.11.0 -fuse-ld=lld: must use with -Wl,
+  : ${USE_TOOLCHAIN:=clang}
+  setup_cc $USE_TOOLCHAIN
+  #use_lld # --target=i386-pc-windows-msvc19.13.0 -fuse-ld=lld: must use with -Wl,
   enable_libmfx
   enable_opt dxva2
-  if [ -z "${Platform/*64/}" ]; then
-    arch=x86_64
-    WIN_VER="0x0502"
-    WIN_VER_LD="5.02"
-  elif [ "`tolower $Platform`" = "arm" ]; then
+  WIN_VER="0x0600"
+  : ${Platform:=$arch}
+  if [ "${platform:0:3}" = "arm" ]; then
     arch=arm
+  elif [ -z "${Platform/*64/}" ]; then
+    arch=x86_64
   else
     arch=x86
-    WIN_VER="0x0501"
-    WIN_VER_LD="5.01"
+    target_tripple_arch=i386
   fi
+  : ${target_tripple_arch:=$arch}
   # environment var LIB is used by lld-link, in windows style, i.e. export LIB=dir1;dir2;...
   # makedef: define env AR=llvm-ar, NM=? dumpbin1
   TOOLCHAIN_OPT+=" --ld=lld-link --ar=llvm-ar --ranlib=llvm-ranlib --nm=llvm-nm --enable-cross-compile --arch=$arch --target-os=win32"
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
-  EXTRA_CFLAGS+=" --target=i386-pc-windows-msvc19.11.0 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
+  EXTRA_CFLAGS+=" --target=${target_tripple_arch}-pc-windows-msvc19.13.0 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
   EXTRA_LDFLAGS+=" -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
   EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
   INSTALL_DIR="sdk-win-$arch-clang"
@@ -935,7 +941,7 @@ config1(){
     osx*|macos*)     setup_macos_env $TAGET_ARCH_FLAG $1 ;;
     mingw*)     setup_mingw_env $TAGET_ARCH_FLAG ;;
     vc)         setup_vc_env $TAGET_ARCH_FLAG $1 ;;
-    win*)       setup_vc_env $TAGET_ARCH_FLAG $1 ;; # TODO: check cc
+    win*)       setup_win $TAGET_ARCH_FLAG $1 ;; # TODO: check cc
     rpi*|raspberry*) setup_rpi_env $TAGET_ARCH_FLAG $1 ;;
     linux*)
       setup_linux_env $TAGET_ARCH_FLAG $1
