@@ -9,7 +9,7 @@ ALL: https://sourceforge.net/projects/avbuild/files
 Lite build of FFmpeg release(4.0):
 
 [Raspberry Pi](https://sourceforge.net/projects/avbuild/files/raspberry-pi/ffmpeg-4.0-raspberry-pi-clang-lite.tar.xz/download), [Android](https://sourceforge.net/projects/avbuild/files/android/ffmpeg-4.0-android-clang-lite.tar.xz/download), [iOS](https://sourceforge.net/projects/avbuild/files/iOS/ffmpeg-4.0-iOS-lite.tar.xz/download), [macOS](https://sourceforge.net/projects/avbuild/files/macOS/ffmpeg-4.0-macOS-lite.tar.xz/download), [Linux](https://sourceforge.net/projects/avbuild/files/linux/ffmpeg-4.0-linux-gcc-lite.tar.xz/download), 
-[MinGW](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-4.0-desktop-MINGW-lite.7z/download), [VS2017 Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-4.0-desktop-VS2017-lite.7z/download), [UWP](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-4.0-store-VS2017-lite.7z/download)
+[MinGW](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-4.0-desktop-MINGW-LITE.7z/download), [VS2017 Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-4.0-desktop-VS2017-LITE.7z/download), [UWP](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-4.0-store-VS2017-LITE.7z/download)
 
 
 Lite build of FFmpeg git:

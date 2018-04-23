@@ -37,14 +37,15 @@ matrix:
       compiler: clang
       env:
         - TARGET=raspberry-pi
-        - _CC=clang-5.0 #--cc=$_CC
+        - _CC=clang-6.0 #--cc=$_CC
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
-            - llvm-toolchain-trusty-5.0
+            - llvm-toolchain-trusty-6.0
+            - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
-            - clang-5.0
-            - lld-5.0
+            - clang-6.0
+            - lld-6.0
             - sshpass
     - os: linux
       compiler: gcc # host compiler is not used, just to tell build script to use which compiler to use from ndk. env: CC/CXX
@@ -90,15 +91,15 @@ matrix:
       compiler: clang
       env:
         - TARGET=host
-        - _CC=clang-5.0 #--cc=$_CC TODO: override CC
+        - _CC=clang-6.0 #--cc=$_CC TODO: override CC
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
-            - llvm-toolchain-trusty-5.0
+            - llvm-toolchain-trusty-6.0
             - ubuntu-toolchain-r-test #libstdc++
           packages:
-            - clang-5.0
-            - lld-5.0
+            - clang-6.0
+            - lld-6.0
             - libstdc++-7-dev #libmfx
             - p7zip-full
             - nasm
