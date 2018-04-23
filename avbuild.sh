@@ -190,6 +190,9 @@ IS_APPLE_CLANG=false
 IS_CLANG_CL=false
 LD_IS_LLD=false
 HAVE_LLD=false
+LLVM_AR=llvm-ar
+LLVM_NM=llvm-nm
+LLVM_RANLIB=llvm-ranlib
 
 use_clang() {
   if [ -n "$CROSS_PREFIX" ]; then # TODO: "$CROSS_PREFIX" != $TARGET_TRIPLE
@@ -223,20 +226,21 @@ setup_cc() {
   TOOLCHAIN_OPT+=" --cc=$USE_TOOLCHAIN"
 }
 
-use_llvm_ar_ranlib() {
+use_llvm_binutils() {
   # use llvm-ar/ranlib, host ar/ranlib may not work for non-mac target(e.g. macOS)
   local clang_dir=${USE_TOOLCHAIN%clang*}
   local clang_name=${USE_TOOLCHAIN##*/}
   local clang=$USE_TOOLCHAIN
-  local CLANG_FALLBACK=clang-5.0
+  local CLANG_FALLBACK=clang-6.0
   $IS_APPLE_CLANG && CLANG_FALLBACK=/usr/local/opt/llvm/bin/clang
   which "`$clang -print-prog-name=llvm-ar`" 2>/dev/null || clang=$CLANG_FALLBACK
   which "`$clang -print-prog-name=llvm-ranlib`" 2>/dev/null || clang=$CLANG_FALLBACK
-  local llvm_ar="\$($clang -print-prog-name=llvm-ar)" #$clang_dir${clang_name/clang/llvm-ar}
-  local llvm_ranlib="\$($clang -print-prog-name=llvm-ranlib)" #$clang_dir${clang_name/clang/llvm-ranlib}
+  which "$LLVM_AR" 2>/dev/null || LLVM_AR="\$($clang -print-prog-name=llvm-ar)" #$clang_dir${clang_name/clang/llvm-ar}
+  which "$LLVM_NM" 2>/dev/null || LLVM_NM="\$($clang -print-prog-name=llvm-nm)" #$clang_dir${clang_name/clang/llvm-ar}
+  which "$LLVM_RANLIB" 2>/dev/null || LLVM_RANLIB="\$($clang -print-prog-name=llvm-ranlib)" #$clang_dir${clang_name/clang/llvm-ranlib}
   #EXTRA_LDFLAGS+=" -nodefaultlibs"; EXTRALIBS+=" -lc -lgcc_s"
   # TODO: apple clang invoke ld64. --ld=${CROSS_PREFIX}ld ldflags are different from cc ld flags
-  TOOLCHAIN_OPT="--ar=$llvm_ar --ranlib=$llvm_ranlib $TOOLCHAIN_OPT"
+  TOOLCHAIN_OPT="--ar=$LLVM_AR --nm=$LLVM_NM --ranlib=$LLVM_RANLIB $TOOLCHAIN_OPT"
 }
 
 use_lld() {
@@ -287,6 +291,7 @@ setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang.
   #LIB_OPT+=" --disable-static"
   : ${USE_TOOLCHAIN:=clang}
   setup_cc $USE_TOOLCHAIN
+  use_llvm_binutils
   #use_lld # --target=i386-pc-windows-msvc19.13.0 -fuse-ld=lld: must use with -Wl,
   enable_libmfx
   enable_opt dxva2
@@ -302,13 +307,21 @@ setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang.
   fi
   : ${target_tripple_arch:=$arch}
   # environment var LIB is used by lld-link, in windows style, i.e. export LIB=dir1;dir2;...
-  # makedef: define env AR=llvm-ar, NM=? dumpbin1
-  TOOLCHAIN_OPT+=" --ld=lld-link --ar=llvm-ar --ranlib=llvm-ranlib --nm=llvm-nm --enable-cross-compile --arch=$arch --target-os=win32"
+  # makedef: define env AR=llvm-ar, NM=llvm-nm
+  # --windres=rc option is broken and not recognized
+  TOOLCHAIN_OPT+=" --ld=lld-link --enable-cross-compile --arch=$arch --target-os=win32"
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
   EXTRA_CFLAGS+=" --target=${target_tripple_arch}-pc-windows-msvc19.13.0 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
   EXTRA_LDFLAGS+=" -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
   EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
   INSTALL_DIR="sdk-win-$arch-clang"
+
+  mkdir -p $THIS_DIR/build_$INSTALL_DIR
+  cat > "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
+export AR=$LLVM_AR
+export NM=$LLVM_NM
+export V=1 # FFmpeg BUG: AR is overriden in common.mak and becomes an invalid command in makedef(@printf is works in makefiles but not sh scripts)
+EOF
 }
 
 setup_vc_env() {
@@ -852,7 +865,7 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
 
   if $IS_CLANG; then
     rpi_cc=clang
-    use_llvm_ar_ranlib
+    use_llvm_binutils
     $IS_APPLE_CLANG && : ${USE_LD:="/usr/local/opt/llvm/bin/clang"}
   fi
   # --cross-prefix is used by binutils (strip, but linux host ar, ranlib, nm can be used for cross build)
