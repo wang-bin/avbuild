@@ -19,18 +19,18 @@ matrix:
   include:
     - os: osx
       compiler: clang
-      osx_image: xcode9.3beta
+      osx_image: xcode9.3
       env:
         - TARGET=raspberry-pi
         - CC_VENDOR=apple
     - os: osx
       compiler: clang
-      osx_image: xcode9.3beta
+      osx_image: xcode9.3
       env:
         - TARGET=host
     - os: osx
       compiler: clang
-      osx_image: xcode9.3beta
+      osx_image: xcode9.3
       env:
         - TARGET=iOS
     - os: linux
