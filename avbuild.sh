@@ -287,19 +287,21 @@ setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang.
   USE_LD=$($USE_TOOLCHAIN -print-prog-name=lld-link) use_lld # lld 6.0 fixes undefined __enclave_config in msvcrt14.12. `lld -flavor link` just warns --version-script and results in link error
   use_llvm_binutils
   #use_lld # --target=i386-pc-windows-msvc19.13.0 -fuse-ld=lld: must use with -Wl,
-  enable_libmfx
   enable_opt dxva2
+  # TODO: unify setup_vc/wnrt
   WIN_VER="0x0600"
   : ${Platform:=$arch}
   if [ "${platform:0:3}" = "arm" ]; then
     arch=arm
   elif [ -z "${Platform/*64/}" ]; then
     arch=x86_64
+    Platform=x64
   else
     arch=x86
     target_tripple_arch=i386
   fi
   : ${target_tripple_arch:=$arch}
+  : ${Platform:=$arch}
   # environment var LIB is used by lld-link, in windows style, i.e. export LIB=dir1;dir2;...
   # makedef: define env AR=llvm-ar, NM=llvm-nm
   # --windres=rc option is broken and not recognized
@@ -308,9 +310,16 @@ setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang.
   EXTRA_CFLAGS+=" --target=${target_tripple_arch}-pc-windows-msvc19.13.0 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
   EXTRA_LDFLAGS+=" -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
   EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
-  INSTALL_DIR="sdk-$2-$arch-clang"
+  INSTALL_DIR="sdk-$2-$Platform-clang"
 
-# vcrt and win sdk dirs
+  [ -n "$PKG_CONFIG_PATH_MFX" ] && which cygpath && PKG_CONFIG_PATH_MFX_UNIX=$(cygpath -u "$PKG_CONFIG_PATH_MFX") || PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX
+  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] || PKG_CONFIG_PATH_MFX_UNIX=${PKG_CONFIG_PATH_MFX_UNIX/\/lib\/pkgconfig/$Platform\/lib\/pkgconfig}
+  export PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
+  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
+echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX
+  enable_libmfx
+
+  # vcrt and win sdk dirs
   win10inc=(shared ucrt um winrt)
   win10inc=(${win10inc[@]/#/$WindowsSdkDir/Include/$WindowsSDKVersion/})
   IFS=\; eval 'INCLUDE="${win10inc[*]}"'
@@ -323,6 +332,12 @@ export AR=$LLVM_AR
 export NM=$LLVM_NM
 export V=1 # FFmpeg BUG: AR is overriden in common.mak and becomes an invalid command in makedef(@printf is works in makefiles but not sh scripts)
 EOF
+  if [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ]; then
+    cat >> "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH
+EOF
+  fi
+# [ expr1 ] && ... at end returns error if expr1 is false
 }
 
 setup_vc_env() {
