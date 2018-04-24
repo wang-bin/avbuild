@@ -1,20 +1,13 @@
 #!/bin/bash
 # TODO: -flto=nb_cpus. lto with static build (except android)
-# Unify gcc/clang(elf?) flags(like android): -Wl,-z,now -Wl,-z,-relro -Bsymbolic ...
 # https://wiki.debian.org/Hardening#DEB_BUILD_HARDENING_RELRO_.28ld_-z_relro.29
 # onecore for store apps
-# iosurface
-# apple: remove opengl properties
-# push patchs to ff repo.
 # TODO: os arch-cc(e.g. winxp x86-gcc, winstore10 x86, win10 x64-clang, gcc is mingw or cygwin etc. depending on host env)
 # lld supports win res files? https://github.com/llvm-mirror/lld/blob/master/docs/windows_support.rst
-# clang for win lower case: Windows.h WinBase.h WinDef.h
-# https://msdn.microsoft.com/en-us/library/windows/desktop/aa383751(v=vs.85).aspx
 # ios: -fomit-frame-pointer  is not supported for target 'armv7'. check_cflags -Werror
 # TODO: link warning as error when checking ld flags. vc/lld-link: -WX
 # TODO: cc_flags, linker_flags(linker only), os_flags, os_cc_flags, os_linker_flags, cc_linker_flags+=$(prepend_Wl linker_flags)
 # remove -Wl, if LD_IS_LLD
-# TODO: dumpbin=>llvm-nm, dlltool=>llvm-dlltool, winres=>llvm-rc  https://github.com/mstorsjo/llvm-mingw/blob/master/Dockerfile
 #set -x
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2018"

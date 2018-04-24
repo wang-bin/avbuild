@@ -194,6 +194,7 @@ after_success:
   - TARGET_OS=${TARGET_OS/#osx/macOS}
   - SUFFIX=${TARGET_OS/%android/$TARGET_OS-$CC_VENDOR$CC}
   - SUFFIX=${SUFFIX/%linux/$SUFFIX-$CC_VENDOR$CC}
+  - SUFFIX=${SUFFIX/%windows*/$SUFFIX-$CC_VENDOR$CC}
   - SUFFIX=${SUFFIX/%raspberry-pi/$SUFFIX-$CC_VENDOR$CC}
   - SUFFIX=${SUFFIX}${CONFIG_SUFFIX}
   - mv sdk* ffmpeg-${FF_VERSION}-${SUFFIX}
