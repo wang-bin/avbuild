@@ -718,6 +718,7 @@ setup_ios_env() {
       else
         ios_min=6.0
       fi
+      sed -i $sed_bak '/^_swri_oldapi_conv_fltp_to_s16_2ch_neon:$/d;/^_swri_oldapi_conv_flt_to_s16_neon:$/d' "$FFSRC/libswresample/arm/audio_convert_neon.S" # breaks armv7 since ffmpeg b22db4f4. restore after build/kill?
     fi
     TOOLCHAIN_OPT+=" --enable-thumb"
   else
