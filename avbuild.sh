@@ -30,7 +30,7 @@ x86/i366 |  x86/i686 | x86/i686 |
  x86_64  |   x86_64  |  x86_64  |
 Build for host if no parameter is set.
 Use a shortcut in winstore to build for WinRT/WinStore/MSVC target.
-Environment vars: USE_TOOLCHAIN(clang, gcc etc.), USE_LD(clang, lld etc.), USER_OPT, ANDROID_NDK, SYSROOT  
+Environment vars: USE_TOOLCHAIN(clang, gcc etc.), USE_LD(clang, lld etc.), USER_OPT, ANDROID_NDK, SYSROOT, ONECORE(="onecore")  
 config.sh and config-${target_platform}.sh is automatically included. config-lite.sh is for building smaller libraries.
 HELP
 
@@ -276,7 +276,11 @@ check_cross_build() {
 setup_win(){
   : ${USE_TOOLCHAIN:=cl}
   probe_cc $USE_TOOLCHAIN
-  $IS_CLANG && setup_win_clang $@ || setup_vc_env $@
+  if $IS_CLANG ; then
+    setup_win_clang $@
+  else
+    setup_vc_env $@
+  fi
 }
 
 setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang. TODO: clang-cl, see putty
@@ -289,10 +293,23 @@ setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang.
   #use_lld # --target=i386-pc-windows-msvc19.13.0 -fuse-ld=lld: must use with -Wl,
   enable_opt dxva2
   # TODO: unify setup_vc/wnrt
+  : ${ONECORE:=}
+  STORE=
+  VS_VER=15
   WIN_VER="0x0600"
+  local IS_STORE=false
+  local os=$2
+  [[ "$os"  == win*store || "$os" == win*phone || "${os:0:3}" == uwp || "${os:0:5}" == winrt ]] && IS_STORE=true
+  local WINPHONE=false
+  [[ "$os" == win*phone ]] && WINPHONE=true
   : ${Platform:=$arch}
+  platform=$(tolower $Platform)
   if [ "${platform:0:3}" = "arm" ]; then
-    arch=arm
+  # FIXME: clang armv7 does not support as_fpu_directive, and the alternative '@ .fpu neon' is not supported by --target=arm-pc-windows-msvc19.13.0 does not support
+    arch=$platform
+    ASM_OPT="--enable-thumb"
+    [ -z "${platform/*64*/}" ] || ASM_OPT+=" --cpu=armv7-a"
+    ONECORE=onecore
   elif [ -z "${Platform/*64/}" ]; then
     arch=x86_64
     Platform=x64
@@ -302,10 +319,15 @@ setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang.
   fi
   : ${target_tripple_arch:=$arch}
   : ${Platform:=$arch}
+  echo IS_STORE=$IS_STORE
+  $IS_STORE && {
+    setup_winrt_env
+    [[ "$ONECORE" == onecore ]] || STORE=store
+  }
   # environment var LIB is used by lld-link, in windows style, i.e. export LIB=dir1;dir2;...
   # makedef: define env AR=llvm-ar, NM=llvm-nm
   # --windres=rc option is broken and not recognized
-  TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$arch --target-os=win32"
+  TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$arch $ASM_OPT --target-os=win32"
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
   EXTRA_CFLAGS+=" --target=${target_tripple_arch}-pc-windows-msvc19.13.0 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
   EXTRA_LDFLAGS+=" -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
@@ -327,7 +349,7 @@ echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat > "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
 export INCLUDE="$VCDIR/include;$INCLUDE"
-export LIB="$VCDIR/lib/${arch/86_/};$WindowsSdkDir/Lib/$WindowsSDKVersion/ucrt/${arch/86_/};$WindowsSdkDir/Lib/$WindowsSDKVersion/um/${arch/86_/}"
+export LIB="$VCDIR/lib/$ONECORE/${arch/86_/}/$STORE;$WindowsSdkDir/Lib/$WindowsSDKVersion/ucrt/${arch/86_/};$WindowsSdkDir/Lib/$WindowsSDKVersion/um/${arch/86_/}"
 export AR=$LLVM_AR
 export NM=$LLVM_NM
 export V=1 # FFmpeg BUG: AR is overriden in common.mak and becomes an invalid command in makedef(@printf is works in makefiles but not sh scripts)
@@ -423,7 +445,7 @@ setup_vc_desktop_env() {
   fi
 }
 
-setup_vc_winrt_env() {
+setup_winrt_env() {
   if [ -f "$FFSRC/compat/w32dlfcn.h" ]; then
     grep -q HAVE_WINRT "$FFSRC/compat/w32dlfcn.h" || {
       echo "Patching LoadPackagedLibrary..."
@@ -451,6 +473,25 @@ setup_vc_winrt_env() {
   WIN10_VER_DEC=`printf "%d" 0x0A00`
   WIN81_VER_DEC=`printf "%d" 0x0603`
   WIN_VER_DEC=`printf "%d" $WIN_VER`
+
+  : ${WINPHONE:=false}
+  target_is winphone && WINPHONE=true
+  if $WINPHONE; then
+  # export dirs (lib, include)
+    FAMILY=_PHONE
+    # phone ldflags only for win8.1?
+    EXTRA_LDFLAGS+=" WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib -NODEFAULTLIB:kernel32.lib -NODEFAULTLIB:ole32.lib"
+  fi
+  if [ $WIN_VER_DEC  -gt ${WIN81_VER_DEC} ]; then
+  # store: can not use onecoreuap.lib, must use windowsapp.lib
+  # uwp: can use onecoreuap.lib
+    EXTRA_LDFLAGS+=" WindowsApp.lib"
+  fi
+  EXTRA_CFLAGS+=" -DWINAPI_FAMILY=WINAPI_FAMILY${FAMILY}_APP"
+}
+
+setup_vc_winrt_env() {
+  setup_winrt_env $@
   local arch=x86_64 #used by configure --arch
   if [ "${platform:0:3}" = "arm" ]; then # TODO: arm64
     enable_pic=false  # TODO: ffmpeg bug, should filter out -fPIC. armasm(gas) error (unsupported option) if pic is
@@ -475,21 +516,7 @@ setup_vc_winrt_env() {
   else
     [ -z "${Platform/*64/}" ] && arch=x86_64 || arch=x86
   fi
-  : ${WINPHONE:=false}
-  target_is winphone && WINPHONE=true
-  if $WINPHONE; then
-  # export dirs (lib, include)
-    FAMILY=_PHONE
-    # phone ldflags only for win8.1?
-    EXTRA_LDFLAGS+=" WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib -NODEFAULTLIB:kernel32.lib -NODEFAULTLIB:ole32.lib"
-  fi
-  if [ $WIN_VER_DEC  -gt ${WIN81_VER_DEC} ]; then
-  # store: can not use onecoreuap.lib, must use windowsapp.lib
-  # uwp: can use onecoreuap.lib
-    EXTRA_LDFLAGS+=" WindowsApp.lib"
-  fi
   TOOLCHAIN_OPT+=" --arch=$arch"
-  EXTRA_CFLAGS+=" -DWINAPI_FAMILY=WINAPI_FAMILY${FAMILY}_APP"
 }
 
 setup_mingw_env() {
@@ -1137,7 +1164,7 @@ build_all(){
       [ "${os:0:3}" == "rpi" -o "${os:0:9}" == "raspberry" ] && archs=(armv6zk armv7-a)
       [ "${os:0:5}" == "mingw" ] && archs=(x86 x86_64)
       [ "${os:0:2}" == "vc" -o "${os:0:3}" == "win" ] && archs=(x86 x64)
-      [[ "${os:0:5}" == "winrt" || "${os:0:3}" == "uwp" || "${os:0:8}" == "winstore" ]] && archs=(x86 x64 arm)
+      [[ "${os:0:5}" == "winrt" || "${os:0:3}" == "uwp" || "$os" == win*store || "$os" == win*phone ]] && archs=(x86 x64 arm)
       #[ "${os:0:5}" == "macos" ] && archs=(x86_64 i386)
     }
     echo ">>>>>archs: ${archs[@]}"
