@@ -322,6 +322,8 @@ setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang.
   echo IS_STORE=$IS_STORE
   $IS_STORE && {
     setup_winrt_env
+    # onecore/vcruntime.lib imports symbols from vcruntime140.dll, while store/vcruntime.lib imports them from vcruntime140_app.dll, both dlls can run in desktop mode
+    # TODO: OneCoreUAP.lib?
     [[ "$ONECORE" == onecore ]] || STORE=store
   }
   # environment var LIB is used by lld-link, in windows style, i.e. export LIB=dir1;dir2;...
@@ -329,7 +331,7 @@ setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang.
   # --windres=rc option is broken and not recognized
   TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$arch $ASM_OPT --target-os=win32"
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
-  EXTRA_CFLAGS+=" --target=${target_tripple_arch}-pc-windows-msvc19.13.0 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
+  EXTRA_CFLAGS+=" --target=${target_tripple_arch}-store-windows-msvc19.13.0 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
   EXTRA_LDFLAGS+=" -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
   EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
   INSTALL_DIR="sdk-$2-$Platform-clang"
@@ -790,6 +792,7 @@ setup_macos_env(){
       MACOS_VER=${MACOS_VER##osx}
     }
   fi
+  : ${MACOS_VER:=10.7}
   enable_opt videotoolbox vda
   version_compare $MACOS_VER "<" 10.7 && disable_opt lzma avdevice #avfoundation is not supported on 10.6
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
