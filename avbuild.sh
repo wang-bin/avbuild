@@ -283,7 +283,7 @@ setup_win(){
   fi
 }
 
-setup_win_clang(){ # TODO: ./avbuild.sh win|windesktop|winstore|winrt x86-clang. TODO: clang-cl, see putty
+setup_win_clang(){
 # -imsvc: add msvc system header path
   #LIB_OPT+=" --disable-static"
   : ${USE_TOOLCHAIN:=clang}
@@ -672,7 +672,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   echo "ANDROID_LLVM_DIR=${ANDROID_LLVM_DIR}"
   ANDROID_TOOLCHAIN_DIR_REL=${ANDROID_TOOLCHAIN_DIR#$NDK_ROOT}
   LFLAGS_CLANG+=" -gcc-toolchain \$NDK_ROOT/$ANDROID_TOOLCHAIN_DIR_REL" # ld from gcc toolchain. TODO: lld?
-  [ "$ANDROID_ARCH" == "arm" ] && CFLAGS_CLANG="-fno-integrated-as -gcc-toolchain \$NDK_ROOT/$ANDROID_TOOLCHAIN_DIR_REL $CFLAGS_CLANG" # Disable integrated-as for better compatibility, but need as from gcc toolchain. from ndk cmake
+  $FFGIT || [ "$ANDROID_ARCH" == "arm" ] && [[ $FFMAJOR <  4 ]] && CFLAGS_CLANG="-fno-integrated-as -gcc-toolchain \$NDK_ROOT/$ANDROID_TOOLCHAIN_DIR_REL $CFLAGS_CLANG" # Disable integrated-as for better compatibility, but need as from gcc toolchain. from ndk cmake
   local ANDROID_SYSROOT_LIB="$NDK_ROOT/platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
   local ANDROID_SYSROOT_LIB_REL="platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
   if [ -d "$UNIFIED_SYSROOT" ]; then
@@ -1163,7 +1163,7 @@ build_all(){
     [ -z "$archs" ] && {
       echo ">>>>>no arch is set. setting default archs..."
       [ "${os:0:3}" == "ios" ] && archs=(armv7 arm64 x86 x86_64)
-      [ "${os:0:7}" == "android" ] && archs=(armv5 armv7 arm64 x86)
+      [ "${os:0:7}" == "android" ] && archs=(armv7 arm64 x86)
       [ "${os:0:3}" == "rpi" -o "${os:0:9}" == "raspberry" ] && archs=(armv6zk armv7-a)
       [ "${os:0:5}" == "mingw" ] && archs=(x86 x86_64)
       [ "${os:0:2}" == "vc" -o "${os:0:3}" == "win" ] && archs=(x86 x64)
