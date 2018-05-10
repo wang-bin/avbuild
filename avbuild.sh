@@ -44,7 +44,7 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 : ${LIB_OPT:="--enable-shared"}
 #: ${FEATURE_OPT:="--enable-hwaccels"}
 : ${DEBUG_OPT:="--disable-debug"}
-: {FORCE_LTO:=false}
+: ${FORCE_LTO:=false}
 : ${FFSRC:=$PWD/ffmpeg}
 [ ! "${LIB_OPT/disable-static/}" == "${LIB_OPT}" ] && FORCE_LTO=true
 # other env vars to control build: NO_ENC, BITCODE, WINPHONE, VC_BUILD, FORCE_LTO (bool)
@@ -285,12 +285,17 @@ setup_win(){
 
 setup_win_clang(){
 # -imsvc: add msvc system header path
-  #LIB_OPT+=" --disable-static"
   : ${USE_TOOLCHAIN:=clang}
   setup_cc $USE_TOOLCHAIN
   USE_LD=$($USE_TOOLCHAIN -print-prog-name=lld-link) use_lld # lld 6.0 fixes undefined __enclave_config in msvcrt14.12. `lld -flavor link` just warns --version-script and results in link error
   use_llvm_binutils
   #use_lld # --target=i386-pc-windows-msvc19.13.0 -fuse-ld=lld: must use with -Wl,
+  enable_lto=false # ffmpeg: "LTO requires same compiler and linker"
+  # lto: link error if clang and lld version does not mach?
+  # TODO: patch ffmpeg. ffmpeg disables lto (enabled by --enable-lto) if "$cc_type" != "$ld_type"
+  FORCE_LTO=true
+  $FORCE_LTO && LTO_CFLAGS=-flto # TODO: thin lto avcodec link error
+  LTO_LFLAGS="/opt:lldltojobs=`getconf _NPROCESSORS_ONLN`" # only affects thin lto?
   enable_opt dxva2
   # TODO: unify setup_vc/wnrt
   : ${ONECORE:=}
@@ -331,7 +336,7 @@ setup_win_clang(){
   # --windres=rc option is broken and not recognized
   TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$arch $ASM_OPT --target-os=win32"
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
-  EXTRA_CFLAGS+=" --target=${target_tripple_arch}-store-windows-msvc19.13.0 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
+  EXTRA_CFLAGS+=" $LTO_CFLAGS --target=${target_tripple_arch}-store-windows-msvc19.13.0 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
   EXTRA_LDFLAGS+=" -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
   EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
   INSTALL_DIR="sdk-$2-$Platform-clang"
@@ -1032,12 +1037,12 @@ config1(){
   esac
 
   if $enable_lto; then
-    if [ ! $FORCE_LTO ]; then
-      echo "lto is disabled when build static libs to get better compatibility"
-    else
+    $FORCE_LTO && {
       echo "lto is enabled"
       TOOLCHAIN_OPT+=" --enable-lto"
-    fi
+    } || {
+      echo "lto is disabled when build static libs to get better compatibility"
+    }
   fi
   $enable_pic && TOOLCHAIN_OPT+=" --enable-pic"
   EXTRA_CFLAGS=$(trim2 $EXTRA_CFLAGS)
