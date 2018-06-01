@@ -258,7 +258,7 @@ include_with_sysroot() {
 }
 # compat for windows path (e.g. android gcc toolchain can not recognize dir in -isystem=), assume clang is fine(to be tested)
 include_with_sysroot_compat() {
-  $IS_CLANG && {
+  $IS_CLANG && [[ ! "$OSTYPE" == "msys"* ]] && { # android clang add msys install dir to value of -iwithsysroot
     include_with_sysroot $@
     return 0
   }
@@ -336,7 +336,7 @@ setup_win_clang(){
   # --windres=rc option is broken and not recognized
   TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$arch $ASM_OPT --target-os=win32"
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
-  EXTRA_CFLAGS+=" $LTO_CFLAGS --target=${target_tripple_arch}-store-windows-msvc19.13.0 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
+  EXTRA_CFLAGS+=" $LTO_CFLAGS --target=${target_tripple_arch}-store-windows-msvc19 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
   EXTRA_LDFLAGS+=" -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
   EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
   INSTALL_DIR="sdk-$2-$Platform-clang"
