@@ -157,7 +157,7 @@ install:
         export VCDIR=$PWD/msvcrt-dev
         7z x winsdk.7z &>/dev/null
         ./winsdk/lowercase.sh
-        export WindowsSDKVersion=10.0.16299.0
+        export WindowsSDKVersion=$(cat winsdk/.version)
         export WindowsSdkDir=$PWD/winsdk
       fi
   - |
