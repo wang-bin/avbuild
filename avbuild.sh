@@ -591,6 +591,7 @@ setup_android_env() {
   ENC_OPT=$ENC_OPT_MOBILE
   MUX_OPT=$MUX_OPT_MOBILE
   disable_opt v4l2_m2m v4l2-m2m
+  sed -i $sed_bak 's/^check_cc v4l2_m2m/enabled v4l2_m2m \&\& check_cc v4l2_m2m/' "$FFSRC/configure"
   local ANDROID_ARCH=${1:=arm}
   TRIPLE_ARCH=$ANDROID_ARCH
   local ANDROID_TOOLCHAIN_PREFIX="${ANDROID_ARCH}-linux-android"
