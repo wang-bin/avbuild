@@ -863,10 +863,21 @@ apple_sdk_version(){
 # armv7l, --target=arm-none-linux-gnueabi
 
 setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in bus error if asm is enabled
-  add_elf_flags
-  local rpi_cc=gcc
-  local ARCH=${1:0:5}
-  local rpi_cross=false
+  local IS_CROSS_BUILD=true
+  [ -c /dev/vchiq ] && IS_CROSS_BUILD=false
+  : ${CROSS_PREFIX:=arm-linux-gnueabihf-}
+  setup_gnu_env $@  # call if first to setup cc which is used by include_with_sysroot_compat
+
+  USER_OPT+=" --enable-omx-rpi --enable-mmal"
+  include_with_sysroot_compat "/opt/vc/include" "/opt/vc/include/IL"
+  # https://github.com/carlonluca/pot/blob/master/piomxtextures_tools/compile_ffmpeg.sh
+  # -funsafe-math-optimizations -mno-apcs-stack-check -mstructure-size-boundary=32 -mno-sched-prolog
+  # not only rpi vc libs, but also gcc headers and libs in sysroot may be required by some toolchains, so simply set --sysroot= may not work
+  # armv6zk, armv6kz, armv6z: https://reviews.llvm.org/D14568
+  EXTRA_LDFLAGS+=" -L\\\$SYSROOT/opt/vc/lib"
+  test -f /bin/sh.exe || EXTRA_LDFLAGS+=" -Wl,-rpath-link,\\\$SYSROOT/opt/vc/lib"
+
+# apply ffmpeg patches
   if ! `grep -q 'check_arm_arch 6KZ;' "$FFSRC/configure"`; then
     echo "patching armv6zk probe..."
     sed -i $sed_bak "/then echo armv6zk/a\\
@@ -883,41 +894,53 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
     patch -p1 <"tmp.patch"
     cd -
   fi
+}
+
+# TODO: generic linux, with armv7 arch
+setup_sunxi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in bus error if asm is enabled
+  local IS_CROSS_BUILD=true
+  [ -d /allwinner ] && IS_CROSS_BUILD=false
   : ${CROSS_PREFIX:=arm-linux-gnueabihf-}
-  [ -c /dev/vchiq ] && {
-    echo "rpi host build"
-    SYSROOT_CC=`gcc -print-sysroot`
-  } || {
-    rpi_cross=true
-    echo "rpi cross build"
+  setup_gnu_env $@
+}
+
+setup_gnu_env(){
+  add_elf_flags
+  local gnu_cc=gcc
+  local ARCH=${1:0:5}
+  $IS_CROSS_BUILD && {
+    IS_CROSS_BUILD=true
+    echo "gnu cross build"
     TOOLCHAIN_OPT="--enable-cross-compile --target-os=linux --arch=arm"
     SYSROOT_CC=`${CROSS_PREFIX}gcc -print-sysroot` # TODO: not for clang
-    [ -d "$SYSROOT_CC/opt/vc" ] || SYSROOT_CC=
+  } || {
+    echo "gnu host build"
+    SYSROOT_CC=`gcc -print-sysroot`
   }
   : ${SYSROOT:=${SYSROOT_CC}}
-  [ -d "$SYSROOT/opt/vc" ] || {
-    echo "rpi sysroot is not found!"
+  [ -d "$SYSROOT/usr/include" ] || {
+    echo "gnu sysroot is not found!"
     exit 1
   }
-  $rpi_cross && TOOLCHAIN_OPT+=" --sysroot=\\\$SYSROOT" # clang searchs host by default, so sysroot is required
+  $IS_CROSS_BUILD && TOOLCHAIN_OPT+=" --sysroot=\\\$SYSROOT" # clang searchs host by default, so sysroot is required
   # probe compiler first
-  setup_cc ${USE_TOOLCHAIN:=gcc} "--target=arm-linux-gnueabihf" # clang on mac(apple or opensource) will use apple flags w/o --target= 
-  local SUBARCH=${ARCH}-a
+  setup_cc ${USE_TOOLCHAIN:=gcc} "--target=${CROSS_PREFIX%%-}" # clang on mac(apple or opensource) will use apple flags w/o --target= 
 # t.S: x .dn 0
 # gas-preprocessor.pl -arch arm -as-type clang -- clang --target=armv7-none-linux-androideabi -march=armv7-a -mfloat-abi=softfp t.S -v -c
 # clang -fintegrated-as --target=armv7-none-linux-androideabi -march=armv7-a -mfloat-abi=softfp -gcc-toolchain $ANDROID_NDK/toolchains/arm-linux-androideabi-4.9/prebuilt/darwin-x86_64/ t.S -v -c
 # host build can always use binutils, so only cross build uses gas-pp
-  $rpi_cross && $IS_CLANG && {
-  # gas-preprocessor is used by configure internally. armv6t2 is required
+  local SUBARCH=${ARCH}-a
+  $IS_CROSS_BUILD && $IS_CLANG && {
+   gas-preprocessor is used by configure internally. armv6t2 is required
     SUBARCH=${SUBARCH/6-a/6t2}
-    $IS_APPLE_CLANG || TOOLCHAIN_OPT+=" --as='gas-preprocessor.pl -as-type clang -arch arm -- $USE_TOOLCHAIN'" # clang searchs host by default, so sysroot is required
+    $IS_APPLE_CLANG || TOOLCHAIN_OPT+=" --as='gas-preprocessor.pl -as-type clang -arch arm -- $USE_TOOLCHAIN'"
   } || SUBARCH=${SUBARCH/6-a/6zk} # armv6kz is not supported by some compilers, but zk is.
   local EXTRA_CFLAGS_armv6="-march=$SUBARCH -mtune=arm1176jzf-s -mfpu=vfp -marm" # no thumb support, set -marm for clang or -mthumb-interwork for gcc
   local EXTRA_CFLAGS_armv7="-march=$SUBARCH -mtune=cortex-a7 -mfpu=neon-vfpv4 -mthumb" # -mthumb-interwork vfpv3-d16"
   local EXTRA_CFLAGS_armv8="-march=$SUBARCH -mtune=cortex-a53 -mfpu=neon-fp-armv8" # crypto extensions is optional for armv8a, and do not exist on rpi3
 
   if $IS_CLANG; then
-    rpi_cc=clang
+    gnu_cc=clang
     use_llvm_binutils
     $IS_APPLE_CLANG && : ${USE_LD:="/usr/local/opt/llvm/bin/clang"}
   fi
@@ -929,22 +952,18 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
       use_lld
     }
   } || {
-    $rpi_cross && TOOLCHAIN_OPT="--cross-prefix=$CROSS_PREFIX $TOOLCHAIN_OPT"
+    $IS_CROSS_BUILD && TOOLCHAIN_OPT="--cross-prefix=$CROSS_PREFIX $TOOLCHAIN_OPT"
   }
-  USER_OPT="--enable-omx-rpi --enable-mmal $USER_OPT"
-  include_with_sysroot "/opt/vc/include" "/opt/vc/include/IL"
-  # https://github.com/carlonluca/pot/blob/master/piomxtextures_tools/compile_ffmpeg.sh
-  # -funsafe-math-optimizations -mno-apcs-stack-check -mstructure-size-boundary=32 -mno-sched-prolog
-  # not only rpi vc libs, but also gcc headers and libs in sysroot may be required by some toolchains, so simply set --sysroot= may not work
-  # armv6zk, armv6kz, armv6z: https://reviews.llvm.org/D14568
-  eval EXTRA_CFLAGS_RPI='${EXTRA_CFLAGS_'$ARCH'}'
-  EXTRA_CFLAGS+=" $CFLAGS_CLANG $CLANG_FLAGS $EXTRA_CFLAGS_RPI -mfloat-abi=hard"
+  eval EXTRA_CFLAGS_GNU='${EXTRA_CFLAGS_'$ARCH'}'
+  local FLOAT_ABI=
+  [[ "$CROSS_PREFIX" == arm* ]] && FLOAT_ABI=softfp
+  [[ "$CROSS_PREFIX" == arm*hf- ]] && FLOAT_ABI=hard
+  EXTRA_CFLAGS+=" $CFLAGS_CLANG $CLANG_FLAGS $EXTRA_CFLAGS_GNU"
+  [ -n "$FLOAT_ABI" ] && EXTRA_CFLAGS+=" -mfloat-abi=$FLOAT_ABI"
   $LD_IS_LLD || EXTRA_LDFLAGS+=" $LFLAGS_CLANG $CLANG_FLAGS"
-  EXTRA_LDFLAGS+=" -L\\\$SYSROOT/opt/vc/lib"
   #-lrt: clock_gettime in glibc2.17
   EXTRALIBS+=" -lrt"
-  test -f /bin/sh.exe || EXTRA_LDFLAGS+=" -Wl,-rpath-link,\\\$SYSROOT/opt/vc/lib"
-  INSTALL_DIR=sdk-$2-${ARCH}-${rpi_cc}
+  INSTALL_DIR=sdk-$2-${ARCH}-${gnu_cc}
 }
 
 # TODO: generic linux for all archs
@@ -1009,6 +1028,7 @@ config1(){
     vc)         setup_vc_env $TAGET_ARCH_FLAG $1 ;;
     win*)       setup_win $TAGET_ARCH_FLAG $1 ;; # TODO: check cc
     rpi*|raspberry*) setup_rpi_env $TAGET_ARCH_FLAG $1 ;;
+    sunxi*) setup_sunxi_env $TAGET_ARCH_FLAG $1 ;;
     linux*)
       setup_linux_env $TAGET_ARCH_FLAG $1
       add_librt
@@ -1024,6 +1044,8 @@ config1(){
       elif host_is Linux; then
         if [ -c /dev/vchiq ]; then
           setup_rpi_env armv6zk rpi
+        elif [ -d /allwinner ]; then
+          setup_sunxi_env armv7 sunxi
         else
           setup_linux_env $TAGET_ARCH_FLAG
         fi
