@@ -1197,9 +1197,10 @@ build_all(){
       [ "${os:0:3}" == "ios" ] && archs=(armv7 arm64 x86 x86_64)
       [ "${os:0:7}" == "android" ] && archs=(armv7 arm64 x86)
       [ "${os:0:3}" == "rpi" -o "${os:0:9}" == "raspberry" ] && archs=(armv6zk armv7-a)
+      [[ "$os" == "sunxi" ]] && archs=(armv7)
       [ "${os:0:5}" == "mingw" ] && archs=(x86 x86_64)
       [ "${os:0:2}" == "vc" -o "${os:0:3}" == "win" ] && archs=(x86 x64)
-      [[ "${os:0:5}" == "winrt" || "${os:0:3}" == "uwp" || "$os" == win*store || "$os" == win*phone ]] && archs=(x86 x64 arm)
+      [[ "${os:0:5}" == "winrt" || "${os:0:3}" == "uwp" || "$os" == win*store* || "$os" == win*phone* ]] && archs=(x86 x64 arm)
       #[ "${os:0:5}" == "macos" ] && archs=(x86_64 i386)
     }
     echo ">>>>>archs: ${archs[@]}"

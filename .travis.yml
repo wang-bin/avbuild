@@ -84,6 +84,20 @@ matrix:
             - lld-6.0
             - sshpass
     - os: linux
+      compiler: clang
+      env:
+        - TARGET=sunxi
+        - _CC=clang-6.0 #--cc=$_CC
+      addons: #can be used in matrix, but required by every combination
+        apt:
+          sources:
+            - llvm-toolchain-trusty-6.0
+            - ubuntu-toolchain-r-test # llvm6.0 dep
+          packages:
+            - clang-6.0
+            - lld-6.0
+            - sshpass
+    - os: linux
       compiler: gcc # host compiler is not used, just to tell build script to use which compiler to use from ndk. env: CC/CXX
       env:
         - TARGET=android
@@ -147,7 +161,12 @@ matrix:
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update --all; fi
 install:
-  - if [ "$TARGET" == "raspberry-pi" ]; then EXTRA_BREW=llvm; fi
+  - |
+      if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+        xcrun --show-sdk-version
+        if [ "$TARGET" != "host" -a "$TARGET" != "iOS" ]; then EXTRA_BREW=llvm; fi
+        brew install ${EXTRA_BREW} nasm yasm perl hudochenkov/sshpass/sshpass xz p7zip
+      fi
   - |
       if [ "${TARGET:0:3}" == "win" ]; then
         lld -flavor gnu -v
@@ -159,11 +178,6 @@ install:
         ./winsdk/lowercase.sh
         export WindowsSDKVersion=$(cat winsdk/.version)
         export WindowsSdkDir=$PWD/winsdk
-      fi
-  - |
-      if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-        xcrun --show-sdk-version
-        brew install ${EXTRA_BREW} nasm yasm perl hudochenkov/sshpass/sshpass xz
       fi
   - |
       if [ "$FF_VERSION" == "git" ]; then
@@ -194,9 +208,9 @@ install:
         export PKG_CONFIG_PATH_MFX=$PWD/tools/linux64-gcc/lib/pkgconfig
       fi
   - |
-      if [ "$TARGET" == "raspberry-pi" ]; then
-        wget https://sourceforge.net/projects/avbuild/files/raspberry-pi/rpi-sysroot.tar.xz/download -O rpi-sysroot.tar.xz
-        tar Jxf rpi-sysroot.tar.xz
+      if [ "$TARGET" == "raspberry-pi" -o "$TARGET" == "sunxi" ]; then
+        wget https://sourceforge.net/projects/avbuild/files/$TARGET/${TARGET/r*pi/rpi}-sysroot.tar.xz/download -O sysroot.tar.xz
+        tar Jxf sysroot.tar.xz
         export SYSROOT=$PWD/sysroot
       fi
 
@@ -215,6 +229,7 @@ after_success:
   - SUFFIX=${SUFFIX/%linux/$SUFFIX-$CC_VENDOR$CC}
   - SUFFIX=${SUFFIX/%windows*/$SUFFIX-$CC_VENDOR$CC}
   - SUFFIX=${SUFFIX/%raspberry-pi/$SUFFIX-$CC_VENDOR$CC}
+  - SUFFIX=${SUFFIX/%sunxi/$SUFFIX-$CC_VENDOR$CC}
   - SUFFIX=${SUFFIX}${CONFIG_SUFFIX}
   - mv sdk* ffmpeg-${FF_VERSION}-${SUFFIX}
   - tar Jcf ffmpeg-${FF_VERSION}-${SUFFIX}{.tar.xz,}
