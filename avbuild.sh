@@ -930,8 +930,12 @@ setup_gnu_env(){
 # clang -fintegrated-as --target=armv7-none-linux-androideabi -march=armv7-a -mfloat-abi=softfp -gcc-toolchain $ANDROID_NDK/toolchains/arm-linux-androideabi-4.9/prebuilt/darwin-x86_64/ t.S -v -c
 # host build can always use binutils, so only cross build uses gas-pp
   local SUBARCH=${ARCH}-a
+  local AS_GAS=false
   $IS_CROSS_BUILD && $IS_CLANG && {
-   gas-preprocessor is used by configure internally. armv6t2 is required
+    grep -q as_dn_directive "$FFSRC/configure" || AS_GAS=true
+  }
+  $AS_GAS && {
+    # gas-preprocessor is used by configure internally. armv6t2 is required
     SUBARCH=${SUBARCH/6-a/6t2}
     $IS_APPLE_CLANG || TOOLCHAIN_OPT+=" --as='gas-preprocessor.pl -as-type clang -arch arm -- $USE_TOOLCHAIN'"
   } || SUBARCH=${SUBARCH/6-a/6zk} # armv6kz is not supported by some compilers, but zk is.
