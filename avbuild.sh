@@ -46,7 +46,7 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 : ${DEBUG_OPT:="--disable-debug"}
 : ${FORCE_LTO:=false}
 : ${FFSRC:=$PWD/ffmpeg}
-[ ! "${LIB_OPT/disable-static/}" == "${LIB_OPT}" ] && FORCE_LTO=true
+[[ "$LIB_OPT" == *"--enable-static"* ]] || FORCE_LTO=true
 # other env vars to control build: NO_ENC, BITCODE, WINPHONE, VC_BUILD, FORCE_LTO (bool)
 
 trap "kill -- -$$; rm -rf $THIS_DIR/.dir exit 3" SIGTERM SIGINT SIGKILL
@@ -293,7 +293,6 @@ setup_win_clang(){
   enable_lto=false # ffmpeg: "LTO requires same compiler and linker"
   # lto: link error if clang and lld version does not mach?
   # TODO: patch ffmpeg. ffmpeg disables lto (enabled by --enable-lto) if "$cc_type" != "$ld_type"
-  FORCE_LTO=true
   $FORCE_LTO && LTO_CFLAGS=-flto # TODO: thin lto avcodec link error
   LTO_LFLAGS="/opt:lldltojobs=`getconf _NPROCESSORS_ONLN`" # only affects thin lto?
   enable_opt dxva2
@@ -374,7 +373,6 @@ setup_vc_env() {
   local osver=$2
   echo Call "set MSYS2_PATH_TYPE=inherit" before msys2 sh.exe if cl.exe is not found!
   enable_lto=false # ffmpeg requires DCE, while vc with LTCG (-GL) does not support DCE
-  LIB_OPT+=" --disable-static"
   # dylink crt
   EXTRA_CFLAGS+=" -MD"
   EXTRA_LDFLAGS+=" -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
@@ -527,7 +525,6 @@ setup_vc_winrt_env() {
 }
 
 setup_mingw_env() {
-  LIB_OPT+=" --disable-static"
   enable_lto=false
   local gcc=gcc
   local arch=$1
