@@ -46,7 +46,7 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 : ${DEBUG_OPT:="--disable-debug"}
 : ${FORCE_LTO:=false}
 : ${FFSRC:=$PWD/ffmpeg}
-[[ "$LIB_OPT" == *"--enable-static"* ]] || FORCE_LTO=true
+[[ "$LIB_OPT" == *"--disable-static"* ]] && FORCE_LTO=true
 # other env vars to control build: NO_ENC, BITCODE, WINPHONE, VC_BUILD, FORCE_LTO (bool)
 
 trap "kill -- -$$; rm -rf $THIS_DIR/.dir exit 3" SIGTERM SIGINT SIGKILL
@@ -293,6 +293,7 @@ setup_win_clang(){
   enable_lto=false # ffmpeg: "LTO requires same compiler and linker"
   # lto: link error if clang and lld version does not mach?
   # TODO: patch ffmpeg. ffmpeg disables lto (enabled by --enable-lto) if "$cc_type" != "$ld_type"
+  [[ "$LIB_OPT" == *"--enable-static"* ]] || FORCE_LTO=true
   $FORCE_LTO && LTO_CFLAGS=-flto # TODO: thin lto avcodec link error
   LTO_LFLAGS="/opt:lldltojobs=`getconf _NPROCESSORS_ONLN`" # only affects thin lto?
   enable_opt dxva2
