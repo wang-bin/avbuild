@@ -142,14 +142,14 @@ matrix:
       compiler: gcc
       env:
         - TARGET=host
-        - _CC=gcc-7 #--cc=$_CC
+        - _CC=gcc-8 #--cc=$_CC
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-7 # gcc-7-multilib
-            - libstdc++-7-dev #libmfx
+            - gcc-8 # gcc-8-multilib
+            - libstdc++-8-dev #libmfx
             - p7zip-full
             - nasm
             - yasm
@@ -169,7 +169,7 @@ matrix:
           packages:
             - clang-6.0
             - lld-6.0
-            - libstdc++-7-dev #libmfx
+            - libstdc++-8-dev #libmfx
             - p7zip-full
             - nasm
             - yasm
