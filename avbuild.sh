@@ -898,6 +898,7 @@ setup_sunxi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result 
   local IS_CROSS_BUILD=true
   [ -d /allwinner ] && IS_CROSS_BUILD=false
   : ${CROSS_PREFIX:=arm-linux-gnueabihf-}
+  EXTRA_CFLAGS+=" -DDRI2=1" # unofficial vdpau_x11.h
   setup_gnu_env $@
 }
 
