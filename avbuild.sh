@@ -200,17 +200,18 @@ use_clang() {
 probe_cc() {
   local cc=$1
   local flags=$2
-  $cc -dM -E -</dev/null |grep -q __clang__ && IS_CLANG=true
-  $cc -dM -E -</dev/null |grep -q __apple_build_version__ && IS_APPLE_CLANG=true
-  $IS_CLANG && {
+  $cc -v 2>&1 |grep -q clang && IS_CLANG=true
+  $cc -v 2>&1 |grep -q "Apple LLVM" && IS_APPLE_CLANG=true
+  $cc -? &>/dev/null && IS_CLANG_CL=true
+  if $IS_CLANG_CL; then
+    HAVE_LLD=true
+  elif $IS_CLANG; then
     CFLAG_IWITHSYSROOT=$CFLAG_IWITHSYSROOT_CLANG
-    # FIXME: requires flavor for lld-link
     LLD=$($USE_TOOLCHAIN -print-prog-name=lld)
     $LLD -flavor gnu -v >/dev/null && HAVE_LLD=true
-  }
-  $IS_CLANG_CL && HAVE_LLD=true
+  fi
   $IS_APPLE_CLANG && [ -f /usr/local/opt/llvm/bin/lld ] && HAVE_LLD=true
-  echo "compiler is clang: $IS_CLANG, apple clang: $IS_APPLE_CLANG, have lld: $HAVE_LLD"
+  echo "compiler is clang: $IS_CLANG, apple clang: $IS_APPLE_CLANG, cl: $IS_CLANG_CL, have lld: $HAVE_LLD"
 }
 
 setup_cc() {
@@ -223,7 +224,7 @@ use_llvm_binutils() {
   # use llvm-ar/ranlib, host ar/ranlib may not work for non-mac target(e.g. macOS)
   local clang_dir=${USE_TOOLCHAIN%clang*}
   local clang_name=${USE_TOOLCHAIN##*/}
-  local clang=$USE_TOOLCHAIN
+  local clang=${USE_TOOLCHAIN%-cl}
   local CLANG_FALLBACK=clang-6.0
   $IS_APPLE_CLANG && CLANG_FALLBACK=/usr/local/opt/llvm/bin/clang
   which "`$clang -print-prog-name=llvm-ar`" &>/dev/null || clang=$CLANG_FALLBACK
@@ -287,7 +288,7 @@ setup_win_clang(){
 # -imsvc: add msvc system header path
   : ${USE_TOOLCHAIN:=clang}
   setup_cc $USE_TOOLCHAIN
-  USE_LD=$($USE_TOOLCHAIN -print-prog-name=lld-link) use_lld # lld 6.0 fixes undefined __enclave_config in msvcrt14.12. `lld -flavor link` just warns --version-script and results in link error
+  USE_LD=$(${USE_TOOLCHAIN%-cl} -print-prog-name=lld-link) use_lld # lld 6.0 fixes undefined __enclave_config in msvcrt14.12. `lld -flavor link` just warns --version-script and results in link error
   use_llvm_binutils
   #use_lld # --target=i386-pc-windows-msvc19.13.0 -fuse-ld=lld: must use with -Wl,
   enable_lto=false # ffmpeg: "LTO requires same compiler and linker"
