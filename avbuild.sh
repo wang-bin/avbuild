@@ -1021,7 +1021,7 @@ config1(){
       host_is Linux && ! target_is android && ! echo $EXTRALIBS |grep -q '\-lrt' && ! echo $EXTRA_LDFLAGS |grep -q '\-lrt' && EXTRALIBS+=" -lrt"
     }
   }
-  local os=${1//-/_} # e.g. windows-desktop, because '-' in ${x-y} is an individual operation
+  local os=${1//[-.]/_} # e.g. windows-desktop, ios9.0, because '-' in ${x-y} is an individual operation, '.' is not allowed in var name
   eval os_opt='${'${os%%[0-9]*}'_OPT}'
   USER_OPT+=" $os_opt"
   eval os_opt='${'${os}'_OPT}'
