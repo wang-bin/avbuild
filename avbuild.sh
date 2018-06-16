@@ -270,7 +270,9 @@ check_cross_build() {
 # warnings are used by ffmpeg developer, some are enabled by configure: -Wl,--warn-shared-textrel
 
 setup_win(){
-  : ${USE_TOOLCHAIN:=cl}
+  local win_cc=clang
+  which cl &>/dev/null && win_cc=cl
+  : ${USE_TOOLCHAIN:=$win_cc}
   probe_cc $USE_TOOLCHAIN
   if $IS_CLANG ; then
     setup_win_clang $@
@@ -1036,9 +1038,6 @@ config1(){
     linux*)
       setup_linux_env $TAGET_ARCH_FLAG $1
       add_librt
-      ;;
-    clang*)
-      setup_win_clang $TAGET_ARCH_FLAG $1
       ;;
     *) # assume host build. use "") ?
       if $VC_BUILD; then
