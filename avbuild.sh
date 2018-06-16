@@ -15,22 +15,17 @@ echo "https://github.com/wang-bin/avbuild"
 
 THIS_NAME=${0##*/}
 THIS_DIR=$PWD
-PLATFORMS="ios|android|rpi|vc|x86|winstore|winpc|winphone|mingw64"
+PLATFORMS="ios|android|rpi|sunxi|vc|win|winrt|uwp|winphone|mingw"
 echo "Usage:"
 test -d $PWD/ffmpeg || echo "  export FFSRC=/path/to/ffmpeg"
 cat<<HELP
 ./$THIS_NAME [target_platform [target_architecture[-clang*/gcc*]]]
 target_platform can be: ${PLATFORMS}
-target_architecture can be:
- ios[x.y]| android[x]|  mingw   |  rpi
-         |   armv5   |          | armv6
-  armv7  |   armv7   |          | armv7
-  arm64  |   arm64   |          | armv8
-x86/i366 |  x86/i686 | x86/i686 |
- x86_64  |   x86_64  |  x86_64  |
+target_architecture can be: x86, x86_64, armv5, armv6, armv7, armv8, arm64
 Build for host if no parameter is set.
-Use a shortcut in winstore to build for WinRT/WinStore/MSVC target.
-Environment vars: USE_TOOLCHAIN(clang, gcc etc.), USE_LD(clang, lld etc.), USER_OPT, ANDROID_NDK, SYSROOT, ONECORE(="onecore")  
+Use a shortcut in tools dir if build for windows using MSVC.
+Environment vars: USE_TOOLCHAIN(clang, gcc etc.), USE_LD(clang, lld etc.), USER_OPT, ANDROID_NDK, SYSROOT, ONECORE(="onecore")
+Add options via USER_OPT, \${platform}_OPT
 config.sh and config-${target_platform}.sh is automatically included. config-lite.sh is for building smaller libraries.
 HELP
 
@@ -1024,6 +1019,11 @@ config1(){
       host_is Linux && ! target_is android && ! echo $EXTRALIBS |grep -q '\-lrt' && ! echo $EXTRA_LDFLAGS |grep -q '\-lrt' && EXTRALIBS+=" -lrt"
     }
   }
+  local os=${1//-/_} # e.g. windows-desktop, because '-' in ${x-y} is an individual operation
+  eval os_opt='${'${os%%[0-9]*}'_OPT}'
+  USER_OPT+=" $os_opt"
+  eval os_opt='${'${os}'_OPT}'
+  USER_OPT+=" $os_opt"
   case $1 in
     android*)    setup_android_env $TAGET_ARCH_FLAG $1 ;;
     ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
