@@ -8,7 +8,11 @@
 # TODO: link warning as error when checking ld flags. vc/lld-link: -WX
 # TODO: cc_flags, linker_flags(linker only), os_flags, os_cc_flags, os_linker_flags, cc_linker_flags+=$(prepend_Wl linker_flags)
 # remove -Wl, if LD_IS_LLD
+
+#PS4='+ $(gdate "+%s.%N")\011 '
+#exec 3>&2 2>/tmp/bashstart.$$.log
 #set -x
+
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2018"
 echo "https://github.com/wang-bin/avbuild"
@@ -312,7 +316,6 @@ setup_win_clang(){
     arch=$platform
     ASM_OPT="--enable-thumb"
     [ -z "${platform/*64*/}" ] || ASM_OPT+=" --cpu=armv7-a"
-    ONECORE=onecore
   elif [ -z "${Platform/*64/}" ]; then
     arch=x86_64
     Platform=x64
@@ -326,15 +329,16 @@ setup_win_clang(){
   $IS_STORE && {
     setup_winrt_env
     # onecore/vcruntime.lib imports symbols from vcruntime140.dll, while store/vcruntime.lib imports them from vcruntime140_app.dll, both dlls can run in desktop mode
-    # TODO: OneCoreUAP.lib?
-    [[ "$ONECORE" == onecore ]] || STORE=store
+    [[ "$ONECORE" == onecore ]] && EXTRALIBS+=" OneCoreUAP.Lib" || STORE=store
+  } || {
+    [[ "$ONECORE" == onecore ]] && EXTRALIBS+=" OneCore.Lib"
   }
   # environment var LIB is used by lld-link, in windows style, i.e. export LIB=dir1;dir2;...
   # makedef: define env AR=llvm-ar, NM=llvm-nm
   # --windres=rc option is broken and not recognized
   TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$arch $ASM_OPT --target-os=win32"
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
-  EXTRA_CFLAGS+=" $LTO_CFLAGS --target=${target_tripple_arch}-store-windows-msvc19 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
+  EXTRA_CFLAGS+=" $LTO_CFLAGS --target=${target_tripple_arch}-${STORE:-pc}-windows-msvc19 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
   EXTRA_LDFLAGS+=" -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
   EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
   INSTALL_DIR="sdk-$2-$Platform-clang"
@@ -1089,6 +1093,8 @@ config1(){
   CONFIGURE=`trim2 $CONFIGURE`
   # http://ffmpeg.org/platform.html
   # static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
+#set +x
+#exec 2>&3 3>&-
 
   mkdir -p build_$INSTALL_DIR
   cd build_$INSTALL_DIR
