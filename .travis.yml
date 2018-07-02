@@ -74,8 +74,27 @@ matrix:
       env:
         - TARGET=windows-store
         - _CC=clang-6.0
-        - ONECORE=onecore # prefer onecore
+        - LIB_OPT=--enable-static
         - ARCHS="x86 x64"
+      addons: #can be used in matrix, but required by every combination
+        apt:
+          sources:
+            - llvm-toolchain-trusty-6.0
+            - ubuntu-toolchain-r-test # llvm6.0 dep
+          packages:
+            - clang-6.0
+            - lld-6.0
+            - sshpass
+            - p7zip-full
+            - nasm
+            - yasm
+    - os: linux
+      compiler: clang
+      env:
+        - TARGET=windows-store
+        - _CC=clang-6.0
+        - ONECORE=onecore # prefer onecore
+        - ARCHS="x64"
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
@@ -249,7 +268,7 @@ after_success:
   - SUFFIX=${SUFFIX/%windows*/$SUFFIX-$CC_VENDOR$CC}
   - SUFFIX=${SUFFIX/%raspberry-pi/$SUFFIX-$CC_VENDOR$CC}
   - SUFFIX=${SUFFIX/%sunxi/$SUFFIX-$CC_VENDOR$CC}
-  - SUFFIX=${SUFFIX}${CONFIG_SUFFIX}${LIB_OPT##*-}
+  - SUFFIX=${SUFFIX}${LIB_OPT//*-/-}${CONFIG_SUFFIX}
   - mv sdk* ffmpeg-${FF_VERSION}-${SUFFIX}
   - tar Jcf ffmpeg-${FF_VERSION}-${SUFFIX}{.tar.xz,}
   - ls -hl ffmpeg-${FF_VERSION}-${SUFFIX}.tar.xz

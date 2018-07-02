@@ -315,7 +315,11 @@ setup_win_clang(){
   # FIXME: clang armv7 does not support as_fpu_directive, and the alternative '@ .fpu neon' is not supported by --target=arm-pc-windows-msvc19.13.0 does not support
     arch=$platform
     ASM_OPT="--enable-thumb"
-    [ -z "${platform/*64*/}" ] || ASM_OPT+=" --cpu=armv7-a"
+    [ -z "${platform/*64*/}" ] || {
+      ASM_OPT+=" --cpu=armv7-a"
+      # clang: FPU error. gas: vfp error
+      TOOLCHAIN_OPT+=" --as='gas-preprocessor.pl -as-type clang -arch arm -- $USE_TOOLCHAIN'"
+    }
   elif [ -z "${Platform/*64/}" ]; then
     arch=x86_64
     Platform=x64
@@ -338,8 +342,8 @@ setup_win_clang(){
   # --windres=rc option is broken and not recognized
   TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$arch $ASM_OPT --target-os=win32"
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
-  EXTRA_CFLAGS+=" $LTO_CFLAGS --target=${target_tripple_arch}-${STORE:-pc}-windows-msvc19 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
-  EXTRA_LDFLAGS+=" -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
+  EXTRA_CFLAGS+=" $LTO_CFLAGS --target=${target_tripple_arch}-${STORE:-${ONECORE:-pc}}-windows-msvc19 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
+  EXTRA_LDFLAGS+=" -MACHINE:$Platform -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
   EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
   INSTALL_DIR="sdk-$2-$Platform-clang"
 
