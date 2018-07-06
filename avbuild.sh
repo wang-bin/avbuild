@@ -318,7 +318,7 @@ setup_win_clang(){
     [ -z "${platform/*64*/}" ] || {
       ASM_OPT+=" --cpu=armv7-a"
       # clang: FPU error. gas: vfp error
-      TOOLCHAIN_OPT+=" --as='gas-preprocessor.pl -as-type clang -arch arm -- $USE_TOOLCHAIN'"
+  #    TOOLCHAIN_OPT+=" --as='gas-preprocessor.pl -as-type clang -arch arm -- $USE_TOOLCHAIN'"
     }
   elif [ -z "${Platform/*64/}" ]; then
     arch=x86_64
@@ -538,7 +538,7 @@ setup_mingw_env() {
   local native_build=false # native build: use gcc instead of ${arch}-w64-mingw32-gcc
   if [ -n "$arch" ]; then
     [ -z "${arch/*64*/}" ] && BIT=64 || BIT=32
-    arch=x86_$BIT
+    [[ $arch = *ar* ]] || arch=x86_$BIT
     arch=${arch/*_32/i686}
   fi
   host_is MinGW || host_is MSYS && echo "install msys2 packages: pacman -Sy --needed diffutils gawk patch pkg-config mingw-w64-i686-gcc mingw-w64-x86_64-gcc nasm yasm"
@@ -549,7 +549,7 @@ setup_mingw_env() {
     }
   }
   $native_build && { # arch is not set. probe using gcc
-    $gcc -dumpmachine |grep -iq "x86_64" && BIT=64 || BIT=32
+    $gcc -dumpmachine |grep -iqE "x86_64|aarch64|arm64" && BIT=64 || BIT=32
     arch=x86_$BIT
     arch=${arch/*_32/i686}
     echo "mingw $arch host native build"
@@ -575,7 +575,7 @@ setup_mingw_env() {
   enable_opt dxva2
   disable_opt iconv
   EXTRA_LDFLAGS+=" -static-libgcc -Wl,-Bstatic"
-  INSTALL_DIR="${INSTALL_DIR}-mingw-x${BIT/32/86}-gcc"
+  INSTALL_DIR="${INSTALL_DIR}-mingw-$1-gcc"
   rm -rf $THIS_DIR/build_$INSTALL_DIR/.env.sh
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   [ -d "$MINGW_BIN" ] && cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
@@ -1040,7 +1040,7 @@ config1(){
     osx*|macos*)     setup_macos_env $TAGET_ARCH_FLAG $1 ;;
     mingw*)     setup_mingw_env $TAGET_ARCH_FLAG ;;
     vc)         setup_vc_env $TAGET_ARCH_FLAG $1 ;;
-    win*)       setup_win $TAGET_ARCH_FLAG $1 ;; # TODO: check cc
+    win*|uwp*)  setup_win $TAGET_ARCH_FLAG $1 ;; # TODO: check cc
     rpi*|raspberry*) setup_rpi_env $TAGET_ARCH_FLAG $1 ;;
     sunxi*) setup_sunxi_env $TAGET_ARCH_FLAG $1 ;;
     linux*)
