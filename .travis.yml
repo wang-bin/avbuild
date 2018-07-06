@@ -37,15 +37,15 @@ matrix:
       compiler: clang
       env:
         - TARGET=windows-desktop
-        - _CC=clang-6.0
+        - _CC=clang-7
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
-            - llvm-toolchain-trusty-6.0
+            - llvm-toolchain-trusty
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
-            - clang-6.0
-            - lld-6.0
+            - clang
+            - lld
             - sshpass
             - p7zip-full
             - nasm
@@ -54,17 +54,17 @@ matrix:
       compiler: clang
       env:
         - TARGET=windows-desktop
-        - _CC=clang-6.0
+        - _CC=clang-7
         - LIB_OPT=--enable-static
         - ARCHS=x64
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
-            - llvm-toolchain-trusty-6.0
+            - llvm-toolchain-trusty
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
-            - clang-6.0
-            - lld-6.0
+            - clang
+            - lld
             - sshpass
             - p7zip-full
             - nasm
@@ -73,17 +73,17 @@ matrix:
       compiler: clang
       env:
         - TARGET=windows-store
-        - _CC=clang-6.0
+        - _CC=clang-7
         - LIB_OPT=--enable-static
-        - ARCHS="x86 x64"
+        - ARCHS=x64
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
-            - llvm-toolchain-trusty-6.0
+            - llvm-toolchain-trusty
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
-            - clang-6.0
-            - lld-6.0
+            - clang
+            - lld
             - sshpass
             - p7zip-full
             - nasm
@@ -92,17 +92,17 @@ matrix:
       compiler: clang
       env:
         - TARGET=windows-store
-        - _CC=clang-6.0
+        - _CC=clang-7
         - ONECORE=onecore # prefer onecore
         - ARCHS="x64"
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
-            - llvm-toolchain-trusty-6.0
+            - llvm-toolchain-trusty
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
-            - clang-6.0
-            - lld-6.0
+            - clang
+            - lld
             - sshpass
             - p7zip-full
             - nasm
@@ -111,29 +111,29 @@ matrix:
       compiler: clang
       env:
         - TARGET=raspberry-pi
-        - _CC=clang-6.0 #--cc=$_CC
+        - _CC=clang-7
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
-            - llvm-toolchain-trusty-6.0
+            - llvm-toolchain-trusty
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
-            - clang-6.0
-            - lld-6.0
+            - clang
+            - lld
             - sshpass
     - os: linux
       compiler: clang
       env:
         - TARGET=sunxi
-        - _CC=clang-6.0 #--cc=$_CC
+        - _CC=clang-7
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
-            - llvm-toolchain-trusty-6.0
+            - llvm-toolchain-trusty
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
-            - clang-6.0
-            - lld-6.0
+            - clang
+            - lld
             - sshpass
     - os: linux
       compiler: gcc # host compiler is not used, just to tell build script to use which compiler to use from ndk. env: CC/CXX
@@ -179,15 +179,15 @@ matrix:
       compiler: clang
       env:
         - TARGET=host
-        - _CC=clang-6.0 #--cc=$_CC TODO: override CC
+        - _CC=clang-7 #--cc=$_CC TODO: override CC
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
-            - llvm-toolchain-trusty-6.0
+            - llvm-toolchain-trusty
             - ubuntu-toolchain-r-test #libstdc++
           packages:
-            - clang-6.0
-            - lld-6.0
+            - clang
+            - lld
             - libstdc++-8-dev #libmfx
             - p7zip-full
             - nasm
@@ -197,6 +197,7 @@ matrix:
             - sshpass
 
 before_install:
+  - $CC -v
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update --all; fi
 install:
   - |
