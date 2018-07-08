@@ -56,7 +56,6 @@ matrix:
         - TARGET=windows-desktop
         - _CC=clang-7
         - LIB_OPT=--enable-static
-        - ARCHS=x64
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
@@ -75,7 +74,7 @@ matrix:
         - TARGET=windows-store
         - _CC=clang-7
         - LIB_OPT=--enable-static
-        - ARCHS=x64
+        - ARCHS="x86 x64"
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
