@@ -14,4 +14,5 @@ ENC_OPT="--enable-encoder=aac,gif,h26[3-4]*,hevc*,mjpeg,mpeg[2-4]*,nellymoser,nv
 MUX_OPT="--enable-muxer=dash,fifo,gif,h264,hevc,hls,mjpeg,matroska*,mov,mp4,mpegts,nu*,og*,pcm*,rawvideo,spdif,wav,webm,*pipe"
 ENC_OPT_MOBILE="--enable-encoder=aac,gif,h264*,nellymoser,opus,pcm*"
 MUX_OPT_MOBILE="--enable-muxer=gif,hls,mov,mp4,mpegts,wav"
-android_OPT="--disable-avdevice"
+# camera requores api level 24, ./avbuild.sh android24
+android_OPT="--disable-indevs --enable-indev=android_camera --disable-outdevs"
