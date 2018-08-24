@@ -11,7 +11,7 @@ USER_OPT="--enable-small --disable-avresample \
 $USER_OPT
 "
 ENC_OPT="--enable-encoder=aac,gif,h26[3-4]*,hevc*,mjpeg,mpeg[2-4]*,nellymoser,nvenc*,opus,pcm*,rawvideo,vorbis,vp*,wrapped_avframe"
-MUX_OPT="--enable-muxer=dash,fifo,gif,h264,hevc,hls,mjpeg,matroska*,mov,mp4,mpegts,nu*,og*,pcm*,rawvideo,spdif,wav,webm,*pipe"
+MUX_OPT="--enable-muxer=dash,fifo,flv,gif,h264,hevc,hls,mjpeg,matroska*,mov,mp4,mpegts,nu*,og*,pcm*,rawvideo,spdif,wav,webm,*pipe"
 ENC_OPT_MOBILE="--enable-encoder=aac,gif,h264*,nellymoser,opus,pcm*"
 MUX_OPT_MOBILE="--enable-muxer=gif,hls,mov,mp4,mpegts,wav"
 # camera requores api level 24, ./avbuild.sh android24
