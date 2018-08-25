@@ -594,6 +594,8 @@ EOF
 setup_android_env() {
   ENC_OPT=$ENC_OPT_MOBILE
   MUX_OPT=$MUX_OPT_MOBILE
+  # fbdev & v4l2 build error and not supported on android. camera requores api level 24, ./avbuild.sh android24
+  FEATURE_OPT+=" --disable-indevs --enable-indev=android_camera --disable-outdevs"
   disable_opt v4l2_m2m v4l2-m2m
   sed -i $sed_bak 's/^check_cc v4l2_m2m/enabled v4l2_m2m \&\& check_cc v4l2_m2m/' "$FFSRC/configure"
   local ANDROID_ARCH=${1:=arm}
