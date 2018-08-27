@@ -19,25 +19,24 @@ matrix:
   include:
     - os: osx
       compiler: clang
-      osx_image: xcode9.3
       env:
         - TARGET=raspberry-pi
         - CC_VENDOR=apple
     - os: osx
       compiler: clang
-      osx_image: xcode9.3
+      osx_image: xcode9.4
       env:
         - TARGET=host
     - os: osx
       compiler: clang
-      osx_image: xcode9.3
+      osx_image: xcode9.4
       env:
         - TARGET=iOS
     - os: linux
       compiler: clang
       env:
         - TARGET=windows-desktop
-        - _CC=clang-7
+        - _CC=clang-8
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
@@ -54,7 +53,7 @@ matrix:
       compiler: clang
       env:
         - TARGET=windows-desktop
-        - _CC=clang-7
+        - _CC=clang-8
         - LIB_OPT=--enable-static
       addons: #can be used in matrix, but required by every combination
         apt:
@@ -72,9 +71,9 @@ matrix:
       compiler: clang
       env:
         - TARGET=windows-store
-        - _CC=clang-7
+        - _CC=clang-8
         - LIB_OPT=--enable-static
-        - ARCHS="x86 x64"
+        - ARCHS="x64"
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
@@ -91,7 +90,7 @@ matrix:
       compiler: clang
       env:
         - TARGET=windows-store
-        - _CC=clang-7
+        - _CC=clang-8
         - ONECORE=onecore # prefer onecore
         - ARCHS="x64"
       addons: #can be used in matrix, but required by every combination
@@ -110,7 +109,7 @@ matrix:
       compiler: clang
       env:
         - TARGET=raspberry-pi
-        - _CC=clang-7
+        - _CC=clang-8
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
@@ -124,7 +123,7 @@ matrix:
       compiler: clang
       env:
         - TARGET=sunxi
-        - _CC=clang-7
+        - _CC=clang-8
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
@@ -178,7 +177,7 @@ matrix:
       compiler: clang
       env:
         - TARGET=host
-        - _CC=clang-7 #--cc=$_CC TODO: override CC
+        - _CC=clang-8 #--cc=$_CC TODO: override CC
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
@@ -216,6 +215,7 @@ install:
         ./winsdk/lowercase.sh
         export WindowsSDKVersion=$(cat winsdk/.version)
         export WindowsSdkDir=$PWD/winsdk
+        export PKG_CONFIG_PATH_MFX=$PWD/tools/VS2017/lib/pkgconfig
       fi
   - |
       if [ "$FF_VERSION" == "git" ]; then
@@ -240,10 +240,12 @@ install:
         7z x -y android-ndk-${NDK_VERSION}-linux-x86_64.zip >/dev/null
       fi
   - |
-      if [ "$TRAVIS_OS_NAME" == "linux" -a "$TARGET" == "host" ]; then
+      if [ "$TRAVIS_OS_NAME" == "linux" -a "$TARGET" == "host" -o "$TARGET" == "windows-desktop" ]; then
         wget https://sourceforge.net/projects/avbuild/files/dep/libmfx.7z/download -O libmfx.7z
         7z x -y libmfx.7z -otools &>/dev/null
-        export PKG_CONFIG_PATH_MFX=$PWD/tools/linux64-gcc/lib/pkgconfig
+        if [ "$TARGET" == "host" ]; then
+          export PKG_CONFIG_PATH_MFX=$PWD/tools/linux64-gcc/lib/pkgconfig
+        fi
       fi
   - |
       if [ "$TARGET" == "raspberry-pi" -o "$TARGET" == "sunxi" ]; then

@@ -346,7 +346,7 @@ setup_win_clang(){
   EXTRA_LDFLAGS+=" -MACHINE:$Platform -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
   EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
   INSTALL_DIR="sdk-$2-$Platform-clang"
-
+  # pkgconf: check_func_headers() includes lflags "mfx.lib" which can not be in -c. fallbck to header and lib check.
   [ -n "$PKG_CONFIG_PATH_MFX" ] && which cygpath && PKG_CONFIG_PATH_MFX_UNIX=$(cygpath -u "$PKG_CONFIG_PATH_MFX") || PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] || PKG_CONFIG_PATH_MFX_UNIX=${PKG_CONFIG_PATH_MFX_UNIX/\/lib\/pkgconfig/$Platform\/lib\/pkgconfig}
   export PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
@@ -361,8 +361,8 @@ echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG
 
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat > "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
-export INCLUDE="$VCDIR/include;$INCLUDE"
-export LIB="$VCDIR/lib/$ONECORE/${arch/86_/}/$STORE;$WindowsSdkDir/Lib/$WindowsSDKVersion/ucrt/${arch/86_/};$WindowsSdkDir/Lib/$WindowsSDKVersion/um/${arch/86_/}"
+export INCLUDE="$VCDIR/include;$INCLUDE;$PKG_CONFIG_PATH_MFX_UNIX/../../include"
+export LIB="$VCDIR/lib/$ONECORE/${arch/86_/}/$STORE;$WindowsSdkDir/Lib/$WindowsSDKVersion/ucrt/${arch/86_/};$WindowsSdkDir/Lib/$WindowsSDKVersion/um/${arch/86_/};$PKG_CONFIG_PATH_MFX_UNIX/../../lib"
 export AR=$LLVM_AR
 export NM=$LLVM_NM
 export V=1 # FFmpeg BUG: AR is overriden in common.mak and becomes an invalid command in makedef(@printf is works in makefiles but not sh scripts)
@@ -663,7 +663,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
       fi
       CLANG_FLAGS+=" --target=armv7-none-linux-androideabi"
       EXTRA_CFLAGS+=" -march=armv7-a -mtune=cortex-a8 -mfloat-abi=softfp $EXTRA_CFLAGS_FPU" #-mcpu= is deprecated in gcc 3, use -mtune=cortex-a8 instead
-      EXTRA_LDFLAGS+=" -Wl,--fix-cortex-a8"
+      EXTRA_LDFLAGS+=" -Wl,--fix-cortex-a8" # TODO: not for lld
     fi
     ANDROID_ARCH=arm
   fi
@@ -751,6 +751,7 @@ setup_ios_env() {
     if [ "${IOS_ARCH:3:2}" == "64" ]; then
       ios_min=7.0
     else
+      TOOLCHAIN_OPT+=" --enable-thumb"
       # armv7 since 3.2, but ios10 sdk does not have crt1.o/crt1.3.1.o, use 6.0 is ok. but we add these files in tools/lib/ios5, so 5.0 and older is fine
       local sdk_crt1_o=`xcrun --show-sdk-path --sdk iphoneos`/usr/lib/crt1.o
       if [ -f $sdk_crt1_o -o -f $THIS_DIR/tools/lib/ios5/crt1.o ]; then
@@ -761,7 +762,6 @@ setup_ios_env() {
       fi
       sed -i $sed_bak '/^_swri_oldapi_conv_fltp_to_s16_2ch_neon:$/d;/^_swri_oldapi_conv_flt_to_s16_neon:$/d' "$FFSRC/libswresample/arm/audio_convert_neon.S" # breaks armv7 since ffmpeg b22db4f4. restore after build/kill?
     fi
-    TOOLCHAIN_OPT+=" --enable-thumb"
   else
     SYSROOT_SDK=iphonesimulator
     VER_OS=ios-simulator
