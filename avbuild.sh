@@ -359,13 +359,14 @@ echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG
   win10inc=(${win10inc[@]/#/$WindowsSdkDir/Include/$WindowsSDKVersion/})
   IFS=\; eval 'INCLUDE="${win10inc[*]}"'
 
+  sed -i $sed_bak 's,\(SLIB_CREATE_DEF_CMD[^ ]*\) \([^ ]*makedef.*\),\1 AR="\$(AR_CMD)" NM="\$(NM_CMD)" \2,g' "$FFSRC/configure"
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat > "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
 export INCLUDE="$VCDIR/include;$INCLUDE;$PKG_CONFIG_PATH_MFX_UNIX/../../include"
 export LIB="$VCDIR/lib/$ONECORE/${arch/86_/}/$STORE;$WindowsSdkDir/Lib/$WindowsSDKVersion/ucrt/${arch/86_/};$WindowsSdkDir/Lib/$WindowsSDKVersion/um/${arch/86_/};$PKG_CONFIG_PATH_MFX_UNIX/../../lib"
 export AR=$LLVM_AR
 export NM=$LLVM_NM
-export V=1 # FFmpeg BUG: AR is overriden in common.mak and becomes an invalid command in makedef(@printf is works in makefiles but not sh scripts)
+#export V=1 # FFmpeg BUG: AR is overriden in common.mak and becomes an invalid command in makedef(@printf works in makefiles but not sh scripts)
 EOF
   if [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ]; then
     cat >> "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
