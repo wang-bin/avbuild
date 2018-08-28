@@ -215,7 +215,7 @@ install:
         ./winsdk/lowercase.sh
         export WindowsSDKVersion=$(cat winsdk/.version)
         export WindowsSdkDir=$PWD/winsdk
-        export PKG_CONFIG_PATH_MFX=$PWD/tools/VS2017/lib/pkgconfig
+        export PKG_CONFIG_PATH_MFX=$PWD/tools/ClangCL/lib/pkgconfig
       fi
   - |
       if [ "$FF_VERSION" == "git" ]; then
