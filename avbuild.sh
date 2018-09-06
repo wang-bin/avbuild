@@ -373,6 +373,13 @@ echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG
   win10inc=(${win10inc[@]/#/$WindowsSdkDir/Include/$WindowsSDKVersion/})
   IFS=\; eval 'INCLUDE="${win10inc[*]}"'
 
+# change static lib name to %.a. lld-link can be used by both msvc(%.lib) target and mingw(%.a) target, it's impossible to tell the static lib. check target os instead
+# LD_LIB: as dll/exe dependencies, default is 'lib%.a' for lld-link
+  grep -q "patch win clang static lib" "$FFSRC/configure" || sed -i $sed_bak "/    win32|win64)/a\\
+\        LIBPREF= # patch win clang static lib\\
+\        LIBSUF=.lib\\
+\        LD_LIB='%.lib'\\
+" "$FFSRC/configure"
   sed -i $sed_bak 's,\(SLIB_CREATE_DEF_CMD[^ ]*\) \([^ ]*makedef.*\),\1 AR="\$(AR_CMD)" NM="\$(NM_CMD)" \2,g' "$FFSRC/configure"
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat > "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
