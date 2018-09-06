@@ -290,8 +290,9 @@ setup_win_clang(){
   : ${USE_TOOLCHAIN:=clang}
   setup_cc $USE_TOOLCHAIN
   USE_LD=$(${USE_TOOLCHAIN%-cl} -print-prog-name=lld-link) use_lld # lld 6.0 fixes undefined __enclave_config in msvcrt14.12. `lld -flavor link` just warns --version-script and results in link error
+  enable_pic=false
   use_llvm_binutils
-  #use_lld # --target=i386-pc-windows-msvc19.13.0 -fuse-ld=lld: must use with -Wl,
+  #use_lld # --target=i386-pc-windows-msvc -fuse-ld=lld: must use with -Wl,
   enable_lto=false # ffmpeg: "LTO requires same compiler and linker"
   # lto: link error if clang and lld version does not mach?
   # TODO: patch ffmpeg. ffmpeg disables lto (enabled by --enable-lto) if "$cc_type" != "$ld_type"
@@ -311,14 +312,17 @@ setup_win_clang(){
   [[ "$os" == win*phone ]] && WINPHONE=true
   : ${Platform:=$arch}
   platform=$(tolower $Platform)
+  MACHINE=$Platform
   if [ "${platform:0:3}" = "arm" ]; then
-  # FIXME: clang armv7 does not support as_fpu_directive, and the alternative '@ .fpu neon' is not supported by --target=arm-pc-windows-msvc19.13.0 does not support
+    USER_OPT+=" --disable-programs" # desktop apis are used if not targeting store
+    $IS_STORE || EXTRA_CFLAGS+=" -DWINAPI_FAMILY=WINAPI_FAMILY_APP" # app only, link to store libs or not
+  # FIXME: clang armv7 does not support as_fpu_directive, and the alternative '@ .fpu neon' is not supported by --target=arm-pc-windows-msvc does not support
     arch=$platform
-    ASM_OPT="--enable-thumb"
     [ -z "${platform/*64*/}" ] || {
-      ASM_OPT+=" --cpu=armv7-a"
+      MACHINE=arm
+      ASM_OPT+=" --enable-thumb --cpu=armv7-a"
       # clang: FPU error. gas: vfp error
-  #    TOOLCHAIN_OPT+=" --as='gas-preprocessor.pl -as-type clang -arch arm -- $USE_TOOLCHAIN'"
+      TOOLCHAIN_OPT+=" --as='$USE_TOOLCHAIN -target armv7-win32-gnu'" # gas-preprocessor.pl -as-type clang -arch arm -- $USE_TOOLCHAIN'"
     }
   elif [ -z "${Platform/*64/}" ]; then
     arch=x86_64
@@ -340,10 +344,20 @@ setup_win_clang(){
   # environment var LIB is used by lld-link, in windows style, i.e. export LIB=dir1;dir2;...
   # makedef: define env AR=llvm-ar, NM=llvm-nm
   # --windres=rc option is broken and not recognized
+  TARGET_TRIPLE=${target_tripple_arch}-${STORE:-${ONECORE:-pc}}-windows-msvc
+  [ "$MACHINE" == arm ] && {
+    # cflags is appended to as flags, but arm as target tripple must be gnu not msvc
+    TARGET_OPT=
+    TOOLCHAIN_OPT=${TOOLCHAIN_OPT//--cc=$USE_TOOLCHAIN/--cc=\'$USE_TOOLCHAIN -target $TARGET_TRIPLE\'}
+    USER_OPT=${USER_OPT//--cc=$USE_TOOLCHAIN/--cc=\'$USE_TOOLCHAIN -target $TARGET_TRIPLE\'}
+  } || {
+    TARGET_OPT="--target=$TARGET_TRIPLE"
+  }
   TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$arch $ASM_OPT --target-os=win32"
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
-  EXTRA_CFLAGS+=" $LTO_CFLAGS --target=${target_tripple_arch}-${STORE:-${ONECORE:-pc}}-windows-msvc19 -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
-  EXTRA_LDFLAGS+=" -MACHINE:$Platform -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
+  EXTRA_CFLAGS+=" $LTO_CFLAGS $TARGET_OPT -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
+  $FORCE_LTO || $enable_lto && EXTRA_LDFLAGS+=" -MACHINE:$MACHINE" # lto is compiled as ir but not coff object and lld can not determin thw target arch
+  EXTRA_LDFLAGS+=" -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
   EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
   INSTALL_DIR="sdk-$2-$Platform-clang"
   # pkgconf: check_func_headers() includes lflags "mfx.lib" which can not be in -c. fallbck to header and lib check.
@@ -363,7 +377,7 @@ echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat > "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
 export INCLUDE="$VCDIR/include;$INCLUDE;$PKG_CONFIG_PATH_MFX_UNIX/../../include"
-export LIB="$VCDIR/lib/$ONECORE/${arch/86_/}/$STORE;$WindowsSdkDir/Lib/$WindowsSDKVersion/ucrt/${arch/86_/};$WindowsSdkDir/Lib/$WindowsSDKVersion/um/${arch/86_/};$PKG_CONFIG_PATH_MFX_UNIX/../../lib"
+export LIB="$VCDIR/lib/$ONECORE/${MACHINE/86_/}/$STORE;$WindowsSdkDir/Lib/$WindowsSDKVersion/ucrt/${MACHINE/86_/};$WindowsSdkDir/Lib/$WindowsSDKVersion/um/${MACHINE/86_/};$PKG_CONFIG_PATH_MFX_UNIX/../../lib"
 export AR=$LLVM_AR
 export NM=$LLVM_NM
 #export V=1 # FFmpeg BUG: AR is overriden in common.mak and becomes an invalid command in makedef(@printf works in makefiles but not sh scripts)
@@ -509,12 +523,11 @@ setup_vc_winrt_env() {
   if [ "${platform:0:3}" = "arm" ]; then # TODO: arm64
     enable_pic=false  # TODO: ffmpeg bug, should filter out -fPIC. armasm(gas) error (unsupported option) if pic is
     type -a gas-preprocessor.pl
-    ASM_OPT="--enable-thumb"
     # vc only arm64_neon.h
     [ -z "${platform/*64*/}" ] && {
       BIT=64
       TOOLCHAIN_OPT+=" --disable-pic" # arm64 pic is enabled by: enabled spic && enable_weak pic
-    } || ASM_OPT+=" --cpu=armv7-a"
+    } || ASM_OPT+=" --enable-thumb --cpu=armv7-a"
     which cpp &>/dev/null && {
       ASM_OPT+=" --as=armasm$BIT"
     } || {

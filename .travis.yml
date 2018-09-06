@@ -55,6 +55,7 @@ matrix:
         - TARGET=windows-desktop
         - _CC=clang-8
         - LIB_OPT=--enable-static
+        - ARCHS="x86 x64 arm64"
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
@@ -73,7 +74,7 @@ matrix:
         - TARGET=windows-store
         - _CC=clang-8
         - LIB_OPT=--enable-static
-        - ARCHS="x64"
+        - ARCHS="x64 arm arm64"
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
@@ -86,13 +87,6 @@ matrix:
             - p7zip-full
             - nasm
             - yasm
-    - os: linux
-      compiler: clang
-      env:
-        - TARGET=windows-store
-        - _CC=clang-8
-        - ONECORE=onecore # prefer onecore
-        - ARCHS="x64"
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:

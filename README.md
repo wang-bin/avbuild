@@ -15,7 +15,7 @@ Lite build of FFmpeg release(4.0):
 Lite build of FFmpeg git:
 
 [Raspberry Pi](https://sourceforge.net/projects/avbuild/files/raspberry-pi/ffmpeg-git-raspberry-pi-clang-lite.tar.xz/download), [Android](https://sourceforge.net/projects/avbuild/files/android/ffmpeg-git-android-clang-lite.tar.xz/download), [iOS](https://sourceforge.net/projects/avbuild/files/iOS/ffmpeg-git-iOS-lite.tar.xz/download), [macOS](https://sourceforge.net/projects/avbuild/files/macOS/ffmpeg-git-macOS-lite.tar.xz/download), [Linux](https://sourceforge.net/projects/avbuild/files/linux/ffmpeg-git-linux-gcc-lite.tar.xz/download), 
-[MinGW](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-git-desktop-MINGW-lite.7z/download), [VS2017 Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-git-desktop-VS2017-lite.7z/download), [UWP](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-git-store-VS2017-lite.7z/download)
+[MinGW](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-git-desktop-MINGW-lite.7z/download), [VS2017 Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-git-desktop-VS2017-lite.7z/download), [UWP](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-git-store-VS2017-lite.7z/download), [Clang Windows Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-git-windows-desktop-clang-lite.tar.xz/download), [Clang UWP](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-git-windows-store-clang-lite.tar.xz/download)
 
 ***Build Details:***
 
