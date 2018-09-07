@@ -122,6 +122,11 @@ is_libav() {
   test -f "$FFSRC_TOOLS/avconv.c" && return 0 || return 1
 }
 
+BUILD_TOOLS=gcc
+host_is MinGW32 && BUILD_TOOLS=mingw-w64-i686-gcc
+host_is MinGW64 && BUILD_TOOLS=mingw-w64-x86_64-gcc
+host_is MinGW || host_is MSYS && echo "install msys2 packages: pacman -Sy --needed make diffutils gawk patch pkg-config nasm yasm $BUILD_TOOLS"
+
 android_arch(){
   # emulate hash in bash3
   local armv5=armeabi   # ${!armv5} is armeabi<=armeabi<=armv5
@@ -535,7 +540,7 @@ setup_vc_winrt_env() {
       BIT=64
       TOOLCHAIN_OPT+=" --disable-pic" # arm64 pic is enabled by: enabled spic && enable_weak pic
     } || ASM_OPT+=" --enable-thumb --cpu=armv7-a"
-    which cpp &>/dev/null && {
+    which cpp &>/dev/null && { # install gcc
       ASM_OPT+=" --as=armasm$BIT"
     } || {
       echo "ASM is disabled: cpp is required by gas-preprocessor but it is missing. make sure (mingw) gcc is in your PATH"
@@ -562,7 +567,6 @@ setup_mingw_env() {
     [[ $arch = *ar* ]] || arch=x86_$BIT
     arch=${arch/*_32/i686}
   fi
-  host_is MinGW || host_is MSYS && echo "install msys2 packages: pacman -Sy --needed diffutils gawk patch pkg-config mingw-w64-i686-gcc mingw-w64-x86_64-gcc nasm yasm"
   # msys2 /usr/bin/gcc is x86_64-pc-msys
   $gcc -dumpmachine |grep -iq mingw && {
     [ -z "$arch" ] && native_build=true || {
@@ -1232,7 +1236,7 @@ build_all(){
       [[ "$os" == "sunxi" ]] && archs=(armv7)
       [ "${os:0:5}" == "mingw" ] && archs=(x86 x86_64)
       [ "${os:0:2}" == "vc" -o "${os:0:3}" == "win" ] && archs=(x86 x64)
-      [[ "${os:0:5}" == "winrt" || "${os:0:3}" == "uwp" || "$os" == win*store* || "$os" == win*phone* ]] && archs=(x86 x64 arm)
+      [[ "${os:0:5}" == "winrt" || "${os:0:3}" == "uwp" || "$os" == win*store* || "$os" == win*phone* ]] && archs=(x86 x64 arm arm64)
       #[ "${os:0:5}" == "macos" ] && archs=(x86_64 i386)
     }
     echo ">>>>>archs: ${archs[@]}"
