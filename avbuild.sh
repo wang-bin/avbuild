@@ -211,8 +211,13 @@ probe_cc() {
     HAVE_LLD=true
   elif $IS_CLANG; then
     CFLAG_IWITHSYSROOT=$CFLAG_IWITHSYSROOT_CLANG
-    LLD=$($USE_TOOLCHAIN -print-prog-name=lld)
+    LLD=$($cc -print-prog-name=lld)
+    # check file existence?
     $LLD -flavor gnu -v >/dev/null && HAVE_LLD=true
+    $HAVE_LLD || {
+      LLD=$($cc -print-prog-name=ld.lld)
+      $LLD -flavor gnu -v >/dev/null && HAVE_LLD=true
+    }
   fi
   $IS_APPLE_CLANG && [ -f /usr/local/opt/llvm/bin/lld ] && HAVE_LLD=true
   echo "compiler is clang: $IS_CLANG, apple clang: $IS_APPLE_CLANG, cl: $IS_CLANG_CL, have lld: $HAVE_LLD"
@@ -629,13 +634,21 @@ setup_android_env() {
   local CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
   local FFARCH=$ANDROID_ARCH
   local API_LEVEL=${2#android}
-  [ -z "$API_LEVEL" ] && API_LEVEL=14 #api9: ensure do not use log2f in libm
+  [ -z "$API_LEVEL" ] && {
+    API_LEVEL=14 #api9: ensure do not use log2f in libm
+    while true; do
+      ls "$NDK_ROOT/platforms/android-$API_LEVEL"
+      [ -d "$NDK_ROOT/platforms/android-$API_LEVEL" ] && break
+      API_LEVEL=$((API_LEVEL+1))
+    done
+  }
   local UNIFIED_SYSROOT="$NDK_ROOT/sysroot"
   [ -d "$UNIFIED_SYSROOT" ] || UNIFIED_SYSROOT=
   add_elf_flags
   EXTRA_CFLAGS+=" -ffast-math -fstrict-aliasing"
 # -no-canonical-prefixes: results in "-mcpu= ", why?
   EXTRA_LDFLAGS+=" -Wl,-z,relro -Wl,-z,now"
+  TRY_FIX_CORTEX_A8=false
   # TODO: clang lto in r14 (gcc?) except aarch64
   if [ -z "${ANDROID_ARCH/*86/}" ]; then
     ANDROID_ARCH=x86
@@ -688,7 +701,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
       fi
       CLANG_FLAGS+=" --target=armv7-none-linux-androideabi"
       EXTRA_CFLAGS+=" -march=armv7-a -mtune=cortex-a8 -mfloat-abi=softfp $EXTRA_CFLAGS_FPU" #-mcpu= is deprecated in gcc 3, use -mtune=cortex-a8 instead
-      EXTRA_LDFLAGS+=" -Wl,--fix-cortex-a8" # TODO: not for lld
+      TRY_FIX_CORTEX_A8=true
     fi
     ANDROID_ARCH=arm
   fi
@@ -701,14 +714,22 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   gxx=`find ${ANDROID_TOOLCHAIN_DIR} -name "*g++*"` # can not use "*-gcc*": can be -gcc-ar, stdint-gcc.h
   clangxxs=(`find $NDK_ROOT/toolchains/llvm/prebuilt -name "clang++*"`) # can not be "clang*": clang-tidy
   clangxx=${clangxxs[0]}
-  echo "g++: $gxx, clang++: $clangxx IS_CLANG:$IS_CLANG"
+  ld_lld=${clangxx/clang++/ld.lld}
+  [ -f "$ld_lld" ] || ld_lld=
+  echo "g++: $gxx, clang++: $clangxx IS_CLANG:$IS_CLANG, ld_lld: $ld_lld"
   $IS_CLANG && probe_cc $clangxx || probe_cc $gxx
   ANDROID_TOOLCHAIN_DIR=${gxx%bin*}
   local ANDROID_LLVM_DIR=${clangxx%bin*}
   echo "ANDROID_TOOLCHAIN_DIR=${ANDROID_TOOLCHAIN_DIR}"
   echo "ANDROID_LLVM_DIR=${ANDROID_LLVM_DIR}"
   ANDROID_TOOLCHAIN_DIR_REL=${ANDROID_TOOLCHAIN_DIR#$NDK_ROOT}
-  LFLAGS_CLANG+=" -gcc-toolchain \$NDK_ROOT/$ANDROID_TOOLCHAIN_DIR_REL" # ld from gcc toolchain. TODO: lld?
+  [ -n "$ld_lld" ] && {
+    TRY_FIX_CORTEX_A8=false
+    LFLAGS_CLANG="-fuse-ld=lld -rtlib=compiler-rt" # use compiler-rt instead of default libgcc.a so -gcc-toolchain is not required
+  } || {
+    LFLAGS_CLANG+=" -gcc-toolchain \$NDK_ROOT/$ANDROID_TOOLCHAIN_DIR_REL" # ld from gcc toolchain. TODO: lld?
+  }
+  $TRY_FIX_CORTEX_A8 && EXTRA_LDFLAGS+=" -Wl,--fix-cortex-a8" # TODO: not for lld
   $FFGIT || [ "$ANDROID_ARCH" == "arm" ] && [[ $FFMAJOR <  4 ]] && CFLAGS_CLANG="-fno-integrated-as -gcc-toolchain \$NDK_ROOT/$ANDROID_TOOLCHAIN_DIR_REL $CFLAGS_CLANG" # Disable integrated-as for better compatibility, but need as from gcc toolchain. from ndk cmake
   local ANDROID_SYSROOT_LIB="$NDK_ROOT/platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
   local ANDROID_SYSROOT_LIB_REL="platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
