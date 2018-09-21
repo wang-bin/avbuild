@@ -5,7 +5,7 @@ cache:
   apt: true
   directories:
     - ffmpeg-$FF_VERSION
-    - android-ndk-${NDK_VERSION}/platforms/android-{14,21}
+    - android-ndk-${NDK_VERSION}/platforms/android-{16,21}
     - android-ndk-${NDK_VERSION}/toolchains/llvm
     - android-ndk-${NDK_VERSION}/toolchains/aarch64-linux-android-4.9
     - android-ndk-${NDK_VERSION}/toolchains/arm-linux-androideabi-4.9
@@ -24,12 +24,12 @@ matrix:
         - CC_VENDOR=apple
     - os: osx
       compiler: clang
-      osx_image: xcode9.4
+      osx_image: xcode10
       env:
         - TARGET=host
     - os: osx
       compiler: clang
-      osx_image: xcode9.4
+      osx_image: xcode10
       env:
         - TARGET=iOS
     - os: linux
@@ -126,17 +126,6 @@ matrix:
           packages:
             - clang
             - lld
-            - sshpass
-    - os: linux
-      compiler: gcc # host compiler is not used, just to tell build script to use which compiler to use from ndk. env: CC/CXX
-      env:
-        - TARGET=android
-      addons: #can be used in matrix, but required by every combination
-        apt:
-          packages:
-            - p7zip-full
-            - nasm
-            - yasm
             - sshpass
     - os: linux
       compiler: clang # host compiler is not used, just to tell build script to use which compiler to use from ndk. env: CC/CXX
