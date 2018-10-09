@@ -333,7 +333,7 @@ setup_win_clang(){
   platform=$(tolower $Platform)
   MACHINE=$Platform
   if [ "${platform:0:3}" = "arm" ]; then
-    USER_OPT+=" --disable-programs" # desktop apis are used if not targeting store
+    WIN_VER="0x0A00"
     $IS_STORE || EXTRA_CFLAGS+=" -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE=1"
   # FIXME: clang armv7 does not support as_fpu_directive, and the alternative '@ .fpu neon' is not supported by --target=arm-pc-windows-msvc does not support
     arch=$platform
