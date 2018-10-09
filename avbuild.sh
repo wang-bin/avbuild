@@ -190,6 +190,7 @@ HAVE_LLD=false
 LLVM_AR=llvm-ar
 LLVM_NM=llvm-nm
 LLVM_RANLIB=llvm-ranlib
+LLVM_STRIP=llvm-strip
 
 use_clang() {
   if [ -n "$CROSS_PREFIX" ]; then # TODO: "$CROSS_PREFIX" != $TARGET_TRIPLE
@@ -229,18 +230,24 @@ setup_cc() {
   TOOLCHAIN_OPT+=" --cc=$USE_TOOLCHAIN"
 }
 
+to_unix_path() {
+  which cygpath && cygpath -u "$1" || echo "$1"
+}
+
 use_llvm_binutils() {
   # use llvm-ar/ranlib, host ar/ranlib may not work for non-mac target(e.g. macOS)
   local clang_dir=${USE_TOOLCHAIN%clang*}
   local clang_name=${USE_TOOLCHAIN##*/}
   local clang=${USE_TOOLCHAIN%-cl}
-  local CLANG_FALLBACK=clang-6.0
+  local CLANG_FALLBACK=clang-7
   $IS_APPLE_CLANG && CLANG_FALLBACK=/usr/local/opt/llvm/bin/clang
-  which "`$clang -print-prog-name=llvm-ar`" &>/dev/null || clang=$CLANG_FALLBACK
-  which "`$clang -print-prog-name=llvm-ranlib`" &>/dev/null || clang=$CLANG_FALLBACK
+  # -print-prog-name= prints native dir format(on windows) and `which` fails
+  which "$(to_unix_path "`$clang -print-prog-name=llvm-ar`")" &>/dev/null || clang=$CLANG_FALLBACK
+  which "$(to_unix_path "`$clang -print-prog-name=llvm-ranlib`")" &>/dev/null || clang=$CLANG_FALLBACK
   which "$LLVM_AR" &>/dev/null || LLVM_AR="\$($clang -print-prog-name=llvm-ar)" #$clang_dir${clang_name/clang/llvm-ar}
   which "$LLVM_NM" &>/dev/null || LLVM_NM="\$($clang -print-prog-name=llvm-nm)" #$clang_dir${clang_name/clang/llvm-ar}
   which "$LLVM_RANLIB" &>/dev/null || LLVM_RANLIB="\$($clang -print-prog-name=llvm-ranlib)" #$clang_dir${clang_name/clang/llvm-ranlib}
+  which "$LLVM_STRIP" &>/dev/null || LLVM_STRIP="\$($clang -print-prog-name=llvm-strip)" #$clang_dir${clang_name/clang/llvm-strip}
   #EXTRA_LDFLAGS+=" -nodefaultlibs"; EXTRALIBS+=" -lc -lgcc_s"
   # TODO: apple clang invoke ld64. --ld=${CROSS_PREFIX}ld ldflags are different from cc ld flags
   TOOLCHAIN_OPT="--ar=$LLVM_AR --nm=$LLVM_NM --ranlib=$LLVM_RANLIB $TOOLCHAIN_OPT"
@@ -256,7 +263,7 @@ use_lld() {
   $LD_IS_LLD || {
     FUSE_LD="${USE_LD:=lld}"
     [[ "${USE_LD##*/}" == *lld* ]] || FUSE_LD=lld # not lld or lld-link
-    EXTRA_LDFLAGS="-s -fuse-ld=$FUSE_LD $EXTRA_LDFLAGS" # -s: strip flag passing to lld
+    EXTRA_LDFLAGS="-s -fuse-ld=$FUSE_LD $EXTRA_LDFLAGS" # -s: strip flag passing to lld. TODO: llvm-strip
     USER_OPT="--disable-stripping $USER_OPT"; # disable strip command because cross gcc may be not installed
   }
 }
@@ -325,7 +332,7 @@ setup_win_clang(){
   MACHINE=$Platform
   if [ "${platform:0:3}" = "arm" ]; then
     USER_OPT+=" --disable-programs" # desktop apis are used if not targeting store
-    $IS_STORE || EXTRA_CFLAGS+=" -DWINAPI_FAMILY=WINAPI_FAMILY_APP" # app only, link to store libs or not
+    $IS_STORE || EXTRA_CFLAGS+=" -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE=1"
   # FIXME: clang armv7 does not support as_fpu_directive, and the alternative '@ .fpu neon' is not supported by --target=arm-pc-windows-msvc does not support
     arch=$platform
     [ -z "${platform/*64*/}" ] || {
@@ -363,7 +370,7 @@ setup_win_clang(){
   } || {
     TARGET_OPT="--target=$TARGET_TRIPLE"
   }
-  TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$arch $ASM_OPT --target-os=win32"
+  TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$arch $ASM_OPT --target-os=win32 --disable-stripping"
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
   EXTRA_CFLAGS+=" $LTO_CFLAGS $TARGET_OPT -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
   $FORCE_LTO || $enable_lto && EXTRA_LDFLAGS+=" -MACHINE:$MACHINE" # lto is compiled as ir but not coff object and lld can not determin thw target arch
@@ -487,6 +494,12 @@ setup_vc_desktop_env() {
       [ $VS_VER -gt 10 ] && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.01'"
     fi
   fi
+  if [[ "$platform" == arm* ]]; then
+    WIN_VER="0x0A00"
+    EXTRA_CFLAGS+=" -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE=1"
+    TOOLCHAIN_OPT+=" --enable-cross-compile --target-os=win32"
+    setup_vc_common_env $@
+  fi
 }
 
 setup_winrt_env() {
@@ -536,6 +549,10 @@ setup_winrt_env() {
 
 setup_vc_winrt_env() {
   setup_winrt_env $@
+  setup_vc_common_env $@
+}
+
+setup_vc_common_env() {
   local arch=x86_64 #used by configure --arch
   if [ "${platform:0:3}" = "arm" ]; then # TODO: arm64
     enable_pic=false  # TODO: ffmpeg bug, should filter out -fPIC. armasm(gas) error (unsupported option) if pic is
@@ -637,7 +654,6 @@ setup_android_env() {
   [ -z "$API_LEVEL" ] && {
     API_LEVEL=14 #api9: ensure do not use log2f in libm
     while true; do
-      ls "$NDK_ROOT/platforms/android-$API_LEVEL"
       [ -d "$NDK_ROOT/platforms/android-$API_LEVEL" ] && break
       API_LEVEL=$((API_LEVEL+1))
     done
