@@ -1,5 +1,8 @@
 /ffmpeg*
+/FFmpeg*
 /libav*
 build_*/
 sdk-*/
 sysroot
+/winsdk*
+/msvc*

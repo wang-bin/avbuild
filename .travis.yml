@@ -55,7 +55,6 @@ matrix:
         - TARGET=windows-desktop
         - _CC=clang-8
         - LIB_OPT=--enable-static
-        - ARCHS="x86 x64 arm64"
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
