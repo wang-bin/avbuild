@@ -52,10 +52,6 @@ trap "kill -- -$$; rm -rf $THIS_DIR/.dir exit 3" SIGTERM SIGINT SIGKILL
 
 export PATH_EXTRA="$PWD/tools/gas-preprocessor"
 export PATH=$PWD/tools/gas-preprocessor:$PATH
-if [ -f "$PWD/tools/nv-codec-headers/ffnvcodec.pc.in" ]; then
-  sed 's/\(prefix=\).*/\1\${pcfiledir\}/' tools/nv-codec-headers/ffnvcodec.pc.in >tools/nv-codec-headers/ffnvcodec.pc
-  export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PWD/tools/nv-codec-headers
-fi
 
 echo FFSRC=$FFSRC
 [ -f $FFSRC/configure ] && {
@@ -191,6 +187,12 @@ LLVM_AR=llvm-ar
 LLVM_NM=llvm-nm
 LLVM_RANLIB=llvm-ranlib
 LLVM_STRIP=llvm-strip
+
+if [ -f "$PWD/tools/nv-codec-headers/ffnvcodec.pc.in" ]; then
+  sed 's/\(prefix=\).*/\1\${pcfiledir\}/' tools/nv-codec-headers/ffnvcodec.pc.in >tools/nv-codec-headers/ffnvcodec.pc
+  export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PWD/tools/nv-codec-headers
+  sed -i $sed_bak 's/LOAD_SYMBOL(cuGLGetDevices\(.*\)/LOAD_SYMBOL_OPT(cuGLGetDevices\1/' tools/nv-codec-headers/include/ffnvcodec/dynlink_loader.h # cuda8 api, never used
+fi
 
 use_clang() {
   if [ -n "$CROSS_PREFIX" ]; then # TODO: "$CROSS_PREFIX" != $TARGET_TRIPLE
