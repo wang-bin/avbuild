@@ -1,0 +1,102 @@
+version: 2
+
+custom-steps:
+  - &install-clang
+    run:
+      name: install dev tools and dependencies
+      command: |
+        wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key |apt-key add -
+        apt update
+        apt install -y software-properties-common # for add-apt-repository, ubuntu-tooolchain-r-test is required by trusty
+        apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main"
+        apt install -y clang-8 lld-8
+  - &install-dev
+    run:
+      name: install dev packages
+      command: |
+        apt install -y libstdc++-7-dev p7zip-full nasm yasm libxv-dev libva-dev libvdpau-dev libbz2-dev zlib1g-dev sshpass
+  - &get-ffmpeg
+    run:
+      name: get ffmpeg source
+      command: |
+        if [ "$FF_VERSION" == "git" ]; then
+          if [ -f ffmpeg-${FF_VERSION}/configure ]; then
+            cd ffmpeg-${FF_VERSION}
+            git reset --hard HEAD
+            git fetch
+            git checkout origin/wang
+            cd -
+          else
+            git clone --depth 1 --no-tags -b wang https://github.com/wang-bin/FFmpeg.git ffmpeg-${FF_VERSION}
+          fi
+        fi
+        if [ ! -f ffmpeg-${FF_VERSION}/configure ]; then
+          wget http://ffmpeg.org/releases/ffmpeg-${FF_VERSION}.tar.bz2
+          tar jxf ffmpeg-${FF_VERSION}.tar.bz2
+        fi
+        wget https://sourceforge.net/projects/avbuild/files/dep/libmfx.7z/download -O libmfx.7z
+        7z x -y libmfx.7z -otools &>/dev/null
+  - &upload
+    run:
+      name: upload
+      command: |
+        mv sdk-* ffmpeg-${FF_VERSION}-linux-${COMPILER}${CONFIG_SUFFIX}
+        tar Jcf ffmpeg-${FF_VERSION}-linux-${COMPILER}${CONFIG_SUFFIX}{.tar.xz,}
+        ls -lh *.xz
+        sshpass -p $SF_PW scp -o StrictHostKeyChecking=no ffmpeg-${FF_VERSION}-linux*.tar.xz $SF_USER,avbuild@frs.sourceforge.net:/home/frs/project/a/av/avbuild/${TARGET_OS}
+
+jobs:
+  build_gcc:
+    docker:
+      - image: buildpack-deps:bionic #ubuntu:18.04 install git etc.
+    environment:
+      COMPILER: gcc
+      TARGET_OS: "linux"
+    steps:
+      - checkout
+      - run: git submodule update --init --recursive
+      - run:
+          name: Install GCC
+          command: |
+            apt update
+            apt install -y  gcc
+      - *install-dev
+      - *get-ffmpeg
+      - run:
+          name: Configure and Build
+          command: |
+            if [ -n "${CONFIG_SUFFIX}" ]; then
+              ln -sf config{${CONFIG_SUFFIX},}.sh;
+            fi
+            export PKG_CONFIG_PATH_MFX=$PWD/tools/linux64-gcc/lib/pkgconfig
+            export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+            ./avbuild.sh
+      - *upload
+  build_clang:
+    docker:
+      - image: buildpack-deps:bionic #ubuntu:18.04 install git etc.
+    environment:
+      COMPILER: clang
+      TARGET_OS: "linux"
+    steps:
+      - checkout
+      - run: git submodule update --init --recursive
+      - *install-clang
+      - *install-dev
+      - *get-ffmpeg
+      - run:
+          name: Configure and Build
+          command: |
+            if [ -n "${CONFIG_SUFFIX}" ]; then
+              ln -sf config{${CONFIG_SUFFIX},}.sh;
+            fi
+            export PKG_CONFIG_PATH_MFX=$PWD/tools/linux64-gcc/lib/pkgconfig
+            export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+            USE_TOOLCHAIN=clang-8 ./avbuild.sh
+      - *upload
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build_gcc
+      - build_clang
