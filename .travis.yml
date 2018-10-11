@@ -152,6 +152,7 @@ matrix:
             - p7zip-full
             - nasm
             - yasm
+            - libxv-dev # required by ffmpeg libva-x11
             - libva-dev
             - libvdpau-dev
             - sshpass
@@ -172,6 +173,7 @@ matrix:
             - p7zip-full
             - nasm
             - yasm
+            - libxv-dev # required by ffmpeg libva-x11
             - libva-dev
             - libvdpau-dev
             - sshpass
