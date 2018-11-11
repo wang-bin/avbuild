@@ -363,7 +363,7 @@ setup_win_clang(){
   # environment var LIB is used by lld-link, in windows style, i.e. export LIB=dir1;dir2;...
   # makedef: define env AR=llvm-ar, NM=llvm-nm
   # --windres=rc option is broken and not recognized
-  TARGET_TRIPLE=${target_tripple_arch}-${STORE:-${ONECORE:-pc}}-windows-msvc
+  TARGET_TRIPLE=${target_tripple_arch}-windows-msvc # lto default vendor is empty, fix lld-link: warning: Linking two modules of different target triples
   [ "$MACHINE" == arm ] && {
     # cflags is appended to as flags, but arm as target tripple must be gnu not msvc
     TARGET_OPT=
@@ -718,7 +718,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
         EXTRA_CFLAGS_FPU="-mfpu=neon"
         CFLAGS_GCC+=" -mvectorize-with-neon-quad"
       fi
-      CLANG_FLAGS+=" --target=armv7-none-linux-androideabi"
+      CLANG_FLAGS+=" --target=armv7a-linux-androideabi" # TODO: api level suffix, and not manually set platform dir?
       EXTRA_CFLAGS+=" -march=armv7-a -mtune=cortex-a8 -mfloat-abi=softfp $EXTRA_CFLAGS_FPU" #-mcpu= is deprecated in gcc 3, use -mtune=cortex-a8 instead
       TRY_FIX_CORTEX_A8=true
     fi
@@ -753,6 +753,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   $FFGIT || [ "$ANDROID_ARCH" == "arm" ] && [[ $FFMAJOR <  4 ]] && CFLAGS_CLANG="-fno-integrated-as -gcc-toolchain \$NDK_ROOT/$ANDROID_TOOLCHAIN_DIR_REL $CFLAGS_CLANG" # Disable integrated-as for better compatibility, but need as from gcc toolchain. from ndk cmake
   local ANDROID_SYSROOT_LIB="$NDK_ROOT/platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
   local ANDROID_SYSROOT_LIB_REL="platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
+  # TODO: new clang can find sysroot automatically
   if [ -d "$UNIFIED_SYSROOT" ]; then
     [ $API_LEVEL -lt 21 ] && PATCH_MMAP="void* mmap(void*, size_t, int, int, int, __kernel_off_t);"
     ANDROID_SYSROOT_REL=sysroot
@@ -817,7 +818,7 @@ setup_ios_env() {
     if [ "${IOS_ARCH:3:2}" == "64" ]; then
       ios_min=7.0
     else
-      TOOLCHAIN_OPT+=" --enable-thumb"
+      TOOLCHAIN_OPT+=" --disable-thumb"
       # armv7 since 3.2, but ios10 sdk does not have crt1.o/crt1.3.1.o, use 6.0 is ok. but we add these files in tools/lib/ios5, so 5.0 and older is fine
       local sdk_crt1_o=`xcrun --show-sdk-path --sdk iphoneos`/usr/lib/crt1.o
       if [ -f $sdk_crt1_o -o -f $THIS_DIR/tools/lib/ios5/crt1.o ]; then
@@ -1210,6 +1211,7 @@ config1(){
         sed -i $sed_bak 's/\(#define MAX_SLICES\) .*/\1 64/' $FFSRC/libavcodec/h264dec.h
       fi
     fi
+    # FIXME: not atomic, lock, or move to windows only
     if ! `grep -q SETDLLDIRECTORY_PATCHED $FFSRC_TOOLS/cmdutils.c`; then # cl, clang and clang-cl
       sed -i $sed_bak "/SetDllDirectory(\"\")/i\\
 \#if (_WIN32_WINNT+0) >= 0x0502  \/\/SETDLLDIRECTORY_PATCHED\\
