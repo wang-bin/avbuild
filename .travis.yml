@@ -36,15 +36,15 @@ matrix:
       compiler: clang
       env:
         - TARGET=windows-desktop
-        - _CC=clang-8
+        - _CC=clang-7
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
-            - llvm-toolchain-trusty
+            - llvm-toolchain-trusty-7
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
-            - clang
-            - lld
+            - clang-7
+            - lld-7
             - sshpass
             - p7zip-full
             - nasm
@@ -53,16 +53,16 @@ matrix:
       compiler: clang
       env:
         - TARGET=windows-desktop
-        - _CC=clang-8
+        - _CC=clang-7
         - LIB_OPT=--enable-static
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
-            - llvm-toolchain-trusty
+            - llvm-toolchain-trusty-7
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
-            - clang
-            - lld
+            - clang-7
+            - lld-7
             - sshpass
             - p7zip-full
             - nasm
@@ -71,29 +71,17 @@ matrix:
       compiler: clang
       env:
         - TARGET=windows-store
-        - _CC=clang-8
+        - _CC=clang-7
         - LIB_OPT=--enable-static
         - ARCHS="x64 arm arm64"
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
-            - llvm-toolchain-trusty
+            - llvm-toolchain-trusty-7
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
-            - clang
-            - lld
-            - sshpass
-            - p7zip-full
-            - nasm
-            - yasm
-      addons: #can be used in matrix, but required by every combination
-        apt:
-          sources:
-            - llvm-toolchain-trusty
-            - ubuntu-toolchain-r-test # llvm6.0 dep
-          packages:
-            - clang
-            - lld
+            - clang-7
+            - lld-7
             - sshpass
             - p7zip-full
             - nasm
