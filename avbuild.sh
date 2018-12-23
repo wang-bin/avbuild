@@ -375,7 +375,7 @@ setup_win_clang(){
   }
   TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$arch $ASM_OPT --target-os=win32 --disable-stripping"
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
-  EXTRA_CFLAGS+=" $LTO_CFLAGS $TARGET_OPT -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
+  EXTRA_CFLAGS+=" -cfguard $LTO_CFLAGS $TARGET_OPT -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
   $FORCE_LTO || $enable_lto && EXTRA_LDFLAGS+=" -MACHINE:$MACHINE" # lto is compiled as ir but not coff object and lld can not determin thw target arch
   EXTRA_LDFLAGS+=" -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
   EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
@@ -425,10 +425,13 @@ EOF
 setup_vc_env() {
   local arch=$1
   local osver=$2
+  grep -q "guard:cf is not recognized by armasm" "$FFSRC/configure" || sed -i $sed_bak "/-M\[TD\]\*)/a\\
+\            -guard*)                                            ;; # -guard:cf is not recognized by armasm\\
+" "$FFSRC/configure"
   echo Call "set MSYS2_PATH_TYPE=inherit" before msys2 sh.exe if cl.exe is not found!
   enable_lto=false # ffmpeg requires DCE, while vc with LTCG (-GL) does not support DCE
   # dylink crt
-  EXTRA_CFLAGS+=" -MD"
+  EXTRA_CFLAGS+=" -MD -guard:cf"
   EXTRA_LDFLAGS+=" -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
   TOOLCHAIN_OPT+=" --toolchain=msvc"
   VS_VER=${VisualStudioVersion:0:2}
