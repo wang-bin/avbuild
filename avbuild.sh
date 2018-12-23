@@ -8,6 +8,7 @@
 # TODO: link warning as error when checking ld flags. vc/lld-link: -WX
 # TODO: cc_flags, linker_flags(linker only), os_flags, os_cc_flags, os_linker_flags, cc_linker_flags+=$(prepend_Wl linker_flags)
 # remove -Wl, if LD_IS_LLD
+# clang-cl == clang --driver_mode=cl
 
 #PS4='+ $(gdate "+%s.%N")\011 '
 #exec 3>&2 2>/tmp/bashstart.$$.log
@@ -387,6 +388,10 @@ setup_win_clang(){
 echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX
   enable_libmfx
 
+  [ -f "$WindowsSdkDir/Include/$WindowsSDKVersion/um/WINDOWS.H" ] || { # case sensitive file system
+  echo "CASE SENSITIVE FS!!!!!!!"
+    [ -f "$WindowsSdkDir/vfs.yaml" ] && EXTRA_CFLAGS+=" -Xclang -ivfsoverlay -Xclang \\\"\$WindowsSdkDir/vfs.yaml\\\""
+  }
   # vcrt and win sdk dirs
   win10inc=(shared ucrt um winrt)
   win10inc=(${win10inc[@]/#/$WindowsSdkDir/Include/$WindowsSDKVersion/})
