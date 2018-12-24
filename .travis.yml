@@ -36,15 +36,15 @@ matrix:
       compiler: clang
       env:
         - TARGET=windows-desktop
-        - _CC=clang-7
+        - _CC=clang-8
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
-            - llvm-toolchain-trusty-7
+            - llvm-toolchain-trusty
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
-            - clang-7
-            - lld-7
+            - clang-8
+            - lld-8
             - sshpass
             - p7zip-full
             - nasm
@@ -53,16 +53,17 @@ matrix:
       compiler: clang
       env:
         - TARGET=windows-desktop
-        - _CC=clang-7
+        - _CC=clang-8
         - LIB_OPT=--enable-static
+        - ARCHS="x86 x64"
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
-            - llvm-toolchain-trusty-7
+            - llvm-toolchain-trusty
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
-            - clang-7
-            - lld-7
+            - clang-8
+            - lld-8
             - sshpass
             - p7zip-full
             - nasm
@@ -71,17 +72,17 @@ matrix:
       compiler: clang
       env:
         - TARGET=windows-store
-        - _CC=clang-7
+        - _CC=clang-8
         - LIB_OPT=--enable-static
-        - ARCHS="x64 arm arm64"
+        - ARCHS="x86 x64"
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
-            - llvm-toolchain-trusty-7
+            - llvm-toolchain-trusty
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
-            - clang-7
-            - lld-7
+            - clang-8
+            - lld-8
             - sshpass
             - p7zip-full
             - nasm

@@ -533,7 +533,7 @@ setup_winrt_env() {
     fi
   fi
   #http://fate.libav.org/arm-msvc-14-wp
-  disable_opt programs
+  disable_opt programs avdevice
   TOOLCHAIN_OPT+=" --enable-cross-compile --target-os=win32"
   EXTRA_LDFLAGS+=" -APPCONTAINER"
   WIN_VER="0x0A00"
@@ -555,7 +555,7 @@ setup_winrt_env() {
   # uwp: can use onecoreuap.lib
     EXTRA_LDFLAGS+=" WindowsApp.lib"
   fi
-  EXTRA_CFLAGS+=" -DWINAPI_FAMILY=WINAPI_FAMILY${FAMILY}_APP"
+  EXTRA_CFLAGS+=" -DWINAPI_FAMILY=WINAPI_FAMILY${FAMILY}_APP -DUNICODE -D_UNICODE" #-EHsc"
 }
 
 setup_vc_winrt_env() {
@@ -1286,7 +1286,7 @@ build_all(){
       [ "${os:0:3}" == "rpi" -o "${os:0:9}" == "raspberry" ] && archs=(armv6zk armv7-a)
       [[ "$os" == "sunxi" ]] && archs=(armv7)
       [ "${os:0:5}" == "mingw" ] && archs=(x86 x86_64)
-      [ "${os:0:2}" == "vc" -o "${os:0:3}" == "win" ] && archs=(x86 x64 arm64)
+      [ "${os:0:2}" == "vc" -o "${os:0:3}" == "win" ] && archs=(x86 x64 arm arm64)
       [[ "${os:0:5}" == "winrt" || "${os:0:3}" == "uwp" || "$os" == win*store* || "$os" == win*phone* ]] && archs=(x86 x64 arm arm64)
       #[ "${os:0:5}" == "macos" ] && archs=(x86_64 i386)
     }
