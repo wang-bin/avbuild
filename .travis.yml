@@ -1,3 +1,4 @@
+# TODO: xenial, windows. https://docs.travis-ci.com/user/reference/windows/
 language: cpp
 sudo: false
 dist: trusty
@@ -24,12 +25,12 @@ matrix:
         - CC_VENDOR=apple
     - os: osx
       compiler: clang
-      osx_image: xcode10
+      osx_image: xcode10.1
       env:
         - TARGET=host
     - os: osx
       compiler: clang
-      osx_image: xcode10
+      osx_image: xcode10.1
       env:
         - TARGET=iOS
     - os: linux
