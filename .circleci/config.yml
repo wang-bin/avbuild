@@ -9,7 +9,7 @@ custom-steps:
         apt update
         apt install -y software-properties-common # for add-apt-repository, ubuntu-tooolchain-r-test is required by trusty
         apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main"
-        apt install -y clang-8 lld-8
+        apt install -y clang-9 lld-9
   - &install-dev
     run:
       name: install dev packages
@@ -92,7 +92,7 @@ jobs:
             fi
             export PKG_CONFIG_PATH_MFX=$PWD/tools/linux64-gcc/lib/pkgconfig
             export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-            USE_TOOLCHAIN=clang-8 ./avbuild.sh
+            USE_TOOLCHAIN=clang-9 ./avbuild.sh
       - *upload
 workflows:
   version: 2

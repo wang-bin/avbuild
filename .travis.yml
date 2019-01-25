@@ -23,6 +23,11 @@ matrix:
       env:
         - TARGET=raspberry-pi
         - CC_VENDOR=apple
+#      addons:
+#        homebrew:
+#          packages:
+#          - beanstalk
+#          update: true
     - os: osx
       compiler: clang
       osx_image: xcode10.1
@@ -37,15 +42,15 @@ matrix:
       compiler: clang
       env:
         - TARGET=windows-desktop
-        - _CC=clang-8
+        - _CC=clang-9
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
             - llvm-toolchain-trusty
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
-            - clang-8
-            - lld-8
+            - clang-9
+            - lld-9
             - sshpass
             - p7zip-full
             - nasm
@@ -54,7 +59,7 @@ matrix:
       compiler: clang
       env:
         - TARGET=windows-desktop
-        - _CC=clang-8
+        - _CC=clang-9
         - LIB_OPT=--enable-static
         - ARCHS="x86 x64"
       addons: #can be used in matrix, but required by every combination
@@ -63,8 +68,8 @@ matrix:
             - llvm-toolchain-trusty
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
-            - clang-8
-            - lld-8
+            - clang-9
+            - lld-9
             - sshpass
             - p7zip-full
             - nasm
@@ -73,7 +78,7 @@ matrix:
       compiler: clang
       env:
         - TARGET=windows-store
-        - _CC=clang-8
+        - _CC=clang-9
         - LIB_OPT=--enable-static
         - ARCHS="x86 x64"
       addons: #can be used in matrix, but required by every combination
@@ -82,8 +87,8 @@ matrix:
             - llvm-toolchain-trusty
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
-            - clang-8
-            - lld-8
+            - clang-9
+            - lld-9
             - sshpass
             - p7zip-full
             - nasm
@@ -92,29 +97,29 @@ matrix:
       compiler: clang
       env:
         - TARGET=raspberry-pi
-        - _CC=clang-8
+        - _CC=clang-9
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
             - llvm-toolchain-trusty
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
-            - clang
-            - lld
+            - clang-9
+            - lld-9
             - sshpass
     - os: linux
       compiler: clang
       env:
         - TARGET=sunxi
-        - _CC=clang-8
+        - _CC=clang-9
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
             - llvm-toolchain-trusty
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
-            - clang
-            - lld
+            - clang-9
+            - lld-9
             - sshpass
     - os: linux
       compiler: clang # host compiler is not used, just to tell build script to use which compiler to use from ndk. env: CC/CXX
