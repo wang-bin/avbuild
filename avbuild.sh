@@ -1,10 +1,8 @@
 #!/bin/bash
-# TODO: -flto=nb_cpus. lto with static build (except android)
+# TODO: -flto=nb_cpus, thin lto
 # https://wiki.debian.org/Hardening#DEB_BUILD_HARDENING_RELRO_.28ld_-z_relro.29
-# onecore for store apps
 # TODO: os arch-cc(e.g. winxp x86-gcc, winstore10 x86, win10 x64-clang, gcc is mingw or cygwin etc. depending on host env)
 # lld supports win res files? https://github.com/llvm-mirror/lld/blob/master/docs/windows_support.rst
-# ios: -fomit-frame-pointer  is not supported for target 'armv7'. check_cflags -Werror
 # TODO: link warning as error when checking ld flags. vc/lld-link: -WX
 # TODO: cc_flags, linker_flags(linker only), os_flags, os_cc_flags, os_linker_flags, cc_linker_flags+=$(prepend_Wl linker_flags)
 # remove -Wl, if LD_IS_LLD

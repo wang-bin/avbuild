@@ -9,7 +9,7 @@ custom-steps:
         apt update
         apt install -y software-properties-common # for add-apt-repository, ubuntu-tooolchain-r-test is required by trusty
         apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main"
-        apt install -y clang-9 lld-9
+        apt install -y binutils-arm-linux-gnueabihf clang-${LLVM_VER} lld-${LLVM_VER} clang-tools-${LLVM_VER} # clang-tools: clang-cl
   - &install-dev
     run:
       name: install dev packages
@@ -34,16 +34,15 @@ custom-steps:
           wget http://ffmpeg.org/releases/ffmpeg-${FF_VERSION}.tar.bz2
           tar jxf ffmpeg-${FF_VERSION}.tar.bz2
         fi
-        wget https://sourceforge.net/projects/avbuild/files/dep/libmfx.7z/download -O libmfx.7z
-        7z x -y libmfx.7z -otools &>/dev/null
   - &upload
     run:
       name: upload
       command: |
-        mv sdk-* ffmpeg-${FF_VERSION}-linux-${COMPILER}${CONFIG_SUFFIX}
-        tar Jcf ffmpeg-${FF_VERSION}-linux-${COMPILER}${CONFIG_SUFFIX}{.tar.xz,}
+        LTO_SUFFIX=$(${FORCE_LTO:=false} && echo -lto)
+        mv sdk-* ffmpeg-${FF_VERSION}-${TARGET_OS}-${COMPILER}${CONFIG_SUFFIX}${LTO_SUFFIX}
+        tar Jcf ffmpeg-${FF_VERSION}-${TARGET_OS}-${COMPILER}${CONFIG_SUFFIX}${LTO_SUFFIX}{.tar.xz,}
         ls -lh *.xz
-        sshpass -p $SF_PW scp -o StrictHostKeyChecking=no ffmpeg-${FF_VERSION}-linux*.tar.xz $SF_USER,avbuild@frs.sourceforge.net:/home/frs/project/a/av/avbuild/${TARGET_OS}
+        sshpass -p $SF_PW scp -o StrictHostKeyChecking=no ffmpeg-${FF_VERSION}-${TARGET_OS}*.tar.xz $SF_USER,avbuild@frs.sourceforge.net:/home/frs/project/a/av/avbuild/${TARGET_OS}
 
 jobs:
   build_gcc:
@@ -68,6 +67,8 @@ jobs:
             if [ -n "${CONFIG_SUFFIX}" ]; then
               ln -sf config{${CONFIG_SUFFIX},}.sh;
             fi
+            wget https://sourceforge.net/projects/avbuild/files/dep/libmfx.7z/download -O libmfx.7z
+            7z x -y libmfx.7z -otools &>/dev/null
             export PKG_CONFIG_PATH_MFX=$PWD/tools/linux64-gcc/lib/pkgconfig
             export FFSRC=$PWD/ffmpeg-${FF_VERSION}
             ./avbuild.sh
@@ -90,13 +91,74 @@ jobs:
             if [ -n "${CONFIG_SUFFIX}" ]; then
               ln -sf config{${CONFIG_SUFFIX},}.sh;
             fi
+            wget https://sourceforge.net/projects/avbuild/files/dep/libmfx.7z/download -O libmfx.7z
+            7z x -y libmfx.7z -otools &>/dev/null
             export PKG_CONFIG_PATH_MFX=$PWD/tools/linux64-gcc/lib/pkgconfig
             export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-            USE_TOOLCHAIN=clang-9 ./avbuild.sh
+            USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh
       - *upload
+
+  build_rpi:
+    docker:
+      - image: buildpack-deps:bionic #ubuntu:18.04 install git etc.
+    environment:
+      COMPILER: clang
+      TARGET_OS: "raspberry-pi"
+    steps:
+      - checkout
+      - run: git submodule update --init --recursive
+      - *install-clang
+      - *install-dev
+      - *get-ffmpeg
+      - run:
+          name: Install sysroot
+          command: |
+            wget https://sourceforge.net/projects/avbuild/files/${TARGET_OS}/${TARGET_OS/r*pi/rpi}-sysroot.tar.xz/download -O sysroot.tar.xz
+            tar Jxf sysroot.tar.xz
+      - run:
+          name: Configure and Build
+          command: |
+            if [ -n "${CONFIG_SUFFIX}" ]; then
+              ln -sf config{${CONFIG_SUFFIX},}.sh;
+            fi
+            export SYSROOT=$PWD/sysroot
+            export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+            USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh ${TARGET_OS}
+      - *upload
+
+  build_sunxi:
+    docker:
+      - image: buildpack-deps:bionic #ubuntu:18.04 install git etc.
+    environment:
+      COMPILER: clang
+      TARGET_OS: "sunxi"
+    steps:
+      - checkout
+      - run: git submodule update --init --recursive
+      - *install-clang
+      - *install-dev
+      - *get-ffmpeg
+      - run:
+          name: Install sysroot
+          command: |
+            wget https://sourceforge.net/projects/avbuild/files/${TARGET_OS}/${TARGET_OS/r*pi/rpi}-sysroot.tar.xz/download -O sysroot.tar.xz
+            tar Jxf sysroot.tar.xz
+      - run:
+          name: Configure and Build
+          command: |
+            if [ -n "${CONFIG_SUFFIX}" ]; then
+              ln -sf config{${CONFIG_SUFFIX},}.sh;
+            fi
+            export SYSROOT=$PWD/sysroot
+            export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+            USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh ${TARGET_OS}
+      - *upload
+
 workflows:
   version: 2
   build_and_test:
     jobs:
       - build_gcc
       - build_clang
+      - build_rpi
+      - build_sunxi
