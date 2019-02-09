@@ -660,12 +660,10 @@ setup_android_env() {
   local CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
   local FFARCH=$ANDROID_ARCH
   local API_LEVEL=${2#android}
+  local NDK_VER=`grep Revision $NDK_ROOT/source.properties |cut -d ' ' -f 3 |cut -d '.' -f 1`
   [ -z "$API_LEVEL" ] && {
-    API_LEVEL=14 #api9: ensure do not use log2f in libm
-    while true; do
-      [ -d "$NDK_ROOT/platforms/android-$API_LEVEL" ] && break
-      API_LEVEL=$((API_LEVEL+1))
-    done
+    API_LEVEL=14
+    [ $NDK_VER -gt 17 ] && API_LEVEL=16
   }
   local UNIFIED_SYSROOT="$NDK_ROOT/sysroot"
   [ -d "$UNIFIED_SYSROOT" ] || UNIFIED_SYSROOT=
@@ -679,7 +677,7 @@ setup_android_env() {
     ANDROID_ARCH=x86
     TRIPLE_ARCH=i686
     ANDROID_TOOLCHAIN_PREFIX=$ANDROID_ARCH
-    CLANG_FLAGS+=" --target=i686-none-linux-android"
+    CLANG_TARGET="i686-none-linux-android"
     # from ndk: x86 devices have stack alignment issues.
     # clang error: inline assembly requires more registers than available ("movzbl "statep"    , "ret")
     CFLAGS_GCC+=" -mstackrealign"
@@ -689,14 +687,14 @@ setup_android_env() {
     ANDROID_ARCH=x86_64
     TRIPLE_ARCH=$ANDROID_ARCH
     ANDROID_TOOLCHAIN_PREFIX=$ANDROID_ARCH
-    CLANG_FLAGS+=" --target=x86_64-none-linux-android"
+    CLANG_TARGET="x86_64-none-linux-android"
     enable_lto=false
   elif [ -z "${ANDROID_ARCH/a*r*64/}" ]; then
     [ $API_LEVEL -lt 21 ] && API_LEVEL=21
     ANDROID_ARCH=arm64
     TRIPLE_ARCH=aarch64
     ANDROID_TOOLCHAIN_PREFIX=${TRIPLE_ARCH}-linux-android
-    CLANG_FLAGS+=" --target=aarch64-none-linux-android"
+    CLANG_TARGET="aarch64-none-linux-android"
   elif [ -z "${ANDROID_ARCH/*arm*/}" ]; then
 #https://wiki.debian.org/ArmHardFloatPort/VfpComparison
     TRIPLE_ARCH=arm
@@ -705,7 +703,7 @@ setup_android_env() {
     if [ -z "${ANDROID_ARCH/armv5*/}" ]; then
       echo "armv5"
       TOOLCHAIN_OPT+=" --cpu=armv5te"
-      CLANG_FLAGS+=" --target=armv5te-none-linux-androideabi"
+      CLANG_TARGET="armv5te-none-linux-androideabi"
 : '
 -mthumb error
 selected processor does not support Thumb mode `itt gt
@@ -724,12 +722,14 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
         EXTRA_CFLAGS_FPU="-mfpu=neon"
         CFLAGS_GCC+=" -mvectorize-with-neon-quad"
       fi
-      CLANG_FLAGS+=" --target=armv7a-linux-androideabi" # TODO: api level suffix, and not manually set platform dir?
+      CLANG_TARGET="armv7a-linux-androideabi"
       EXTRA_CFLAGS+=" -march=armv7-a -mtune=cortex-a8 -mfloat-abi=softfp $EXTRA_CFLAGS_FPU" #-mcpu= is deprecated in gcc 3, use -mtune=cortex-a8 instead
       TRY_FIX_CORTEX_A8=true
     fi
     ANDROID_ARCH=arm
   fi
+  [ $NDK_VER -gt 17 ] && API_SUFFIX=$API_LEVEL
+  CLANG_FLAGS+=" --target=$CLANG_TARGET$API_SUFFIX" # TODO: api level suffix, and not manually set platform dir?
   ANDROID_HEADER_TRIPLE=${TRIPLE_ARCH}-linux-android
   [ "$ANDROID_ARCH" == "arm" ] && ANDROID_HEADER_TRIPLE=${ANDROID_HEADER_TRIPLE}eabi
   CROSS_PREFIX=${ANDROID_HEADER_TRIPLE}-
@@ -749,13 +749,13 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   echo "ANDROID_LLVM_DIR=${ANDROID_LLVM_DIR}"
   ANDROID_TOOLCHAIN_DIR_REL=${ANDROID_TOOLCHAIN_DIR#$NDK_ROOT}
   [ -n "$ld_lld" ] && {
+    [ $ANDROID_ARCH = "x86" ] && LFLAGS_CLANG+=" -Wl,-z,notext"
     TRY_FIX_CORTEX_A8=false
     LFLAGS_CLANG+=" -fuse-ld=lld -rtlib=compiler-rt" # use compiler-rt instead of default libgcc.a so -gcc-toolchain is not required
-    [ $ANDROID_ARCH = "x86" ] && LFLAGS_CLANG+=" -Wl,-z,notext"
   } || {
     LFLAGS_CLANG+=" -gcc-toolchain \$NDK_ROOT/$ANDROID_TOOLCHAIN_DIR_REL" # ld from gcc toolchain. TODO: lld?
   }
-  $TRY_FIX_CORTEX_A8 && EXTRA_LDFLAGS+=" -Wl,--fix-cortex-a8" # TODO: not for lld
+  $TRY_FIX_CORTEX_A8 && EXTRA_LDFLAGS+=" -Wl,--fix-cortex-a8"
   $FFGIT || [ "$ANDROID_ARCH" == "arm" ] && [[ $FFMAJOR <  4 ]] && CFLAGS_CLANG="-fno-integrated-as -gcc-toolchain \$NDK_ROOT/$ANDROID_TOOLCHAIN_DIR_REL $CFLAGS_CLANG" # Disable integrated-as for better compatibility, but need as from gcc toolchain. from ndk cmake
   local ANDROID_SYSROOT_LIB="$NDK_ROOT/platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
   local ANDROID_SYSROOT_LIB_REL="platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
@@ -764,8 +764,10 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
     [ $API_LEVEL -lt 21 ] && PATCH_MMAP="void* mmap(void*, size_t, int, int, int, __kernel_off_t);"
     ANDROID_SYSROOT_REL=sysroot
     SYSROOT=$NDK_ROOT/$ANDROID_SYSROOT_REL
-    EXTRA_CFLAGS+=" -D__ANDROID_API__=$API_LEVEL --sysroot \$SYSROOT"
-    EXTRA_LDFLAGS+=" --sysroot \$NDK_ROOT/$ANDROID_SYSROOT_LIB_REL" # linker need crt objects in platform-$API_LEVEL dir, must set the dir as sysroot. but --sysroot in extra-ldflags comes before configure --sysroot= and has no effect
+    [ -d "$ANDROID_SYSROOT_LIB" ] && { # ndk r19+ has built-in sysroot and api level support
+      EXTRA_LDFLAGS+=" --sysroot \$NDK_ROOT/$ANDROID_SYSROOT_LIB_REL" # linker need crt objects in platform-$API_LEVEL dir, must set the dir as sysroot. but --sysroot in extra-ldflags comes before configure --sysroot= and has no effect
+      EXTRA_CFLAGS+=" -D__ANDROID_API__=$API_LEVEL --sysroot \$SYSROOT"
+    }
     include_with_sysroot_compat /usr/include/$ANDROID_HEADER_TRIPLE
   else
     ANDROID_SYSROOT_REL=${ANDROID_SYSROOT_LIB_REL}
@@ -992,7 +994,7 @@ setup_gnu_env(){
     IS_CROSS_BUILD=true
     echo "gnu cross build"
     TOOLCHAIN_OPT="--enable-cross-compile --target-os=linux --arch=arm"
-    SYSROOT_CC=`${CROSS_PREFIX}gcc -print-sysroot` # TODO: not for clang
+    which "${CROSS_PREFIX}gcc" && SYSROOT_CC=`${CROSS_PREFIX}gcc -print-sysroot` # TODO: not for clang
   } || {
     echo "gnu host build"
     SYSROOT_CC=`gcc -print-sysroot`

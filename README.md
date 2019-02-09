@@ -6,10 +6,10 @@ How: https://github.com/wang-bin/avbuild/wiki
 
 ALL: https://sourceforge.net/projects/avbuild/files
 
-Lite build of FFmpeg release(4.0):
+Lite build of FFmpeg release(4.1):
 
-[Raspberry Pi](https://sourceforge.net/projects/avbuild/files/raspberry-pi/ffmpeg-4.0.2-raspberry-pi-clang-lite.tar.xz/download), [Android](https://sourceforge.net/projects/avbuild/files/android/ffmpeg-4.0.2-android-clang-lite.tar.xz/download), [iOS](https://sourceforge.net/projects/avbuild/files/iOS/ffmpeg-4.0.2-iOS-lite.tar.xz/download), [macOS](https://sourceforge.net/projects/avbuild/files/macOS/ffmpeg-4.0.2-macOS-lite.tar.xz/download), [Linux](https://sourceforge.net/projects/avbuild/files/linux/ffmpeg-4.0.2-linux-gcc-lite.tar.xz/download),
-[MinGW](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-4.0.2-desktop-MINGW-lite.7z/download), [VS2017 Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-4.0.2-desktop-VS2017-lite.7z/download), [UWP](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-4.0.2-store-VS2017-lite.7z/download), [Clang Windows Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-4.0.2-windows-desktop-clang-lite.tar.xz/download), [Clang UWP](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-4.0.2-windows-store-clang-lite.tar.xz/download)
+[Raspberry Pi](https://sourceforge.net/projects/avbuild/files/raspberry-pi/ffmpeg-4.1-raspberry-pi-clang-lite.tar.xz/download), [Android](https://sourceforge.net/projects/avbuild/files/android/ffmpeg-4.1-android-clang-lite.tar.xz/download), [iOS](https://sourceforge.net/projects/avbuild/files/iOS/ffmpeg-4.1-iOS-lite.tar.xz/download), [macOS](https://sourceforge.net/projects/avbuild/files/macOS/ffmpeg-4.1-macOS-lite.tar.xz/download), [Linux](https://sourceforge.net/projects/avbuild/files/linux/ffmpeg-4.1-linux-gcc-lite.tar.xz/download),
+[MinGW](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-4.1-desktop-MINGW-lite.7z/download), [VS2017 Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-4.1-desktop-VS2017-lite.7z/download), [UWP](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-4.1-store-VS2017-lite.7z/download), [Clang Windows Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-4.1-windows-desktop-clang-lite.tar.xz/download), [Clang UWP](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-4.1-windows-store-clang-lite.tar.xz/download)
 
 
 Lite build of FFmpeg git:
@@ -37,7 +37,7 @@ windows mingw, vs2013~2017, desktop/store/phone: [![appveyor_ci](https://ci.appv
 | CC/H?X/OS |  Linux  |  Android  |  macOS  |   iOS   |    RPi    |  Win32  |  WinStore  | WinPhone |
 |-----------|---------|-----------|---------|---------|-----------|---------|------------|----------|
 |   Clang   |    H    |     X     |   A+H   |   A+X   |    H+X    |         |            |          |
-| Clang+LLD |    H    |     ?     |    ?    |         |   A+H+X   |  A+H+X  |   A+H+X    |     ?    |
+| Clang+LLD |    H    |     X     |    ?    |         |   A+H+X   |  A+H+X  |   A+H+X    |     ?    |
 |    GCC    |    H    |     X     |    H    |         |    H+X    |   H+X   |      ?     |     ?    |
 |  VS2013   |         |           |         |         |           |    H    |      H     |     X    |
 |  VS2015   |         |           |         |         |           |    H    |      H     |     X    |
