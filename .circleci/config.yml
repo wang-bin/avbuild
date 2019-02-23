@@ -38,7 +38,7 @@ custom-steps:
     run:
       name: upload
       command: |
-        LTO_SUFFIX=$(${FORCE_LTO:=false} && echo -lto)
+        $FORCE_LTO && LTO_SUFFIX=-lto
         mv sdk-* ffmpeg-${FF_VERSION}-${TARGET_OS}-${COMPILER}${CONFIG_SUFFIX}${LTO_SUFFIX}
         tar Jcf ffmpeg-${FF_VERSION}-${TARGET_OS}-${COMPILER}${CONFIG_SUFFIX}${LTO_SUFFIX}{.tar.xz,}
         ls -lh *.xz
