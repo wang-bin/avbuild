@@ -4,10 +4,10 @@ USER_OPT="--enable-small --disable-avresample \
 --disable-muxers \
 --disable-encoders \
 --disable-decoders \
---enable-decoder=*sub*,*text*,*web*,aac*,ac3*,alac*,ape,ass,cc_dec,cook,dca,eac3*,flv,flac,gif,h264*,hevc*,mp[1-3]*,*peg*,mpl2,nellymoser,opus,pcm*,rawvideo,rv*,sami,srt,ssa,v210*,vc1*,vorbis,vp[6-9],wm*,wrapped_avframe \
+--enable-decoder=*sub*,*text*,*web*,aac*,ac3*,alac*,ape,ass,cc_dec,cook,dca,eac3*,truehd,flv,flac,gif,h264*,hevc*,mp[1-3]*,*peg*,mlp,mpl2,nellymoser,opus,pcm*,rawvideo,rv*,sami,srt,ssa,v210*,vc1*,vorbis,vp[6-9],wm*,wrapped_avframe \
 --disable-demuxers \
 --enable-demuxer=*sub*,*text*,*ac3,*ac,*peg*,*web*,ape,ass,avi,concat,dts*,*dash*,*flv,gif,hls,h264,hevc,matroska,mlv,mov,mp3,mxf,nsv,nut,ogg,pcm*,rawvideo,rt*p,spdif,srt,vc1,v210*,wav,*pipe \
---disable-parsers --enable-parser=*sub*,aac*,ac3,cook,flac,h26[3-4],hevc,*peg*,opus,rv*,vc1,vorbis,vp[8-9] \
+--disable-parsers --enable-parser=*sub*,aac*,ac3,cook,flac,h26[3-4],hevc,m*,opus,rv*,vc1,vorbis,vp[8-9] \
 $USER_OPT
 "
 ENC_OPT="--enable-encoder=aac,gif,h26[3-4]*,hevc*,mjpeg,mpeg[2-4]*,nellymoser,nvenc*,opus,pcm*,rawvideo,vorbis,vp*,wrapped_avframe"
