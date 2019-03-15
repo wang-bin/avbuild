@@ -7,6 +7,7 @@
 # TODO: cc_flags, linker_flags(linker only), os_flags, os_cc_flags, os_linker_flags, cc_linker_flags+=$(prepend_Wl linker_flags)
 # remove -Wl, if LD_IS_LLD
 # clang-cl == clang --driver_mode=cl
+# winphone clang+vs2013sdk: https://fate.libav.org/armv7-win32-clang-4.0/20190219150948  --arch=arm --cpu=armv7-a --as='clang -target armv7-win32-gnu' --cc='clang -target armv7-win32-msvc' --ld=lld-link --target-os=win32 --extra-cflags='-DWINAPI_FAMILY=WINAPI_FAMILY_PHONE_APP' --extra-ldflags='msvcrt.lib oldnames.lib -nodefaultlib:kernel32.lib -nodefaultlib:ole32.lib WindowsPhoneCore.lib' --enable-cross-compile --ar=llvm-ar --nm=llvm-nm
 
 #PS4='+ $(gdate "+%s.%N")\011 '
 #exec 3>&2 2>/tmp/bashstart.$$.log
@@ -82,8 +83,13 @@ FFMAJOR=`echo $FFVERSION_FULL |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
 FFMINOR=`echo $FFVERSION_FULL |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
 FFGIT=false
 [ ${#FFMAJOR} -gt 3 ] && FFGIT=true
-cd -
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR  git: $FFGIT"
+if $FFGIT; then
+  for p in $(find "$THIS_DIR/patches-master" -name "*.patch"); do
+    patch -p1 -N < $p
+  done
+fi
+cd -
 
 toupper(){
     echo "$@" | tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ
@@ -336,6 +342,7 @@ setup_win_clang(){
     $IS_STORE || EXTRA_CFLAGS+=" -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE=1"
   # FIXME: clang armv7 does not support as_fpu_directive, and the alternative '@ .fpu neon' is not supported by --target=arm-pc-windows-msvc does not support
     arch=$platform
+    #  --as='clang -target aarch64-win32-gnu' --cc='clang -target aarch64-win32-msvc' : https://fate.libav.org/aarch64-win32-clang-6.0/20190219163918
     [ -z "${platform/*64*/}" ] || {
       MACHINE=arm
       ASM_OPT+=" --enable-thumb --cpu=armv7-a"

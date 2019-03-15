@@ -5,7 +5,7 @@ dist: trusty
 cache:
   apt: true
   directories:
-    - ffmpeg-$FF_VERSION
+#    - ffmpeg-$FF_VERSION
     - android-ndk-${NDK_VERSION}/platforms/android-{16,21}
     - android-ndk-${NDK_VERSION}/toolchains/llvm
     - android-ndk-${NDK_VERSION}/toolchains/aarch64-linux-android-4.9
@@ -175,10 +175,10 @@ install:
           cd ffmpeg-${FF_VERSION}
           git reset --hard HEAD
           git fetch
-          git checkout origin/wang
+          git checkout origin/master
           cd -
         else
-          git clone --depth 1 --no-tags -b wang https://github.com/wang-bin/FFmpeg.git ffmpeg-${FF_VERSION}
+          git clone --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-${FF_VERSION}
         fi
       fi
   - |

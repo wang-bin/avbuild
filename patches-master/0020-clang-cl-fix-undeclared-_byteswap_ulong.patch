@@ -1,0 +1,24 @@
+From 5a65f89c36f91d1831129c5ce551d13410896f50 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Mon, 24 Dec 2018 16:06:30 +0800
+Subject: [PATCH 20/20] clang-cl: fix undeclared _byteswap_ulong
+
+---
+ libavutil/x86/bswap.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/libavutil/x86/bswap.h b/libavutil/x86/bswap.h
+index ffa59e4c82..c226cdf62f 100644
+--- a/libavutil/x86/bswap.h
++++ b/libavutil/x86/bswap.h
+@@ -27,6 +27,7 @@
+ #include <stdint.h>
+ #if defined(_MSC_VER)
+ #include <intrin.h>
++#include <stdlib.h> // clang cl
+ #endif
+ #include "config.h"
+ #include "libavutil/attributes.h"
+-- 
+2.11.0
+

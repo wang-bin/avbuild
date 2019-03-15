@@ -1,0 +1,39 @@
+From 7c0815bf400f909e832e6a494100a94aee50aaea Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Sun, 29 Oct 2017 23:52:35 +0800
+Subject: [PATCH 05/20] mediacodec: check whether cropping is set before use
+
+---
+ libavcodec/mediacodecdec_common.c | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
+
+diff --git a/libavcodec/mediacodecdec_common.c b/libavcodec/mediacodecdec_common.c
+index 7c2661f672..f2ea90af7e 100644
+--- a/libavcodec/mediacodecdec_common.c
++++ b/libavcodec/mediacodecdec_common.c
+@@ -408,13 +408,15 @@ static int mediacodec_dec_parse_format(AVCodecContext *avctx, MediaCodecDecConte
+     }
+ 
+     /* Optional fields */
+-    AMEDIAFORMAT_GET_INT32(s->crop_top,    "crop-top",    0);
+-    AMEDIAFORMAT_GET_INT32(s->crop_bottom, "crop-bottom", 0);
+-    AMEDIAFORMAT_GET_INT32(s->crop_left,   "crop-left",   0);
+-    AMEDIAFORMAT_GET_INT32(s->crop_right,  "crop-right",  0);
+-
+-    width = s->crop_right + 1 - s->crop_left;
+-    height = s->crop_bottom + 1 - s->crop_top;
++    if (ff_AMediaFormat_getInt32(s->format, "crop-top", &s->crop_top) && ff_AMediaFormat_getInt32(s->format, "crop-bottom", &s->crop_bottom))
++        height = s->crop_bottom + 1 - s->crop_top;
++    else
++        height = s->height;
++
++    if (ff_AMediaFormat_getInt32(s->format, "crop-left", &s->crop_left) && ff_AMediaFormat_getInt32(s->format, "crop-right", &s->crop_right))
++        width = s->crop_right + 1 - s->crop_left;
++    else
++        width = s->width;
+ 
+     AMEDIAFORMAT_GET_INT32(s->display_width,  "display-width",  0);
+     AMEDIAFORMAT_GET_INT32(s->display_height, "display-height", 0);
+-- 
+2.11.0
+

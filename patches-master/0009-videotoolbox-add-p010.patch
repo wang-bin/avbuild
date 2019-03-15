@@ -1,0 +1,24 @@
+From 6747c7ae7b3e3528618d98f1441a5f201e46094a Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Mon, 13 Nov 2017 12:26:26 +0800
+Subject: [PATCH 09/20] videotoolbox: add p010
+
+---
+ libavutil/hwcontext_videotoolbox.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/libavutil/hwcontext_videotoolbox.c b/libavutil/hwcontext_videotoolbox.c
+index cc00f1f2f2..8c632c3e91 100644
+--- a/libavutil/hwcontext_videotoolbox.c
++++ b/libavutil/hwcontext_videotoolbox.c
+@@ -36,6 +36,7 @@ static const struct {
+     uint32_t cv_fmt;
+     enum AVPixelFormat pix_fmt;
+ } cv_pix_fmts[] = {
++    { kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange, AV_PIX_FMT_P010 },
+     { kCVPixelFormatType_420YpCbCr8Planar,              AV_PIX_FMT_YUV420P },
+     { kCVPixelFormatType_422YpCbCr8,                    AV_PIX_FMT_UYVY422 },
+     { kCVPixelFormatType_32BGRA,                        AV_PIX_FMT_BGRA },
+-- 
+2.11.0
+

@@ -1,0 +1,37 @@
+From 7ff000f667eaf5025d7220640899f2e21eaa00f2 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Sat, 28 Oct 2017 20:26:50 +0800
+Subject: [PATCH 01/20] use CreateMutexEx instead of CreateMutex to fix win8
+ store app link error
+
+---
+ libavutil/hwcontext_d3d11va.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/libavutil/hwcontext_d3d11va.c b/libavutil/hwcontext_d3d11va.c
+index 41330f0ae6..b9a0352e1e 100644
+--- a/libavutil/hwcontext_d3d11va.c
++++ b/libavutil/hwcontext_d3d11va.c
+@@ -40,6 +40,10 @@
+ #include "pixfmt.h"
+ #include "thread.h"
+ 
++#ifndef CreateMutexEx
++#define CreateMutexEx(lpMutexAttributes, lpName, dwFlags, dwDesiredAccess) CreateMutex(lpMutexAttributes, lpName, dwFlags)
++#endif
++
+ typedef HRESULT(WINAPI *PFN_CREATE_DXGI_FACTORY)(REFIID riid, void **ppFactory);
+ 
+ static AVOnce functions_loaded = AV_ONCE_INIT;
+@@ -447,7 +451,7 @@ static int d3d11va_device_init(AVHWDeviceContext *hwdev)
+     HRESULT hr;
+ 
+     if (!device_hwctx->lock) {
+-        device_hwctx->lock_ctx = CreateMutex(NULL, 0, NULL);
++        device_hwctx->lock_ctx = CreateMutexEx(NULL, 0, NULL, 0);
+         if (device_hwctx->lock_ctx == INVALID_HANDLE_VALUE) {
+             av_log(NULL, AV_LOG_ERROR, "Failed to create a mutex\n");
+             return AVERROR(EINVAL);
+-- 
+2.11.0
+

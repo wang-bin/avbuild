@@ -27,7 +27,7 @@ custom-steps:
             git checkout origin/wang
             cd -
           else
-            git clone --depth 1 --no-tags -b wang https://github.com/wang-bin/FFmpeg.git ffmpeg-${FF_VERSION}
+            git clone --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-${FF_VERSION}
           fi
         fi
         if [ ! -f ffmpeg-${FF_VERSION}/configure ]; then

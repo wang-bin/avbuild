@@ -51,7 +51,7 @@ install:
     )
   - C:\msys64\usr\bin\pacman -S --noconfirm --needed diffutils patch pkg-config nasm yasm
   - if [%FF_VERSION%] == [git] (
-      git clone --depth 1 --no-tags -b wang https://github.com/wang-bin/FFmpeg.git ffmpeg-%FF_VERSION%
+      git clone --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-%FF_VERSION%
     )
   - if not exist ffmpeg-%FF_VERSION% (
       appveyor DownloadFile "http://ffmpeg.org/releases/ffmpeg-%FF_VERSION%.tar.xz" &&

@@ -1,0 +1,130 @@
+From e3a68a32e71bc5060437c4db6a34bd47dc9692ab Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Mon, 13 Nov 2017 15:14:26 +0800
+Subject: [PATCH 10/20] mmal: add vp8, mjpeg, wmv3
+
+---
+ configure              |  3 +++
+ libavcodec/allcodecs.c |  3 +++
+ libavcodec/mmaldec.c   | 26 ++++++++++++++++++++++++++
+ 3 files changed, 32 insertions(+)
+
+diff --git a/configure b/configure
+index f3b0de88e2..639021dbc6 100755
+--- a/configure
++++ b/configure
+@@ -3021,6 +3021,7 @@ hevc_v4l2m2m_decoder_deps="v4l2_m2m hevc_v4l2_m2m"
+ hevc_v4l2m2m_decoder_select="hevc_mp4toannexb_bsf"
+ hevc_v4l2m2m_encoder_deps="v4l2_m2m hevc_v4l2_m2m"
+ mjpeg_cuvid_decoder_deps="cuvid"
++mjpeg_mmal_decoder_deps="mmal"
+ mjpeg_qsv_encoder_deps="libmfx"
+ mjpeg_qsv_encoder_select="qsvenc"
+ mjpeg_vaapi_encoder_deps="VAEncPictureParameterBufferJPEG"
+@@ -3053,6 +3054,7 @@ vc1_v4l2m2m_decoder_deps="v4l2_m2m vc1_v4l2_m2m"
+ vp8_cuvid_decoder_deps="cuvid"
+ vp8_mediacodec_decoder_deps="mediacodec"
+ vp8_qsv_decoder_select="qsvdec vp8_parser"
++vp8_mmal_decoder_deps="mmal"
+ vp8_rkmpp_decoder_deps="rkmpp"
+ vp8_vaapi_encoder_deps="VAEncPictureParameterBufferVP8"
+ vp8_vaapi_encoder_select="vaapi_encode"
+@@ -3065,6 +3067,7 @@ vp9_vaapi_encoder_deps="VAEncPictureParameterBufferVP9"
+ vp9_vaapi_encoder_select="vaapi_encode"
+ vp9_v4l2m2m_decoder_deps="v4l2_m2m vp9_v4l2_m2m"
+ wmv3_crystalhd_decoder_select="crystalhd"
++wmv3_mmal_decoder_deps="mmal"
+ 
+ # parsers
+ aac_parser_select="adts_header"
+diff --git a/libavcodec/allcodecs.c b/libavcodec/allcodecs.c
+index b26aeca239..4fc85716d5 100644
+--- a/libavcodec/allcodecs.c
++++ b/libavcodec/allcodecs.c
+@@ -334,6 +334,7 @@ extern AVCodec ff_vp6a_decoder;
+ extern AVCodec ff_vp6f_decoder;
+ extern AVCodec ff_vp7_decoder;
+ extern AVCodec ff_vp8_decoder;
++extern AVCodec ff_vp8_mmal_decoder;
+ extern AVCodec ff_vp8_rkmpp_decoder;
+ extern AVCodec ff_vp8_v4l2m2m_decoder;
+ extern AVCodec ff_vp9_decoder;
+@@ -350,6 +351,7 @@ extern AVCodec ff_wmv2_encoder;
+ extern AVCodec ff_wmv2_decoder;
+ extern AVCodec ff_wmv3_decoder;
+ extern AVCodec ff_wmv3_crystalhd_decoder;
++extern AVCodec ff_wmv3_mmal_decoder;
+ extern AVCodec ff_wmv3image_decoder;
+ extern AVCodec ff_wnv1_decoder;
+ extern AVCodec ff_xan_wc3_decoder;
+@@ -758,6 +760,7 @@ extern AVCodec ff_hevc_vaapi_encoder;
+ extern AVCodec ff_hevc_videotoolbox_encoder;
+ extern AVCodec ff_libkvazaar_encoder;
+ extern AVCodec ff_mjpeg_cuvid_decoder;
++extern AVCodec ff_mjpeg_mmal_decoder;
+ extern AVCodec ff_mjpeg_qsv_encoder;
+ extern AVCodec ff_mjpeg_vaapi_encoder;
+ extern AVCodec ff_mpeg1_cuvid_decoder;
+diff --git a/libavcodec/mmaldec.c b/libavcodec/mmaldec.c
+index a653a9e6b5..c1cfb09283 100644
+--- a/libavcodec/mmaldec.c
++++ b/libavcodec/mmaldec.c
+@@ -377,15 +377,24 @@ static av_cold int ffmmal_init_decoder(AVCodecContext *avctx)
+     format_in = decoder->input[0]->format;
+     format_in->type = MMAL_ES_TYPE_VIDEO;
+     switch (avctx->codec_id) {
++    case AV_CODEC_ID_MJPEG:
++        format_in->encoding = MMAL_ENCODING_MJPEG;
++        break;
+     case AV_CODEC_ID_MPEG2VIDEO:
+         format_in->encoding = MMAL_ENCODING_MP2V;
+         break;
+     case AV_CODEC_ID_MPEG4:
+         format_in->encoding = MMAL_ENCODING_MP4V;
+         break;
++    case AV_CODEC_ID_VP8:
++        format_in->encoding = MMAL_ENCODING_VP8;
++        break;
+     case AV_CODEC_ID_VC1:
+         format_in->encoding = MMAL_ENCODING_WVC1;
+         break;
++    case AV_CODEC_ID_WMV3: // may be not enabled
++        format_in->encoding = MMAL_ENCODING_WMV3;
++        break;
+     case AV_CODEC_ID_H264:
+     default:
+         format_in->encoding = MMAL_ENCODING_H264;
+@@ -816,6 +825,20 @@ static const AVCodecHWConfigInternal *mmal_hw_configs[] = {
+     NULL
+ };
+ 
++AVHWAccel ff_vp8_mmal_hwaccel = {
++    .name       = "vp8_mmal",
++    .type       = AVMEDIA_TYPE_VIDEO,
++    .id         = AV_CODEC_ID_VP8,
++    .pix_fmt    = AV_PIX_FMT_MMAL,
++};
++
++AVHWAccel ff_wmv3_mmal_hwaccel = {
++    .name       = "wmv3_mmal",
++    .type       = AVMEDIA_TYPE_VIDEO,
++    .id         = AV_CODEC_ID_WMV3,
++    .pix_fmt    = AV_PIX_FMT_MMAL,
++};
++
+ static const AVOption options[]={
+     {"extra_buffers", "extra buffers", offsetof(MMALDecodeContext, extra_buffers), AV_OPT_TYPE_INT, {.i64 = 10}, 0, 256, 0},
+     {"extra_decoder_buffers", "extra MMAL internal buffered frames", offsetof(MMALDecodeContext, extra_decoder_buffers), AV_OPT_TYPE_INT, {.i64 = 10}, 0, 256, 0},
+@@ -853,6 +876,9 @@ static const AVOption options[]={
+     };
+ 
+ FFMMAL_DEC(h264, AV_CODEC_ID_H264)
++FFMMAL_DEC(mjpeg, AV_CODEC_ID_MJPEG)
+ FFMMAL_DEC(mpeg2, AV_CODEC_ID_MPEG2VIDEO)
+ FFMMAL_DEC(mpeg4, AV_CODEC_ID_MPEG4)
+ FFMMAL_DEC(vc1, AV_CODEC_ID_VC1)
++FFMMAL_DEC(vp8, AV_CODEC_ID_VP8)
++FFMMAL_DEC(wmv3, AV_CODEC_ID_WMV3)
+-- 
+2.11.0
+

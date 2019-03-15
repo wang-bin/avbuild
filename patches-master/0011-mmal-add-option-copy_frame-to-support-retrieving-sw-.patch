@@ -1,0 +1,88 @@
+From 563556758e4b41b53968dc211b4f1aedf0b04c96 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Fri, 17 Nov 2017 14:54:23 +0800
+Subject: [PATCH 11/20] mmal: add option copy_frame to support retrieving sw
+ frames w/o copy
+
+mmal buffer->data is already in host memory. AFAIK decoders implemented in omx must
+be configured to output frames to either memory or something directly used by renderer,
+for example mediacodec surface, mmal buffer and omxil eglimage.
+test result: big buck bunny 1080p fps increases from about 100 to 110 if copy_frame is
+turned off
+---
+ libavcodec/mmaldec.c | 31 +++++++++++++++++++++++--------
+ 1 file changed, 23 insertions(+), 8 deletions(-)
+
+diff --git a/libavcodec/mmaldec.c b/libavcodec/mmaldec.c
+index c1cfb09283..9cd6c6558f 100644
+--- a/libavcodec/mmaldec.c
++++ b/libavcodec/mmaldec.c
+@@ -69,6 +69,7 @@ typedef struct MMALDecodeContext {
+     AVClass *av_class;
+     int extra_buffers;
+     int extra_decoder_buffers;
++    int copy_frame;
+ 
+     MMAL_COMPONENT_T *decoder;
+     MMAL_QUEUE_T *queue_decoded_frames;
+@@ -139,7 +140,6 @@ static int ffmmal_set_ref(AVFrame *frame, FFPoolRef *pool,
+     atomic_fetch_add_explicit(&ref->pool->refcount, 1, memory_order_relaxed);
+     mmal_buffer_header_acquire(buffer);
+ 
+-    frame->format = AV_PIX_FMT_MMAL;
+     frame->data[3] = (uint8_t *)ref->buffer;
+     return 0;
+ }
+@@ -650,20 +650,34 @@ static int ffmal_copy_frame(AVCodecContext *avctx,  AVFrame *frame,
+ 
+         if ((ret = ffmmal_set_ref(frame, ctx->pool_out, buffer)) < 0)
+             goto done;
++        frame->format = AV_PIX_FMT_MMAL;
+     } else {
+         int w = FFALIGN(avctx->width, 32);
+         int h = FFALIGN(avctx->height, 16);
+         uint8_t *src[4];
+         int linesize[4];
+ 
+-        if ((ret = ff_get_buffer(avctx, frame, 0)) < 0)
+-            goto done;
++        if (ctx->copy_frame) {
++            if ((ret = ff_get_buffer(avctx, frame, 0)) < 0)
++                goto done;
+ 
+-        av_image_fill_arrays(src, linesize,
+-                             buffer->data + buffer->type->video.offset[0],
+-                             avctx->pix_fmt, w, h, 1);
+-        av_image_copy(frame->data, frame->linesize, src, linesize,
+-                      avctx->pix_fmt, avctx->width, avctx->height);
++            av_image_fill_arrays(src, linesize,
++                                buffer->data + buffer->type->video.offset[0],
++                                avctx->pix_fmt, w, h, 1);
++            av_image_copy(frame->data, frame->linesize, src, linesize,
++                        avctx->pix_fmt, avctx->width, avctx->height);
++        } else {
++            if ((ret = ff_decode_frame_props(avctx, frame)) < 0)
++                goto done;
++            /* buffer->type->video.offset/pitch[i]; is always 0 */
++            av_image_fill_arrays(src, linesize,
++                                buffer->data + buffer->type->video.offset[0],
++                                avctx->pix_fmt, w, h, 1);
++            if ((ret = ffmmal_set_ref(frame, ctx->pool_out, buffer)) < 0)
++                goto done;
++            memcpy(frame->data, src, sizeof(src));
++            memcpy(frame->linesize, linesize, sizeof(linesize));
++        }
+     }
+ 
+     frame->pts = buffer->pts == MMAL_TIME_UNKNOWN ? AV_NOPTS_VALUE : buffer->pts;
+@@ -842,6 +856,7 @@ AVHWAccel ff_wmv3_mmal_hwaccel = {
+ static const AVOption options[]={
+     {"extra_buffers", "extra buffers", offsetof(MMALDecodeContext, extra_buffers), AV_OPT_TYPE_INT, {.i64 = 10}, 0, 256, 0},
+     {"extra_decoder_buffers", "extra MMAL internal buffered frames", offsetof(MMALDecodeContext, extra_decoder_buffers), AV_OPT_TYPE_INT, {.i64 = 10}, 0, 256, 0},
++    {"copy_frame", "copy deocded data to avframe", offsetof(MMALDecodeContext, copy_frame), AV_OPT_TYPE_BOOL, {.i64 = 1}, 0, 256, 0},
+     {NULL}
+ };
+ 
+-- 
+2.11.0
+

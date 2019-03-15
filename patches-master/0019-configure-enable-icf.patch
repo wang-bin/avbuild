@@ -1,0 +1,26 @@
+From 75d96de9ab3a7c68734462dcd879e362a2c6d663 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Tue, 11 Sep 2018 23:16:49 +0800
+Subject: [PATCH 19/20] configure: enable icf
+
+---
+ configure | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/configure b/configure
+index 8e627187d2..9612dd677f 100755
+--- a/configure
++++ b/configure
+@@ -6696,6 +6696,9 @@ test_cc -mno-red-zone <<EOF && noredzone_flags="-mno-red-zone"
+ int x;
+ EOF
+ 
++check_ldflags --icf=safe || check_ldflags -Wl,--icf=safe || { # ld or clang7 + lld
++    check_cflags -faddrsig && (check_ldflags --icf=all || check_ldflags -Wl,--icf=all)
++}
+ 
+ if enabled icc; then
+     # Just warnings, no remarks
+-- 
+2.11.0
+
