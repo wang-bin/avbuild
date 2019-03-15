@@ -1,4 +1,4 @@
-USER_OPT="--enable-small --disable-avresample \
+USER_OPT="--disable-avresample \
 --disable-filters \
 --enable-filter=*fade,*fifo,*format,*resample,aeval,all*,atempo,color*,convolution,draw*,eq*,framerate,hw*,null,volume \
 --disable-muxers \
