@@ -215,8 +215,9 @@ probe_cc() {
   local flags=$2
   $cc -v 2>&1 |grep -q clang && IS_CLANG=true
   $cc -v 2>&1 |grep -q "Apple LLVM" && IS_APPLE_CLANG=true
-  $cc -? &>/dev/null && IS_CLANG_CL=true
+  $cc -? 2>/dev/null |grep LLVM &>/dev/null && IS_CLANG_CL=true
   if $IS_CLANG_CL; then
+    IS_CLANG=true
     HAVE_LLD=true
   elif $IS_CLANG; then
     CFLAG_IWITHSYSROOT=$CFLAG_IWITHSYSROOT_CLANG
@@ -321,8 +322,8 @@ setup_win_clang(){
   enable_lto=false # ffmpeg: "LTO requires same compiler and linker"
   # lto: link error if clang and lld version does not mach?
   # TODO: patch ffmpeg. ffmpeg disables lto (enabled by --enable-lto) if "$cc_type" != "$ld_type"
-  [[ "$LIB_OPT" == *"--enable-static"* ]] || FORCE_LTO=true
-  $FORCE_LTO && LTO_CFLAGS=-flto # TODO: thin lto avcodec link error
+  #[[ "$LIB_OPT" == *"--enable-static"* ]] || FORCE_LTO=true
+  #$FORCE_LTO && LTO_CFLAGS=-flto=thin # win lto binary size is larger
   LTO_LFLAGS="/opt:lldltojobs=`getconf _NPROCESSORS_ONLN`" # only affects thin lto?
   enable_opt dxva2
   # TODO: unify setup_vc/wnrt
@@ -344,12 +345,7 @@ setup_win_clang(){
   # FIXME: clang armv7 does not support as_fpu_directive, and the alternative '@ .fpu neon' is not supported by --target=arm-pc-windows-msvc does not support
     arch=$platform
     #  --as='clang -target aarch64-win32-gnu' --cc='clang -target aarch64-win32-msvc' : https://fate.libav.org/aarch64-win32-clang-6.0/20190219163918
-    [ -z "${platform/*64*/}" ] || {
-      MACHINE=arm
-      ASM_OPT+=" --enable-thumb --cpu=armv7-a"
-      # clang: FPU error. gas: vfp error
-      TOOLCHAIN_OPT+=" --as='$USE_TOOLCHAIN -target armv7-win32-gnu'" # gas-preprocessor.pl -as-type clang -arch arm -- $USE_TOOLCHAIN'"
-    }
+    [ -z "${platform/*64*/}" ] ||  MACHINE=arm
   elif [ -z "${Platform/*64/}" ]; then
     arch=x86_64
     Platform=x64
@@ -371,16 +367,20 @@ setup_win_clang(){
   # makedef: define env AR=llvm-ar, NM=llvm-nm
   # --windres=rc option is broken and not recognized
   TARGET_TRIPLE=${target_tripple_arch}-windows-msvc # lto default vendor is empty, fix lld-link: warning: Linking two modules of different target triples
+  TARGET_OPT="--target=$TARGET_TRIPLE"
   [ "$MACHINE" == arm ] && {
-    # cflags is appended to as flags, but arm as target tripple must be gnu not msvc
+    ASM_OPT+=" --enable-thumb --enable-neon --cpu=armv7-a"
+    # clang: FPU error. gas: vfp error
+    TOOLCHAIN_OPT+=" --as='$USE_TOOLCHAIN --target=armv7-win32-gnu -mfpu=neon'" # gas-preprocessor.pl -as-type clang -arch arm -- $USE_TOOLCHAIN'"
+  # cflags is appended to as flags, but arm as target tripple must be gnu not msvc
     TARGET_OPT=
-    TOOLCHAIN_OPT=${TOOLCHAIN_OPT//--cc=$USE_TOOLCHAIN/--cc=\'$USE_TOOLCHAIN -target $TARGET_TRIPLE\'}
-    USER_OPT=${USER_OPT//--cc=$USE_TOOLCHAIN/--cc=\'$USE_TOOLCHAIN -target $TARGET_TRIPLE\'}
-  } || {
-    TARGET_OPT="--target=$TARGET_TRIPLE"
+    TOOLCHAIN_OPT=${TOOLCHAIN_OPT//--cc=$USE_TOOLCHAIN/--cc=\'$USE_TOOLCHAIN --target=$TARGET_TRIPLE\'}
+    USER_OPT=${USER_OPT//--cc=$USE_TOOLCHAIN/--cc=\'$USE_TOOLCHAIN --target=$TARGET_TRIPLE\'}
   }
   TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$arch $ASM_OPT --target-os=win32 --disable-stripping"
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
+  #FIXME: clang-cl undefined __stack_chk_guard for arm
+  # -fcf-protection[=full] x86 only? /guard:cf
   EXTRA_CFLAGS+=" -cfguard $LTO_CFLAGS $TARGET_OPT -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
   $FORCE_LTO || $enable_lto && EXTRA_LDFLAGS+=" -MACHINE:$MACHINE" # lto is compiled as ir but not coff object and lld can not determin thw target arch
   EXTRA_LDFLAGS+=" -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
