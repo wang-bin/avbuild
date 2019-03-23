@@ -84,7 +84,8 @@ FFMINOR=`echo $FFVERSION_FULL |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
 FFGIT=false
 [ ${#FFMAJOR} -gt 3 ] && FFGIT=true
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR  git: $FFGIT"
-if $FFGIT; then
+: ${PATCH_MASTER:=true}
+if $FFGIT && $PATCH_MASTER ; then
   for p in $(find "$THIS_DIR/patches-master" -name "*.patch"); do
     patch -p1 -N < $p
   done
