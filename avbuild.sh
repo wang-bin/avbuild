@@ -247,16 +247,20 @@ use_llvm_binutils() {
   # use llvm-ar/ranlib, host ar/ranlib may not work for non-mac target(e.g. macOS)
   local clang_dir=${USE_TOOLCHAIN%clang*}
   local clang_name=${USE_TOOLCHAIN##*/}
-  local clang=${USE_TOOLCHAIN%-cl}
-  local CLANG_FALLBACK=clang-7
+  local clang=$clang_dir${clang_name/-cl/}
+  local CLANG_FALLBACK=clang-8
   $IS_APPLE_CLANG && CLANG_FALLBACK=/usr/local/opt/llvm/bin/clang
   # -print-prog-name= prints native dir format(on windows) and `which` fails
   which "$(to_unix_path "`$clang -print-prog-name=llvm-ar`")" &>/dev/null || clang=$CLANG_FALLBACK
   which "$(to_unix_path "`$clang -print-prog-name=llvm-ranlib`")" &>/dev/null || clang=$CLANG_FALLBACK
-  which "$LLVM_AR" &>/dev/null || LLVM_AR="\$($clang -print-prog-name=llvm-ar)" #$clang_dir${clang_name/clang/llvm-ar}
-  which "$LLVM_NM" &>/dev/null || LLVM_NM="\$($clang -print-prog-name=llvm-nm)" #$clang_dir${clang_name/clang/llvm-ar}
-  which "$LLVM_RANLIB" &>/dev/null || LLVM_RANLIB="\$($clang -print-prog-name=llvm-ranlib)" #$clang_dir${clang_name/clang/llvm-ranlib}
-  which "$LLVM_STRIP" &>/dev/null || LLVM_STRIP="\$($clang -print-prog-name=llvm-strip)" #$clang_dir${clang_name/clang/llvm-strip}
+  local llvm_ar_path=`which "$LLVM_AR" &>/dev/null`
+  local llvm_ar_ver_path=`$clang -print-prog-name=llvm-ar`
+  if [ "$llvm_ar_path" != "$llvm_ar_ver_path" ]; then
+    LLVM_AR="\$($clang -print-prog-name=llvm-ar)" #$clang_dir${clang_name/clang/llvm-ar}
+    LLVM_NM="\$($clang -print-prog-name=llvm-nm)" #$clang_dir${clang_name/clang/llvm-ar}
+    LLVM_RANLIB="\$($clang -print-prog-name=llvm-ranlib)" #$clang_dir${clang_name/clang/llvm-ranlib}
+    LLVM_STRIP="\$($clang -print-prog-name=llvm-strip)" #$clang_dir${clang_name/clang/llvm-strip}
+  fi
   #EXTRA_LDFLAGS+=" -nodefaultlibs"; EXTRALIBS+=" -lc -lgcc_s"
   # TODO: apple clang invoke ld64. --ld=${CROSS_PREFIX}ld ldflags are different from cc ld flags
   TOOLCHAIN_OPT="--ar=$LLVM_AR --nm=$LLVM_NM --ranlib=$LLVM_RANLIB $TOOLCHAIN_OPT"
@@ -315,7 +319,10 @@ setup_win_clang(){
 # -imsvc: add msvc system header path
   : ${USE_TOOLCHAIN:=clang}
   setup_cc $USE_TOOLCHAIN
-  USE_LD=$(${USE_TOOLCHAIN%-cl} -print-prog-name=lld-link) use_lld # lld 6.0 fixes undefined __enclave_config in msvcrt14.12. `lld -flavor link` just warns --version-script and results in link error
+  local clang_dir=${USE_TOOLCHAIN%clang*}
+  local clang_name=${USE_TOOLCHAIN##*/}
+  local clang=$clang_dir${clang_name/-cl/}
+  USE_LD=$($clang -print-prog-name=lld-link) use_lld # lld 6.0 fixes undefined __enclave_config in msvcrt14.12. `lld -flavor link` just warns --version-script and results in link error
   enable_pic=false
   use_llvm_binutils
   #use_lld # --target=i386-pc-windows-msvc -fuse-ld=lld: must use with -Wl,
@@ -380,8 +387,14 @@ setup_win_clang(){
   TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$arch $ASM_OPT --target-os=win32 --disable-stripping"
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
   #FIXME: clang-cl undefined __stack_chk_guard for arm
-  # -fcf-protection[=full] x86 only? /guard:cf
-  EXTRA_CFLAGS+=" -cfguard $LTO_CFLAGS $TARGET_OPT -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
+  # -fcf-protection[=full] x86 only?
+  # FIXME: arm64 works with clang-cl but not clang, clang fatal error when linking or compiling for static: error in backend: .seh_ directive must appear within an active frame
+  $IS_CLANG_CL && {
+    EXTRA_CFLAGS+=" -MD /guard:cf"
+  } || {
+    EXTRA_CFLAGS+=" -cfguard"    
+  }
+  EXTRA_CFLAGS+=" $LTO_CFLAGS $TARGET_OPT -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
   $FORCE_LTO || $enable_lto && EXTRA_LDFLAGS+=" -MACHINE:$MACHINE" # lto is compiled as ir but not coff object and lld can not determin thw target arch
   EXTRA_LDFLAGS+=" -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
   EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
@@ -1316,7 +1329,7 @@ build_all(){
         fi
         CONFIG_JOBS=(${CONFIG_JOBS[@]} %$((${#CONFIG_JOBS[@]}+1)))
         # TODO: will vars (IS_CLANG, arch, USE_TOOLCHAIN) in sub process be modified by other process?
-        config1 $os $arch &
+        config1 $os $arch $USE_TOOLCHAIN &
         USE_TOOLCHAIN=$USE_TOOLCHAIN0
       done
       [ ${#CONFIG_JOBS[@]} -gt 0 ] && {

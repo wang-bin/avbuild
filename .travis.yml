@@ -43,7 +43,7 @@ matrix:
       env:
         - TARGET=windows-desktop
         - _CC=clang-8
-        - ARCHS="arm x86 x64" # clang-8/9: arm64 .seh_ error (https://travis-ci.org/wang-bin/avbuild/jobs/497331831)
+        - ARCHS="arm64-clang-cl-8 arm x86 x64" # clang-8/9: arm64 .seh_ link error (https://travis-ci.org/wang-bin/avbuild/jobs/497331831)
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
@@ -52,6 +52,7 @@ matrix:
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
             - clang-8
+            - clang-tools-8
             - lld-8
             - clang-9
             - lld-9
@@ -87,7 +88,7 @@ matrix:
         - TARGET=windows-store
         - _CC=clang-8 # clang-9: compiler-rt symbols are used, e.g. ___ashldi3 (https://travis-ci.org/wang-bin/avbuild/jobs/497331833)
         - LIB_OPT=--enable-static
-        - ARCHS="arm x86 x64" # arm: aacpsdsp_neon.S error (https://travis-ci.org/wang-bin/avbuild/jobs/497384619)
+        - ARCHS="arm64-clang-cl-8 arm x86 x64" # arm: aacpsdsp_neon.S error (https://travis-ci.org/wang-bin/avbuild/jobs/497384619)
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
@@ -96,6 +97,7 @@ matrix:
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
             - clang-8
+            - clang-tools-8
             - lld-8
             - clang-9
             - lld-9
@@ -209,7 +211,7 @@ install:
 script:
   - export FFSRC=$PWD/ffmpeg-${FF_VERSION}
   - export ANDROID_NDK=$PWD/android-ndk-${NDK_VERSION}
-  - if [ -n "$_CC" ]; then export USER_OPT="$USER_OPT --cc=$_CC"; fi  # host build
+  - if [ -n "$_CC" -a "$TARGET" == "host" ]; then export USER_OPT="$USER_OPT --cc=$_CC"; fi  # host build
   - if [ -n "${CONFIG_SUFFIX}" ]; then ln -sf config{${CONFIG_SUFFIX},}.sh; fi
   - USE_TOOLCHAIN=${_CC:-$CC} ./avbuild.sh $TARGET "$ARCHS" # CC(gcc/clang) is set by travis depending on compiler
 
