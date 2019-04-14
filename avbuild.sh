@@ -251,20 +251,34 @@ use_llvm_binutils() {
   local clang=$clang_dir${clang_name/-cl/}
   local CLANG_FALLBACK=clang-8
   $IS_APPLE_CLANG && CLANG_FALLBACK=/usr/local/opt/llvm/bin/clang
+  echo "clang: `$clang --version`"
   # -print-prog-name= prints native dir format(on windows) and `which` fails
-  which "$(to_unix_path "`$clang -print-prog-name=llvm-ar`")" &>/dev/null || clang=$CLANG_FALLBACK
-  $(to_unix_path "`$clang -print-prog-name=llvm-ranlib`") --version || clang=$CLANG_FALLBACK
-  local llvm_ar_path=`which "$LLVM_AR" &>/dev/null`
-  local llvm_ar_ver_path=`$clang -print-prog-name=llvm-ar`
-  if [ "$llvm_ar_path" != "$llvm_ar_ver_path" ]; then
-    LLVM_AR="\$($clang -print-prog-name=llvm-ar)" #$clang_dir${clang_name/clang/llvm-ar}
-    LLVM_NM="\$($clang -print-prog-name=llvm-nm)" #$clang_dir${clang_name/clang/llvm-ar}
-    LLVM_RANLIB="\$($clang -print-prog-name=llvm-ranlib)" #$clang_dir${clang_name/clang/llvm-ranlib}
-    LLVM_STRIP="\$($clang -print-prog-name=llvm-strip)" #$clang_dir${clang_name/clang/llvm-strip}
-  fi
+  $(to_unix_path "`$clang -print-prog-name=llvm-ar`") --version &>/dev/null || clang=$CLANG_FALLBACK
+  for tool in ar nm ranlib; do # strip
+    local tool_path=`eval 'which ${LLVM_'$(toupper $tool)'}'`
+    local tool_path_print=$($clang -print-prog-name=llvm-$tool)
+  # -print-prog-name= prints non-versioned path if exists, which may be wrong on linux
+    local tool_v=${clang//*-/llvm-$tool-}
+    [ "$tool_v" = "$clang" ] && tool_v=${clang%clang}llvm-$tool
+    echo "llvm-$tool: $tool_path_print -- `which $tool_v`"
+    which $tool_v &>/dev/null || tool_v=$clang_dir$tool_v
+    which $tool_v &>/dev/null && {
+      eval 'LLVM_'$(toupper $tool)'=$tool_v'
+    } || {
+      local clang_path=`which $clang`
+      local clang_dir=${clang_path%clang*}
+      ls $clang_dir
+      tool_path=${clang_dir}llvm-$tool
+      if [ -x "$tool_path" -a "$tool_path" != "$tool_path_print" ]; then
+        eval 'LLVM_'$(toupper $tool)'="$tool_path"'
+      else
+        eval 'LLVM_'$(toupper $tool)'="\$($clang -print-prog-name=llvm-$tool)"'
+      fi
+    }
+    eval 'TOOLCHAIN_OPT="--$tool=${LLVM_'$(toupper $tool)'} $TOOLCHAIN_OPT"'
+  done
   #EXTRA_LDFLAGS+=" -nodefaultlibs"; EXTRALIBS+=" -lc -lgcc_s"
   # TODO: apple clang invoke ld64. --ld=${CROSS_PREFIX}ld ldflags are different from cc ld flags
-  TOOLCHAIN_OPT="--ar=$LLVM_AR --nm=$LLVM_NM --ranlib=$LLVM_RANLIB $TOOLCHAIN_OPT"
 }
 
 use_lld() {

@@ -55,6 +55,7 @@ matrix:
             - clang-8
             - clang-tools-8
             - lld-8
+            - llvm-8
             - sshpass
             - p7zip-full
             - nasm
@@ -76,6 +77,7 @@ matrix:
             - clang-8
             - clang-tools-8
             - lld-8
+            - llvm-8
             - sshpass
             - p7zip-full
             - nasm
@@ -97,6 +99,7 @@ matrix:
             - clang-8
             - clang-tools-8
             - lld-8
+            - llvm-8
             - sshpass
             - p7zip-full
             - nasm
@@ -116,6 +119,7 @@ matrix:
             - clang-8
             - clang-tools-8
             - lld-8
+            - llvm-8
             - sshpass
     - os: linux
       compiler: clang
@@ -132,6 +136,7 @@ matrix:
             - clang-9
             - clang-tools-9
             - lld-9
+            - llvm-9
             - sshpass
     - os: linux
       compiler: clang # host compiler is not used, just to tell build script to use which compiler to use from ndk. env: CC/CXX
