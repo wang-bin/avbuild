@@ -30,12 +30,12 @@ matrix:
 #          update: true
     - os: osx
       compiler: clang
-      osx_image: xcode10.1
+      osx_image: xcode10.2
       env:
         - TARGET=host
     - os: osx
       compiler: clang
-      osx_image: xcode10.1
+      osx_image: xcode10.2
       env:
         - TARGET=iOS
     - os: linux
@@ -43,7 +43,8 @@ matrix:
       env:
         - TARGET=windows-desktop
         - _CC=clang-8
-        - ARCHS="arm64-clang-cl-8 arm x86 x64" # clang-8/9: arm64 .seh_ link error (https://travis-ci.org/wang-bin/avbuild/jobs/497331831)
+        # arm: undefined __stack_chk_guard
+        - ARCHS="arm64-clang-cl-8 x86 x64" # clang-8/9 -Oz: arm64 .seh_ link error (https://travis-ci.org/wang-bin/avbuild/jobs/497331831)
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
@@ -54,8 +55,6 @@ matrix:
             - clang-8
             - clang-tools-8
             - lld-8
-            - clang-9
-            - lld-9
             - sshpass
             - p7zip-full
             - nasm
@@ -75,9 +74,8 @@ matrix:
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
             - clang-8
+            - clang-tools-8
             - lld-8
-            - clang-9
-            - lld-9
             - sshpass
             - p7zip-full
             - nasm
@@ -99,8 +97,6 @@ matrix:
             - clang-8
             - clang-tools-8
             - lld-8
-            - clang-9
-            - lld-9
             - sshpass
             - p7zip-full
             - nasm
@@ -118,9 +114,8 @@ matrix:
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
             - clang-8
+            - clang-tools-8
             - lld-8
-            - clang-9
-            - lld-9
             - sshpass
     - os: linux
       compiler: clang
@@ -135,6 +130,7 @@ matrix:
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
             - clang-9
+            - clang-tools-9
             - lld-9
             - sshpass
     - os: linux

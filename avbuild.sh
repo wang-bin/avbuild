@@ -244,6 +244,7 @@ to_unix_path() {
 }
 
 use_llvm_binutils() {
+  echo "detecting llvm tools..."
   # use llvm-ar/ranlib, host ar/ranlib may not work for non-mac target(e.g. macOS)
   local clang_dir=${USE_TOOLCHAIN%clang*}
   local clang_name=${USE_TOOLCHAIN##*/}
@@ -252,7 +253,7 @@ use_llvm_binutils() {
   $IS_APPLE_CLANG && CLANG_FALLBACK=/usr/local/opt/llvm/bin/clang
   # -print-prog-name= prints native dir format(on windows) and `which` fails
   which "$(to_unix_path "`$clang -print-prog-name=llvm-ar`")" &>/dev/null || clang=$CLANG_FALLBACK
-  which "$(to_unix_path "`$clang -print-prog-name=llvm-ranlib`")" &>/dev/null || clang=$CLANG_FALLBACK
+  $(to_unix_path "`$clang -print-prog-name=llvm-ranlib`") --version || clang=$CLANG_FALLBACK
   local llvm_ar_path=`which "$LLVM_AR" &>/dev/null`
   local llvm_ar_ver_path=`$clang -print-prog-name=llvm-ar`
   if [ "$llvm_ar_path" != "$llvm_ar_ver_path" ]; then
