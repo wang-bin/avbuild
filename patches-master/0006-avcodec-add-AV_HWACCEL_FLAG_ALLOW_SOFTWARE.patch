@@ -1,7 +1,7 @@
-From 26eeb7678ee810b4556fb0821b49eb476c9e4587 Mon Sep 17 00:00:00 2001
+From 6ee34cb1a0514ff9131f1d824bfc0fc63b33ec33 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 9 Nov 2017 14:56:53 +0800
-Subject: [PATCH 06/20] avcodec: add AV_HWACCEL_FLAG_ALLOW_SOFTWARE
+Subject: [PATCH 06/21] avcodec: add AV_HWACCEL_FLAG_ALLOW_SOFTWARE
 
 a hw decoder may have software or hybrid implementation, for example videotoolbox hevc.
 the performance may be better than ffmpeg sw decoder.
@@ -11,20 +11,20 @@ the performance may be better than ffmpeg sw decoder.
  2 files changed, 5 insertions(+)
 
 diff --git a/libavcodec/avcodec.h b/libavcodec/avcodec.h
-index 0ce22ec4fa..e7d6814134 100644
+index 9e37466641..d786e47373 100644
 --- a/libavcodec/avcodec.h
 +++ b/libavcodec/avcodec.h
-@@ -3832,6 +3832,10 @@ typedef struct AVHWAccel {
+@@ -3834,6 +3834,10 @@ typedef struct AVHWAccel {
+  */
  #define AV_HWACCEL_FLAG_ALLOW_PROFILE_MISMATCH (1 << 2)
  
- /**
++/**
 + * Hardware acceleration can use it's software implementation.
 + */
 +#define AV_HWACCEL_FLAG_ALLOW_SOFTWARE (1 << 3)
-+/**
+ /**
   * @}
   */
- 
 diff --git a/libavcodec/options_table.h b/libavcodec/options_table.h
 index a3235bcd57..24b1f78036 100644
 --- a/libavcodec/options_table.h
@@ -38,5 +38,5 @@ index a3235bcd57..24b1f78036 100644
  {"discard_damaged_percentage", "Percentage of damaged samples to discard a frame", OFFSET(discard_damaged_percentage), AV_OPT_TYPE_INT, {.i64 = 95 }, 0, 100, V|D },
  {NULL},
 -- 
-2.11.0
+2.20.1 (Apple Git-117)
 

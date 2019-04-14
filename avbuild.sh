@@ -388,7 +388,7 @@ setup_win_clang(){
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
   #FIXME: clang-cl undefined __stack_chk_guard for arm
   # -fcf-protection[=full] x86 only?
-  # FIXME: arm64 works with clang-cl but not clang, clang fatal error when linking or compiling for static: error in backend: .seh_ directive must appear within an active frame
+  # arm64 -Oz: .seh_ directive must appear within an active frame
   $IS_CLANG_CL && {
     EXTRA_CFLAGS+=" -MD /guard:cf"
   } || {
@@ -416,15 +416,6 @@ echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG
   win10inc=(${win10inc[@]/#/$WindowsSdkDir/Include/$WindowsSDKVersion/})
   IFS=\; eval 'INCLUDE="${win10inc[*]}"'
 
-# change static lib name to %.a. lld-link can be used by both msvc(%.lib) target and mingw(%.a) target, it's impossible to tell the static lib. check target os instead
-# LD_LIB: as dll/exe dependencies, default is 'lib%.a' for lld-link
-# FIXME: affects vc build
-  grep -q "patch win clang static lib" "$FFSRC/configure" || sed -i $sed_bak "/    win32|win64)/a\\
-\        LIBPREF= # patch win clang static lib\\
-\        LIBSUF=.lib\\
-\        LD_LIB='%.lib'\\
-" "$FFSRC/configure"
-  sed -i $sed_bak 's,\(SLIB_CREATE_DEF_CMD[^ ]*\) \([^ ]*makedef.*\),\1 AR="\$(AR_CMD)" NM="\$(NM_CMD)" \2,g' "$FFSRC/configure"
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat > "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
 export INCLUDE="$VCDIR/include;$INCLUDE;$PKG_CONFIG_PATH_MFX_UNIX/../../include"
@@ -1241,7 +1232,7 @@ config1(){
       fi
     fi
     # FIXME: not atomic, lock, or move to windows only
-    if ! `grep -q SETDLLDIRECTORY_PATCHED $FFSRC_TOOLS/cmdutils.c`; then # cl, clang and clang-cl
+    if [ ${#FFMAJOR} -lt 4 ] && ! $FFGIT && ! `grep -q SETDLLDIRECTORY_PATCHED $FFSRC_TOOLS/cmdutils.c`; then # cl, clang and clang-cl
       sed -i $sed_bak "/SetDllDirectory(\"\")/i\\
 \#if (_WIN32_WINNT+0) >= 0x0502  \/\/SETDLLDIRECTORY_PATCHED\\
 " "$FFSRC_TOOLS/cmdutils.c"

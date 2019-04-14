@@ -1,7 +1,7 @@
-From 6747c7ae7b3e3528618d98f1441a5f201e46094a Mon Sep 17 00:00:00 2001
+From 44e1f5f89e2decf73356a7823f682319d0cab143 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 13 Nov 2017 12:26:26 +0800
-Subject: [PATCH 09/20] videotoolbox: add p010
+Subject: [PATCH 09/21] videotoolbox: add p010
 
 ---
  libavutil/hwcontext_videotoolbox.c | 1 +
@@ -20,5 +20,5 @@ index cc00f1f2f2..8c632c3e91 100644
      { kCVPixelFormatType_422YpCbCr8,                    AV_PIX_FMT_UYVY422 },
      { kCVPixelFormatType_32BGRA,                        AV_PIX_FMT_BGRA },
 -- 
-2.11.0
+2.20.1 (Apple Git-117)
 

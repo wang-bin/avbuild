@@ -1,7 +1,7 @@
-From d45ccba9cf6004fe3db0615a3858317ea26dda41 Mon Sep 17 00:00:00 2001
+From dcc785ad375f9613583d7e3251e390772a17600c Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:19:07 +0800
-Subject: [PATCH 02/20] mmal: enable 0-copy for egl interop
+Subject: [PATCH 02/21] mmal: enable 0-copy for egl interop
 
 ---
  libavcodec/mmaldec.c | 5 ++++-
@@ -31,5 +31,5 @@ index 647a22ef7c..a653a9e6b5 100644
      if (!ctx->pool_out->pool) {
          ret = AVERROR(ENOMEM);
 -- 
-2.11.0
+2.20.1 (Apple Git-117)
 

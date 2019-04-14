@@ -1,7 +1,7 @@
-From fb960026af59ccc6d0c9cd9203aa5cce248fcbda Mon Sep 17 00:00:00 2001
+From 85d4255be03f99d4a7f4b0cde48cac1e18ad3475 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 30 Mar 2018 16:23:57 +0800
-Subject: [PATCH 16/20] videotoolbox: use fourcc for p010 instead of an enum
+Subject: [PATCH 16/21] videotoolbox: use fourcc for p010 instead of an enum
  which may not exist in sdk
 
 ---
@@ -22,5 +22,5 @@ index 8c632c3e91..bdbd1111b5 100644
      { kCVPixelFormatType_422YpCbCr8,                    AV_PIX_FMT_UYVY422 },
      { kCVPixelFormatType_32BGRA,                        AV_PIX_FMT_BGRA },
 -- 
-2.11.0
+2.20.1 (Apple Git-117)
 

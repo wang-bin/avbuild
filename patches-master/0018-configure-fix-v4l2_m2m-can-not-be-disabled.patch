@@ -1,17 +1,17 @@
-From 84ec411a4387bc9f283f58a4f4ca2f18fbf66215 Mon Sep 17 00:00:00 2001
+From 0f9271eed26571ef0a272b0e19709919eee7b00a Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Wed, 16 May 2018 10:38:58 +0800
-Subject: [PATCH 18/20] configure: fix v4l2_m2m can not be disabled
+Subject: [PATCH 18/21] configure: fix v4l2_m2m can not be disabled
 
 ---
  configure | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/configure b/configure
-index 2e2d5169c4..8e627187d2 100755
+index d40ab1c5e9..b322bbbf37 100755
 --- a/configure
 +++ b/configure
-@@ -6382,7 +6382,7 @@ rsync --help 2> /dev/null | grep -q 'contimeout' && enable rsync_contimeout || d
+@@ -6369,7 +6369,7 @@ rsync --help 2> /dev/null | grep -q 'contimeout' && enable rsync_contimeout || d
  check_headers linux/fb.h
  check_headers linux/videodev2.h
  test_code cc linux/videodev2.h "struct v4l2_frmsizeenum vfse; vfse.discrete.width = 0;" && enable_sanitized struct_v4l2_frmivalenum_discrete
@@ -21,5 +21,5 @@ index 2e2d5169c4..8e627187d2 100755
  check_cc mpeg1_v4l2_m2m linux/videodev2.h "int i = V4L2_PIX_FMT_MPEG1;"
  check_cc mpeg2_v4l2_m2m linux/videodev2.h "int i = V4L2_PIX_FMT_MPEG2;"
 -- 
-2.11.0
+2.20.1 (Apple Git-117)
 
