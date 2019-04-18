@@ -196,8 +196,8 @@ install:
       fi
   - |
       if [ "$TRAVIS_OS_NAME" == "linux" -a "$TARGET" == "host" -o "$TARGET" == "windows-desktop" ]; then
-        wget https://sourceforge.net/projects/avbuild/files/dep/libmfx.7z/download -O libmfx.7z
-        7z x -y libmfx.7z -otools &>/dev/null
+        wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7z
+        7z x -y dep.7z -otools &>/dev/null
         if [ "$TARGET" == "host" ]; then
           export PKG_CONFIG_PATH_MFX=$PWD/tools/linux64-gcc/lib/pkgconfig
         fi

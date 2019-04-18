@@ -59,8 +59,8 @@ install:
       7z x -y ffmpeg-%FF_VERSION%.tar > NUL
     )
   - if /i %_PLATFORM%==desktop (
-      appveyor DownloadFile "https://sourceforge.net/projects/avbuild/files/dep/libmfx.7z/download" -FileName libmfx.7z &&
-      7z x -y libmfx.7z -otools &&
+      appveyor DownloadFile "https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download" -FileName dep.7z &&
+      7z x -y dep.7z -otools &&
       set PKG_CONFIG_PATH_MFX=%CD%\tools\%_CC%%_ARCH%\lib\pkgconfig)
 
 before_build:
