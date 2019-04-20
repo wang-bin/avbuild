@@ -267,7 +267,6 @@ use_llvm_binutils() {
     } || {
       local clang_path=`which $clang`
       local clang_dir=${clang_path%clang*}
-      ls $clang_dir
       tool_path=${clang_dir}llvm-$tool
       if [ -x "$tool_path" -a "$tool_path" != "$tool_path_print" ]; then
         eval 'LLVM_'$(toupper $tool)'="$tool_path"'

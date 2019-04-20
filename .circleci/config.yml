@@ -5,11 +5,7 @@ custom-steps:
     run:
       name: install dev tools and dependencies
       command: |
-        wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key |apt-key add -
-        apt update
-        apt install -y software-properties-common # for add-apt-repository, ubuntu-tooolchain-r-test is required by trusty
-        apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main"
-        apt install -y binutils-arm-linux-gnueabihf clang-${LLVM_VER} lld-${LLVM_VER} clang-tools-${LLVM_VER} # clang-tools: clang-cl
+        apt install -y binutils-arm-linux-gnueabihf lld-${LLVM_VER} clang-tools-${LLVM_VER} # clang-tools: clang-cl
   - &install-dev
     run:
       name: install dev packages
@@ -34,20 +30,34 @@ custom-steps:
           wget http://ffmpeg.org/releases/ffmpeg-${FF_VERSION}.tar.bz2
           tar jxf ffmpeg-${FF_VERSION}.tar.bz2
         fi
+  - &get-winsysroot
+    run:
+      name: Install windows sdk and vcrt
+      command: |
+        wget https://sourceforge.net/projects/avbuild/files/dep/msvcrt-dev.7z/download -O msvcrt-dev.7z
+        7z x msvcrt-dev.7z -o/tmp &>/dev/null
+        wget https://sourceforge.net/projects/avbuild/files/dep/winsdk.7z/download -O winsdk.7z
+        7z x winsdk.7z -o/tmp &>/dev/null
+        ${WindowsSdkDir}/lowercase.sh
+        ${WindowsSdkDir}/mkvfs.sh
+        export VCDIR=/tmp/msvcrt-dev
+        export WindowsSDKVersion=$(cat /tmp/winsdk/.version)
+        export WindowsSdkDir=/tmp/winsdk
+        export PKG_CONFIG_PATH_MFX=/tmp/tools/ClangCL/lib/pkgconfig
   - &upload
     run:
       name: upload
       command: |
         $FORCE_LTO && LTO_SUFFIX=-lto
-        mv sdk-* ffmpeg-${FF_VERSION}-${TARGET_OS}-${COMPILER}${CONFIG_SUFFIX}${LTO_SUFFIX}
-        tar Jcf ffmpeg-${FF_VERSION}-${TARGET_OS}-${COMPILER}${CONFIG_SUFFIX}${LTO_SUFFIX}{.tar.xz,}
+        mv sdk-* ffmpeg-${FF_VERSION}-${TARGET_OS}-${COMPILER}${LIB_OPT//*-/-}${CONFIG_SUFFIX}${LTO_SUFFIX}
+        tar Jcf ffmpeg-${FF_VERSION}-${TARGET_OS}-${COMPILER}${LIB_OPT//*-/-}${CONFIG_SUFFIX}${LTO_SUFFIX}{.tar.xz,}
         ls -lh *.xz
         sshpass -p $SF_PW scp -o StrictHostKeyChecking=no ffmpeg-${FF_VERSION}-${TARGET_OS}*.tar.xz $SF_USER,avbuild@frs.sourceforge.net:/home/frs/project/a/av/avbuild/${TARGET_OS}
 
 jobs:
   build_gcc:
     docker:
-      - image: buildpack-deps:bionic #ubuntu:18.04 install git etc.
+      - image: buildpack-deps:19.04
     environment:
       COMPILER: gcc
       TARGET_OS: "linux"
@@ -67,15 +77,15 @@ jobs:
             if [ -n "${CONFIG_SUFFIX}" ]; then
               ln -sf config{${CONFIG_SUFFIX},}.sh;
             fi
-            wget https://sourceforge.net/projects/avbuild/files/dep/libmfx.7z/download -O libmfx.7z
-            7z x -y libmfx.7z -otools &>/dev/null
+            wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7z
+            7z x -y dep.7z -otools &>/dev/null
             export PKG_CONFIG_PATH_MFX=$PWD/tools/linux64-gcc/lib/pkgconfig
             export FFSRC=$PWD/ffmpeg-${FF_VERSION}
             ./avbuild.sh
       - *upload
   build_clang:
     docker:
-      - image: buildpack-deps:bionic #ubuntu:18.04 install git etc.
+      - image: buildpack-deps:19.04
     environment:
       COMPILER: clang
       TARGET_OS: "linux"
@@ -91,8 +101,8 @@ jobs:
             if [ -n "${CONFIG_SUFFIX}" ]; then
               ln -sf config{${CONFIG_SUFFIX},}.sh;
             fi
-            wget https://sourceforge.net/projects/avbuild/files/dep/libmfx.7z/download -O libmfx.7z
-            7z x -y libmfx.7z -otools &>/dev/null
+            wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7z
+            7z x -y dep.7z -otools &>/dev/null
             export PKG_CONFIG_PATH_MFX=$PWD/tools/linux64-gcc/lib/pkgconfig
             export FFSRC=$PWD/ffmpeg-${FF_VERSION}
             USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh
@@ -100,7 +110,7 @@ jobs:
 
   build_rpi:
     docker:
-      - image: buildpack-deps:bionic #ubuntu:18.04 install git etc.
+      - image: buildpack-deps:19.04
     environment:
       COMPILER: clang
       TARGET_OS: "raspberry-pi"
@@ -128,7 +138,7 @@ jobs:
 
   build_sunxi:
     docker:
-      - image: buildpack-deps:bionic #ubuntu:18.04 install git etc.
+      - image: buildpack-deps:19.04
     environment:
       COMPILER: clang
       TARGET_OS: "sunxi"
@@ -154,11 +164,98 @@ jobs:
             USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh ${TARGET_OS}
       - *upload
 
+  build_win_static:
+    docker:
+      - image: buildpack-deps:19.04
+    environment:
+      COMPILER: clang # clang-9: compiler-rt symbols are used, e.g. ___ashldi3 (https://travis-ci.org/wang-bin/avbuild/jobs/497331833)
+      TARGET_OS: windows-desktop
+      LIB_OPT: --enable-static
+      VCDIR: /tmp/msvcrt-dev
+      WindowsSdkDir: /tmp/winsdk
+      PKG_CONFIG_PATH_MFX: /tmp/ClangCL/lib/pkgconfig
+    steps:
+      - checkout
+      - run: git submodule update --init --recursive
+      - *install-clang
+      - *install-dev
+      - *get-ffmpeg
+      - *get-winsysroot
+      - run:
+          name: Configure and Build
+          command: |
+            echo WindowsSDKVersion: $WindowsSDKVersion
+            export WindowsSDKVersion=$(cat $WindowsSdkDir/.version)
+            if [ -n "${CONFIG_SUFFIX}" ]; then
+              ln -sf config{${CONFIG_SUFFIX},}.sh;
+            fi
+            wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7z
+            7z x -y dep.7z -o/tmp &>/dev/null
+            export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+            USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh ${TARGET_OS} "arm64-clang-cl-${LLVM_VER} arm x86 x64"
+      - *upload
+
+  build_uwp_static:
+    docker:
+      - image: buildpack-deps:19.04
+    environment:
+      COMPILER: clang
+      TARGET_OS: windows-store
+      LIB_OPT: --enable-static
+      VCDIR: /tmp/msvcrt-dev
+      WindowsSdkDir: /tmp/winsdk
+    steps:
+      - checkout
+      - run: git submodule update --init --recursive
+      - *install-clang
+      - *install-dev
+      - *get-ffmpeg
+      - *get-winsysroot
+      - run:
+          name: Configure and Build
+          command: |
+            echo WindowsSDKVersion: $WindowsSDKVersion
+            export WindowsSDKVersion=$(cat $WindowsSdkDir/.version)
+            if [ -n "${CONFIG_SUFFIX}" ]; then
+              ln -sf config{${CONFIG_SUFFIX},}.sh;
+            fi
+            export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+            USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh ${TARGET_OS} "arm64-clang-cl-${LLVM_VER} arm x86 x64"
+      - *upload
+
+  build_uwp:
+    docker:
+      - image: buildpack-deps:19.04
+    environment:
+      COMPILER: clang
+      TARGET_OS: windows-store
+      VCDIR: /tmp/msvcrt-dev
+      WindowsSdkDir: /tmp/winsdk
+    steps:
+      - checkout
+      - run: git submodule update --init --recursive
+      - *install-clang
+      - *install-dev
+      - *get-ffmpeg
+      - *get-winsysroot
+      - run:
+          name: Configure and Build
+          command: |
+            echo WindowsSDKVersion: $WindowsSDKVersion
+            export WindowsSDKVersion=$(cat $WindowsSdkDir/.version)
+            if [ -n "${CONFIG_SUFFIX}" ]; then
+              ln -sf config{${CONFIG_SUFFIX},}.sh;
+            fi
+            export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+            USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh ${TARGET_OS} "arm64-clang-cl-${LLVM_VER} arm x86 x64"
+      - *upload
+
 workflows:
   version: 2
   build_and_test:
     jobs:
       - build_gcc
       - build_clang
-      - build_rpi
-      - build_sunxi
+      - build_win_static
+      - build_uwp
+      - build_uwp_static
