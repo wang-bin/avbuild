@@ -137,7 +137,7 @@ install:
           git checkout origin/master
           cd -
         else
-          git clone --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-${FF_VERSION}
+          git clone -b ${FF_BRANCH:-master} --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-${FF_VERSION}
         fi
       fi
   - |
