@@ -387,7 +387,7 @@ setup_win_clang(){
   # environment var LIB is used by lld-link, in windows style, i.e. export LIB=dir1;dir2;...
   # makedef: define env AR=llvm-ar, NM=llvm-nm
   # --windres=rc option is broken and not recognized
-  TARGET_TRIPLE=${target_tripple_arch}-windows-msvc # lto default vendor is empty, fix lld-link: warning: Linking two modules of different target triples
+  TARGET_TRIPLE=${target_tripple_arch}-pc-windows-msvc # lto default vendor is empty, fix lld-link: warning: Linking two modules of different target triples
   TARGET_OPT="--target=$TARGET_TRIPLE"
   [ "$MACHINE" == arm ] && {
     ASM_OPT+=" --enable-thumb --enable-neon --cpu=armv7-a"
