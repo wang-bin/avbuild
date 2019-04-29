@@ -761,29 +761,30 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   CROSS_PREFIX=${ANDROID_HEADER_TRIPLE}-
   local TOOLCHAIN=${ANDROID_TOOLCHAIN_PREFIX}-4.9
   [ -d $NDK_ROOT/toolchains/${TOOLCHAIN} ] || TOOLCHAIN=${ANDROID_TOOLCHAIN_PREFIX}-4.8
-  local ANDROID_TOOLCHAIN_DIR="$NDK_ROOT/toolchains/${TOOLCHAIN}"
-  gxx=`find ${ANDROID_TOOLCHAIN_DIR} -name "*g++*"` # can not use "*-gcc*": can be -gcc-ar, stdint-gcc.h
-  as=`find ${ANDROID_TOOLCHAIN_DIR} -name "*-as" -o -name "*-as.exe"`
+  local ANDROID_GCC_DIR="$NDK_ROOT/toolchains/${TOOLCHAIN}"
+  gxx=`find ${ANDROID_GCC_DIR} -name "*g++*" 2>/dev/null` # can not use "*-gcc*": can be -gcc-ar, stdint-gcc.h
+  as=`find ${ANDROID_GCC_DIR} -name "*-as" -o -name "*-as.exe" 2>/dev/null`
   clangxxs=(`find $NDK_ROOT/toolchains/llvm/prebuilt -name "clang++*"`) # can not be "clang*": clang-tidy
   clangxx=${clangxxs[0]}
   ld_lld=${clangxx/clang++/ld.lld}
   [ -f "$ld_lld" ] || ld_lld=
+  [ -f "$gxx" ] || IS_CLANG=true
   echo "g++: $gxx, clang++: $clangxx IS_CLANG:$IS_CLANG, ld_lld: $ld_lld, as: $as"
   $IS_CLANG && probe_cc $clangxx || probe_cc $gxx
-  ANDROID_TOOLCHAIN_DIR=${as%bin*}
+  ANDROID_GCC_DIR=${as%bin*}
   local ANDROID_LLVM_DIR=${clangxx%bin*}
-  echo "ANDROID_TOOLCHAIN_DIR=${ANDROID_TOOLCHAIN_DIR}"
+  echo "ANDROID_GCC_DIR=${ANDROID_GCC_DIR}"
   echo "ANDROID_LLVM_DIR=${ANDROID_LLVM_DIR}"
-  ANDROID_TOOLCHAIN_DIR_REL=${ANDROID_TOOLCHAIN_DIR#$NDK_ROOT}
+  ANDROID_GCC_DIR_REL=${ANDROID_GCC_DIR#$NDK_ROOT}
   [ -n "$ld_lld" ] && {
     [ $ANDROID_ARCH = "x86" ] && LFLAGS_CLANG+=" -Wl,-z,notext"
     TRY_FIX_CORTEX_A8=false
     LFLAGS_CLANG+=" -fuse-ld=lld -rtlib=compiler-rt" # use compiler-rt instead of default libgcc.a so -gcc-toolchain is not required
   } || {
-    LFLAGS_CLANG+=" -gcc-toolchain \$NDK_ROOT/$ANDROID_TOOLCHAIN_DIR_REL" # ld from gcc toolchain. TODO: lld?
+    LFLAGS_CLANG+=" -gcc-toolchain \$NDK_ROOT/$ANDROID_GCC_DIR_REL" # ld from gcc toolchain. TODO: lld?
   }
   $TRY_FIX_CORTEX_A8 && EXTRA_LDFLAGS+=" -Wl,--fix-cortex-a8"
-  $FFGIT || [ "$ANDROID_ARCH" == "arm" ] && [[ $FFMAJOR <  4 ]] && CFLAGS_CLANG="-fno-integrated-as -gcc-toolchain \$NDK_ROOT/$ANDROID_TOOLCHAIN_DIR_REL $CFLAGS_CLANG" # Disable integrated-as for better compatibility, but need as from gcc toolchain. from ndk cmake
+  $FFGIT || [ "$ANDROID_ARCH" == "arm" ] && [[ $FFMAJOR <  4 ]] && CFLAGS_CLANG="-fno-integrated-as -gcc-toolchain \$NDK_ROOT/$ANDROID_GCC_DIR_REL $CFLAGS_CLANG" # Disable integrated-as for better compatibility, but need as from gcc toolchain. from ndk cmake
   local ANDROID_SYSROOT_LIB="$NDK_ROOT/platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
   local ANDROID_SYSROOT_LIB_REL="platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
   # TODO: new clang can find sysroot automatically
@@ -814,14 +815,14 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
       fi
     fi
   fi
-  #test -d $ANDROID_TOOLCHAIN_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-$API_LEVEL --toolchain=$TOOLCHAIN --install-dir=$ANDROID_TOOLCHAIN_DIR #--system=linux-x86_64
+  #test -d $ANDROID_GCC_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-$API_LEVEL --toolchain=$TOOLCHAIN --install-dir=$ANDROID_GCC_DIR #--system=linux-x86_64
   TOOLCHAIN_OPT+=" --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE\""
   INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}
   $IS_CLANG && INSTALL_DIR="${INSTALL_DIR}-clang" || INSTALL_DIR="${INSTALL_DIR}-gcc"
   enable_opt jni mediacodec
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
-export PATH=$ANDROID_TOOLCHAIN_DIR/bin:$ANDROID_LLVM_DIR/bin:$PATH
+export PATH=$ANDROID_GCC_DIR/bin:$ANDROID_LLVM_DIR/bin:$PATH
 EOF
 }
 #  --toolchain=hardened : https://wiki.debian.org/Hardening
