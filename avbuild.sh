@@ -763,7 +763,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   [ -d $NDK_ROOT/toolchains/${TOOLCHAIN} ] || TOOLCHAIN=${ANDROID_TOOLCHAIN_PREFIX}-4.8
   local ANDROID_TOOLCHAIN_DIR="$NDK_ROOT/toolchains/${TOOLCHAIN}"
   gxx=`find ${ANDROID_TOOLCHAIN_DIR} -name "*g++*"` # can not use "*-gcc*": can be -gcc-ar, stdint-gcc.h
-  as=`find ${ANDROID_TOOLCHAIN_DIR} -name  -name "*-as" -o -name "*-as.exe"`
+  as=`find ${ANDROID_TOOLCHAIN_DIR} -name "*-as" -o -name "*-as.exe"`
   clangxxs=(`find $NDK_ROOT/toolchains/llvm/prebuilt -name "clang++*"`) # can not be "clang*": clang-tidy
   clangxx=${clangxxs[0]}
   ld_lld=${clangxx/clang++/ld.lld}
