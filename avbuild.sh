@@ -1161,8 +1161,7 @@ config1(){
     ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
     osx*|macos*)     setup_macos_env $TAGET_ARCH_FLAG $1 ;;
     mingw*)     setup_mingw_env $TAGET_ARCH_FLAG ;;
-    vc)         setup_vc_env $TAGET_ARCH_FLAG $1 ;;
-    win*|uwp*)  setup_win $TAGET_ARCH_FLAG $1 ;; # TODO: check cc
+    vc|win*|uwp*)  setup_win $TAGET_ARCH_FLAG $1 ;; # TODO: check cc
     rpi*|raspberry*) setup_rpi_env $TAGET_ARCH_FLAG $1 ;;
     sunxi*) setup_sunxi_env $TAGET_ARCH_FLAG $1 ;;
     linux*)
@@ -1171,7 +1170,7 @@ config1(){
       ;;
     *) # assume host build. use "") ?
       if $VC_BUILD; then
-        setup_vc_env $TAGET_ARCH_FLAG
+        setup_win $TAGET_ARCH_FLAG
       elif host_is MinGW || host_is MSYS; then
         setup_mingw_env
       elif host_is Linux; then
