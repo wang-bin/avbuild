@@ -37,11 +37,11 @@ windows mingw, vs2013~2017, desktop/store/phone: [![appveyor_ci](https://ci.appv
 | CC/H?X/OS |  Linux  |  Android  |  macOS  |   iOS   |    RPi    |  Win32  |  WinStore  | WinPhone |
 |-----------|---------|-----------|---------|---------|-----------|---------|------------|----------|
 |   Clang   |    H    |     C     |   A+H   |   A+C   |    H+C    |         |            |          |
-| Clang+LLD |    H    |     C     |    ?    |         |   A+H+C   |  A+H+C  |   A+H+C    |     ?    |
-|    GCC    |    H    |     C     |    H    |         |    H+C    |   H+C   |      ?     |     ?    |
+| Clang+LLD |    H    |     C     |    ?    |         |   A+H+C   |  A+H+C  |   A+H+C    |    A+C   |
+|    GCC    |    H    |     C     |    H    |         |    H+C    |   H+C   |      ?     |          |
 |  VS2013   |         |           |         |         |           |    H    |      H     |     C    |
 |  VS2015   |         |           |         |         |           |    H    |      H     |     C    |
-|  VS2017   |         |           |         |         |           |    H    |      H     |     ?    |
+|  VS2017   |         |           |         |         |           |    H    |      H     |          |
 
 
 - A: Apple clang

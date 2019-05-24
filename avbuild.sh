@@ -318,6 +318,18 @@ check_cross_build() {
 # warnings are used by ffmpeg developer, some are enabled by configure: -Wl,--warn-shared-textrel
 
 setup_win(){
+  WIN_VER_SET=false
+  local win_name=${2%%[0-9]*}
+  local win_ver=${2##$win_name}
+  local win_major=${win_ver%%.*}
+  local win_minor=${win_ver##*.}
+  echo "$win_ver" |grep -q '\.' || win_minor=0
+  [ -n "$win_major" ] && WIN_VER_SET=true || win_major=6
+  [[ "$2" == win*xp ]] && {
+    win_major=5
+    win_minor=1
+  }
+  WIN_VER=`printf "0x%02X%02X" $win_major $win_minor`
   local win_cc=clang
   which cl &>/dev/null && win_cc=cl
   : ${USE_TOOLCHAIN:=$win_cc}
@@ -351,7 +363,6 @@ setup_win_clang(){
   : ${ONECORE:=}
   STORE=
   VS_VER=15
-  WIN_VER="0x0600"
   local IS_STORE=false
   local os=$2
   [[ "$os"  == win*store || "$os" == win*phone || "${os:0:3}" == uwp || "${os:0:5}" == winrt ]] && IS_STORE=true
@@ -361,7 +372,7 @@ setup_win_clang(){
   platform=$(tolower $Platform)
   MACHINE=$Platform
   if [ "${platform:0:3}" = "arm" ]; then
-    WIN_VER="0x0A00"
+    $WIN_VER_SET || WIN_VER="0x0A00"
     $IS_STORE || EXTRA_CFLAGS+=" -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE=1"
   # FIXME: clang armv7 does not support as_fpu_directive, and the alternative '@ .fpu neon' is not supported by --target=arm-pc-windows-msvc does not support
     arch=$platform
@@ -429,11 +440,15 @@ echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG
   win10inc=(shared ucrt um winrt)
   win10inc=(${win10inc[@]/#/$WindowsSdkDir/Include/$WindowsSDKVersion/})
   IFS=\; eval 'INCLUDE="${win10inc[*]}"'
-
+  local VCDIR_LIB=$VCDIR/lib/$ONECORE/${MACHINE/86_/}/$STORE
+  ARCH120=${MACHINE/*86_*/amd64} #vc120 sdk layout
+  ARCH120=${MACHINE/x64/amd64}
+  ARCH120=${MACHINE/x86/}
+  [ ! -d "$VCDIR_LIB" ] && VCDIR_LIB=$VCDIR/lib/$STORE/${ARCH120}
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat > "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
 export INCLUDE="$VCDIR/include;$INCLUDE;$PKG_CONFIG_PATH_MFX_UNIX/../../include"
-export LIB="$VCDIR/lib/$ONECORE/${MACHINE/86_/}/$STORE;$WindowsSdkDir/Lib/$WindowsSDKVersion/ucrt/${MACHINE/86_/};$WindowsSdkDir/Lib/$WindowsSDKVersion/um/${MACHINE/86_/};$PKG_CONFIG_PATH_MFX_UNIX/../../lib"
+export LIB="$VCDIR_LIB;$WindowsSdkDir/Lib/$WindowsSDKVersion/ucrt/${MACHINE/86_/};$WindowsSdkDir/Lib/$WindowsSDKVersion/um/${MACHINE/86_/};$PKG_CONFIG_PATH_MFX_UNIX/../../lib"
 export AR=$LLVM_AR
 export NM=$LLVM_NM
 #export V=1 # FFmpeg BUG: AR is overriden in common.mak and becomes an invalid command in makedef(@printf works in makefiles but not sh scripts)
@@ -469,7 +484,6 @@ setup_vc_env() {
   export PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
   FAMILY=
-  WIN_VER=
   if $WINRT; then
     [ -z "$osver" ] && osver=winrt
     setup_vc_winrt_env $arch
@@ -517,20 +531,20 @@ setup_vc_desktop_env() {
   # TODO: check dxva2_extralibs="-luser32" in configure
   grep -q " user32 " "$FFSRC/configure" || EXTRALIBS+=" user32.lib" # ffmpeg 3.x bug: hwcontext_dxva2 GetDesktopWindow()
   if $FFGIT; then
-    WIN_VER="0x0600"
+    $WIN_VER_SET || WIN_VER="0x0600"
   elif [ $FFMAJOR -gt 3 ]; then
-    WIN_VER="0x0600"
+    $WIN_VER_SET || WIN_VER="0x0600"
   else
     if [ -z "${Platform/*64/}" ]; then
-      WIN_VER="0x0502"
+      $WIN_VER_SET || WIN_VER="0x0502"
       [ $VS_VER -gt 10 ] && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.02'"
     else
-      WIN_VER="0x0501"
+      $WIN_VER_SET || WIN_VER="0x0501"
       [ $VS_VER -gt 10 ] && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.01'"
     fi
   fi
   if [[ "$platform" == arm* ]]; then
-    WIN_VER="0x0A00"
+    $WIN_VER_SET || WIN_VER="0x0A00"
     EXTRA_CFLAGS+=" -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE=1"
     TOOLCHAIN_OPT+=" --enable-cross-compile --target-os=win32"
     setup_vc_common_env $@
@@ -560,8 +574,11 @@ setup_winrt_env() {
   disable_opt programs avdevice
   TOOLCHAIN_OPT+=" --enable-cross-compile --target-os=win32"
   EXTRA_LDFLAGS+=" -APPCONTAINER"
-  WIN_VER="0x0A00"
-  test $VS_VER -lt 14 && WIN_VER="0x0603" #FIXME: vc can support multiple target (and sdk)
+  $WIN_VER_SET || {
+    WIN_VER="0x0A00"
+    test $VS_VER -lt 14 && WIN_VER="0x0603" # vc can support multiple target (and sdk)
+    target_is winphone && WIN_VER="0x0603"
+  }
   WIN10_VER_DEC=`printf "%d" 0x0A00`
   WIN81_VER_DEC=`printf "%d" 0x0603`
   WIN_VER_DEC=`printf "%d" $WIN_VER`
