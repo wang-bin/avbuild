@@ -50,14 +50,7 @@ install:
       C:\msys64\usr\bin\pacman -Sc --noconfirm
     )
   - C:\msys64\usr\bin\pacman -S --noconfirm --needed diffutils patch pkg-config nasm yasm
-  - if [%FF_VERSION%] == [git] (
-      git clone -b %FF_BRANCH% --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-%FF_VERSION%
-    )
-  - if not exist ffmpeg-%FF_VERSION% (
-      appveyor DownloadFile "http://ffmpeg.org/releases/ffmpeg-%FF_VERSION%.tar.xz" &&
-      7z x -y ffmpeg-%FF_VERSION%.tar.xz &&
-      7z x -y ffmpeg-%FF_VERSION%.tar > NUL
-    )
+  - git clone -b %FF_VERSION% --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-%FF_VERSION%
   - if /i %_PLATFORM%==desktop (
       appveyor DownloadFile "https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download" -FileName dep.7z &&
       7z x -y dep.7z -otools &&

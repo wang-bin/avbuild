@@ -20,21 +20,7 @@ custom-steps:
     run:
       name: get ffmpeg source
       command: |
-        if [ "$FF_VERSION" == "git" ]; then
-          if [ -f ffmpeg-${FF_VERSION}/configure ]; then
-            cd ffmpeg-${FF_VERSION}
-            git reset --hard HEAD
-            git fetch
-            git checkout origin/wang
-            cd -
-          else
-            git clone -b ${FF_BRANCH:-master} --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-${FF_VERSION}
-          fi
-        fi
-        if [ ! -f ffmpeg-${FF_VERSION}/configure ]; then
-          wget http://ffmpeg.org/releases/ffmpeg-${FF_VERSION}.tar.bz2
-          tar jxf ffmpeg-${FF_VERSION}.tar.bz2
-        fi
+        git clone -b $FF_VERSION --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-${FF_VERSION}
   - &get-winsysroot
     run:
       name: Install windows sdk and vcrt
