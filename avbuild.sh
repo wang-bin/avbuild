@@ -197,7 +197,8 @@ LLVM_STRIP=llvm-strip
 if [ -f "$PWD/tools/nv-codec-headers/ffnvcodec.pc.in" ]; then
   sed 's/\(prefix=\).*/\1\${pcfiledir\}/' tools/nv-codec-headers/ffnvcodec.pc.in >tools/nv-codec-headers/ffnvcodec.pc
   export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PWD/tools/nv-codec-headers
-  sed -i $sed_bak 's/LOAD_SYMBOL(cuGLGetDevices\(.*\)/LOAD_SYMBOL_OPT(cuGLGetDevices\1/' tools/nv-codec-headers/include/ffnvcodec/dynlink_loader.h # cuda8 api, never used
+  # cuGLGetDevices is a cuda8 api, never used
+  sed -i $sed_bak 's/LOAD_SYMBOL(cuGLGetDevices\(.*\)/LOAD_SYMBOL_OPT(cuGLGetDevices\1/;s/LOAD_SYMBOL(cuDeviceGetAttribute\(.*\)/LOAD_SYMBOL_OPT(cuDeviceGetAttribute\1/;s/LOAD_SYMBOL(cuCtxSetLimit\(.*\)/LOAD_SYMBOL_OPT(cuCtxSetLimit\1/' tools/nv-codec-headers/include/ffnvcodec/dynlink_loader.h
 fi
 
 use_clang() {
