@@ -1303,6 +1303,12 @@ build1(){
     echo configure was not finished
     exit 1
   fi
+# patch config.sh used by pkgconfig_generate.sh. you can use this ffmpeg sdk like this: PKG_CONFIG_PATH=$ffmpeg_sdk_dir/lib/pkgconfig pkg-config --libs libavutil
+  cat >>ffbuild/config.sh <<'EOF'
+prefix=\${pcfiledir}/../..
+libdir=\${prefix}/lib
+incdir=\${prefix}/include
+EOF
   [ -f .env.sh ] && . .env.sh
   ## https://github.com/ninja-build/ninja/pull/1224
   time (make -j`getconf _NPROCESSORS_ONLN` install prefix="$THIS_DIR/$INSTALL_DIR" && cp -af config.txt $THIS_DIR/$INSTALL_DIR)
