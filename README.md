@@ -31,6 +31,7 @@ windows mingw, vs2013~2017, desktop/store/phone: [![appveyor_ci](https://ci.appv
 - support windows xp with latest vs and win sdk (vs2017+win10 sdk) if ffmpeg <= 3.4
 - support SSL for macOS & iOS
 - enable all gpu decoders and encoders if possible
+- nvidia driver version is not limited(nvcuvid, nvdec, nvenc)
 
 ## Build Matrix
 
