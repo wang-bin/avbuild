@@ -1,7 +1,7 @@
 # TODO: xenial, windows. https://docs.travis-ci.com/user/reference/windows/
 language: cpp
 sudo: false
-dist: trusty
+dist: xenial
 cache:
   apt: true
   directories:
@@ -48,7 +48,7 @@ matrix:
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
-            - llvm-toolchain-trusty
+            #- llvm-toolchain-trusty
             - llvm-toolchain-trusty-8
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
@@ -68,7 +68,6 @@ matrix:
       addons: #can be used in matrix, but required by every combination
         apt:
           sources:
-            - llvm-toolchain-trusty
             - llvm-toolchain-trusty-8
             - ubuntu-toolchain-r-test # llvm6.0 dep
           packages:
