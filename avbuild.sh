@@ -1,12 +1,9 @@
 #!/bin/bash
-# TODO: -flto=nb_cpus, thin lto
 # https://wiki.debian.org/Hardening#DEB_BUILD_HARDENING_RELRO_.28ld_-z_relro.29
 # TODO: os arch-cc(e.g. winxp x86-gcc, winstore10 x86, win10 x64-clang, gcc is mingw or cygwin etc. depending on host env)
-# lld supports win res files? https://github.com/llvm-mirror/lld/blob/master/docs/windows_support.rst
 # TODO: link warning as error when checking ld flags. vc/lld-link: -WX
 # TODO: cc_flags, linker_flags(linker only), os_flags, os_cc_flags, os_linker_flags, cc_linker_flags+=$(prepend_Wl linker_flags)
 # remove -Wl, if LD_IS_LLD
-# clang-cl == clang --driver_mode=cl
 # winphone clang+vs2013sdk: https://fate.libav.org/armv7-win32-clang-4.0/20190219150948  --arch=arm --cpu=armv7-a --as='clang -target armv7-win32-gnu' --cc='clang -target armv7-win32-msvc' --ld=lld-link --target-os=win32 --extra-cflags='-DWINAPI_FAMILY=WINAPI_FAMILY_PHONE_APP' --extra-ldflags='msvcrt.lib oldnames.lib -nodefaultlib:kernel32.lib -nodefaultlib:ole32.lib WindowsPhoneCore.lib' --enable-cross-compile --ar=llvm-ar --nm=llvm-nm
 
 #PS4='+ $(gdate "+%s.%N")\011 '
@@ -607,7 +604,7 @@ setup_vc_winrt_env() {
 
 setup_vc_common_env() {
   local arch=x86_64 #used by configure --arch
-  if [ "${platform:0:3}" = "arm" ]; then # TODO: arm64
+  if [ "${platform:0:3}" = "arm" ]; then
     enable_pic=false  # TODO: ffmpeg bug, should filter out -fPIC. armasm(gas) error (unsupported option) if pic is
     type -a gas-preprocessor.pl
     # vc only arm64_neon.h
@@ -850,7 +847,6 @@ setup_ios_env() {
   MUX_OPT=$MUX_OPT_MOBILE
   enable_opt videotoolbox
   LIB_OPT= #static only
-# TODO: multi arch (Xarch+arch)
 # clang -arch i386 -arch x86_64
 ## cc="xcrun -sdk iphoneos clang" or cc=`xcrun -sdk iphoneos --find clang`
   local IOS_ARCH=$1

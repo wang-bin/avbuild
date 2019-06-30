@@ -12,7 +12,7 @@ Lite build of FFmpeg release(4.1):
 [MinGW](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-4.1-desktop-MINGW-lite.7z/download), [VS2017 Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-4.1-desktop-VS2017-lite.7z/download), [UWP](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-4.1-store-VS2017-lite.7z/download), [Clang Windows Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-4.1-windows-desktop-clang-lite.tar.xz/download), [Clang UWP](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-4.1-windows-store-clang-lite.tar.xz/download)
 
 
-Lite build of FFmpeg git:
+Lite build of FFmpeg master branch:
 
 [Raspberry Pi](https://sourceforge.net/projects/avbuild/files/raspberry-pi/ffmpeg-master-raspberry-pi-clang-lite.tar.xz/download), [Android](https://sourceforge.net/projects/avbuild/files/android/ffmpeg-master-android-clang-lite.tar.xz/download), [iOS](https://sourceforge.net/projects/avbuild/files/iOS/ffmpeg-master-iOS-lite.tar.xz/download), [macOS](https://sourceforge.net/projects/avbuild/files/macOS/ffmpeg-master-macOS-lite.tar.xz/download), [Linux](https://sourceforge.net/projects/avbuild/files/linux/ffmpeg-master-linux-gcc-lite.tar.xz/download),
 [MinGW](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-master-desktop-MINGW-lite.7z/download), [VS2017 Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-master-desktop-VS2017-lite.7z/download), [UWP](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-master-store-VS2017-lite.7z/download), [Clang Windows Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-master-windows-desktop-clang-lite.tar.xz/download), [Clang UWP](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-master-windows-store-clang-lite.tar.xz/download)
@@ -39,7 +39,7 @@ windows mingw, vs2013~2017, desktop/store/phone: [![appveyor_ci](https://ci.appv
 |-----------|---------|-----------|---------|---------|-----------|---------|------------|----------|
 |   Clang   |    H    |     C     |   A+H   |   A+C   |    H+C    |         |            |          |
 | Clang+LLD |    H    |     C     |    ?    |         |   A+H+C   |  A+H+C  |   A+H+C    |    A+C   |
-|    GCC    |    H    |     C     |    H    |         |    H+C    |   H+C   |      ?     |          |
+|    GCC    |    H    |     C     |    H    |         |    H+C    |   H+C   |            |          |
 |  VS2013   |         |           |         |         |           |    H    |      H     |     C    |
 |  VS2015   |         |           |         |         |           |    H    |      H     |     C    |
 |  VS2017+  |         |           |         |         |           |    H    |      H     |          |
@@ -50,3 +50,6 @@ windows mingw, vs2013~2017, desktop/store/phone: [![appveyor_ci](https://ci.appv
 - C: cross build (for example, build win32 from linux/macOS using mingw, build rpi from windows/linux/macOS using gcc and clang)
 - ?: in plan
 - Empty: won't support
+
+## TODO
+- single package for windows including shared and static libs
