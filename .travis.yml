@@ -1,4 +1,5 @@
-# TODO: xenial, windows. https://docs.travis-ci.com/user/reference/windows/
+# TODO: windows. https://docs.travis-ci.com/user/reference/windows/
+# - MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0" https://docs.travis-ci.com/user/languages/cpp/#clang-on-linux
 language: cpp
 sudo: false
 dist: xenial
@@ -135,7 +136,9 @@ install:
         git checkout origin/master
         cd -
       else
-        git clone -b ${FF_VERSION} --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-${FF_VERSION}
+        FF_BRANCH=${FF_VERSION}
+        [ "$FF_BRANCH" == "master" ] || FF_BRANCH="release/$FF_BRANCH"
+        git clone -b ${FF_BRANCH} --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-${FF_VERSION}
       fi
   - |
       if [ "${TARGET:0:7}" == "android" -a ! -f android-ndk-${NDK_VERSION}/ndk-build ]; then

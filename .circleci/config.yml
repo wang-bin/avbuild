@@ -20,7 +20,9 @@ custom-steps:
     run:
       name: get ffmpeg source
       command: |
-        git clone -b $FF_VERSION --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-${FF_VERSION}
+        FF_BRANCH=${FF_VERSION}
+        [ "$FF_BRANCH" == "master" ] || FF_BRANCH="release/$FF_BRANCH"
+        git clone -b $FF_BRANCH --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-${FF_VERSION}
   - &get-winsysroot
     run:
       name: Install windows sdk and vcrt
