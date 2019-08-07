@@ -1,6 +1,6 @@
 USER_OPT="--enable-small --disable-avresample \
 --disable-filters \
---enable-filter=*fade,*fifo,*format,*resample,aeval,all*,atempo,color*,convolution,draw*,eq*,framerate,hw*,null,scale,volume \
+--enable-filter=*fade,*fifo,*format,*resample,aeval,all*,atempo,color*,convolution,draw*,eq*,framerate,*_cuda,hw*,null,scale,volume \
 --disable-muxers \
 --disable-encoders \
 --disable-decoders \

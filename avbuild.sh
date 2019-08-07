@@ -139,6 +139,10 @@ android_arch(){
   echo ${arch:=$1}
 }
 
+enable_cuda_llvm() {
+  grep -q "\-\-nvcc=" $FFSRC/configure && TOOLCHAIN_OPT+=" --nvcc=$USE_TOOLCHAIN"
+}
+
 #ffmpeg 1.2 autodetect dxva, vaapi, vdpau. manually enable vda before 2.3
 enable_opt() {
   # grep -m1
@@ -357,6 +361,7 @@ setup_win_clang(){
   #$FORCE_LTO && LTO_CFLAGS=-flto=thin # win lto binary size is larger
   LTO_LFLAGS="/opt:lldltojobs=`getconf _NPROCESSORS_ONLN`" # only affects thin lto?
   enable_opt dxva2
+  enable_cuda_llvm
   # TODO: unify setup_vc/wnrt
   : ${ONECORE:=}
   STORE=
@@ -989,6 +994,7 @@ setup_rpi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result in
   local IS_CROSS_BUILD=true
   [ -c /dev/vchiq ] && IS_CROSS_BUILD=false
   : ${CROSS_PREFIX:=arm-linux-gnueabihf-}
+  EXTRA_CFLAGS_armv8= #
   setup_gnu_env $@  # call if first to setup cc which is used by include_with_sysroot_compat
 
   USER_OPT+=" --enable-omx-rpi --enable-mmal"
@@ -1064,8 +1070,8 @@ setup_gnu_env(){
     $IS_APPLE_CLANG || TOOLCHAIN_OPT+=" --as='gas-preprocessor.pl -as-type clang -arch arm -- $USE_TOOLCHAIN'"
   } || SUBARCH=${SUBARCH/6-a/6zk} # armv6kz is not supported by some compilers, but zk is.
   local EXTRA_CFLAGS_armv6="-march=$SUBARCH -mtune=arm1176jzf-s -mfpu=vfp -marm" # no thumb support, set -marm for clang or -mthumb-interwork for gcc
-  local EXTRA_CFLAGS_armv7="-march=$SUBARCH -mtune=cortex-a7 -mfpu=neon-vfpv4 -mthumb" # -mthumb-interwork vfpv3-d16"
-  local EXTRA_CFLAGS_armv8="-march=$SUBARCH -mtune=cortex-a53 -mfpu=neon-fp-armv8" # crypto extensions is optional for armv8a, and do not exist on rpi3
+  local EXTRA_CFLAGS_armv7="-march=$SUBARCH -mtune=cortex-a7 -mfpu=neon-vfpv4 -mthumb" # -mthumb-interwork vfpv3-d16"  gcc -mvectorize-with-neon-quad
+  local EXTRA_CFLAGS_armv8="-march=$SUBARCH -mtune=cortex-a53 -mfpu=neon-fp-armv8" # crypto extensions is optional for armv8a, and do not exist on rpi3.  gcc -mvectorize-with-neon-quad
 
   if $IS_CLANG; then
     gnu_cc=clang
@@ -1114,6 +1120,7 @@ setup_linux_env() {
     EXTRA_LDFLAGS="-m$BIT $EXTRA_LDFLAGS"
   }
   $IS_CLANG && {
+    enable_cuda_llvm
     EXTRA_CFLAGS+=" $CFLAGS_CLANG $CLANG_FLAGS"
     EXTRA_LDFLAGS+=" $LFLAGS_CLANG $CLANG_FLAGS"
     $HAVE_LLD && [ $BIT -eq 64 ] && use_lld # 32bit error: can't create dynamic relocation R_386_32 against local symbol in readonly segment   libavutil/x86/float_dsp.o
