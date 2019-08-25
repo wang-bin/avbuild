@@ -1,7 +1,7 @@
-From d7288892b6e385799b51c3a3672d289a1577def6 Mon Sep 17 00:00:00 2001
+From acd324776047a40919820d235dbca817abdf6abf Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 17 Nov 2017 14:54:23 +0800
-Subject: [PATCH 11/21] mmal: add option copy_frame to support retrieving sw
+Subject: [PATCH 11/22] mmal: add option copy_frame to support retrieving sw
  frames w/o copy
 
 mmal buffer->data is already in host memory. AFAIK decoders implemented in omx must

@@ -1,7 +1,7 @@
-From ec6c4028ee687fb5763b98b648fc2471d2fa1d9d Mon Sep 17 00:00:00 2001
+From c638bd31311bb1c0696ffab04f2a03045eb9d700 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sat, 28 Oct 2017 20:26:50 +0800
-Subject: [PATCH 01/21] use CreateMutexEx instead of CreateMutex to fix win8
+Subject: [PATCH 01/22] use CreateMutexEx instead of CreateMutex to fix win8
  store app link error
 
 ---
@@ -9,7 +9,7 @@ Subject: [PATCH 01/21] use CreateMutexEx instead of CreateMutex to fix win8
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/libavutil/hwcontext_d3d11va.c b/libavutil/hwcontext_d3d11va.c
-index 41330f0ae6..b9a0352e1e 100644
+index 6670c47579..fd1ae4d81b 100644
 --- a/libavutil/hwcontext_d3d11va.c
 +++ b/libavutil/hwcontext_d3d11va.c
 @@ -40,6 +40,10 @@

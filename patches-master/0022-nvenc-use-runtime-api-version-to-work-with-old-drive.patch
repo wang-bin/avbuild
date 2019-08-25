@@ -1,7 +1,7 @@
-From 973f4b22d1b7c63ba8544cb1d66593588c0570cd Mon Sep 17 00:00:00 2001
+From 8fcd95900b1946f1bde51ac47d6d3ff8bcb8eb71 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Wed, 12 Jun 2019 10:43:50 +0800
-Subject: [PATCH] nvenc: use runtime api version to work with old drivers
+Subject: [PATCH 22/22] nvenc: use runtime api version to work with old drivers
 
 the document recommends to use build version, so using latest nvenc
 headers requires latest driver version. But api and abi change rarely,
@@ -252,5 +252,5 @@ index ddd6168409..0fe68c4f81 100644
  
  int ff_nvenc_encode_init(AVCodecContext *avctx);
 -- 
-2.17.1
+2.20.1 (Apple Git-117)
 

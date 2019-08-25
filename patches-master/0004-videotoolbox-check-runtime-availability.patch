@@ -1,7 +1,7 @@
-From 10ecefd9b9279c390fa5fc920a7e993c4d04496c Mon Sep 17 00:00:00 2001
+From 58c883f93902301a56fd16ddf2898e33e7a0d720 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:35:28 +0800
-Subject: [PATCH 04/21] videotoolbox: check runtime availability
+Subject: [PATCH 04/22] videotoolbox: check runtime availability
 
 fix warnings/errors for new compiler (since xcode9) if targeting
 macOS<10.8
@@ -10,10 +10,10 @@ macOS<10.8
  1 file changed, 15 insertions(+), 7 deletions(-)
 
 diff --git a/libavcodec/videotoolbox.c b/libavcodec/videotoolbox.c
-index fb3501f413..769a28fd0d 100644
+index acaeef77dd..a7027e6895 100644
 --- a/libavcodec/videotoolbox.c
 +++ b/libavcodec/videotoolbox.c
-@@ -33,6 +33,10 @@
+@@ -34,6 +34,10 @@
  #include "mpegvideo.h"
  #include <TargetConditionals.h>
  
@@ -24,7 +24,7 @@ index fb3501f413..769a28fd0d 100644
  #ifndef kVTVideoDecoderSpecification_RequireHardwareAcceleratedVideoDecoder
  #  define kVTVideoDecoderSpecification_RequireHardwareAcceleratedVideoDecoder CFSTR("RequireHardwareAcceleratedVideoDecoder")
  #endif
-@@ -620,7 +624,7 @@ static void videotoolbox_decoder_callback(void *opaque,
+@@ -621,7 +625,7 @@ static void videotoolbox_decoder_callback(void *opaque,
  
  static OSStatus videotoolbox_session_decode_frame(AVCodecContext *avctx)
  {
@@ -33,7 +33,7 @@ index fb3501f413..769a28fd0d 100644
      CMSampleBufferRef sample_buf;
      AVVideotoolboxContext *videotoolbox = videotoolbox_get_context(avctx);
      VTContext *vtctx = avctx->internal->hwaccel_priv_data;
-@@ -632,13 +636,15 @@ static OSStatus videotoolbox_session_decode_frame(AVCodecContext *avctx)
+@@ -633,13 +637,15 @@ static OSStatus videotoolbox_session_decode_frame(AVCodecContext *avctx)
      if (!sample_buf)
          return -1;
  
@@ -52,7 +52,7 @@ index fb3501f413..769a28fd0d 100644
  
      CFRelease(sample_buf);
  
-@@ -765,7 +771,7 @@ static CFDictionaryRef videotoolbox_decoder_config_create(CMVideoCodecType codec
+@@ -766,7 +772,7 @@ static CFDictionaryRef videotoolbox_decoder_config_create(CMVideoCodecType codec
  static int videotoolbox_start(AVCodecContext *avctx)
  {
      AVVideotoolboxContext *videotoolbox = videotoolbox_get_context(avctx);
@@ -61,7 +61,7 @@ index fb3501f413..769a28fd0d 100644
      VTDecompressionOutputCallbackRecord decoder_cb;
      CFDictionaryRef decoder_spec;
      CFDictionaryRef buf_attr;
-@@ -824,7 +830,8 @@ static int videotoolbox_start(AVCodecContext *avctx)
+@@ -825,7 +831,8 @@ static int videotoolbox_start(AVCodecContext *avctx)
      decoder_cb.decompressionOutputCallback = videotoolbox_decoder_callback;
      decoder_cb.decompressionOutputRefCon   = avctx;
  
@@ -71,7 +71,7 @@ index fb3501f413..769a28fd0d 100644
                                            videotoolbox->cm_fmt_desc, // videoFormatDescription
                                            decoder_spec,              // videoDecoderSpecification
                                            buf_attr,                  // destinationImageBufferAttributes
-@@ -872,7 +879,8 @@ static void videotoolbox_stop(AVCodecContext *avctx)
+@@ -873,7 +880,8 @@ static void videotoolbox_stop(AVCodecContext *avctx)
      }
  
      if (videotoolbox->session) {

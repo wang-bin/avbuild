@@ -1,14 +1,14 @@
-From 44e1f5f89e2decf73356a7823f682319d0cab143 Mon Sep 17 00:00:00 2001
+From c2c95a717a90ef7c07c9fd9b773063b722eb7cec Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 13 Nov 2017 12:26:26 +0800
-Subject: [PATCH 09/21] videotoolbox: add p010
+Subject: [PATCH 09/22] videotoolbox: add p010
 
 ---
  libavutil/hwcontext_videotoolbox.c | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/libavutil/hwcontext_videotoolbox.c b/libavutil/hwcontext_videotoolbox.c
-index cc00f1f2f2..8c632c3e91 100644
+index 6eac2c0774..6e464b5ca9 100644
 --- a/libavutil/hwcontext_videotoolbox.c
 +++ b/libavutil/hwcontext_videotoolbox.c
 @@ -36,6 +36,7 @@ static const struct {

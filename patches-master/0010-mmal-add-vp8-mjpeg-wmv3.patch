@@ -1,7 +1,7 @@
-From c9512d13e8594aa653b38c24d469488c4878b669 Mon Sep 17 00:00:00 2001
+From b3ab0bd08f2d49b03b61bd45031723c561b1159b Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 13 Nov 2017 15:14:26 +0800
-Subject: [PATCH 10/21] mmal: add vp8, mjpeg, wmv3
+Subject: [PATCH 10/22] mmal: add vp8, mjpeg, wmv3
 
 ---
  configure              |  3 +++
@@ -10,26 +10,26 @@ Subject: [PATCH 10/21] mmal: add vp8, mjpeg, wmv3
  3 files changed, 32 insertions(+)
 
 diff --git a/configure b/configure
-index d456059982..2c79d653e5 100755
+index 1e8f542cd8..e0cca6b17d 100755
 --- a/configure
 +++ b/configure
-@@ -3020,6 +3020,7 @@ hevc_v4l2m2m_decoder_deps="v4l2_m2m hevc_v4l2_m2m"
+@@ -3042,6 +3042,7 @@ hevc_v4l2m2m_decoder_deps="v4l2_m2m hevc_v4l2_m2m"
  hevc_v4l2m2m_decoder_select="hevc_mp4toannexb_bsf"
  hevc_v4l2m2m_encoder_deps="v4l2_m2m hevc_v4l2_m2m"
  mjpeg_cuvid_decoder_deps="cuvid"
 +mjpeg_mmal_decoder_deps="mmal"
+ mjpeg_qsv_decoder_select="qsvdec"
  mjpeg_qsv_encoder_deps="libmfx"
  mjpeg_qsv_encoder_select="qsvenc"
- mjpeg_vaapi_encoder_deps="VAEncPictureParameterBufferJPEG"
-@@ -3052,6 +3053,7 @@ vc1_v4l2m2m_decoder_deps="v4l2_m2m vc1_v4l2_m2m"
+@@ -3074,6 +3075,7 @@ vc1_qsv_decoder_select="qsvdec"
+ vc1_v4l2m2m_decoder_deps="v4l2_m2m vc1_v4l2_m2m"
  vp8_cuvid_decoder_deps="cuvid"
  vp8_mediacodec_decoder_deps="mediacodec"
- vp8_qsv_decoder_select="qsvdec vp8_parser"
 +vp8_mmal_decoder_deps="mmal"
+ vp8_qsv_decoder_select="qsvdec"
  vp8_rkmpp_decoder_deps="rkmpp"
  vp8_vaapi_encoder_deps="VAEncPictureParameterBufferVP8"
- vp8_vaapi_encoder_select="vaapi_encode"
-@@ -3064,6 +3066,7 @@ vp9_vaapi_encoder_deps="VAEncPictureParameterBufferVP9"
+@@ -3088,6 +3090,7 @@ vp9_vaapi_encoder_deps="VAEncPictureParameterBufferVP9"
  vp9_vaapi_encoder_select="vaapi_encode"
  vp9_v4l2m2m_decoder_deps="v4l2_m2m vp9_v4l2_m2m"
  wmv3_crystalhd_decoder_select="crystalhd"
@@ -38,10 +38,10 @@ index d456059982..2c79d653e5 100755
  # parsers
  aac_parser_select="adts_header"
 diff --git a/libavcodec/allcodecs.c b/libavcodec/allcodecs.c
-index 6178d31b5c..3cba19a333 100644
+index 22985325e0..288f95632d 100644
 --- a/libavcodec/allcodecs.c
 +++ b/libavcodec/allcodecs.c
-@@ -336,6 +336,7 @@ extern AVCodec ff_vp6a_decoder;
+@@ -337,6 +337,7 @@ extern AVCodec ff_vp6a_decoder;
  extern AVCodec ff_vp6f_decoder;
  extern AVCodec ff_vp7_decoder;
  extern AVCodec ff_vp8_decoder;
@@ -49,7 +49,7 @@ index 6178d31b5c..3cba19a333 100644
  extern AVCodec ff_vp8_rkmpp_decoder;
  extern AVCodec ff_vp8_v4l2m2m_decoder;
  extern AVCodec ff_vp9_decoder;
-@@ -352,6 +353,7 @@ extern AVCodec ff_wmv2_encoder;
+@@ -353,6 +354,7 @@ extern AVCodec ff_wmv2_encoder;
  extern AVCodec ff_wmv2_decoder;
  extern AVCodec ff_wmv3_decoder;
  extern AVCodec ff_wmv3_crystalhd_decoder;
@@ -57,14 +57,14 @@ index 6178d31b5c..3cba19a333 100644
  extern AVCodec ff_wmv3image_decoder;
  extern AVCodec ff_wnv1_decoder;
  extern AVCodec ff_xan_wc3_decoder;
-@@ -761,6 +763,7 @@ extern AVCodec ff_hevc_vaapi_encoder;
+@@ -762,6 +764,7 @@ extern AVCodec ff_hevc_vaapi_encoder;
  extern AVCodec ff_hevc_videotoolbox_encoder;
  extern AVCodec ff_libkvazaar_encoder;
  extern AVCodec ff_mjpeg_cuvid_decoder;
 +extern AVCodec ff_mjpeg_mmal_decoder;
  extern AVCodec ff_mjpeg_qsv_encoder;
+ extern AVCodec ff_mjpeg_qsv_decoder;
  extern AVCodec ff_mjpeg_vaapi_encoder;
- extern AVCodec ff_mpeg1_cuvid_decoder;
 diff --git a/libavcodec/mmaldec.c b/libavcodec/mmaldec.c
 index a653a9e6b5..c1cfb09283 100644
 --- a/libavcodec/mmaldec.c

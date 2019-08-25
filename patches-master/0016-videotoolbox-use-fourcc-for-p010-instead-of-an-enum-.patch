@@ -1,7 +1,7 @@
-From 85d4255be03f99d4a7f4b0cde48cac1e18ad3475 Mon Sep 17 00:00:00 2001
+From e048ab20951a84f68527b755ff82e9a3d65707f7 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 30 Mar 2018 16:23:57 +0800
-Subject: [PATCH 16/21] videotoolbox: use fourcc for p010 instead of an enum
+Subject: [PATCH 16/22] videotoolbox: use fourcc for p010 instead of an enum
  which may not exist in sdk
 
 ---
@@ -9,7 +9,7 @@ Subject: [PATCH 16/21] videotoolbox: use fourcc for p010 instead of an enum
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/libavutil/hwcontext_videotoolbox.c b/libavutil/hwcontext_videotoolbox.c
-index 8c632c3e91..bdbd1111b5 100644
+index 6e464b5ca9..6c338ae581 100644
 --- a/libavutil/hwcontext_videotoolbox.c
 +++ b/libavutil/hwcontext_videotoolbox.c
 @@ -36,7 +36,7 @@ static const struct {
