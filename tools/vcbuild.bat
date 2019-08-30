@@ -12,7 +12,7 @@ set MSYS2_PATH_TYPE=inherit
 set PATH_CLEAN=%PATH%
 set VC_BUILD=true
 set VS_CL=%1
-if [%VS_CL%] == [] set /P VS_CL="VS CL name, e.g. vs2017 vs2015, vs140, cl1900: "
+if [%VS_CL%] == [] set /P VS_CL="VS CL name, e.g. vs2019 vs2017 vs2015, vs140, cl1900: "
 
 set VSVER=150
 set CL_VER=191
@@ -26,6 +26,10 @@ if /i [%VS_CL:~0,2%] == [vs] (
         set VSVER=150
         set VCRT_VER=141
     )
+    if [%VS_CL:~2%] == [2019] (
+        set VSVER=160
+        set VCRT_VER=142
+    )
 )
 :: vs2017 cl1910
 if /i [%VS_CL:~0,2%] == [cl] (
@@ -35,6 +39,10 @@ if /i [%VS_CL:~0,2%] == [cl] (
     if [%VS_CL:~2,3%] == [191] (
         set VSVER=150
         set VCRT_VER=141
+    )
+    if [%VS_CL:~2,3%] == [192] (
+        set VSVER=160
+        set VCRT_VER=142
     )
 )
 echo VS_CL=%VS_CL%
@@ -74,7 +82,7 @@ if not [%OS%] == [%OS:phone=%] (
 )
 
 set ARCH=%3
-if [%ARCH%] == [] set /P ARCH="architecture (x86, x64, arm): "
+if [%ARCH%] == [] set /P ARCH="architecture (x86, x64, arm, arm64): "
 
 set ARCH2=%ARCH%
 set ARG=x86_%ARCH%
@@ -88,8 +96,16 @@ if "%ARCH%" == "x64" (
 )
 
 if [%VSVER%] == [150] goto SetupVC150Env
+if [%VSVER%] == [160] goto SetupVC160Env
 
 goto SetupVCEnvLegacy
+
+:SetupVC160Env
+for /f "usebackq tokens=*" %%i in (`vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
+  set VS_INSTALL_DIR=%%i
+)
+set VCVARSALL_BAT=%VS_INSTALL_DIR%\VC\Auxiliary\Build\vcvarsall.bat
+goto SetupVCEnv
 
 :SetupVC150Env
 :: copy from https://github.com/Leandros/VisualStudioStandalone
@@ -115,7 +131,9 @@ set /p VS_TOOLS_VERSION=<%VS_TOOLS%
 set VS_TOOLS_VERSION=%VS_TOOLS_VERSION: =%
 set VCVARSALL_BAT=%VS_INSTALL_DIR%\VC\Auxiliary\Build\vcvarsall.bat
 echo Using tools version %VS_TOOLS_VERSION%
+goto SetupVCEnv
 
+:SetupVCEnv
 if [%WINRT%] == [true] set EXTRA_ARGS=store
 :: TODO: sdk version, or pass all vcvarsall.bat parameters to support old windows target, onecore etc
 if not [%ARCH%] == [all] (
