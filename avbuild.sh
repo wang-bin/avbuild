@@ -11,7 +11,7 @@
 #set -x
 
 echo
-echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2018"
+echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2019"
 echo "https://github.com/wang-bin/avbuild"
 
 THIS_NAME=${0##*/}
@@ -1316,6 +1316,14 @@ EOF
   ## https://github.com/ninja-build/ninja/pull/1224
   time (make -j`getconf _NPROCESSORS_ONLN` install prefix="$THIS_DIR/$INSTALL_DIR" && cp -af config.txt $THIS_DIR/$INSTALL_DIR)
   [ $? -eq 0 ] || exit 2
+  chmod +x $THIS_DIR/tools/mklibffmpeg.sh
+  $THIS_DIR/tools/mklibffmpeg.sh $PWD
+  [ -f ffmpeg.dll ] && cp -avf ffmpeg.dll $THIS_DIR/$INSTALL_DIR/bin
+  [ -f libffmpeg.dll ] && cp -avf libffmpeg.dll $THIS_DIR/$INSTALL_DIR/bin
+  [ -f ffmpeg.lib ] && cp -avf ffmpeg.lib $THIS_DIR/$INSTALL_DIR/lib
+  [ -f libffmpeg.dll.a ] && cp -avf libffmpeg.dll.a $THIS_DIR/$INSTALL_DIR/lib
+  [ -f libffmpeg.so ] && cp -avf libffmpeg.so $THIS_DIR/$INSTALL_DIR/lib
+  [ -f libffmpeg.dylib ] && cp -avf libffmpeg.dylib $THIS_DIR/$INSTALL_DIR/lib
   cd $THIS_DIR/$INSTALL_DIR
   echo "https://github.com/wang-bin/avbuild" > README.txt
   cp -af $FFSRC/{Changelog,RELEASE_NOTES} .
