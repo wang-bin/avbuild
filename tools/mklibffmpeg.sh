@@ -18,22 +18,22 @@ else
   fi
 fi
 
-cat >libffmpeg.ver<<EOF
+cat >libffmpeg.v<<EOF
 LIBFFMPEG {
   global:
     av_*;
     avio_*;
     avpictuire_*;
     avsubtitle_*;
-	swr_*;
-	sws_*;
+    swr_*;
+    sws_*;
     avutil_*;
     avcodec_*;
-	avformat_*;
-	avfilter_*;
-	avdevice_*;
-	swresample_*;
-	swscale_*;
+    avformat_*;
+    avfilter_*;
+    avdevice_*;
+    swresample_*;
+    swscale_*;
   local:
     *;
 };
@@ -68,11 +68,18 @@ include ffbuild/config.mak
 NAME=ffmpeg
 FFLIBS=avcodec avformat avfilter avdevice avutil postproc swresample swscale
 FFEXTRALIBS := $(foreach lib,$(FFLIBS:%=EXTRALIBS-%),$($(lib))) $(EXTRALIBS)
+ECHO   = printf "$(1)\t%s\n" $(2)
+M      = @$(call ECHO,$(TAG),$@);
+%.c %.h %.pc %.ver %.version: TAG = GEN
+
 define DOBUILD
 SUBDIR :=
-$(SLIBNAME): $(OBJS)
+$(SLIBNAME): $(OBJS) lib$(NAME).ver
 	$$(LD) $(SHFLAGS) $(LDFLAGS) $(LDSOFLAGS) $$(LD_O) $$(filter %.o,$$^) $(FFEXTRALIBS)
 	$(SLIB_EXTRA_CMD)
+
+lib$(NAME).ver: lib$(NAME).v $(OBJS)
+	$$(M)cat $$< | $(VERSION_SCRIPT_POSTPROCESS_CMD) > $$@
 endef
 
 $(eval $(call DOBUILD)) # double $$ in SHFLAGS, so need eval to expand twice
