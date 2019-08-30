@@ -1,8 +1,8 @@
 BUILD_DIR=$1
 
 cd "$BUILD_DIR"
-[ -f .env.sh ] && . .env.sh
 
+# TODO: win dllimport LNK4217 fix (lib.exe tt.obj /export:func /def, static lib?). also make it possible to build both static and shared lib for ffmpeg modules
 if `ls libavutil/*.def &>/dev/null`; then
   echo "EXPORTS" > ffmpeg.def
   cat `find lib* -name "*.def"` |grep -vE 'EXPORTS|avpriv_' >>ffmpeg.def # mingw ld can not recognize multiple EXPORTS
@@ -46,10 +46,9 @@ DUP_OBJS=(libswscale/log2_tab.o libswresample/log2_tab.o libavcodec/log2_tab.o l
   libavformat/golomb_tab.o
   libavcodec/reverse.o libavdevice/reverse.o
   )
-OBJS=`find lib* -name "*.o" \
-	|grep -vE "$(join '|' ${DUP_OBJS[@]})" \
-	|xargs`
-
+OBJS=`find lib* -name "*.o" |grep -vE "$(join '|' ${DUP_OBJS[@]})"`
+# appveyor PATH value is very large, xargs gets error "environment is too large for exec", so use echo
+OBJS=$(echo -n $OBJS)
 LIBVERSION=0.0.0
 RELEASE=`cat Makefile |sed 's/^include //;s/Makefile$/RELEASE/'`
 [ -f $RELEASE ] && {
@@ -84,4 +83,6 @@ endef
 
 $(eval $(call DOBUILD)) # double $$ in SHFLAGS, so need eval to expand twice
 EOF
+
+[ -f .env.sh ] && . .env.sh
 make -f Makefile.libffmpeg

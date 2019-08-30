@@ -54,3 +54,5 @@ windows mingw, vs2013~2017, desktop/store/phone: [![appveyor_ci](https://ci.appv
 
 ## TODO
 - single package for windows including shared and static libs
+- Azure pipeline: vs2019, macOS, etc.
+- lto prebuilt(shared only)
