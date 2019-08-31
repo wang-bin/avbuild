@@ -1,24 +1,22 @@
+# A script to create libffmpeg single shared library. Author: 'wbsecg1 at gmail.com' 2019. MIT license
 BUILD_DIR=$1
-
+INSTALL_DIR=$2
 cd "$BUILD_DIR"
 
 # TODO: win dllimport LNK4217 fix (lib.exe tt.obj /export:func /def, static lib?). also make it possible to build both static and shared lib for ffmpeg modules
-if `ls libavutil/*.def &>/dev/null`; then
-  echo "EXPORTS" > ffmpeg.def
-  cat `find lib* -name "*.def"` |grep -vE 'EXPORTS|avpriv_' >>ffmpeg.def # mingw ld can not recognize multiple EXPORTS
-  if [ -f libavutil/libavutil.dll.a ]; then
+if [ -f libavutil/libavutil.dll.a ]; then
 # avpriv_ are declared as av_export_avcodec/avutil, mingw link error, undefined '_imp__avpriv_mpa_freq_tab' etc.. this also results in ffmpeg can not be built both static and shared for windows
-	echo "mingw ld does not support linking a single libffmpeg.dll"
-	exit 0
-  fi
-else
+  echo "mingw ld does not support linking a single ffmpeg dll"
+  exit 0
+fi
+if ! `ls libavutil/*.def &>/dev/null`; then
   if [ -f libavutil/avutil.lib ]; then
-    echo "windows static build. no need to create ffmpeg.dll"
-	exit 0
+    echo "windows static build. no need to create ffmpeg dll"
+    exit 0
   fi
 fi
 
-cat >libffmpeg.v<<EOF
+[ -f libffmpeg.v ] || cat >libffmpeg.v<<EOF
 LIBFFMPEG {
   global:
     av_*;
@@ -51,18 +49,17 @@ OBJS=`find lib* -name "*.o" |grep -vE "$(join '|' ${DUP_OBJS[@]})"`
 OBJS=$(echo -n $OBJS)
 LIBVERSION=0.0.0
 RELEASE=`cat Makefile |sed 's/^include //;s/Makefile$/RELEASE/'`
-[ -f $RELEASE ] && {
-  LIBVERSION=`cat $RELEASE |sed 's/git/0/'`
-}
+[ -f $RELEASE ] && LIBVERSION=`cat $RELEASE |sed 's/git/0/'`
 LIBMAJOR=`echo $LIBVERSION |cut -d . -f 1`
 LIBMINOR=`echo $LIBVERSION |cut -d . -f 2`
-cat >Makefile.libffmpeg <<EOF
+
+cat >libffmpeg.mk <<EOF
 LIBVERSION=$LIBVERSION
 LIBMAJOR=$LIBMAJOR
 LIBMINOR=$LIBMINOR
 OBJS=$OBJS
 EOF
-cat >>Makefile.libffmpeg <<'EOF'
+cat >>libffmpeg.mk <<'EOF'
 include ffbuild/config.mak
 NAME=ffmpeg
 FFLIBS=avcodec avformat avfilter avdevice avutil postproc swresample swscale
@@ -73,16 +70,29 @@ M      = @$(call ECHO,$(TAG),$@);
 
 define DOBUILD
 SUBDIR :=
-$(SLIBNAME): $(OBJS) lib$(NAME).ver
+$(SUBDIR)$(SLIBNAME): $(SUBDIR)$(SLIBNAME_WITH_MAJOR)
+	$(Q)cd ./$(SUBDIR) && $(LN_S) $(SLIBNAME_WITH_MAJOR) $(SLIBNAME)
+
+$(SUBDIR)$(SLIBNAME_WITH_MAJOR): $(OBJS) lib$(NAME).ver
+	$(SLIB_CREATE_DEF_CMD)
 	$$(LD) $(SHFLAGS) $(LDFLAGS) $(LDSOFLAGS) $$(LD_O) $$(filter %.o,$$^) $(FFEXTRALIBS)
 	$(SLIB_EXTRA_CMD)
 
 lib$(NAME).ver: lib$(NAME).v $(OBJS)
 	$$(M)cat $$< | $(VERSION_SCRIPT_POSTPROCESS_CMD) > $$@
+
+install: $(SLIBNAME)
+	$(Q)mkdir -p "$(SHLIBDIR)"
+	$$(INSTALL) -m 755 $$< "$(SHLIBDIR)/$(SLIB_INSTALL_NAME)"
+	$$(STRIP) "$(SHLIBDIR)/$(SLIB_INSTALL_NAME)"
+	$(Q)$(foreach F,$(SLIB_INSTALL_LINKS),(cd "$(SHLIBDIR)" && $(LN_S) $(SLIB_INSTALL_NAME) $(F));)
+	$(if $(SLIB_INSTALL_EXTRA_SHLIB),$$(INSTALL) -m 644 $(SLIB_INSTALL_EXTRA_SHLIB:%=$(SUBDIR)%) "$(SHLIBDIR)")
+	$(if $(SLIB_INSTALL_EXTRA_LIB),$(Q)mkdir -p "$(LIBDIR)")
+	$(if $(SLIB_INSTALL_EXTRA_LIB),$$(INSTALL) -m 644 $(SLIB_INSTALL_EXTRA_LIB:%=$(SUBDIR)%) "$(LIBDIR)")
 endef
 
 $(eval $(call DOBUILD)) # double $$ in SHFLAGS, so need eval to expand twice
 EOF
 
 [ -f .env.sh ] && . .env.sh
-make -f Makefile.libffmpeg
+make -f libffmpeg.mk install prefix=$INSTALL_DIR

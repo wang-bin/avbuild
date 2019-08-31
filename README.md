@@ -25,7 +25,7 @@ windows mingw, vs2013~2017, desktop/store/phone: [![appveyor_ci](https://ci.appv
 
 ## Features
 
-- Create a single FFmpeg shared library: ffmpeg.dll, libffmpeg.so, libffmpeg.dylib
+- Single FFmpeg shared library: ffmpeg.dll, libffmpeg.so, libffmpeg.dylib
 - multiple targets build and configure simultaneously
 - ffmpeg patches
 - modern toolchain support: clang+lld, cross build for almost all platforms on any host OS
