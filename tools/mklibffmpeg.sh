@@ -44,7 +44,7 @@ DUP_OBJS=(libswscale/log2_tab.o libswresample/log2_tab.o libavcodec/log2_tab.o l
   libavformat/golomb_tab.o
   libavcodec/reverse.o libavdevice/reverse.o
   )
-OBJS=`find lib* -name "*.o" |grep -vE "$(join '|' ${DUP_OBJS[@]})"`
+OBJS=`find compat lib* -name "*.o" |grep -vE "$(join '|' ${DUP_OBJS[@]})"`
 # appveyor PATH value is very large, xargs gets error "environment is too large for exec", so use echo
 OBJS=$(echo -n $OBJS)
 LIBVERSION=0.0.0
