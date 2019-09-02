@@ -10,12 +10,12 @@ branches:
 # APPVEYOR_BUILD_WORKER_IMAGE is used in environment matrix, image is not
 environment:
   matrix:
-  - _CC: VS2017
+  - _CC: VS2019
     _PLATFORM: desktop
-    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-  - _CC: VS2017
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+  - _CC: VS2019
     _PLATFORM: store
-    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
   - _CC: MINGW
     _PLATFORM: desktop
     _CACHE: msys64

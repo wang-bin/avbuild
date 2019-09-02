@@ -101,7 +101,7 @@ if [%VSVER%] == [160] goto SetupVC160Env
 goto SetupVCEnvLegacy
 
 :SetupVC160Env
-for /f "usebackq tokens=*" %%i in (`vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
+for /f "usebackq tokens=*" %%i in (`%~dp0vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
   set VS_INSTALL_DIR=%%i
 )
 set VCVARSALL_BAT=%VS_INSTALL_DIR%\VC\Auxiliary\Build\vcvarsall.bat
