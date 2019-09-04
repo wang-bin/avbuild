@@ -788,7 +788,10 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   clangxx=${clangxxs[0]}
   ld_lld=${clangxx/clang++/ld.lld}
   [ -f "$ld_lld" ] || ld_lld=
-  [ -f "$gxx" ] || IS_CLANG=true
+  [ -f "$gxx" ] || {
+  IS_CLANG=true
+  echo "gxx not found!!!!"
+  }
   echo "g++: $gxx, clang++: $clangxx IS_CLANG:$IS_CLANG, ld_lld: $ld_lld, as: $as"
   $IS_CLANG && probe_cc $clangxx || probe_cc $gxx
   ANDROID_GCC_DIR=${as%bin*}
@@ -1351,6 +1354,7 @@ build_all(){
     } || {
       local CONFIG_JOBS=()
       USE_TOOLCHAIN0=$USE_TOOLCHAIN
+      IS_CLANG0=$IS_CLANG
       for arch in ${archs[@]}; do
         if [ -z "${arch/*clang*/}" ]; then
           IS_CLANG=true
@@ -1365,6 +1369,7 @@ build_all(){
         # TODO: will vars (IS_CLANG, arch, USE_TOOLCHAIN) in sub process be modified by other process?
         config1 $os $arch $USE_TOOLCHAIN &
         USE_TOOLCHAIN=$USE_TOOLCHAIN0
+        IS_CLANG=$IS_CLANG0
       done
       [ ${#CONFIG_JOBS[@]} -gt 0 ] && {
         echo "waiting for all configure jobs(${#CONFIG_JOBS[@]}) finished..."
