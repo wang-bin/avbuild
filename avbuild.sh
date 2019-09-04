@@ -830,6 +830,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
     EXTRA_CFLAGS+=" $CFLAGS_CLANG $CLANG_FLAGS"
     $LD_IS_LLD || EXTRA_LDFLAGS+=" $LFLAGS_CLANG $CLANG_FLAGS" # -Qunused-arguments is added by ffmpeg configure
   else
+    TOOLCHAIN_OPT+=" --cc=${CROSS_PREFIX}gcc" # ffmpeg4.x set clang as default compiler
     EXTRA_CFLAGS+=" $CFLAGS_GCC $GCC_FLAGS"
     EXTRA_LDFLAGS+=" $LFLAGS_GCC $GCC_FLAGS"
     if $enable_lto; then
