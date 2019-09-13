@@ -1,7 +1,7 @@
-From 90b31efe313b802628e1fe4d33eba07ed43c4733 Mon Sep 17 00:00:00 2001
+From a8ad6fb4f1cb991bc6cdbb095ab666c7eecf9610 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 24 Dec 2018 16:06:30 +0800
-Subject: [PATCH 20/22] clang-cl: fix undeclared _byteswap_ulong
+Subject: [PATCH 15/17] clang-cl: fix undeclared _byteswap_ulong
 
 ---
  libavutil/x86/bswap.h | 1 +

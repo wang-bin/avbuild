@@ -1,7 +1,7 @@
-From 22eec185c11fdca4792569e7abc7f309c7c877d0 Mon Sep 17 00:00:00 2001
+From 669a820b9594b1f3facfedb213fab3477f3efb1a Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 29 Mar 2018 15:21:04 +0800
-Subject: [PATCH 14/22] mediacodec: remove unused MediaCodec.getName
+Subject: [PATCH 12/17] mediacodec: remove unused MediaCodec.getName
 
 it's introduced in android 4.3. we can safely remove it and let
 mediacodec support android<4.3

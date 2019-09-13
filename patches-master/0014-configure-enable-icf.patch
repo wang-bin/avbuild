@@ -1,17 +1,17 @@
-From 8e7434862b89edd75aab56dda3ba316e792cedd5 Mon Sep 17 00:00:00 2001
+From d0ed88866de84a9deece9861866e99bb482f5254 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 11 Sep 2018 23:16:49 +0800
-Subject: [PATCH 19/22] configure: enable icf
+Subject: [PATCH 14/17] configure: enable icf
 
 ---
  configure | 3 +++
  1 file changed, 3 insertions(+)
 
 diff --git a/configure b/configure
-index 3a704d365f..912bee52dd 100755
+index 5873a0e2ab..0397b02552 100755
 --- a/configure
 +++ b/configure
-@@ -6769,6 +6769,9 @@ test_cc -mno-red-zone <<EOF && noredzone_flags="-mno-red-zone"
+@@ -6778,6 +6778,9 @@ test_cc -mno-red-zone <<EOF && noredzone_flags="-mno-red-zone"
  int x;
  EOF
  

@@ -1,7 +1,7 @@
-From c638bd31311bb1c0696ffab04f2a03045eb9d700 Mon Sep 17 00:00:00 2001
+From 4f867afb425d45f8db9e4c31e67bafe62890bfe2 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sat, 28 Oct 2017 20:26:50 +0800
-Subject: [PATCH 01/22] use CreateMutexEx instead of CreateMutex to fix win8
+Subject: [PATCH 01/17] use CreateMutexEx instead of CreateMutex to fix win8
  store app link error
 
 ---
