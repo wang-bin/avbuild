@@ -321,17 +321,26 @@ check_cross_build() {
 
 setup_win(){
   WIN_VER_SET=false
-  local win_name=${2%%[0-9]*}
-  local win_ver=${2##$win_name}
-  local win_major=${win_ver%%.*}
-  local win_minor=${win_ver##*.}
-  echo "$win_ver" |grep -q '\.' || win_minor=0
-  [ -n "$win_major" ] && WIN_VER_SET=true || win_major=6
-  [[ "$2" == win*xp ]] && {
-    win_major=5
-    win_minor=1
-  }
-  WIN_VER=`printf "0x%02X%02X" $win_major $win_minor`
+  local os=$2
+  local XP_VER=5.1
+  [[ $1 == *64 ]] && XP_VER=5.2
+  os=${os/xp/${XP_VER}}
+  echo os:$os
+  os=${os/vista/6.0}
+  os=${os/7/6.1}
+  os=${os/8.1/6.3}
+  os=${os/8/6.2}
+  local os_name=${os%%[0-9.]*}
+  local os_ver=${os##$os_name}
+  local os_major=${os_ver%%.*}
+  local os_minor=${os_ver##*.}
+  echo "$os_ver" |grep -q '\.' || os_minor=0
+  [ -n "$os_major" ] && {
+    WIN_VER_SET=true
+    WIN_VER_LD=${os_major}.0$os_minor
+  } || os_major=6
+  WIN_VER=`printf "0x%02X%02X" $os_major $os_minor`
+  echo WIN_VER_SET: $WIN_VER_SET  WIN_VER:$WIN_VER
   local win_cc=clang
   which cl &>/dev/null && win_cc=cl
   : ${USE_TOOLCHAIN:=$win_cc}
@@ -533,19 +542,7 @@ setup_vc_desktop_env() {
   # can not use -luser32 because extralibs will not be filter -l to .lib (ldflags_filter is not ready, ffmpeg bug)
   # TODO: check dxva2_extralibs="-luser32" in configure
   grep -q " user32 " "$FFSRC/configure" || EXTRALIBS+=" user32.lib" # ffmpeg 3.x bug: hwcontext_dxva2 GetDesktopWindow()
-  if $FFGIT; then
-    $WIN_VER_SET || WIN_VER="0x0600"
-  elif [ $FFMAJOR -gt 3 ]; then
-    $WIN_VER_SET || WIN_VER="0x0600"
-  else
-    if [ -z "${Platform/*64/}" ]; then
-      $WIN_VER_SET || WIN_VER="0x0502"
-      [ $VS_VER -gt 10 ] && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.02'"
-    else
-      $WIN_VER_SET || WIN_VER="0x0501"
-      [ $VS_VER -gt 10 ] && echo "adding windows xp compatible link flags..." && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,5.01'"
-    fi
-  fi
+  [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
   if [[ "$platform" == arm* ]]; then
     $WIN_VER_SET || WIN_VER="0x0A00"
     EXTRA_CFLAGS+=" -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE=1"
