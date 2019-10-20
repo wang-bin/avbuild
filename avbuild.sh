@@ -1157,10 +1157,13 @@ config1(){
     }
   }
   local os=${1//[-.]/_} # e.g. windows-desktop, ios9.0, because '-' in ${x-y} is an individual operation, '.' is not allowed in var name
-  eval os_opt='${'${os%%[0-9]*}'_OPT}'
+  local os_ver=${os%%[0-9]*}
+  eval os_opt='${'${os_ver}'_OPT}'
   USER_OPT+=" $os_opt"
-  eval os_opt='${'${os}'_OPT}'
-  USER_OPT+=" $os_opt"
+  if [ "$os" != "$os_ver" ]; then
+    eval os_opt='${'${os}'_OPT}'
+    USER_OPT+=" $os_opt"
+  fi
   case $1 in
     android*)    setup_android_env $TAGET_ARCH_FLAG $1 ;;
     ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
