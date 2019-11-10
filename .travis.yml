@@ -21,22 +21,18 @@ matrix:
   include:
     - os: osx
       compiler: clang
+      osx_image: xcode11.2
       env:
         - TARGET=raspberry-pi
         - CC_VENDOR=apple
-#      addons:
-#        homebrew:
-#          packages:
-#          - beanstalk
-#          update: true
     - os: osx
       compiler: clang
-      osx_image: xcode11
+      osx_image: xcode11.2
       env:
         - TARGET=host
     - os: osx
       compiler: clang
-      osx_image: xcode11
+      osx_image: xcode11.2
       env:
         - TARGET=iOS
     - os: linux
