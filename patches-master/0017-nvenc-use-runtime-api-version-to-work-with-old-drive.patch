@@ -1,7 +1,7 @@
-From 0820e459c3823b8cac35be8b404b5eaee013b323 Mon Sep 17 00:00:00 2001
+From 3272d2e033e34cda96e211355d2aa952609b77d2 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Wed, 12 Jun 2019 10:43:50 +0800
-Subject: [PATCH 17/17] nvenc: use runtime api version to work with old drivers
+Subject: [PATCH 17/18] nvenc: use runtime api version to work with old drivers
 
 the document recommends to use build version, so using latest nvenc
 headers requires latest driver version. But api and abi change rarely,
@@ -12,7 +12,7 @@ so requesting runtime version should work, and does work for my tests.
  2 files changed, 53 insertions(+), 29 deletions(-)
 
 diff --git a/libavcodec/nvenc.c b/libavcodec/nvenc.c
-index bbb43ddad8..e3ef173435 100644
+index 111048d043..e7e8cba393 100644
 --- a/libavcodec/nvenc.c
 +++ b/libavcodec/nvenc.c
 @@ -168,20 +168,35 @@ static void nvenc_print_driver_requirement(AVCodecContext *avctx, int level)
@@ -238,19 +238,19 @@ index bbb43ddad8..e3ef173435 100644
      if ((!ctx->cu_context && !ctx->d3d11_device) || !ctx->nvencoder)
          return AVERROR(EINVAL);
 diff --git a/libavcodec/nvenc.h b/libavcodec/nvenc.h
-index a269bd97bb..751e913ff4 100644
+index a269bd97bb..306fa251e8 100644
 --- a/libavcodec/nvenc.h
 +++ b/libavcodec/nvenc.h
-@@ -169,6 +169,9 @@ typedef struct NvencContext
- 
-     void *nvencoder;
+@@ -128,6 +128,9 @@ typedef struct NvencContext
+ {
+     AVClass *avclass;
  
 +    uint32_t apiver_rt;
 +    uint32_t config_ver_rt;
 +
-     int preset;
-     int profile;
-     int level;
+     NvencDynLoadFunctions nvenc_dload_funcs;
+ 
+     NV_ENC_INITIALIZE_PARAMS init_encode_params;
 -- 
-2.17.1
+2.21.0 (Apple Git-122.2)
 

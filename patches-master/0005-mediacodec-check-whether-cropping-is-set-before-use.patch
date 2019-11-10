@@ -1,7 +1,7 @@
-From cdbde111cc21f82189207abe5fbd6f6c13ee5067 Mon Sep 17 00:00:00 2001
+From fdb7ba5013fe93a3a56bc876a40ab30143fe1fdd Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:52:35 +0800
-Subject: [PATCH 05/17] mediacodec: check whether cropping is set before use
+Subject: [PATCH 05/18] mediacodec: check whether cropping is set before use
 
 ---
  libavcodec/mediacodecdec_common.c | 16 +++++++++-------
@@ -35,5 +35,5 @@ index f0752fa626..7743823b65 100644
      AMEDIAFORMAT_GET_INT32(s->display_width,  "display-width",  0);
      AMEDIAFORMAT_GET_INT32(s->display_height, "display-height", 0);
 -- 
-2.20.1 (Apple Git-117)
+2.21.0 (Apple Git-122.2)
 

@@ -1,7 +1,7 @@
-From 669a820b9594b1f3facfedb213fab3477f3efb1a Mon Sep 17 00:00:00 2001
+From 586174cf5624c31a14a23c01586dfbf35e553e1e Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 29 Mar 2018 15:21:04 +0800
-Subject: [PATCH 12/17] mediacodec: remove unused MediaCodec.getName
+Subject: [PATCH 12/18] mediacodec: remove unused MediaCodec.getName
 
 it's introduced in android 4.3. we can safely remove it and let
 mediacodec support android<4.3
@@ -23,5 +23,5 @@ index 5213cf640a..79f6c1bc9b 100644
          { "android/media/MediaCodec", "configure", "(Landroid/media/MediaFormat;Landroid/view/Surface;Landroid/media/MediaCrypto;I)V", FF_JNI_METHOD, offsetof(struct JNIAMediaCodecFields, configure_id), 1 },
          { "android/media/MediaCodec", "start", "()V", FF_JNI_METHOD, offsetof(struct JNIAMediaCodecFields, start_id), 1 },
 -- 
-2.20.1 (Apple Git-117)
+2.21.0 (Apple Git-122.2)
 

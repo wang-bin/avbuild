@@ -1,7 +1,7 @@
-From a6b5272febef5901eeff61b584a7806a1711ee15 Mon Sep 17 00:00:00 2001
+From 3f5fe5aa036df0a8ffa67d377120c42ee98a2f99 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 9 Nov 2017 14:56:53 +0800
-Subject: [PATCH 06/17] avcodec: add AV_HWACCEL_FLAG_ALLOW_SOFTWARE
+Subject: [PATCH 06/18] avcodec: add AV_HWACCEL_FLAG_ALLOW_SOFTWARE
 
 a hw decoder may have software or hybrid implementation, for example videotoolbox hevc.
 the performance may be better than ffmpeg sw decoder.
@@ -11,10 +11,10 @@ the performance may be better than ffmpeg sw decoder.
  2 files changed, 5 insertions(+)
 
 diff --git a/libavcodec/avcodec.h b/libavcodec/avcodec.h
-index de4feb6a65..ab0637a319 100644
+index bcb931f0dd..078bd042e6 100644
 --- a/libavcodec/avcodec.h
 +++ b/libavcodec/avcodec.h
-@@ -3845,6 +3845,10 @@ typedef struct AVHWAccel {
+@@ -3855,6 +3855,10 @@ typedef struct AVHWAccel {
   */
  #define AV_HWACCEL_FLAG_ALLOW_PROFILE_MISMATCH (1 << 2)
  
@@ -26,10 +26,10 @@ index de4feb6a65..ab0637a319 100644
   * @}
   */
 diff --git a/libavcodec/options_table.h b/libavcodec/options_table.h
-index c3a500a629..ed2128c587 100644
+index 4b9f3fff2b..1d8f8242eb 100644
 --- a/libavcodec/options_table.h
 +++ b/libavcodec/options_table.h
-@@ -480,6 +480,7 @@ static const AVOption avcodec_options[] = {
+@@ -481,6 +481,7 @@ static const AVOption avcodec_options[] = {
  {"ignore_level", "ignore level even if the codec level used is unknown or higher than the maximum supported level reported by the hardware driver", 0, AV_OPT_TYPE_CONST, { .i64 = AV_HWACCEL_FLAG_IGNORE_LEVEL }, INT_MIN, INT_MAX, V | D, "hwaccel_flags" },
  {"allow_high_depth", "allow to output YUV pixel formats with a different chroma sampling than 4:2:0 and/or other than 8 bits per component", 0, AV_OPT_TYPE_CONST, {.i64 = AV_HWACCEL_FLAG_ALLOW_HIGH_DEPTH }, INT_MIN, INT_MAX, V | D, "hwaccel_flags"},
  {"allow_profile_mismatch", "attempt to decode anyway if HW accelerated decoder's supported profiles do not exactly match the stream", 0, AV_OPT_TYPE_CONST, {.i64 = AV_HWACCEL_FLAG_ALLOW_PROFILE_MISMATCH }, INT_MIN, INT_MAX, V | D, "hwaccel_flags"},
@@ -38,5 +38,5 @@ index c3a500a629..ed2128c587 100644
  {"discard_damaged_percentage", "Percentage of damaged samples to discard a frame", OFFSET(discard_damaged_percentage), AV_OPT_TYPE_INT, {.i64 = 95 }, 0, 100, V|D },
  {NULL},
 -- 
-2.20.1 (Apple Git-117)
+2.21.0 (Apple Git-122.2)
 

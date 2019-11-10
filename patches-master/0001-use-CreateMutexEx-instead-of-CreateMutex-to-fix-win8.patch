@@ -1,7 +1,7 @@
-From 4f867afb425d45f8db9e4c31e67bafe62890bfe2 Mon Sep 17 00:00:00 2001
+From e085542861d8a35881433526973cd8bcfe8df06e Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sat, 28 Oct 2017 20:26:50 +0800
-Subject: [PATCH 01/17] use CreateMutexEx instead of CreateMutex to fix win8
+Subject: [PATCH 01/18] use CreateMutexEx instead of CreateMutex to fix win8
  store app link error
 
 ---
@@ -33,5 +33,5 @@ index 6670c47579..fd1ae4d81b 100644
              av_log(NULL, AV_LOG_ERROR, "Failed to create a mutex\n");
              return AVERROR(EINVAL);
 -- 
-2.20.1 (Apple Git-117)
+2.21.0 (Apple Git-122.2)
 
