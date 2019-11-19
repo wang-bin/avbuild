@@ -1252,9 +1252,10 @@ config1(){
         sed -i $sed_bak 's/\(.*HAVE_CLOCK_GETTIME\).*/\1 0/g' config.h
       fi
     fi
-    CONFIG_MAK=config.mak
-    [ -f $CONFIG_MAK ] || CONFIG_MAK=ffbuild/config.mak
-    [ -f $CONFIG_MAK ] || CONFIG_MAK=avbuild/config.mak
+	FFBUILD=ffbuild/
+    [ -d $FFBUILD ] || FFBUILD=avbuild/
+    [ -d $FFBUILD ] || FFBUILD=./
+    CONFIG_MAK=$FFBUILD/config.mak
     LLD_AS_LD=false
     grep -q "lld -flavor" $CONFIG_MAK && LLD_AS_LD=true # check lld-link?
     $LLD_AS_LD && { # remove -Wl flags add by configure. they are not supported by lld, but lld only reports warnings
@@ -1310,8 +1311,11 @@ build1(){
     echo configure was not finished
     exit 1
   fi
+  FFBUILD=ffbuild/
+  [ -d $FFBUILD ] || FFBUILD=avbuild/
+  [ -d $FFBUILD ] || FFBUILD=./
 # patch config.sh used by pkgconfig_generate.sh. you can use this ffmpeg sdk like this: PKG_CONFIG_PATH=$ffmpeg_sdk_dir/lib/pkgconfig pkg-config --libs libavutil
-  cat >>ffbuild/config.sh <<'EOF'
+  cat >>$FFBUILD/config.sh <<'EOF'
 prefix=\${pcfiledir}/../..
 libdir=\${prefix}/lib
 incdir=\${prefix}/include
