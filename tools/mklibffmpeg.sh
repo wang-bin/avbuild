@@ -47,7 +47,9 @@ DUP_OBJS=(libswscale/log2_tab.o libswresample/log2_tab.o libavcodec/log2_tab.o l
 OBJS=`find compat lib* -name "*.o" |grep -vE "$(join '|' ${DUP_OBJS[@]})"`
 # appveyor PATH value is very large, xargs gets error "environment is too large for exec", so use echo
 OBJS=$(echo -n $OBJS)
-LIBVERSION=0.0.0
+MAJOR_GUESS=`cat libavutil/libavutil.version |grep MAJOR |cut -d '=' -f 2`
+MAJOR_GUESS=$((MAJOR_GUESS-52))
+LIBVERSION=${MAJOR_GUESS}.0.0
 RELEASE=`cat Makefile |sed 's/^include //;s/Makefile$/RELEASE/'`
 [ -f $RELEASE ] && LIBVERSION=`cat $RELEASE |sed 's/git/0/'`
 LIBMAJOR=`echo $LIBVERSION |cut -d . -f 1`

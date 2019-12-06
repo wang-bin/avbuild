@@ -11,3 +11,5 @@ make_mri() {
 MRI=/tmp/libffmpeg.mri
 make_mri > $MRI
 ${AR:=ar} -M < $MRI
+
+# llvm-ar -qLs $ADIR/libffmpeg.a *.a
