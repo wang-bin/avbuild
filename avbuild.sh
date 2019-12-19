@@ -429,11 +429,11 @@ setup_win_clang(){
   $IS_CLANG_CL && {
     EXTRA_CFLAGS+=" -MD /guard:cf"
   } || {
-    EXTRA_CFLAGS+=" -cfguard"    
+    EXTRA_CFLAGS+=" -Xclang -cfguard"    
   }
   EXTRA_CFLAGS+=" $LTO_CFLAGS $TARGET_OPT -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
   $FORCE_LTO || $enable_lto && EXTRA_LDFLAGS+=" -MACHINE:$MACHINE" # lto is compiled as ir but not coff object and lld can not determin thw target arch
-  EXTRA_LDFLAGS+=" -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt"
+  EXTRA_LDFLAGS+=' -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt'
   EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
   INSTALL_DIR="sdk-$2-$Platform-clang"
   # pkgconf: check_func_headers() includes lflags "mfx.lib" which can not be in -c. fallbck to header and lib check.
@@ -622,7 +622,7 @@ setup_vc_common_env() {
     }
     #gas-preprocessor.pl change open(INPUT, "-|", @preprocess_c_cmd) || die "Error running preprocessor"; to open(INPUT, "@preprocess_c_cmd|") || die "Error running preprocessor";
     #EXTRA_CFLAGS+=" -D__ARM_PCS_VFP" # for gcc, hard float
-    EXTRA_LDFLAGS+=" -MACHINE:$Platform"
+    EXTRA_LDFLAGS+=' -MACHINE:$Platform' # clang-cl: -pdb:\\$(NAME).pdb
     arch="$platform"
     TOOLCHAIN_OPT+=" $ASM_OPT"
   else
