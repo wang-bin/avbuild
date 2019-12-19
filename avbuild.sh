@@ -1345,7 +1345,7 @@ build_all(){
     [ -z "$archs" ] && {
       echo ">>>>>no arch is set. setting default archs..."
       [ "${os:0:3}" == "ios" ] && archs=(armv7 arm64 x86 x86_64)
-      [ "${os:0:7}" == "android" ] && archs=(armv7 arm64 x86)
+      [ "${os:0:7}" == "android" ] && archs=(armv7 arm64 x86 x86_64)
       [ "${os:0:3}" == "rpi" -o "${os:0:9}" == "raspberry" ] && archs=(armv6zk armv7-a)
       [[ "$os" == "sunxi" ]] && archs=(armv7)
       [ "${os:0:5}" == "mingw" ] && archs=(x86 x86_64)
