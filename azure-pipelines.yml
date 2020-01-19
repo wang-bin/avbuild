@@ -1,5 +1,13 @@
 # https://aka.ms/yaml
 # vm images: https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted?view=azure-devops
+schedules:  # https://docs.microsoft.com/en-us/azure/devops/pipelines/build/triggers?view=azure-devops&tabs=yaml#scheduled-triggers
+- cron: "0 12 * * 0"
+  displayName: Weekly Sunday build
+  branches:
+    include:
+    - master
+  always: true
+
 jobs:
 - job: 'Windows_clang'
   pool:
