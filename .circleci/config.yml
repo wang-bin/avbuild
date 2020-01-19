@@ -37,7 +37,7 @@ custom-steps:
         export VCDIR=/tmp/msvcrt-dev
         export WindowsSDKVersion=$(cat /tmp/winsdk/.version)
         export WindowsSdkDir=/tmp/winsdk
-        export PKG_CONFIG_PATH_MFX=/tmp/tools/ClangCL/lib/pkgconfig
+        export PKG_CONFIG_PATH_MFX=/tmp/ClangCL/lib/pkgconfig
   - &upload
     run:
       name: upload

@@ -1,0 +1,195 @@
+# https://aka.ms/yaml
+# vm images: https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted?view=azure-devops
+jobs:
+- job: 'Windows_clang'
+  pool:
+    vmImage: 'ubuntu-18.04'
+  variables:
+    TARGET_OS: windows-desktop
+    VCDIR: '/tmp/msvcrt-dev'
+    WINDOWSSDKDIR: '/tmp/winsdk'
+    PKG_CONFIG_PATH_MFX: '/tmp/ClangCL/lib/pkgconfig'
+    COMPILER: 'clang'
+  steps:
+  - script: ./tools/ci-before-build.sh
+    displayName: 'Install Dev Tools and Dependencies'
+  - bash: |
+      export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+      export WindowsSdkDir=${WINDOWSSDKDIR}
+      export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
+      USE_TOOLCHAIN=clang-${LLVM_VER:-9} ./avbuild.sh $TARGET_OS "arm64-clang-cl-${LLVM_VER:-9} x86 x64"
+    displayName: 'Build'
+  - bash: ./tools/ci-after-build.sh
+    env:
+      SF_USER_MAPPED: $(SF_USER)
+      SF_PW_MAPPED: $(SF_PW)
+    displayName: 'Make SDK'
+
+
+- job: 'UWP_clang'
+  pool:
+    vmImage: 'ubuntu-18.04'
+  variables:
+    TARGET_OS: windows-store
+    VCDIR: '/tmp/msvcrt-dev'
+    WINDOWSSDKDIR: '/tmp/winsdk' # always convet to upper case
+    COMPILER: 'clang'
+  steps:
+  - script: ./tools/ci-before-build.sh
+    displayName: 'Install Dev Tools and Dependencies'
+  - bash: |
+      export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+      export WindowsSdkDir=${WINDOWSSDKDIR}
+      export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
+      USE_TOOLCHAIN=clang-${LLVM_VER:-9} ./avbuild.sh ${TARGET_OS} "arm64-clang-cl-${LLVM_VER:-9} arm x86 x64"
+    displayName: 'Build'
+  - bash: ./tools/ci-after-build.sh
+    env:
+      SF_USER_MAPPED: $(SF_USER)
+      SF_PW_MAPPED: $(SF_PW)
+    displayName: 'Make SDK'
+
+- job: 'Linux_GCC'
+  pool:
+    vmImage: 'ubuntu-18.04' # ubuntu-latest is 16.04
+  variables:
+    TARGET_OS: linux
+    COMPILER: 'gcc'
+    PKG_CONFIG_PATH_MFX: "/tmp/linux64-gcc/lib/pkgconfig"
+  steps:
+  - script: ./tools/ci-before-build.sh
+    displayName: 'Install Dev Tools and Dependencies'
+  - bash: |
+      export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+      ./avbuild.sh
+    displayName: 'Build'
+  - bash: ./tools/ci-after-build.sh
+    env:
+      SF_USER_MAPPED: $(SF_USER)
+      SF_PW_MAPPED: $(SF_PW)
+    displayName: 'Make SDK'
+
+- job: 'Linux_Clang'
+  pool:
+    vmImage: 'ubuntu-18.04' # ubuntu-latest is 16.04
+  variables:
+    TARGET_OS: linux
+    COMPILER: 'clang'
+    PKG_CONFIG_PATH_MFX: "/tmp/linux64-gcc/lib/pkgconfig"
+  steps:
+  - script: ./tools/ci-before-build.sh
+    displayName: 'Install Dev Tools and Dependencies'
+  - bash: |
+      export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+      USE_TOOLCHAIN=clang-${LLVM_VER:-9} ./avbuild.sh
+    displayName: 'Build'
+  - bash: ./tools/ci-after-build.sh
+    env:
+      SF_USER_MAPPED: $(SF_USER)
+      SF_PW_MAPPED: $(SF_PW)
+    displayName: 'Make SDK'
+
+- job: 'RaspberryPi'
+  pool:
+    vmImage: 'ubuntu-18.04'
+  variables:
+    TARGET_OS: raspberry-pi
+    COMPILER: 'clang'
+  steps:
+  - script: ./tools/ci-before-build.sh
+    displayName: 'Install Dev Tools and Dependencies'
+  - bash: |
+      export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+      export SYSROOT=/tmp/sysroot
+      USE_TOOLCHAIN=clang-${LLVM_VER:-9} ./avbuild.sh ${TARGET_OS}
+    displayName: 'Build'
+  - bash: ./tools/ci-after-build.sh
+    env:
+      SF_USER_MAPPED: $(SF_USER)
+      SF_PW_MAPPED: $(SF_PW)
+    displayName: 'Make SDK'
+
+- job: 'SUNXI'
+  pool:
+    vmImage: 'ubuntu-18.04'
+  variables:
+    TARGET_OS: sunxi
+    COMPILER: 'clang'
+  steps:
+  - script: ./tools/ci-before-build.sh
+    displayName: 'Install Dev Tools and Dependencies'
+  - bash: |
+      export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+      export SYSROOT=/tmp/sysroot
+      USE_TOOLCHAIN=clang-${LLVM_VER:-9} ./avbuild.sh ${TARGET_OS}
+    displayName: 'Build'
+  - bash: ./tools/ci-after-build.sh
+    env:
+      SF_USER_MAPPED: $(SF_USER)
+      SF_PW_MAPPED: $(SF_PW)
+    displayName: 'Make SDK'
+
+
+- job: 'Android'
+  pool:
+    vmImage: 'macOS-latest'
+  variables:
+    TARGET_OS: android
+    NDK_VERSION: r21
+    ANDROID_NDK: /tmp/android-ndk
+  steps:
+  - script: ./tools/ci-before-build.sh
+    displayName: 'Install Dev Tools and Dependencies'
+
+  - bash: |
+      export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+      ./avbuild.sh ${TARGET_OS}
+    displayName: 'Build'
+  - bash: ./tools/ci-after-build.sh
+    env:
+      SF_USER_MAPPED: $(SF_USER)
+      SF_PW_MAPPED: $(SF_PW)
+    displayName: 'Make SDK'
+
+
+- job: 'iOS'
+  pool:
+    vmImage: 'macOS-latest'
+  variables:
+    TARGET_OS: iOS
+  steps:
+  - script: ./tools/ci-before-build.sh
+    displayName: 'Install Dev Tools and Dependencies'
+
+  - bash: |
+      export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+      ./avbuild.sh ${TARGET_OS}
+    displayName: 'Build'
+  - bash: ./tools/ci-after-build.sh
+    env:
+      SF_USER_MAPPED: $(SF_USER)
+      SF_PW_MAPPED: $(SF_PW)
+    displayName: 'Make SDK'
+
+
+- job: 'macOS'
+  pool:
+    vmImage: 'macOS-latest'
+  variables:
+    TARGET_OS: macOS
+  steps:
+  - script: ./tools/ci-before-build.sh
+    displayName: 'Install Dev Tools and Dependencies'
+
+  - bash: |
+      export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+      ./avbuild.sh ${TARGET_OS}
+    displayName: 'Build'
+  - bash: ./tools/ci-after-build.sh
+    env:
+      SF_USER_MAPPED: $(SF_USER)
+      SF_PW_MAPPED: $(SF_PW)
+    displayName: 'Make SDK'
+
+# vs2019 use matrix for both desktop and uwp?
+# condition: in(variables['agent.os'], 'Darwin', 'Linux') eq(variables['agent.os'], 'Windows_NT')
