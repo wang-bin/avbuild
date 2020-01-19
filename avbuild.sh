@@ -11,7 +11,7 @@
 #set -x
 
 echo
-echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2019"
+echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2020"
 echo "https://github.com/wang-bin/avbuild"
 
 THIS_NAME=${0##*/}
@@ -805,15 +805,21 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   }
   $TRY_FIX_CORTEX_A8 && EXTRA_LDFLAGS+=" -Wl,--fix-cortex-a8"
   $FFGIT || [ "$ANDROID_ARCH" == "arm" ] && [[ $FFMAJOR <  4 ]] && CFLAGS_CLANG="-fno-integrated-as -gcc-toolchain \$NDK_ROOT/$ANDROID_GCC_DIR_REL $CFLAGS_CLANG" # Disable integrated-as for better compatibility, but need as from gcc toolchain. from ndk cmake
-  local ANDROID_SYSROOT_LIB="$NDK_ROOT/platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
   local ANDROID_SYSROOT_LIB_REL="platforms/android-$API_LEVEL/arch-${ANDROID_ARCH}"
-  # TODO: new clang can find sysroot automatically
+  local ANDROID_SYSROOT_LIB="$NDK_ROOT/$ANDROID_SYSROOT_LIB_REL"
+  [ -d "$ANDROID_LLVM_DIR/sysroot" ] && UNIFIED_SYSROOT="$ANDROID_LLVM_DIR/sysroot"
   if [ -d "$UNIFIED_SYSROOT" ]; then
     [ $API_LEVEL -lt 21 ] && PATCH_MMAP="void* mmap(void*, size_t, int, int, int, __kernel_off_t);"
     ANDROID_SYSROOT_REL=sysroot
     SYSROOT=$NDK_ROOT/$ANDROID_SYSROOT_REL
+    ls "$ANDROID_LLVM_DIR/sysroot"
+    if [ -d "$ANDROID_LLVM_DIR/sysroot" ]; then
+        SYSROOT="$ANDROID_LLVM_DIR/$ANDROID_SYSROOT_REL"
+        ANDROID_SYSROOT_LIB="$SYSROOT/usr/lib/$ANDROID_TOOLCHAIN_PREFIX/$API_LEVEL"
+        [ "$ANDROID_ARCH" == "arm" ] && EXE_FLAGS+=" -lunwind" #r21 undefined __aeabi_unwind_cpp_pr0 from compiler-rt. linking to libgcc auto add libunwind
+    fi
     [ -d "$ANDROID_SYSROOT_LIB" ] && { # ndk r19+ has built-in sysroot and api level support
-      EXTRA_LDFLAGS+=" --sysroot \$NDK_ROOT/$ANDROID_SYSROOT_LIB_REL" # linker need crt objects in platform-$API_LEVEL dir, must set the dir as sysroot. but --sysroot in extra-ldflags comes before configure --sysroot= and has no effect
+      EXTRA_LDFLAGS+=" --sysroot \$SYSROOT" # linker need crt objects in platform-$API_LEVEL dir, must set the dir as sysroot. but --sysroot in extra-ldflags comes before configure --sysroot= and has no effect
       EXTRA_CFLAGS+=" -D__ANDROID_API__=$API_LEVEL --sysroot \$SYSROOT"
     }
     include_with_sysroot_compat /usr/include/$ANDROID_HEADER_TRIPLE
@@ -837,7 +843,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
     fi
   fi
   #test -d $ANDROID_GCC_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-$API_LEVEL --toolchain=$TOOLCHAIN --install-dir=$ANDROID_GCC_DIR #--system=linux-x86_64
-  TOOLCHAIN_OPT+=" --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE\""
+  TOOLCHAIN_OPT+=" --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE $EXE_FLAGS\""
   INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}
   $IS_CLANG && INSTALL_DIR="${INSTALL_DIR}-clang" || INSTALL_DIR="${INSTALL_DIR}-gcc"
   enable_opt jni mediacodec
