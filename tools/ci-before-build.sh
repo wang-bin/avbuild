@@ -8,6 +8,7 @@ if [ `which dpkg` ]; then
     #sudo apt install -y software-properties-common # for add-apt-repository, ubuntu-tooolchain-r-test is required by trusty
     sudo apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main"
     sudo apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main" # clang-10
+    sudo apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main" # for win arm32. https://bugs.llvm.org/show_bug.cgi?id=42711
     sudo apt update
     pkgs="sshpass nasm yasm p7zip-full lld-$LLVER clang-tools-$LLVER" # clang-tools: clang-cl
     if [ "$TARGET_OS" == "linux" ]; then

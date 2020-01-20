@@ -43,13 +43,15 @@ jobs:
     WINDOWSSDKDIR: '/tmp/winsdk' # always convet to upper case
     COMPILER: 'clang'
   steps:
-  - script: ./tools/ci-before-build.sh
+  - bash: |
+      ./tools/ci-before-build.sh
+      sudo apt install -y lld-8 clang-tools-8
     displayName: 'Install Dev Tools and Dependencies'
   - bash: |
       export FFSRC=$PWD/ffmpeg-${FF_VERSION}
       export WindowsSdkDir=${WINDOWSSDKDIR}
       export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
-      USE_TOOLCHAIN=clang-${LLVM_VER:-9} ./avbuild.sh ${TARGET_OS} "arm64-clang-cl-${LLVM_VER:-9} arm x86 x64"
+      USE_TOOLCHAIN=clang-${LLVM_VER:-9} ./avbuild.sh ${TARGET_OS} "arm64-clang-cl-${LLVM_VER:-9} arm-clang-8 x86 x64"
     displayName: 'Build'
   - bash: ./tools/ci-after-build.sh
     env:
