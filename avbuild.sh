@@ -5,7 +5,7 @@
 # TODO: cc_flags, linker_flags(linker only), os_flags, os_cc_flags, os_linker_flags, cc_linker_flags+=$(prepend_Wl linker_flags)
 # remove -Wl, if LD_IS_LLD
 # winphone clang+vs2013sdk: https://fate.libav.org/armv7-win32-clang-4.0/20190219150948  --arch=arm --cpu=armv7-a --as='clang -target armv7-win32-gnu' --cc='clang -target armv7-win32-msvc' --ld=lld-link --target-os=win32 --extra-cflags='-DWINAPI_FAMILY=WINAPI_FAMILY_PHONE_APP' --extra-ldflags='msvcrt.lib oldnames.lib -nodefaultlib:kernel32.lib -nodefaultlib:ole32.lib WindowsPhoneCore.lib' --enable-cross-compile --ar=llvm-ar --nm=llvm-nm
-
+# wsl: https://docs.microsoft.com/en-us/archive/blogs/gillesk/building-ffmpeg-using-wsl
 #PS4='+ $(gdate "+%s.%N")\011 '
 #exec 3>&2 2>/tmp/bashstart.$$.log
 #set -x
@@ -242,7 +242,12 @@ setup_cc() {
 }
 
 to_unix_path() {
-  which cygpath && cygpath -u "$1" || echo "$1"
+  which wslpath &>/dev/null && { #append /mnt/ to the first path only
+    wslpath -u "$1" | sed 's,\;,\;/mnt\/,g;s,:,,g'
+    exit 0
+  }
+  which cygpath &>/dev/null && cygpath -u "$1" && exit 0
+  echo "$1"
 }
 
 use_llvm_binutils() {
@@ -342,7 +347,7 @@ setup_win(){
   WIN_VER=`printf "0x%02X%02X" $os_major $os_minor`
   echo WIN_VER_SET: $WIN_VER_SET  WIN_VER:$WIN_VER
   local win_cc=clang
-  which cl &>/dev/null && win_cc=cl
+  which cl.exe &>/dev/null && win_cc=cl.exe # .exe: for wsl
   : ${USE_TOOLCHAIN:=$win_cc}
   probe_cc $USE_TOOLCHAIN
   if $IS_CLANG ; then
@@ -437,7 +442,7 @@ setup_win_clang(){
   EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
   INSTALL_DIR="sdk-$2-$Platform-clang"
   # pkgconf: check_func_headers() includes lflags "mfx.lib" which can not be in -c. fallbck to header and lib check.
-  [ -n "$PKG_CONFIG_PATH_MFX" ] && which cygpath && PKG_CONFIG_PATH_MFX_UNIX=$(cygpath -u "$PKG_CONFIG_PATH_MFX") || PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX
+  [ -n "$PKG_CONFIG_PATH_MFX" ] && PKG_CONFIG_PATH_MFX_UNIX=`to_unix_path "$PKG_CONFIG_PATH_MFX"`
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] || PKG_CONFIG_PATH_MFX_UNIX=${PKG_CONFIG_PATH_MFX_UNIX/\/lib\/pkgconfig/$Platform\/lib\/pkgconfig}
   export PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
@@ -491,12 +496,12 @@ setup_vc_env() {
   local platform=$(tolower $Platform)
   echo "VS version: $VS_VER, platform: $Platform" # Platform is from vsvarsall.bat
 
-  [ -n "$PKG_CONFIG_PATH_MFX" ] && PKG_CONFIG_PATH_MFX_UNIX=$(cygpath -u "$PKG_CONFIG_PATH_MFX")
+  [ -n "$PKG_CONFIG_PATH_MFX" ] && PKG_CONFIG_PATH_MFX_UNIX=$(to_unix_path "$PKG_CONFIG_PATH_MFX")
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] || PKG_CONFIG_PATH_MFX_UNIX=${PKG_CONFIG_PATH_MFX_UNIX/\/lib\/pkgconfig/$Platform\/lib\/pkgconfig}
   export PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
   FAMILY=
-  if $WINRT; then
+  if ${WINRT:-false}; then
     [ -z "$osver" ] && osver=winrt
     setup_vc_winrt_env $arch
   else
@@ -522,7 +527,7 @@ setup_vc_env() {
   INCLUDE_arch=$(echo ${!INCLUDE_arch} |sed 's/\\/\\\\/g;s/(/\\\(/g;s/)/\\\)/g;s/ /\\ /g;s/\;/\\\;/g')
   [ -n "$PATH_arch" ] && {
   # msvc exes are used by script, so must be converted to posix paths
-    PATH_arch=$(cygpath -u "$PATH_arch" |sed 's/\([a-zA-Z]\):/\/\1/g;s/\;/:/g;s/(/\\\(/g;s/)/\\\)/g;s/ /\\ /g')
+    PATH_arch=$(to_unix_path "$PATH_arch" |sed 's/\([a-zA-Z]\):/\/\1/g;s/\;/:/g;s/(/\\\(/g;s/)/\\\)/g;s/ /\\ /g')
   # PATH_arch is set before bash environment, so must manually add bash paths
     echo "export PATH=$PATH_EXTRA:/usr/local/bin:/usr/bin:/bin:/opt/bin:$PATH_arch" >"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
   }
@@ -665,7 +670,7 @@ setup_mingw_env() {
       TOOLCHAIN_OPT+=" --enable-cross-compile --cross-prefix=${arch}-w64-mingw32- --target-os=mingw$BIT --arch=$arch"
     }
   }
-  [ -n "$PKG_CONFIG_PATH_MFX" ] && PKG_CONFIG_PATH_MFX_UNIX=$(cygpath -u "$PKG_CONFIG_PATH_MFX")
+  [ -n "$PKG_CONFIG_PATH_MFX" ] && PKG_CONFIG_PATH_MFX_UNIX=$(to_unix_path "$PKG_CONFIG_PATH_MFX")
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] || PKG_CONFIG_PATH_MFX_UNIX=${PKG_CONFIG_PATH_MFX_UNIX/\/lib\/pkgconfig/$BIT\/lib\/pkgconfig}
   export PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
