@@ -145,7 +145,6 @@ jobs:
     vmImage: 'macOS-latest'
   variables:
     TARGET_OS: android
-    NDK_VERSION: r21
     ANDROID_NDK: /tmp/android-ndk
   steps:
   - script: ./tools/ci-before-build.sh

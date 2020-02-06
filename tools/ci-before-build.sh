@@ -48,7 +48,7 @@ if [ "$TARGET_OS" == "sunxi" -o "$TARGET_OS" == "raspberry-pi" ]; then
 fi
 
 if [ "$TARGET_OS" == "android" ]; then
-    wget https://dl.google.com/android/repository/android-ndk-${NDK_VERSION:-r20b}-${NDK_HOST}-x86_64.zip -O ndk.zip
+    wget https://dl.google.com/android/repository/android-ndk-${NDK_VERSION:-r21}-${NDK_HOST}-x86_64.zip -O ndk.zip
     7z x ndk.zip -o/tmp &>/dev/null
     mv /tmp/android-ndk-${NDK_VERSION:-r21} ${ANDROID_NDK:-/tmp/android-ndk}
 fi
