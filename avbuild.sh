@@ -817,17 +817,18 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
     [ $API_LEVEL -lt 21 ] && PATCH_MMAP="void* mmap(void*, size_t, int, int, int, __kernel_off_t);"
     ANDROID_SYSROOT_REL=sysroot
     SYSROOT=$NDK_ROOT/$ANDROID_SYSROOT_REL
-    ls "$ANDROID_LLVM_DIR/sysroot"
     if [ -d "$ANDROID_LLVM_DIR/sysroot" ]; then
         SYSROOT="$ANDROID_LLVM_DIR/$ANDROID_SYSROOT_REL"
         ANDROID_SYSROOT_LIB="$SYSROOT/usr/lib/$ANDROID_TOOLCHAIN_PREFIX/$API_LEVEL"
         [ "$ANDROID_ARCH" == "arm" ] && EXE_FLAGS+=" -lunwind" #r21 undefined __aeabi_unwind_cpp_pr0 from compiler-rt. linking to libgcc auto add libunwind
+        EXTRA_LDFLAGS+=" --sysroot \$SYSROOT"
+    else
+        EXTRA_LDFLAGS+=" --sysroot \$NDK_ROOT/$ANDROID_SYSROOT_LIB_REL" # linker need crt objects in platform-$API_LEVEL dir, must set the dir as sysroot. but --sysroot in extra-ldflags comes before configure --sysroot= and has no effect
     fi
     [ -d "$ANDROID_SYSROOT_LIB" ] && { # ndk r19+ has built-in sysroot and api level support
-      EXTRA_LDFLAGS+=" --sysroot \$SYSROOT" # linker need crt objects in platform-$API_LEVEL dir, must set the dir as sysroot. but --sysroot in extra-ldflags comes before configure --sysroot= and has no effect
-      EXTRA_CFLAGS+=" -D__ANDROID_API__=$API_LEVEL --sysroot \$SYSROOT"
+      EXTRA_CFLAGS+=" -D__ANDROID_API__=$API_LEVEL --sysroot \$SYSROOT" # TODO: not required if api level is set in --target=
     }
-    include_with_sysroot_compat /usr/include/$ANDROID_HEADER_TRIPLE
+    include_with_sysroot_compat /usr/include/$ANDROID_HEADER_TRIPLE # TODO: not required if api level is set in --target=
   else
     ANDROID_SYSROOT_REL=${ANDROID_SYSROOT_LIB_REL}
     TOOLCHAIN_OPT+=" --sysroot=\$NDK_ROOT/$ANDROID_SYSROOT_REL"
