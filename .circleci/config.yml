@@ -9,9 +9,8 @@ custom-steps:
         apt update
         apt install -y software-properties-common # for add-apt-repository, ubuntu-tooolchain-r-test is required by trusty
         apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main"
-        apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main"
-        apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main"
-        apt install -y binutils-arm-linux-gnueabihf lld-${LLVM_VER:-9} clang-tools-${LLVM_VER:-9} # clang-tools: clang-cl
+        apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main"
+        apt install -y binutils-arm-linux-gnueabihf lld-${LLVM_VER:-10} clang-tools-${LLVM_VER:-10} # clang-tools: clang-cl
   - &install-dev
     run:
       name: install dev packages
@@ -99,7 +98,7 @@ jobs:
             7z x -y dep.7z -otools &>/dev/null
             export PKG_CONFIG_PATH_MFX=$PWD/tools/linux64-gcc/lib/pkgconfig
             export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-            USE_TOOLCHAIN=clang-${LLVM_VER:-9} ./avbuild.sh
+            USE_TOOLCHAIN=clang-${LLVM_VER:-10} ./avbuild.sh
       - *upload
 
   build_rpi:
@@ -127,7 +126,7 @@ jobs:
             fi
             export SYSROOT=$PWD/sysroot
             export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-            USE_TOOLCHAIN=clang-${LLVM_VER:-9} ./avbuild.sh ${TARGET_OS}
+            USE_TOOLCHAIN=clang-${LLVM_VER:-10} ./avbuild.sh ${TARGET_OS}
       - *upload
 
   build_sunxi:
@@ -155,14 +154,14 @@ jobs:
             fi
             export SYSROOT=$PWD/sysroot
             export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-            USE_TOOLCHAIN=clang-${LLVM_VER:-9} ./avbuild.sh ${TARGET_OS}
+            USE_TOOLCHAIN=clang-${LLVM_VER:-10} ./avbuild.sh ${TARGET_OS}
       - *upload
 
   build_win_static:
     docker:
       - image: buildpack-deps:bionic
     environment:
-      COMPILER: clang # clang-9: compiler-rt symbols are used, e.g. ___ashldi3 (https://travis-ci.org/wang-bin/avbuild/jobs/497331833)
+      COMPILER: clang # clang-10: compiler-rt symbols are used, e.g. ___ashldi3 (https://travis-ci.org/wang-bin/avbuild/jobs/497331833)
       TARGET_OS: windows-desktop
       LIB_OPT: --enable-static
       VCDIR: /tmp/msvcrt-dev
@@ -186,7 +185,7 @@ jobs:
             wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7z
             7z x -y dep.7z -o/tmp &>/dev/null
             export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-            USE_TOOLCHAIN=clang-${LLVM_VER:-9} ./avbuild.sh ${TARGET_OS} "arm64-clang-cl-${LLVM_VER:-9} arm x86 x64"
+            USE_TOOLCHAIN=clang-${LLVM_VER:-10} ./avbuild.sh ${TARGET_OS} "arm64-clang-cl-${LLVM_VER:-10} arm x86 x64"
       - *upload
 
   build_uwp_static:
@@ -214,7 +213,7 @@ jobs:
               ln -sf config{${CONFIG_SUFFIX},}.sh;
             fi
             export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-            USE_TOOLCHAIN=clang-${LLVM_VER:-9} ./avbuild.sh ${TARGET_OS} "arm64-clang-cl-${LLVM_VER:-9} arm x86 x64"
+            USE_TOOLCHAIN=clang-${LLVM_VER:-10} ./avbuild.sh ${TARGET_OS} "arm64-clang-cl-${LLVM_VER:-10} arm x86 x64"
       - *upload
 
   build_uwp:
@@ -241,7 +240,7 @@ jobs:
               ln -sf config{${CONFIG_SUFFIX},}.sh;
             fi
             export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-            USE_TOOLCHAIN=clang-${LLVM_VER:-9} ./avbuild.sh ${TARGET_OS} "arm64-clang-cl-${LLVM_VER:-9} arm x86 x64"
+            USE_TOOLCHAIN=clang-${LLVM_VER:-10} ./avbuild.sh ${TARGET_OS} "arm64-clang-cl-${LLVM_VER:-10} arm x86 x64"
       - *upload
 
 workflows:

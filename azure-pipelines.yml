@@ -25,7 +25,7 @@ jobs:
       export FFSRC=$PWD/ffmpeg-${FF_VERSION}
       export WindowsSdkDir=${WINDOWSSDKDIR}
       export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
-      USE_TOOLCHAIN=clang-${LLVM_VER:-9} ./avbuild.sh $TARGET_OS "arm64-clang-cl-${LLVM_VER:-9} x86 x64"
+      USE_TOOLCHAIN=clang-${LLVM_VER:-10} ./avbuild.sh $TARGET_OS "arm64-clang-cl-${LLVM_VER:-10} x86 x64"
     displayName: 'Build'
   - bash: ./tools/ci-after-build.sh
     env:
@@ -51,7 +51,7 @@ jobs:
       export FFSRC=$PWD/ffmpeg-${FF_VERSION}
       export WindowsSdkDir=${WINDOWSSDKDIR}
       export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
-      USE_TOOLCHAIN=clang-${LLVM_VER:-9} ./avbuild.sh ${TARGET_OS} "arm64-clang-cl-${LLVM_VER:-9} arm-clang-8 x86 x64"
+      USE_TOOLCHAIN=clang-${LLVM_VER:-10} ./avbuild.sh ${TARGET_OS} "arm64-clang-cl-${LLVM_VER:-10} arm-clang-8 x86 x64"
     displayName: 'Build'
   - bash: ./tools/ci-after-build.sh
     env:
@@ -91,7 +91,7 @@ jobs:
     displayName: 'Install Dev Tools and Dependencies'
   - bash: |
       export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-      USE_TOOLCHAIN=clang-${LLVM_VER:-9} ./avbuild.sh
+      USE_TOOLCHAIN=clang-${LLVM_VER:-10} ./avbuild.sh
     displayName: 'Build'
   - bash: ./tools/ci-after-build.sh
     env:
@@ -111,7 +111,7 @@ jobs:
   - bash: |
       export FFSRC=$PWD/ffmpeg-${FF_VERSION}
       export SYSROOT=/tmp/sysroot
-      USE_TOOLCHAIN=clang-${LLVM_VER:-9} ./avbuild.sh ${TARGET_OS}
+      USE_TOOLCHAIN=clang-${LLVM_VER:-10} ./avbuild.sh ${TARGET_OS}
     displayName: 'Build'
   - bash: ./tools/ci-after-build.sh
     env:
@@ -131,7 +131,7 @@ jobs:
   - bash: |
       export FFSRC=$PWD/ffmpeg-${FF_VERSION}
       export SYSROOT=/tmp/sysroot
-      USE_TOOLCHAIN=clang-${LLVM_VER:-9} ./avbuild.sh ${TARGET_OS}
+      USE_TOOLCHAIN=clang-${LLVM_VER:-10} ./avbuild.sh ${TARGET_OS}
     displayName: 'Build'
   - bash: ./tools/ci-after-build.sh
     env:
