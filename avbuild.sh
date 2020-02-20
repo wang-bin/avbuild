@@ -1055,7 +1055,7 @@ setup_gnu_env(){
   $IS_CROSS_BUILD && {
     IS_CROSS_BUILD=true
     echo "gnu cross build"
-    TOOLCHAIN_OPT="--enable-cross-compile --target-os=linux --arch=arm"
+    TOOLCHAIN_OPT="--toolchain=hardened --enable-cross-compile --target-os=linux --arch=arm"
     which "${CROSS_PREFIX}gcc" && SYSROOT_CC=`${CROSS_PREFIX}gcc -print-sysroot` # TODO: not for clang
   } || {
     echo "gnu host build"
