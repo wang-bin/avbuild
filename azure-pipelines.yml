@@ -105,6 +105,7 @@ jobs:
   variables:
     TARGET_OS: raspberry-pi
     COMPILER: 'clang'
+    LLVM_VER: 8
   steps:
   - script: ./tools/ci-before-build.sh
     displayName: 'Install Dev Tools and Dependencies'
