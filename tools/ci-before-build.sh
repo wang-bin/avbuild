@@ -41,7 +41,7 @@ if [[ "$TARGET_OS" == "windows"* ]]; then
     ${WINDOWSSDKDIR}/mkvfs.sh
 fi
 
-if [ "$TARGET_OS" == "sunxi" -o "$TARGET_OS" == "raspberry-pi" ]; then
+if [ "$TARGET_OS" == "sunxi" -o "$TARGET_OS" == "raspberry-pi" -o "$TARGET_OS" == "linux" ]; then
     wget https://sourceforge.net/projects/avbuild/files/${TARGET_OS}/${TARGET_OS/r*pi/rpi}-sysroot.tar.xz/download -O sysroot.tar.xz
     tar Jxf sysroot.tar.xz -C /tmp
     export SYSROOT=/tmp/sysroot

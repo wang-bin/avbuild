@@ -90,7 +90,8 @@ jobs:
     displayName: 'Install Dev Tools and Dependencies'
   - bash: |
       export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-      USE_TOOLCHAIN=clang-${LLVM_VER:-10} ./avbuild.sh
+      export SYSROOT=/tmp/sysroot
+      USE_TOOLCHAIN=clang-${LLVM_VER:-10} ./avbuild.sh linux "amd64 arm64 armhf"
     displayName: 'Build'
   - bash: ./tools/ci-after-build.sh
     env:

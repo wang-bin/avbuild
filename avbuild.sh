@@ -139,6 +139,32 @@ android_arch(){
   echo ${arch:=$1}
 }
 
+linux_arch(){
+  if [[ "$ARCH" == *ar*64 ]]; then
+    echo arm64
+  elif [[ "$ARCH" == *64 ]]; then
+    echo amd64
+  elif [[ "$ARCH" == *86 ]]; then
+    echo i386
+  elif [[ "$ARCH" == armel ]]; then
+    echo armel
+  elif [[ "$ARCH" == arm* ]]; then
+    echo armhf
+  fi
+}
+
+linux_gnu_triple(){
+  if [[ "$ARCH" == *ar*64 ]]; then
+    echo aarch64-linux-gnu
+  elif [[ "$ARCH" == *64 ]]; then
+    echo x86_64-linux-gnu
+  elif [[ "$ARCH" == *86 ]]; then
+    echo i386-linux-gnu
+  elif [[ "$ARCH" == arm* ]]; then
+    echo arm-linux-gnueabihf
+  fi
+}
+
 enable_cuda_llvm() {
   grep -q "\-\-nvcc=" $FFSRC/configure && TOOLCHAIN_OPT+=" --nvcc=$USE_TOOLCHAIN"
 }
@@ -434,7 +460,7 @@ setup_win_clang(){
   $IS_CLANG_CL && {
     EXTRA_CFLAGS+=" -MD /guard:cf"
   } || {
-    EXTRA_CFLAGS+=" -Xclang -cfguard"    
+    EXTRA_CFLAGS+=" -Xclang -cfguard"
   }
   EXTRA_CFLAGS+=" $LTO_CFLAGS $TARGET_OPT -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
   $FORCE_LTO || $enable_lto && EXTRA_LDFLAGS+=" -MACHINE:$MACHINE" # lto is compiled as ir but not coff object and lld can not determin thw target arch
@@ -755,7 +781,7 @@ setup_android_env() {
 : '
 -mthumb error
 selected processor does not support Thumb mode `itt gt
-D:\msys2\tmp\ccXOcbBA.s:262: Error: instruction not supported in Thumb16 mode -- adds r3,r1,r0,lsr#31 
+D:\msys2\tmp\ccXOcbBA.s:262: Error: instruction not supported in Thumb16 mode -- adds r3,r1,r0,lsr#31
 use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/ARM-Options.html
 '
 # -msoft-float == -mfloat-abi=soft https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/ARM-Options.html
@@ -1052,10 +1078,11 @@ setup_gnu_env(){
   add_elf_flags
   local gnu_cc=gcc
   local ARCH=${1:0:5}
+  TOOLCHAIN_OPT+=" --toolchain=hardened"
   $IS_CROSS_BUILD && {
     IS_CROSS_BUILD=true
     echo "gnu cross build"
-    TOOLCHAIN_OPT="--toolchain=hardened --enable-cross-compile --target-os=linux --arch=arm"
+    TOOLCHAIN_OPT+=" --enable-cross-compile --target-os=linux --arch=$ARCH"
     which "${CROSS_PREFIX}gcc" && SYSROOT_CC=`${CROSS_PREFIX}gcc -print-sysroot` # TODO: not for clang
   } || {
     echo "gnu host build"
@@ -1066,16 +1093,18 @@ setup_gnu_env(){
     echo "gnu sysroot is not found!"
     exit 1
   }
+  PKG_CONFIG_PATH+=":$SYSROOT/usr/lib/${CROSS_PREFIX%%-}/pkgconfig"
+  export PKG_CONFIG_PATH
   $IS_CROSS_BUILD && TOOLCHAIN_OPT+=" --sysroot=\\\$SYSROOT" # clang searchs host by default, so sysroot is required
   # probe compiler first
-  setup_cc ${USE_TOOLCHAIN:=gcc} "--target=${CROSS_PREFIX%%-}" # clang on mac(apple or opensource) will use apple flags w/o --target= 
+  setup_cc ${USE_TOOLCHAIN:=gcc} "--target=${CROSS_PREFIX%%-}" # clang on mac(apple or opensource) will use apple flags w/o --target=
 # t.S: x .dn 0
 # gas-preprocessor.pl -arch arm -as-type clang -- clang --target=armv7-none-linux-androideabi -march=armv7-a -mfloat-abi=softfp t.S -v -c
 # clang -fintegrated-as --target=armv7-none-linux-androideabi -march=armv7-a -mfloat-abi=softfp -gcc-toolchain $ANDROID_NDK/toolchains/arm-linux-androideabi-4.9/prebuilt/darwin-x86_64/ t.S -v -c
 # host build can always use binutils, so only cross build uses gas-pp
   local SUBARCH=${ARCH}-a
   local AS_GAS=false
-  $IS_CROSS_BUILD && $IS_CLANG && {
+  $IS_CROSS_BUILD && $IS_CLANG && [[ "$ARCH" == arm* && "$ARCH" != *64 ]] && {
     grep -q as_dn_directive "$FFSRC/configure" || AS_GAS=true
   }
   $AS_GAS && {
@@ -1119,8 +1148,9 @@ setup_linux_env() {
   : ${USE_TOOLCHAIN:=gcc}
   probe_cc $USE_TOOLCHAIN
   add_elf_flags
-  enable_libmfx
   enable_opt vaapi vdpau
+  $IS_CLANG && enable_cuda_llvm
+
   local CC_ARCH=`$USE_TOOLCHAIN -dumpmachine`
   CC_ARCH=${CC_ARCH%%-*}
   local CC_BIT=64
@@ -1128,13 +1158,21 @@ setup_linux_env() {
   local ARCH=$1
   local BIT=64
   [ -z "$ARCH" -o "$ARCH" == "linux" ] && ARCH=$CC_ARCH
+  ARCH=$(linux_arch $ARCH)
+  [[ "$ARCH" == amd64  || "$ARCH" == x*64 ]] && enable_libmfx
+  if [ -n "$SYSROOT" ]; then
+    CROSS_PREFIX=$(linux_gnu_triple $ARCH)-
+    setup_gnu_env $ARCH linux
+    return 0
+  fi
+
+  TOOLCHAIN_OPT+=" --toolchain=hardened"
   [ -n "${ARCH/*64/}" ] && BIT=32
   [ $BIT -ne $CC_BIT ] && {
     EXTRA_CFLAGS="-m$BIT $EXTRA_CFLAGS"
     EXTRA_LDFLAGS="-m$BIT $EXTRA_LDFLAGS"
   }
   $IS_CLANG && {
-    enable_cuda_llvm
     EXTRA_CFLAGS+=" $CFLAGS_CLANG $CLANG_FLAGS"
     EXTRA_LDFLAGS+=" $LFLAGS_CLANG $CLANG_FLAGS"
     $HAVE_LLD && [ $BIT -eq 64 ] && use_lld # 32bit error: can't create dynamic relocation R_386_32 against local symbol in readonly segment   libavutil/x86/float_dsp.o
