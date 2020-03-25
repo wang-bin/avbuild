@@ -120,27 +120,6 @@ jobs:
       SF_PW_MAPPED: $(SF_PW)
     displayName: 'Make SDK'
 
-- job: 'SUNXI'
-  pool:
-    vmImage: 'ubuntu-18.04'
-  variables:
-    TARGET_OS: sunxi
-    COMPILER: 'clang'
-  steps:
-  - script: ./tools/ci-before-build.sh
-    displayName: 'Install Dev Tools and Dependencies'
-  - bash: |
-      export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-      export SYSROOT=/tmp/sysroot
-      USE_TOOLCHAIN=clang-${LLVM_VER:-10} ./avbuild.sh ${TARGET_OS}
-    displayName: 'Build'
-  - bash: ./tools/ci-after-build.sh
-    env:
-      SF_USER_MAPPED: $(SF_USER)
-      SF_PW_MAPPED: $(SF_PW)
-    displayName: 'Make SDK'
-
-
 - job: 'Android'
   pool:
     vmImage: 'macOS-latest'
