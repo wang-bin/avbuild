@@ -58,6 +58,29 @@ jobs:
       SF_PW_MAPPED: $(SF_PW)
     displayName: 'Make SDK'
 
+- job: 'VCRT120_clang'
+  pool:
+    vmImage: 'ubuntu-18.04'
+  variables:
+    TARGET_OS: windows-desktop
+    VCDIR: '/tmp/msvcrt-dev/120'
+    WINDOWSSDKDIR: '/tmp/winsdk'
+    COMPILER: 'clang-vcrt120'
+  steps:
+  - script: ./tools/ci-before-build.sh
+    displayName: 'Install Dev Tools and Dependencies'
+  - bash: |
+      export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+      export WindowsSdkDir=${WINDOWSSDKDIR}
+      export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
+      USE_TOOLCHAIN=clang-${LLVM_VER:-10} ./avbuild.sh $TARGET_OS "x86 x64"
+    displayName: 'Build'
+  - bash: ./tools/ci-after-build.sh
+    env:
+      SF_USER_MAPPED: $(SF_USER)
+      SF_PW_MAPPED: $(SF_PW)
+    displayName: 'Make SDK'
+
 - job: 'Linux_GCC'
   pool:
     vmImage: 'ubuntu-18.04' # ubuntu-latest is 16.04
