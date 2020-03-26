@@ -466,17 +466,9 @@ setup_win_clang(){
   }
   TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$arch $ASM_OPT --target-os=win32 --disable-stripping"
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
-  #FIXME: clang-cl undefined __stack_chk_guard for arm
-  # -fcf-protection[=full] x86 only?
-  # arm64 -Oz: .seh_ directive must appear within an active frame
-  $IS_CLANG_CL && {
-    EXTRA_CFLAGS+=" -MD /guard:cf"
-  } || {
-    EXTRA_CFLAGS+=" -Xclang -cfguard"
-  }
   EXTRA_CFLAGS+=" $LTO_CFLAGS $TARGET_OPT -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
   $FORCE_LTO || $enable_lto && EXTRA_LDFLAGS+=" -MACHINE:$MACHINE" # lto is compiled as ir but not coff object and lld can not determin thw target arch
-  EXTRA_LDFLAGS+=' -guard:cf -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt'
+  EXTRA_LDFLAGS+=' -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt'
   EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
   INSTALL_DIR="sdk-$2-$Platform-clang"
   # pkgconf: check_func_headers() includes lflags "mfx.lib" which can not be in -c. fallbck to header and lib check.
@@ -491,6 +483,7 @@ echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG
   echo "CASE SENSITIVE FS!!!!!!!"
     [ -f "$WindowsSdkDir/vfs.yaml" ] && EXTRA_CFLAGS+=" -Xclang -ivfsoverlay -Xclang \\\"\$WindowsSdkDir/vfs.yaml\\\""
   }
+  cfguard=true
   # vcrt and win sdk dirs
   win10inc=(shared ucrt um winrt)
   win10inc=(${win10inc[@]/#/$WindowsSdkDir/Include/$WindowsSDKVersion/})
@@ -499,7 +492,19 @@ echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG
   ARCH120=${MACHINE/*86_*/amd64} #vc120 sdk layout
   ARCH120=${MACHINE/x64/amd64}
   ARCH120=${MACHINE/x86/}
-  [ ! -d "$VCDIR_LIB" ] && VCDIR_LIB=$VCDIR/lib/$STORE/${ARCH120}
+  [ ! -d "$VCDIR_LIB" ] && {
+    VCDIR_LIB=$VCDIR/lib/$STORE/${ARCH120}
+    cfguard=false # since vs2015. undefined ___guard_check_icall_fptr
+  }
+  $cfguard && {
+    # arm64 -Oz: .seh_ directive must appear within an active frame
+    $IS_CLANG_CL && {
+      EXTRA_CFLAGS+=" -MD /guard:cf"
+    } || {
+      EXTRA_CFLAGS+=" -Xclang -cfguard"
+    }
+    EXTRA_LDFLAGS+=' -guard:cf'
+  }
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat > "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
 export INCLUDE="$VCDIR/include;$INCLUDE;$PKG_CONFIG_PATH_MFX_UNIX/../../include"
