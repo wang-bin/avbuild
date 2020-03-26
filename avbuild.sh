@@ -268,7 +268,7 @@ setup_cc() {
 }
 
 to_unix_path() {
-  which wslpath &>/dev/null && { #append /mnt/ to the first path only
+  which wslpath &>/dev/null && { #preppend /mnt/ to the first path only. and always preppend /mnt/x before absolute path
     wslpath -u "$1" | sed 's,\;,\;/mnt\/,g;s,:,,g'
     exit 0
   }
@@ -282,11 +282,12 @@ use_llvm_binutils() {
   local clang_dir=${USE_TOOLCHAIN%clang*}
   local clang_name=${USE_TOOLCHAIN##*/}
   local clang=$clang_dir${clang_name/-cl/}
-  local CLANG_FALLBACK=clang-9
+  local CLANG_FALLBACK=clang-10
   $IS_APPLE_CLANG && CLANG_FALLBACK=/usr/local/opt/llvm/bin/clang
   echo "clang: `$clang --version`"
   # -print-prog-name= prints native dir format(on windows) and `which` fails
-  $(to_unix_path "`$clang -print-prog-name=llvm-ar`") --version &>/dev/null || clang=$CLANG_FALLBACK
+  `$clang -print-prog-name=llvm-ar` --version &>/dev/null || $(to_unix_path "`$clang -print-prog-name=llvm-ar`") --version &>/dev/null || clang=$CLANG_FALLBACK
+  echo clang=$clang
   for tool in ar nm ranlib; do # strip
     local tool_path=`eval 'which ${LLVM_'$(toupper $tool)'}'`
     local tool_path_print=$($clang -print-prog-name=llvm-$tool)
@@ -373,7 +374,18 @@ setup_win(){
   WIN_VER=`printf "0x%02X%02X" $os_major $os_minor`
   echo WIN_VER_SET: $WIN_VER_SET  WIN_VER:$WIN_VER
   local win_cc=clang
-  which cl.exe &>/dev/null && win_cc=cl.exe # .exe: for wsl
+  cl.exe
+  which cl.exe &>/dev/null && {
+    win_cc=cl.exe # .exe: for wsl
+  } || {
+    : ${Platform:=x86} #Platform is empty(native) or x86(cross using 64bit toolchain)
+    Platform=${arch:-${Platform}} # arch is set, but may be null,  so :-
+    local platform=$(tolower $Platform)
+    local PATH_arch=PATH_$platform
+    PATH_arch=${!PATH_arch}
+    PATH_arch=$(to_unix_path "$PATH_arch" |sed 's/\([a-zA-Z]\):/\/\1/g;s/\;/:/g;s/(/\\\(/g;s/)/\\\)/g;s/ /\\ /g')
+    PATH=$PATH_arch:$PATH which cl.exe &>/dev/null && win_cc=cl.exe
+  }
   : ${USE_TOOLCHAIN:=$win_cc}
   probe_cc $USE_TOOLCHAIN
   if $IS_CLANG ; then
