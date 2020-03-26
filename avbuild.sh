@@ -490,11 +490,13 @@ echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG
   IFS=\; eval 'INCLUDE="${win10inc[*]}"'
   local VCDIR_LIB=$VCDIR/lib/$ONECORE/${MACHINE/86_/}/$STORE
   ARCH120=${MACHINE/*86_*/amd64} #vc120 sdk layout
-  ARCH120=${MACHINE/x64/amd64}
-  ARCH120=${MACHINE/x86/}
+  ARCH120=${ARCH120/x64/amd64}
+  ARCH120=${ARCH120/x86/}
   [ ! -d "$VCDIR_LIB" ] && {
     VCDIR_LIB=$VCDIR/lib/$STORE/${ARCH120}
     cfguard=false # since vs2015. undefined ___guard_check_icall_fptr
+    cp -af patches/0001-define-timespec-for-vcrt-140.patch "$FFSRC/tmp.patch"
+    (cd "$FFSRC" && patch -p1 -N <"tmp.patch")
   }
   $cfguard && {
     # arm64 -Oz: .seh_ directive must appear within an active frame

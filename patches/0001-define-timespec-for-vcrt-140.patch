@@ -1,0 +1,32 @@
+From 1ce0f57fb91c611137707e3a82f5f9ef6d0a5739 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Thu, 26 Mar 2020 15:53:02 +0800
+Subject: [PATCH] define timespec for vcrt < 140
+
+incomplete timespec error. not sure which commit break this. since 2020-01?
+---
+ compat/w32pthreads.h | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/compat/w32pthreads.h b/compat/w32pthreads.h
+index 6405e72b64..8fecd88b9b 100644
+--- a/compat/w32pthreads.h
++++ b/compat/w32pthreads.h
+@@ -46,6 +46,14 @@
+ #include "libavutil/mem.h"
+ #include "libavutil/time.h"
+ 
++#if defined(_VC_CRT_MAJOR_VERSION) && (_VC_CRT_MAJOR_VERSION <= 12)
++struct timespec
++{
++    time_t tv_sec;  // Seconds - >= 0
++    long   tv_nsec; // Nanoseconds - [0, 999999999]
++};
++#endif
++
+ typedef struct pthread_t {
+     void *handle;
+     void *(*func)(void* arg);
+-- 
+2.22.0.vfs.1.1.57.gbaf16c8
+
