@@ -1,6 +1,7 @@
 #!/bin/bash
 LLVER=${LLVM_VER:-10}
 NDK_HOST=linux
+git submodule update --init --recursive
 if [ `which dpkg` ]; then
     #wget https://apt.llvm.org/llvm.sh
     wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key |sudo apt-key add -
@@ -21,7 +22,7 @@ if [ `which dpkg` ]; then
     fi
     sudo apt install -y $pkgs
 elif [ `which brew` ]; then
-    pkgs="nasm yasm perl hudochenkov/sshpass/sshpass xz p7zip"
+    pkgs="pkg-config nasm yasm perl hudochenkov/sshpass/sshpass xz p7zip"
     brew install $pkgs
     NDK_HOST=darwin
 fi

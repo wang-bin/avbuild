@@ -227,6 +227,7 @@ if [ -f "$PWD/tools/nv-codec-headers/ffnvcodec.pc.in" ]; then
   # cuGLGetDevices is a cuda8 api, never used
   sed -i $sed_bak 's/LOAD_SYMBOL(cuGLGetDevices\(.*\)/LOAD_SYMBOL_OPT(cuGLGetDevices\1/;s/LOAD_SYMBOL(cuDeviceGetAttribute\(.*\)/LOAD_SYMBOL_OPT(cuDeviceGetAttribute\1/;s/LOAD_SYMBOL(cuCtxSetLimit\(.*\)/LOAD_SYMBOL_OPT(cuCtxSetLimit\1/' tools/nv-codec-headers/include/ffnvcodec/dynlink_loader.h
 fi
+ls "$PWD/tools/nv-codec-headers"
 
 use_clang() {
   if [ -n "$CROSS_PREFIX" ]; then # TODO: "$CROSS_PREFIX" != $TARGET_TRIPLE
@@ -474,8 +475,8 @@ setup_win_clang(){
   # pkgconf: check_func_headers() includes lflags "mfx.lib" which can not be in -c. fallbck to header and lib check.
   [ -n "$PKG_CONFIG_PATH_MFX" ] && PKG_CONFIG_PATH_MFX_UNIX=`to_unix_path "$PKG_CONFIG_PATH_MFX"`
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] || PKG_CONFIG_PATH_MFX_UNIX=${PKG_CONFIG_PATH_MFX_UNIX/\/lib\/pkgconfig/$Platform\/lib\/pkgconfig}
-  export PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
-  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
+  PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
+  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
 echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX
   enable_libmfx
 
@@ -514,12 +515,8 @@ export LIB="$VCDIR_LIB;$WindowsSdkDir/Lib/$WindowsSDKVersion/ucrt/${MACHINE/86_/
 export AR=$LLVM_AR
 export NM=$LLVM_NM
 #export V=1 # FFmpeg BUG: AR is overriden in common.mak and becomes an invalid command in makedef(@printf works in makefiles but not sh scripts)
-EOF
-  if [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ]; then
-    cat >> "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
 export PKG_CONFIG_PATH=$PKG_CONFIG_PATH
 EOF
-  fi
 # [ expr1 ] && ... at end returns error if expr1 is false
 }
 
@@ -543,8 +540,8 @@ setup_vc_env() {
 
   [ -n "$PKG_CONFIG_PATH_MFX" ] && PKG_CONFIG_PATH_MFX_UNIX=$(to_unix_path "$PKG_CONFIG_PATH_MFX")
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] || PKG_CONFIG_PATH_MFX_UNIX=${PKG_CONFIG_PATH_MFX_UNIX/\/lib\/pkgconfig/$Platform\/lib\/pkgconfig}
-  export PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
-  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
+  PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
+  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
   FAMILY=
   if ${WINRT:-false}; then
     [ -z "$osver" ] && osver=winrt
@@ -579,7 +576,7 @@ setup_vc_env() {
   [ -n "$LIB_arch" ] && echo "export LIB=$LIB_arch" >>"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
   [ -n "$LIBPATH_arch" ] && echo "export LIBPATH=$LIBPATH_arch" >>"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
   [ -n "$INCLUDE_arch" ] && echo "export INCLUDE=$INCLUDE_arch" >>"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
-  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && cat >> "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
+  cat >> "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
 export PKG_CONFIG_PATH=$PKG_CONFIG_PATH
 EOF
 }
@@ -717,8 +714,8 @@ setup_mingw_env() {
   }
   [ -n "$PKG_CONFIG_PATH_MFX" ] && PKG_CONFIG_PATH_MFX_UNIX=$(to_unix_path "$PKG_CONFIG_PATH_MFX")
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] || PKG_CONFIG_PATH_MFX_UNIX=${PKG_CONFIG_PATH_MFX_UNIX/\/lib\/pkgconfig/$BIT\/lib\/pkgconfig}
-  export PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
-  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
+  PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
+  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
 
   enable_libmfx
   enable_opt dxva2
@@ -732,9 +729,6 @@ export PATH=$MINGW_BIN:$PATH
 shopt -s expand_aliases
 #alias ${arch}-w64-mingw32-strip=$MINGW_BIN/strip # seems not work in sh used by ffmpeg
 #alias ${arch}-w64-mingw32-nm=$MINGW_BIN/nm
-EOF
-  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && cat >> "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
-export PKG_CONFIG_PATH=$PKG_CONFIG_PATH
 EOF
 }
 
@@ -909,7 +903,8 @@ EOF
 setup_ios_env() {
   ENC_OPT=$ENC_OPT_MOBILE
   MUX_OPT=$MUX_OPT_MOBILE
-  enable_opt videotoolbox
+  enable_opt videotoolbox libxml2
+  EXTRA_CFLAGS+=" -iwithsysroot /usr/include/libxml2"
   LIB_OPT= #static only
 # clang -arch i386 -arch x86_64
 ## cc="xcrun -sdk iphoneos clang" or cc=`xcrun -sdk iphoneos --find clang`
@@ -986,7 +981,8 @@ setup_macos_env(){
     }
   fi
   : ${MACOS_VER:=10.7}
-  enable_opt videotoolbox vda
+  enable_opt videotoolbox vda libxml2
+  EXTRA_CFLAGS+=" -iwithsysroot /usr/include/libxml2"
   version_compare $MACOS_VER "<" 10.7 && disable_opt lzma avdevice #avfoundation is not supported on 10.6
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
   if $FFGIT; then
@@ -1113,7 +1109,6 @@ setup_gnu_env(){
     exit 1
   }
   PKG_CONFIG_PATH+=":$SYSROOT/usr/lib/${CROSS_PREFIX%%-}/pkgconfig"
-  export PKG_CONFIG_PATH
   $IS_CROSS_BUILD && TOOLCHAIN_OPT+=" --sysroot=\\\$SYSROOT" # clang searchs host by default, so sysroot is required
   # probe compiler first
   setup_cc ${USE_TOOLCHAIN:=gcc} "--target=${CROSS_PREFIX%%-}" # clang on mac(apple or opensource) will use apple flags w/o --target=
@@ -1160,6 +1155,9 @@ setup_gnu_env(){
   #-lrt: clock_gettime in glibc2.17
   EXTRALIBS+=" -lrt"
   INSTALL_DIR=sdk-$2-${ARCH}-${gnu_cc}
+cat > "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH
+EOF
 }
 
 # TODO: generic linux for all archs
