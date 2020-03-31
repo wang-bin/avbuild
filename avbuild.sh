@@ -1392,7 +1392,10 @@ incdir=\${prefix}/include
 EOF
   [ -f .env.sh ] && . .env.sh
   ## https://github.com/ninja-build/ninja/pull/1224
-  time (make -j`getconf _NPROCESSORS_ONLN` install prefix="$THIS_DIR/$INSTALL_DIR" && cp -af config.txt $THIS_DIR/$INSTALL_DIR)
+  time (make -j`getconf _NPROCESSORS_ONLN` install prefix="$THIS_DIR/$INSTALL_DIR" && {
+      cp -af config.txt $THIS_DIR/$INSTALL_DIR
+      cp -af $FFBUILD/config.log $THIS_DIR/$INSTALL_DIR
+  })
   [ $? -eq 0 ] || exit 2
   $THIS_DIR/tools/mklibffmpeg.sh $PWD $THIS_DIR/$INSTALL_DIR
   cd $THIS_DIR/$INSTALL_DIR
@@ -1518,6 +1521,7 @@ make_universal()
       cp -af $d/bin/* $OUT_DIR/bin/$arch
       cp -af $d/lib/* $OUT_DIR/lib/$arch
       cat $d/config.txt >$OUT_DIR/config-$arch.txt
+      cat $d/config.log >$OUT_DIR/config-$arch.log
       cp -af $FFSRC/{Changelog,RELEASE_NOTES} $OUT_DIR
       [ -f "$FFSRC/$LICENSE_FILE" ] && cp -af "$FFSRC/$LICENSE_FILE" $OUT_DIR || touch $OUT_DIR/$LICENSE_FILE
       echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
