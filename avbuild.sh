@@ -467,7 +467,7 @@ setup_win_clang(){
   }
   TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$arch $ASM_OPT --target-os=win32 --disable-stripping"
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
-  EXTRA_CFLAGS+=" -Zi $LTO_CFLAGS $TARGET_OPT -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
+  EXTRA_CFLAGS+=" $LTO_CFLAGS $TARGET_OPT -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
   $FORCE_LTO || $enable_lto && EXTRA_LDFLAGS+=" -MACHINE:$MACHINE" # lto is compiled as ir but not coff object and lld can not determin thw target arch
   EXTRA_LDFLAGS+=' -DEBUG -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt'
   EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
@@ -499,15 +499,15 @@ echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG
     cp -af patches/0001-define-timespec-for-vcrt-140.patch "$FFSRC/tmp.patch"
     (cd "$FFSRC" && patch -p1 -N <"tmp.patch")
   }
-  $cfguard && {
-    # arm64 -Oz: .seh_ directive must appear within an active frame
-    $IS_CLANG_CL && {
-      EXTRA_CFLAGS+=" -MD /guard:cf"
-    } || {
-      EXTRA_CFLAGS+=" -Xclang -cfguard"
-    }
-    EXTRA_LDFLAGS+=' -guard:cf'
+  $IS_CLANG_CL && {
+	EXTRA_CFLAGS+=" -MD"
+	[ "$MACHINE" == arm ] || EXTRA_CFLAGS+=" -Zi" # codeview is not implemented for arm(clang-10)
+	$cfguard && EXTRA_CFLAGS+=" /guard:cf"
+  }	|| {
+	[ "$MACHINE" == arm ] || EXTRA_CFLAGS+=" -g -gcodeview"
+	$cfguard && EXTRA_CFLAGS+=" -Xclang -cfguard"
   }
+  $cfguard && EXTRA_LDFLAGS+=' -guard:cf'
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat > "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
 export INCLUDE="$VCDIR/include;$INCLUDE;$PKG_CONFIG_PATH_MFX_UNIX/../../include"
@@ -529,7 +529,7 @@ setup_vc_env() {
   echo Call "set MSYS2_PATH_TYPE=inherit" before msys2 sh.exe if cl.exe is not found!
   enable_lto=false # ffmpeg requires DCE, while vc with LTCG (-GL) does not support DCE
   # dylink crt
-  EXTRA_CFLAGS+=" -Zi -MD -guard:cf"
+  EXTRA_CFLAGS+=" /Zi /FS -MD -guard:cf" # /Zi: https://scc.ustc.edu.cn/zlsc/tc4600/intel/2017.0.098/compiler_f/common/core/GUID-CA811CC8-A2C1-4DFF-AC39-DF7E1EEAF30E.html
   EXTRA_LDFLAGS+=" -DEBUG -guard:cf -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
   TOOLCHAIN_OPT+=" --toolchain=msvc"
   VS_VER=${VisualStudioVersion:0:2}
