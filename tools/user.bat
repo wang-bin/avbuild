@@ -1,4 +1,4 @@
-:: set PKG_CONFIG_PATH_EXT=%CD%\VS2017\lib\pkgconfig
+:: set PKG_CONFIG_PATH_MFX=%CD%\VS2019\lib\pkgconfig
 if [%MSYSTEM%] == [] goto SetupMSYS2
 
 :SetupAV

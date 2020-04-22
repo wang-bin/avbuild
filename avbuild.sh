@@ -1308,6 +1308,7 @@ config1(){
   if $reconf; then
     [ -f .env.sh ] && . .env.sh && cat .env.sh
     echo configuration changes
+	rm -f config-utf8.h
     time eval $CONFIGURE
   fi
   if [ $? -eq 0 ]; then
@@ -1350,7 +1351,7 @@ config1(){
 " "$FFSRC_TOOLS/cmdutils.c"
     fi
     if $VC_BUILD; then # check ffmpeg version?
-      if [ "${VisualStudioVersion:0:2}" -gt 14 ] && `echo $LANG |grep -q zh` && [ ! -f config-utf8.h ] ; then  # check ffmpeg version?
+      if [ "${VisualStudioVersion:0:2}" -ge 14 ] && `echo $LANG |grep -q zh` && [ ! -f config-utf8.h ] ; then  # check ffmpeg version?
         iconv -t "UTF-8" -f "GBK" config.h > config-utf8.h
         cp -f config{-utf8,}.h
       fi
