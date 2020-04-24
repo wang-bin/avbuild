@@ -525,11 +525,12 @@ setup_vc_env() {
   local osver=$2
   grep -q "guard:cf is not recognized by armasm" "$FFSRC/configure" || sed -i $sed_bak "/-M\[TD\]\*)/a\\
 \            -guard*)                                            ;; # -guard:cf is not recognized by armasm\\
+\            -FS)                                                ;; # -FS is not recognized by armasm\\
 " "$FFSRC/configure"
   echo Call "set MSYS2_PATH_TYPE=inherit" before msys2 sh.exe if cl.exe is not found!
   enable_lto=false # ffmpeg requires DCE, while vc with LTCG (-GL) does not support DCE
   # dylink crt
-  EXTRA_CFLAGS+=" /Zi /FS -MD -guard:cf" # /Zi: https://scc.ustc.edu.cn/zlsc/tc4600/intel/2017.0.098/compiler_f/common/core/GUID-CA811CC8-A2C1-4DFF-AC39-DF7E1EEAF30E.html
+  EXTRA_CFLAGS+=" -Zi -FS -MD -guard:cf" # /Zi: https://scc.ustc.edu.cn/zlsc/tc4600/intel/2017.0.098/compiler_f/common/core/GUID-CA811CC8-A2C1-4DFF-AC39-DF7E1EEAF30E.html
   EXTRA_LDFLAGS+=" -DEBUG -guard:cf -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
   TOOLCHAIN_OPT+=" --toolchain=msvc"
   VS_VER=${VisualStudioVersion:0:2}
