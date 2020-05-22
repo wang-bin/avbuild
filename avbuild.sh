@@ -389,6 +389,7 @@ setup_win(){
   }
   : ${USE_TOOLCHAIN:=$win_cc}
   probe_cc $USE_TOOLCHAIN
+  enable_opt mediafoundation
   if $IS_CLANG ; then
     setup_win_clang $@
   else
@@ -720,6 +721,7 @@ setup_mingw_env() {
 
   enable_libmfx
   enable_opt dxva2
+  enable_opt mediafoundation
   disable_opt iconv
   EXTRA_LDFLAGS+=" -static-libgcc -Wl,-Bstatic"
   INSTALL_DIR="${INSTALL_DIR}-mingw-$1-gcc"
