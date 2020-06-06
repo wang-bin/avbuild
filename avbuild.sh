@@ -18,7 +18,7 @@ THIS_NAME=${0##*/}
 THIS_DIR=$PWD
 PLATFORMS="ios|android|rpi|sunxi|vc|win|winrt|uwp|winphone|mingw"
 echo "Usage:"
-test -d $PWD/ffmpeg || echo "  export FFSRC=/path/to/ffmpeg"
+test -d $PWD/FFmpeg || echo "  export FFSRC=/path/to/ffmpeg"
 cat<<HELP
 ./$THIS_NAME [target_platform [target_architecture[-clang*/gcc*]]]
 target_platform can be: ${PLATFORMS}
@@ -41,7 +41,7 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 #: ${FEATURE_OPT:="--enable-hwaccels"}
 : ${DEBUG_OPT:="--disable-debug"}
 : ${FORCE_LTO:=false}
-: ${FFSRC:=$PWD/ffmpeg}
+: ${FFSRC:=$PWD/FFmpeg}
 [[ "$LIB_OPT" == *"--disable-static"* ]] && FORCE_LTO=true
 # other env vars to control build: NO_ENC, BITCODE, WINPHONE, VC_BUILD, FORCE_LTO (bool)
 
@@ -228,7 +228,7 @@ if [ -f "$PWD/tools/nv-codec-headers/ffnvcodec.pc.in" ]; then
   sed -i $sed_bak 's/LOAD_SYMBOL(cuGLGetDevices\(.*\)/LOAD_SYMBOL_OPT(cuGLGetDevices\1/;s/LOAD_SYMBOL(cuDeviceGetAttribute\(.*\)/LOAD_SYMBOL_OPT(cuDeviceGetAttribute\1/;s/LOAD_SYMBOL(cuCtxSetLimit\(.*\)/LOAD_SYMBOL_OPT(cuCtxSetLimit\1/' tools/nv-codec-headers/include/ffnvcodec/dynlink_loader.h
 fi
 ls "$PWD/tools/nv-codec-headers"
-
+sed -i $sed_bak 's/-lmfplat/-lMfplat/g' "$FFSRC/configure"
 use_clang() {
   if [ -n "$CROSS_PREFIX" ]; then # TODO: "$CROSS_PREFIX" != $TARGET_TRIPLE
     CLANG_TARGET=${CROSS_PREFIX%%-}
@@ -1394,7 +1394,7 @@ incdir=\${prefix}/include
 EOF
   [ -f .env.sh ] && . .env.sh
   ## https://github.com/ninja-build/ninja/pull/1224
-  time (make -j`getconf _NPROCESSORS_ONLN` install prefix="$THIS_DIR/$INSTALL_DIR" && {
+  time (make -j${JOBS:-`getconf _NPROCESSORS_ONLN`} install prefix="$THIS_DIR/$INSTALL_DIR" && {
       cp -af config.txt $THIS_DIR/$INSTALL_DIR
       cp -af $FFBUILD/config.log $THIS_DIR/$INSTALL_DIR
   })
