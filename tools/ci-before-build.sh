@@ -1,6 +1,8 @@
 #!/bin/bash
 LLVER=${LLVM_VER:-10}
 NDK_HOST=linux
+export XZ_OPT="--threads=`getconf _NPROCESSORS_ONLN` -9e" # -9e. -8/9 will disable mt?
+
 git submodule update --init --recursive
 if [ `which dpkg` ]; then
     #wget https://apt.llvm.org/llvm.sh
