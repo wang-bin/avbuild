@@ -1,7 +1,7 @@
-From f2a9eab03b8a1108300acd4bbcdacd4abf85c07f Mon Sep 17 00:00:00 2001
+From 7fb71cdd7b354b46478aa398b8cfeec9c713176d Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:35:28 +0800
-Subject: [PATCH 04/18] videotoolbox: check runtime availability
+Subject: [PATCH 04/19] videotoolbox: check runtime availability
 
 fix warnings/errors for new compiler (since xcode9) if targeting
 macOS<10.8
@@ -82,5 +82,5 @@ index 8773de3393..781f5e7345 100644
          videotoolbox->session = NULL;
      }
 -- 
-2.21.0 (Apple Git-122.2)
+2.17.1
 

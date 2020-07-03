@@ -1,7 +1,7 @@
-From 31c54560097a2292a0fcf0c7bb5d244f904d195b Mon Sep 17 00:00:00 2001
+From 1f3a210c4edf260bcf7c70644013840de917ae91 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 17 Nov 2017 14:54:23 +0800
-Subject: [PATCH 10/18] mmal: add option copy_frame to support retrieving sw
+Subject: [PATCH 10/19] mmal: add option copy_frame to support retrieving sw
  frames w/o copy
 
 mmal buffer->data is already in host memory. AFAIK decoders implemented in omx must
@@ -14,7 +14,7 @@ turned off
  1 file changed, 23 insertions(+), 8 deletions(-)
 
 diff --git a/libavcodec/mmaldec.c b/libavcodec/mmaldec.c
-index c1cfb09283..9cd6c6558f 100644
+index 26faa9dffb..7c808f3e8e 100644
 --- a/libavcodec/mmaldec.c
 +++ b/libavcodec/mmaldec.c
 @@ -69,6 +69,7 @@ typedef struct MMALDecodeContext {
@@ -84,5 +84,5 @@ index c1cfb09283..9cd6c6558f 100644
  };
  
 -- 
-2.21.0 (Apple Git-122.2)
+2.17.1
 

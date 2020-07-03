@@ -1,17 +1,17 @@
-From 6462e89cf58001681d3c7bc9cd71fad4991678b3 Mon Sep 17 00:00:00 2001
+From 62f1d3701794883fb99085b5ae13ca79023b6013 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:22:25 +0800
-Subject: [PATCH 03/18] configure: fix mmal probing in cross build
+Subject: [PATCH 03/19] configure: fix mmal probing in cross build
 
 ---
  configure | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/configure b/configure
-index 48e1426013..a5aa6e724d 100755
+index bdfd731602..8757cb6d8a 100755
 --- a/configure
 +++ b/configure
-@@ -6359,11 +6359,11 @@ enabled mbedtls           && { check_pkg_config mbedtls mbedtls mbedtls/x509_crt
+@@ -6437,11 +6437,11 @@ enabled mbedtls           && { check_pkg_config mbedtls mbedtls mbedtls/x509_crt
                                 check_lib mbedtls mbedtls/ssl.h mbedtls_ssl_init -lmbedtls -lmbedx509 -lmbedcrypto ||
                                 die "ERROR: mbedTLS not found"; }
  enabled mediacodec        && { enabled jni || die "ERROR: mediacodec requires --enable-jni"; }
@@ -26,5 +26,5 @@ index 48e1426013..a5aa6e724d 100755
                                 check_func_headers interface/mmal/mmal.h "MMAL_PARAMETER_VIDEO_MAX_NUM_CALLBACKS"; }
  enabled openal            && { { for al_extralibs in "${OPENAL_LIBS}" "-lopenal" "-lOpenAL32"; do
 -- 
-2.21.0 (Apple Git-122.2)
+2.17.1
 
