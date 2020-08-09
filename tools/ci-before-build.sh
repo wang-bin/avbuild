@@ -1,5 +1,5 @@
 #!/bin/bash
-LLVER=${LLVM_VER:-10}
+LLVER=${LLVM_VER:-11}
 NDK_HOST=linux
 export XZ_OPT="--threads=`getconf _NPROCESSORS_ONLN` -9e" # -9e. -8/9 will disable mt?
 
@@ -9,8 +9,8 @@ if [ `which dpkg` ]; then
     wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key |sudo apt-key add -
     #sudo apt update
     #sudo apt install -y software-properties-common # for add-apt-repository, ubuntu-tooolchain-r-test is required by trusty
-    sudo apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main"
-    sudo apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main" # clang-11
+    sudo apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-11 main"
+    sudo apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main" # clang-12
     sudo apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main" # for win arm32. https://bugs.llvm.org/show_bug.cgi?id=42711
     sudo apt update
     pkgs="sshpass nasm yasm p7zip-full lld-$LLVER clang-tools-$LLVER" # clang-tools: clang-cl
