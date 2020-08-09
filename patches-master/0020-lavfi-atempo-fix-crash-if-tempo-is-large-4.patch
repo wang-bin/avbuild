@@ -1,0 +1,25 @@
+From a0ddfc6f9e777016ee8574ff57c4b4d9536f0a1e Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Sun, 9 Aug 2020 23:35:08 +0800
+Subject: [PATCH 20/20] lavfi/atempo: fix crash if tempo is large(>4)
+
+---
+ libavfilter/af_atempo.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libavfilter/af_atempo.c b/libavfilter/af_atempo.c
+index e4fc691abe..16fed28bce 100644
+--- a/libavfilter/af_atempo.c
++++ b/libavfilter/af_atempo.c
+@@ -532,7 +532,7 @@ static int yae_load_frag(ATempoContext *atempo,
+     if (frag->position[0] < start) {
+         // what we don't have we substitute with zeros:
+         zeros = FFMIN(start - frag->position[0], (int64_t)nsamples);
+-        av_assert0(zeros != nsamples);
++        //av_assert0(zeros != nsamples);
+ 
+         memset(dst, 0, zeros * atempo->stride);
+         dst += zeros * atempo->stride;
+-- 
+2.24.1 (Apple Git-126)
+
