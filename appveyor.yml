@@ -51,7 +51,7 @@ install:
       C:\msys64\usr\bin\pacman -Sc --noconfirm
     )
   - C:\msys64\usr\bin\pacman -S --noconfirm --needed diffutils patch pkg-config nasm yasm
-  - set FF_BRANCH=%FF_VERSION%
+  - set FF_BRANCH=master
   - if not [%FF_BRANCH%]==[master] set FF_BRANCH=release/%FF_VERSION%
   - git clone -b %FF_BRANCH% --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-%FF_VERSION%
   - if /i %_PLATFORM%==desktop (
