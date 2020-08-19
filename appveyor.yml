@@ -3,8 +3,6 @@ branches:
   only:
     - master
     - prelease
-    - ci
-    - appveyor
 
 # https://www.appveyor.com/docs/build-environment/#using-multiple-images-for-the-same-build
 # APPVEYOR_BUILD_WORKER_IMAGE is used in environment matrix, image is not
@@ -19,15 +17,6 @@ environment:
   - _CC: MINGW
     _PLATFORM: desktop
     _CACHE: msys64
-  - _ARCH: arm
-    _CC: VS2013
-    _PLATFORM: phone
-  - _ARCH: x86
-    _CC: VS2013
-    _PLATFORM: store
-  - _ARCH: x86
-    _CC: VS2013
-    _PLATFORM: desktop
 
 matrix:
   fast_finish: false
