@@ -11,9 +11,6 @@ environment:
   - _CC: VS2019
     _PLATFORM: desktop
     APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
-  - _CC: VS2019
-    _PLATFORM: store
-    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
   - _CC: MINGW
     _PLATFORM: desktop
     _CACHE: msys64
