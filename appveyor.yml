@@ -2,7 +2,6 @@
 branches:
   only:
     - master
-    - prelease
 
 # https://www.appveyor.com/docs/build-environment/#using-multiple-images-for-the-same-build
 # APPVEYOR_BUILD_WORKER_IMAGE is used in environment matrix, image is not
@@ -11,9 +10,6 @@ environment:
   - _CC: VS2019
     _PLATFORM: desktop
     APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
-  - _CC: MINGW
-    _PLATFORM: desktop
-    _CACHE: msys64
 
 matrix:
   fast_finish: false
