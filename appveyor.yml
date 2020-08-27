@@ -69,12 +69,3 @@ test: off
 artifacts:
   - path: '%SDK_NAME%.7z'  # relative to repo root
 
-deploy:
-  provider: FTP
-  protocol: sftp
-  host: frs.sourceforge.net
-  username: novesky
-  password:
-    secure: 2mQg4oxdX8S7rMJz2TCGGg==
-  folder: /home/frs/project/avbuild/windows-%_PLATFORM% # why always relative path even if starts with / ? I have to make a link home/frs/project/avbuild/xxx => /home/frs/project/avbuild/xxx
-  active_mode: false
