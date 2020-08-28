@@ -26,17 +26,17 @@ install:
 # can not starts with %
 - git submodule update --init
 # install latest pacman
-- bash 'pacman -Sy --noconfirm pacman pacman-mirrors'
+- bash "pacman -Sy --noconfirm pacman pacman-mirrors"
 
 # update core packages
-- bash 'pacman -Syu --noconfirm'
-- bash 'pacman -Syu --noconfirm'
+- bash "pacman -Syu --noconfirm"
+- bash "pacman -Syu --noconfirm"
  
  # install packages
-- bash 'pacman --sync --noconfirm VCS'
-- bash 'pacman --sync --noconfirm base-devel'
-- bash 'pacman --sync --noconfirm msys2-devel'
-- bash 'pacman --sync --noconfirm mingw-w64-x86_64-toolchain'
+- bash "pacman --sync --noconfirm VCS"
+- bash "pacman --sync --noconfirm base-devel"
+- bash "pacman --sync --noconfirm msys2-devel"
+- bash "pacman --sync --noconfirm mingw-w64-x86_64-toolchain"
 
 - curl -O http://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
 - curl -O http://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig
