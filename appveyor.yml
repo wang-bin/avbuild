@@ -23,8 +23,9 @@ init:
   - echo PROCESSOR_IDENTIFIER=%PROCESSOR_IDENTIFIER%
   - set MSYS2_PATH_TYPE=inherit
   - set MSYS2_DIR=C:\msys64
-  - set USE_TOOLCHAIN=gcc
-
+  - set USE_TOOLCHAIN=clang
+  - set NDK_HOST=windows
+  - set NDK_VERSION=r21d
 #https://stackoverflow.com/questions/37627248/how-to-split-a-command-over-multiple-lines-in-appveyor-yml
 
 install:
@@ -58,7 +59,7 @@ install:
 - C:\msys64\usr\bin\pacman -Su --noconfirm --needed wget diffutils patch pkg-config nasm yasm
 # - C:\msys64\usr\bin\pacman -Scc --noconfirm
 
-- C:\msys64\usr\bin\wget.exe https://dl.google.com/android/repository/android-ndk-${NDK_VERSION:-r21}-${NDK_HOST}-x86_64.zip -O ndk.zip
+- C:\msys64\usr\bin\wget.exe https://dl.google.com/android/repository/android-ndk-%NDK_VERSION%-%NDK_HOST%-x86_64.zip -O ndk.zip
 - 7z x ndk.zip -o/tmp &>/dev/null
 - mv /tmp/android-ndk-${NDK_VERSION:-r21} ${ANDROID_NDK:-/tmp/android-ndk}
 - set ANDROID_NDK=/tmp/android-ndk
@@ -83,7 +84,7 @@ build_script:
 #  - if /i not %_CC%==MinGW if /i not %_PLATFORM%==store set V=1
 # - ./avbuild.sh android arm64
 - set VC_BUILD=false
-- C:\msys64\usr\bin\bash.exe --login avbuild.sh android arm64-gcc
+- C:\msys64\usr\bin\bash.exe --login avbuild.sh android arm64
  #   ) else (
  #     set BUILD_NOW=true&&
  #     tools\vcbuild.bat %_CC% %_PLATFORM% %_ARCH% all
