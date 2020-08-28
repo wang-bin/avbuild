@@ -47,21 +47,20 @@ install:
 # - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw64.db
 # - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw64.db.tar.gz
 
-# - C:\msys64\usr\bin\pacman -Syu --noconfirm
-# - C:\msys64\usr\bin\pacman -Syu --noconfirm
+- C:\msys64\usr\bin\pacman -Su --noconfirm
+- C:\msys64\usr\bin\pacman -Su --noconfirm
  
  # install packages
 - C:\msys64\usr\bin\pacman --sync --noconfirm VCS
 
-- C:\msys64\usr\bin\pacman --sync --noconfirm msys2-devel
-- C:\msys64\usr\bin\pacman --sync --noconfirm mingw-w64-x86_64-toolchain
+- C:\msys64\usr\bin\pacman -Su --noconfirm --needed msys2-devel
+- C:\msys64\usr\bin\pacman -Su --noconfirm --needed mingw-w64-x86_64-toolchain
 
-- C:\msys64\usr\bin\pacman -S --noconfirm mingw-w64-x86_64-gcc
-- C:\msys64\usr\bin\pacman -Sc --noconfirm
- 
-- C:\msys64\usr\bin\pacman -Su --noconfirm diffutils patch pkg-config nasm yasm
+- C:\msys64\usr\bin\pacman -Su --noconfirm --needed mingw-w64-x86_64-gcc
+- C:\msys64\usr\bin\pacman -Su --noconfirm --needed diffutils patch pkg-config nasm yasm
+- C:\msys64\usr\bin\pacman -Scc --noconfirm
 
-- set %FF_VERSION%=master
+- set FF_VERSION=master
 - set FF_BRANCH=%FF_VERSION%
 - if not [%FF_BRANCH%]==[master] set FF_BRANCH=release/%FF_VERSION%
 - git clone -b %FF_BRANCH% --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-%FF_BRANCH%
@@ -80,16 +79,14 @@ build_script:
 # V=1 to check libmfx error, but the error disappears if V=1. WTF
 #  - if /i not %_CC%==MinGW if /i not %_PLATFORM%==store set V=1
 # - ./avbuild.sh android arm64
-- if /i %_CC%==MinGW (
-      set VC_BUILD=false&&
-      C:\msys64\usr\bin\bash.exe --login avbuild.sh android
+- C:\msys64\usr\bin\bash --login avbuild.sh android arm64
  #   ) else (
  #     set BUILD_NOW=true&&
  #     tools\vcbuild.bat %_CC% %_PLATFORM% %_ARCH% all
  #   )
 
 after_build:
-  - set SDK_NAME=ffmpeg-%FF_VERSION%-%_PLATFORM%-%_CC%%_ARCH%%CONFIG_SUFFIX%
+  - set SDK_NAME=ffmpeg-%FF_VERSION%-%_PLATFORM%-%_CC%%_ARCH%
   - move sdk* %SDK_NAME%
   - 7z a %SDK_NAME%.7z %SDK_NAME%
 
