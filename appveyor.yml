@@ -28,7 +28,6 @@ install:
 # install latest pacman
 C:\msys64\usr\bin\pacman -Sy --noconfirm pacman pacman-mirrors
 
-# update core packages
 - bash "pacman -Syu --noconfirm"
 - bash "pacman -Syu --noconfirm"
  
