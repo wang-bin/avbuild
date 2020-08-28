@@ -38,10 +38,10 @@ install:
 # install latest pacman
 - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/pacman-5.2.2-1-x86_64.pkg.tar.xz
 - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/pacman-mirrors-20200329-1-any.pkg.tar.xz
-- C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-db-6.0.19-3-any.pkg.tar.xz
+# - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-db-6.0.19-3-any.pkg.tar.xz
 # - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/msys.db.tar.gz 
-- C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/gnupg-2.2.20-1-x86_64.pkg.tar.xz
-- C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/libgpgme-1.14.0-1-x86_64.pkg.tar.zst
+# - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/gnupg-2.2.20-1-x86_64.pkg.tar.xz
+# - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/libgpgme-1.14.0-1-x86_64.pkg.tar.zst
 
 
 # - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw64.db
@@ -51,16 +51,14 @@ install:
 - C:\msys64\usr\bin\pacman -Su --noconfirm
  
  # install packages
-- C:\msys64\usr\bin\pacman --sync --noconfirm VCS
+- C:\msys64\usr\bin\pacman -Su --noconfirm --needed VCS
 
-- C:\msys64\usr\bin\pacman -Su --noconfirm msys2-devel
-- C:\msys64\usr\bin\pacman -Su --noconfirm mingw-w64-x86_64-toolchain
+- C:\msys64\usr\bin\pacman -Su --noconfirm --needed base-devel mingw-w64-x86_64-toolchain mingw-w64-cross-toolchain
+- C:\msys64\usr\bin\pacman -Su --noconfirm --needed mingw-w64-x86_64-clang
+- C:\msys64\usr\bin\pacman -Su --noconfirm --needed wget diffutils patch pkg-config nasm yasm
+# - C:\msys64\usr\bin\pacman -Scc --noconfirm
 
-- C:\msys64\usr\bin\pacman -Su --noconfirm mingw-w64-x86_64-gcc
-- C:\msys64\usr\bin\pacman -Su --noconfirm  wget diffutils patch pkg-config nasm yasm
-- C:\msys64\usr\bin\pacman -Scc --noconfirm
-
-- C:\msys64\usr\bin\bash.exe wget https://dl.google.com/android/repository/android-ndk-${NDK_VERSION:-r21}-${NDK_HOST}-x86_64.zip -O ndk.zip
+- C:\msys64\usr\bin\wget.exe https://dl.google.com/android/repository/android-ndk-${NDK_VERSION:-r21}-${NDK_HOST}-x86_64.zip -O ndk.zip
 - 7z x ndk.zip -o/tmp &>/dev/null
 - mv /tmp/android-ndk-${NDK_VERSION:-r21} ${ANDROID_NDK:-/tmp/android-ndk}
 - set ANDROID_NDK=/tmp/android-ndk
