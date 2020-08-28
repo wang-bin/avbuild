@@ -26,7 +26,7 @@ install:
 # can not starts with %
 - git submodule update --init
 # install latest pacman
-- pacman -Sy --noconfirm pacman pacman-mirrors
+C:\msys64\usr\bin\pacman -Sy --noconfirm pacman pacman-mirrors
 
 # update core packages
 - bash "pacman -Syu --noconfirm"
