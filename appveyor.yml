@@ -26,7 +26,7 @@ install:
 # can not starts with %
 - git submodule update --init
 # install latest pacman
-- bash "pacman -Sy --noconfirm pacman pacman-mirrors"
+- pacman -Sy --noconfirm pacman pacman-mirrors
 
 # update core packages
 - bash "pacman -Syu --noconfirm"
