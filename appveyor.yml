@@ -7,12 +7,12 @@ branches:
 # APPVEYOR_BUILD_WORKER_IMAGE is used in environment matrix, image is not
 environment:
   matrix:
-  - _ARCH: arm
+  - _ARCH: arm64
     _CC: MINGW
     _PLATFORM: desktop 
   
-  matrix: 
-    fast_finish: false
+matrix:
+  fast_finish: false
 
 init:
   - echo NUMBER_OF_PROCESSORS=%NUMBER_OF_PROCESSORS%
