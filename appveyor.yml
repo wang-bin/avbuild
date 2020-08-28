@@ -8,7 +8,7 @@ branches:
 environment:
   matrix:
   - _ARCH: arm64
-    _CC: MINGW
+    _CC: MinGW
  #   _CACHE: msys64
  #   _PLATFORM: android
 
@@ -52,7 +52,7 @@ build_script:
 #  - if /i not %_CC%==MinGW if /i not %_PLATFORM%==store set V=1
   - if /i %_CC%==MinGW (
      set VC_BUILD=false&&
-      set MSYS2_PATH_TYPE=&&
+ #     set MSYS2_PATH_TYPE=&&
       C:\msys64\usr\bin\bash.exe --login avbuild.sh android arm64
       )
  # - if /i %_CC%==MinGW (
