@@ -8,9 +8,9 @@ branches:
 environment:
   matrix:
   - _ARCH: arm64
-    _CC: VS2019
+    _CC: MINGW
+    _CACHE: msys64
     _PLATFORM: android
-    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
 
 matrix:
   fast_finish: false
@@ -39,7 +39,7 @@ install:
   - git clone -b %FF_BRANCH% --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-%FF_VERSION%
   - appveyor DownloadFile "https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download" -FileName dep.7z &&
       7z x -y dep.7z -otools &&
-      set PKG_CONFIG_PATH_MFX=%CD%\tools\%_CC%%_ARCH%\lib\pkgconfig)
+      set PKG_CONFIG_PATH_MFX=%CD%\tools\%_CC%%_ARCH%\lib\pkgconfig
 
 before_build:
   - set HOME=%CD%
@@ -49,15 +49,19 @@ before_build:
 
 build_script:
 # V=1 to check libmfx error, but the error disappears if V=1. WTF
-  - if /i not %_CC%==MinGW if /i not %_PLATFORM%==store set V=1
-  - if /i %_CC%==MinGW (
-      set VC_BUILD=false&&
-      set MSYS2_PATH_TYPE=&&
-      C:\msys64\usr\bin\bash.exe --login avbuild.sh mingw
-    ) else (
-      set BUILD_NOW=true&&
-      tools\vcbuild.bat %_CC% %_PLATFORM% %_ARCH% all
-    )
+#  - if /i not %_CC%==MinGW if /i not %_PLATFORM%==store set V=1
+#  - if /i %_PLATFORM%==android (
+     set VC_BUILD=false&&
+#      set MSYS2_PATH_TYPE=&&
+      C:\msys64\usr\bin\bash.exe --login avbuild.sh android "arm64-clang"
+ # - if /i %_CC%==MinGW (
+ #     set VC_BUILD=false&&
+ #     set MSYS2_PATH_TYPE=&&
+ #     C:\msys64\usr\bin\bash.exe --login avbuild.sh android "arm64-clang arm64"
+ #   ) else (
+ #     set BUILD_NOW=true&&
+ #     tools\vcbuild.bat %_CC% %_PLATFORM% %_ARCH% all
+ #   )
 
 after_build:
   - set SDK_NAME=ffmpeg-%FF_VERSION%-%_PLATFORM%-%_CC%%_ARCH%%CONFIG_SUFFIX%
