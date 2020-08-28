@@ -31,7 +31,7 @@ install:
 # - sh pacman-key --verify msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig
 - C:\msys64\usr\bin\pacman -U --config <(echo) msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
 # install latest pacman
-- C:\msys64\usr\bin\pacman -Sy --noconfirm pacman pacman-mirrors
+- C:\msys64\usr\bin\pacman -S --noconfirm pacman pacman-mirrors
 
 - bash "pacman -Syu --noconfirm"
 - bash "pacman -Syu --noconfirm"
@@ -69,7 +69,6 @@ build_script:
 # - ./avbuild.sh android arm64
 - if /i %_CC%==MinGW (
       set VC_BUILD=false&&
-      set MSYS2_PATH_TYPE=&&
       C:\msys64\usr\bin\bash.exe --login avbuild.sh android
  #   ) else (
  #     set BUILD_NOW=true&&
