@@ -7,7 +7,7 @@ branches:
 # APPVEYOR_BUILD_WORKER_IMAGE is used in environment matrix, image is not
 environment:
   matrix:
-  - _ARCH: arm64
+  - _ARCH: arm
     _CC: MINGW
     _PLATFORM: desktop
     _CACHE: msys64
@@ -60,9 +60,11 @@ install:
 - C:\msys64\usr\bin\pacman -Sc --noconfirm
  
 - C:\msys64\usr\bin\pacman -Su --noconfirm diffutils patch pkg-config nasm yasm
-- set FF_BRANCH=master
+
+- set %FF_VERSION%=master
+- set FF_BRANCH=%FF_VERSION%
 - if not [%FF_BRANCH%]==[master] set FF_BRANCH=release/%FF_VERSION%
-- git clone -b %FF_BRANCH% --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-master
+- git clone -b %FF_BRANCH% --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-%FF_BRANCH%
 - if /i %_PLATFORM%==desktop (
       appveyor DownloadFile "https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download" -FileName dep.7z &&
       7z x -y dep.7z -otools &&
