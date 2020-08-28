@@ -28,7 +28,7 @@ install:
 #- curl -O http://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig
 #- C:\msys64\usr\bin\pacman-key --verify msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig
 #- C:\msys64\usr\bin\pacman -U msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
-  - if /i %_CC%==MinGW (
+- if /i %_CC%==MinGW (
       C:\msys64\usr\bin\pacman -Syu --noconfirm &&
       C:\msys64\usr\bin\pacman -Su --noconfirm &&
       C:\msys64\usr\bin\pacman -S --noconfirm mingw-w64-i686-gcc mingw-w64-x86_64-gcc &&
@@ -51,11 +51,11 @@ before_build:
 build_script:
 # V=1 to check libmfx error, but the error disappears if V=1. WTF
 #  - if /i not %_CC%==MinGW if /i not %_PLATFORM%==store set V=1
-- ./avbuild.sh android arm64
- # - if /i %_CC%==MinGW (
- #     set VC_BUILD=false&&
- #     set MSYS2_PATH_TYPE=&&
- #     C:\msys64\usr\bin\bash.exe --login avbuild.sh android "arm64-clang arm64"
+# - ./avbuild.sh android arm64
+- if /i %_CC%==MinGW (
+      set VC_BUILD=false&&
+      set MSYS2_PATH_TYPE=&&
+      C:\msys64\usr\bin\bash.exe --login avbuild.sh android "arm64-clang"
  #   ) else (
  #     set BUILD_NOW=true&&
  #     tools\vcbuild.bat %_CC% %_PLATFORM% %_ARCH% all
