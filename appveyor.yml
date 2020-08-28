@@ -7,9 +7,9 @@ branches:
 # APPVEYOR_BUILD_WORKER_IMAGE is used in environment matrix, image is not
 environment:
   matrix:
-  - _ARCH: arm
+  - _ARCH: arm64
     _CC: MINGW
-    _PLATFORM: desktop
+    _PLATFORM:phone
     _CACHE: msys64
   
 matrix:
@@ -23,6 +23,7 @@ init:
   - echo PROCESSOR_IDENTIFIER=%PROCESSOR_IDENTIFIER%
   - set MSYS2_PATH_TYPE=inherit
   - set MSYS2_DIR=C:\msys64
+  - set USE_TOOLCHAIN=gcc
 
 #https://stackoverflow.com/questions/37627248/how-to-split-a-command-over-multiple-lines-in-appveyor-yml
 
@@ -38,8 +39,8 @@ install:
 - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/pacman-5.2.2-1-x86_64.pkg.tar.xz
 - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/pacman-mirrors-20200329-1-any.pkg.tar.xz
 - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-db-6.0.19-3-any.pkg.tar.xz
-# - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/msys.db.tar.gz
-# - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/pkgconf-0.9.11-1-x86_64.pkg.tar.zst
+# - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/msys.db.tar.gz 
+- C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/pkgconf-0.9.11-1-x86_64.pkg.tar.zst
 - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/gnupg-2.2.20-1-x86_64.pkg.tar.xz
 - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/libgpgme-1.14.0-1-x86_64.pkg.tar.zst
 
@@ -53,11 +54,11 @@ install:
  # install packages
 - C:\msys64\usr\bin\pacman --sync --noconfirm VCS
 
-- C:\msys64\usr\bin\pacman -Su --noconfirm --needed msys2-devel
-- C:\msys64\usr\bin\pacman -Su --noconfirm --needed mingw-w64-x86_64-toolchain
+- C:\msys64\usr\bin\pacman -Su --noconfirm msys2-devel
+- C:\msys64\usr\bin\pacman -Su --noconfirm mingw-w64-x86_64-toolchain
 
-- C:\msys64\usr\bin\pacman -Su --noconfirm --needed mingw-w64-x86_64-gcc
-- C:\msys64\usr\bin\pacman -Su --noconfirm --needed diffutils patch pkg-config nasm yasm
+- C:\msys64\usr\bin\pacman -Su --noconfirm mingw-w64-x86_64-gcc
+- C:\msys64\usr\bin\pacman -Su --noconfirm diffutils patch pkg-config nasm yasm
 - C:\msys64\usr\bin\pacman -Scc --noconfirm
 
 - set FF_VERSION=master
@@ -79,7 +80,8 @@ build_script:
 # V=1 to check libmfx error, but the error disappears if V=1. WTF
 #  - if /i not %_CC%==MinGW if /i not %_PLATFORM%==store set V=1
 # - ./avbuild.sh android arm64
-- C:\msys64\usr\bin\bash --login avbuild.sh android arm64
+- set VC_BUILD=false
+- C:\msys64\usr\bin\bash.exe --login avbuild.sh android arm64-gcc
  #   ) else (
  #     set BUILD_NOW=true&&
  #     tools\vcbuild.bat %_CC% %_PLATFORM% %_ARCH% all
