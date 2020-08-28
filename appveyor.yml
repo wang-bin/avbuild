@@ -40,7 +40,6 @@ install:
 - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/pacman-mirrors-20200329-1-any.pkg.tar.xz
 - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-db-6.0.19-3-any.pkg.tar.xz
 # - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/msys.db.tar.gz 
-- C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/pkgconf-0.9.11-1-x86_64.pkg.tar.zst
 - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/gnupg-2.2.20-1-x86_64.pkg.tar.xz
 - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/libgpgme-1.14.0-1-x86_64.pkg.tar.zst
 
