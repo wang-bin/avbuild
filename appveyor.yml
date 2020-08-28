@@ -9,10 +9,14 @@ environment:
   matrix:
   - _ARCH: arm64
     _CC: MINGW
-    _PLATFORM: desktop 
+    _PLATFORM: desktop
+    _CACHE: msys64
   
 matrix:
   fast_finish: false
+  
+cache:
+  - C:\%_CACHE%\var\cache\pacman\pkg -> appveyor.yml
 
 init:
   - echo NUMBER_OF_PROCESSORS=%NUMBER_OF_PROCESSORS%
@@ -26,19 +30,20 @@ install:
 # can not starts with %
 - git submodule update --init
 
-- curl -O http://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
-- curl -O http://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig
-# - sh pacman-key --verify msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig
-- C:\msys64\usr\bin\pacman -U --noconfirm msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
+# - curl -O http://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
+# - curl -O http://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig
+# - C:\msys64\usr\bin\bash.exe pacman-key --verify msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig
+- C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
 # install latest pacman
-- C:\msys64\usr\bin\pacman -S --noconfirm pacman pacman-mirrors
+- C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/pacman-5.2.2-1-x86_64.pkg.tar.xz
+- C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/pacman-mirrors-20200329-1-any.pkg.tar.xz
 
-- C:\msys64\usr\bin\pacman -Syu --noconfirm
-- C:\msys64\usr\bin\pacman -Syu --noconfirm
+- C:\msys64\usr\bin\pacman -Su --noconfirm
+- C:\msys64\usr\bin\pacman -Su --noconfirm
  
  # install packages
 - C:\msys64\usr\bin\pacman --sync --noconfirm VCS
-- C:\msys64\usr\bin\pacman --sync --noconfirm base-devel
+- C:\msys64\usr\bin\pacman --sync --noconfirm http://repo.msys2.org/distrib/msys2-x86_64-latest.tar.xz
 - C:\msys64\usr\bin\pacman --sync --noconfirm msys2-devel
 - C:\msys64\usr\bin\pacman --sync --noconfirm mingw-w64-x86_64-toolchain
 
