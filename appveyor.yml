@@ -38,10 +38,12 @@ install:
 - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/pacman-5.2.2-1-x86_64.pkg.tar.xz
 - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/pacman-mirrors-20200329-1-any.pkg.tar.xz
 - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-db-6.0.19-3-any.pkg.tar.xz
-- C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/msys.db.tar.gz
+# - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/msys/x86_64/msys.db.tar.gz
+- C:\msys64\usr\bin\pacman -U --noconfirm https://repo.msys2.org/msys/x86_64/msys2-runtime-3.1.6-3-x86_64.pkg.tar.xz
 
-# http://repo.msys2.org/mingw/x86_64/mingw64.db
-- C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw64.db.tar.gz
+
+- C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw64.db
+# - C:\msys64\usr\bin\pacman -U --noconfirm http://repo.msys2.org/mingw/x86_64/mingw64.db.tar.gz
 
 # - C:\msys64\usr\bin\pacman -Syu --noconfirm
 # - C:\msys64\usr\bin\pacman -Syu --noconfirm
