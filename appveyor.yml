@@ -25,8 +25,8 @@ install:
 # can not starts with %
   - git submodule update --init
   - if /i %_CC%==MinGW (
-      C:\msys64\usr\bin\pacman -Syyuu --noconfirm &&
-      C:\msys64\usr\bin\pacman -Suu --noconfirm &&
+      C:\msys64\usr\bin\pacman -Syu --noconfirm &&
+      C:\msys64\usr\bin\pacman -Su --noconfirm &&
       C:\msys64\usr\bin\pacman -S --noconfirm --needed mingw-w64-i686-gcc mingw-w64-x86_64-gcc &&
       C:\msys64\usr\bin\pacman -Sc --noconfirm
     )
