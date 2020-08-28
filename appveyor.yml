@@ -9,8 +9,8 @@ environment:
   matrix:
   - _ARCH: arm64
     _CC: MINGW
-    _CACHE: msys64
-    _PLATFORM: android
+ #   _CACHE: msys64
+ #   _PLATFORM: android
 
 matrix:
   fast_finish: false
@@ -50,10 +50,10 @@ before_build:
 build_script:
 # V=1 to check libmfx error, but the error disappears if V=1. WTF
 #  - if /i not %_CC%==MinGW if /i not %_PLATFORM%==store set V=1
-  - if /i %_PLATFORM%==android (
+  - if /i %_CC%==MinGW (
      set VC_BUILD=false&&
       set MSYS2_PATH_TYPE=&&
-      C:\msys64\usr\bin\bash.exe --login avbuild.sh android arm64-clang
+      C:\msys64\usr\bin\bash.exe --login avbuild.sh android arm64
       )
  # - if /i %_CC%==MinGW (
  #     set VC_BUILD=false&&
