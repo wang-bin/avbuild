@@ -9,8 +9,6 @@ environment:
   matrix:
   - _ARCH: arm64
     _CC: MinGW
- #   _CACHE: msys64
-    _PLATFORM: phone
 
 matrix:
   fast_finish: false
@@ -20,7 +18,6 @@ init:
   - echo PROCESSOR_IDENTIFIER=%PROCESSOR_IDENTIFIER%
   - set MSYS2_PATH_TYPE=inherit
   - set MSYS2_DIR=C:\msys64
-  - set
 
 #https://stackoverflow.com/questions/37627248/how-to-split-a-command-over-multiple-lines-in-appveyor-yml
 
@@ -29,7 +26,7 @@ install:
   - git submodule update --init
   - if /i %_CC%==MinGW (
       C:\msys64\usr\bin\pacman -Syyuu --noconfirm &&
-      C:\msys64\usr\bin\pacman -Suu --noconfirm   &&
+      C:\msys64\usr\bin\pacman -Suu --noconfirm &&
       C:\msys64\usr\bin\pacman -S --noconfirm --needed mingw-w64-i686-gcc mingw-w64-x86_64-gcc &&
       C:\msys64\usr\bin\pacman -Sc --noconfirm
     )
@@ -50,9 +47,7 @@ before_build:
 build_script:
 # V=1 to check libmfx error, but the error disappears if V=1. WTF
 #  - if /i not %_CC%==MinGW if /i not %_PLATFORM%==store set V=1
-  - if /i %_CC%==MinGW (
-     set VC_BUILD=false&&
-      C:\msys64\usr\bin\bash.exe --login avbuild.sh android arm64 )
+- ./avbuild.sh android arm64
  # - if /i %_CC%==MinGW (
  #     set VC_BUILD=false&&
  #     set MSYS2_PATH_TYPE=&&
