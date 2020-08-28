@@ -7,11 +7,12 @@ branches:
 # APPVEYOR_BUILD_WORKER_IMAGE is used in environment matrix, image is not
 environment:
   matrix:
-  - _ARCH: arm64
-    _CC: MinGW
-
-matrix:
-  fast_finish: false
+  - _ARCH: arm
+    _CC: MINGW
+    _PLATFORM: desktop 
+  
+  matrix: 
+    fast_finish: false
 
 init:
   - echo NUMBER_OF_PROCESSORS=%NUMBER_OF_PROCESSORS%
@@ -34,13 +35,14 @@ install:
       C:\msys64\usr\bin\pacman -S --noconfirm mingw-w64-i686-gcc mingw-w64-x86_64-gcc &&
       C:\msys64\usr\bin\pacman -Sc --noconfirm
     )
-  - C:\msys64\usr\bin\pacman -S --noconfirm diffutils patch pkg-config nasm yasm
-  - set FF_BRANCH=master
-  - if not [%FF_BRANCH%]==[master] set FF_BRANCH=release/%FF_VERSION%
-  - git clone -b %FF_BRANCH% --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-%FF_VERSION%
-  - appveyor DownloadFile "https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download" -FileName dep.7z &&
+- C:\msys64\usr\bin\pacman -S --noconfirm diffutils patch pkg-config nasm yasm
+- set FF_BRANCH=master
+- if not [%FF_BRANCH%]==[master] set FF_BRANCH=release/%FF_VERSION%
+- git clone -b %FF_BRANCH% --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-master
+- if /i %_PLATFORM%==desktop (
+      appveyor DownloadFile "https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download" -FileName dep.7z &&
       7z x -y dep.7z -otools &&
-      set PKG_CONFIG_PATH_MFX=%CD%\tools\%_CC%%_ARCH%\lib\pkgconfig
+      set PKG_CONFIG_PATH_MFX=%CD%\tools\%_CC%%_ARCH%\lib\pkgconfig)
 
 before_build:
   - set HOME=%CD%
