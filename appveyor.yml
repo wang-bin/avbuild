@@ -60,9 +60,8 @@ install:
 # - C:\msys64\usr\bin\pacman -Scc --noconfirm
 
 - curl -O http://dl.google.com/android/repository/android-ndk-%NDK_VERSION%-%NDK_HOST%-x86_64.zip
-- 7z x -y android-ndk-%NDK_VERSION%-%NDK_HOST%-x86_64.zip -o/tmp
-- mv /tmp/android-ndk-%NDK_VERSION% /tmp/android-ndk
-- set ANDROID_NDK=/tmp/android-ndk
+- 7z x -y android-ndk-%NDK_VERSION%-%NDK_HOST%-x86_64.zip -oandroid-ndk
+- set ANDROID_NDK=%CD%\android-ndk
 
 - set FF_VERSION=master
 - set FF_BRANCH=%FF_VERSION%
