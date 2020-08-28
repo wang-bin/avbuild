@@ -9,7 +9,7 @@ environment:
   matrix:
   - _ARCH: arm64
     _CC: MINGW
-    _PLATFORM:phone
+    _PLATFORM: phone
     _CACHE: msys64
   
 matrix:
@@ -60,6 +60,11 @@ install:
 - C:\msys64\usr\bin\pacman -Su --noconfirm mingw-w64-x86_64-gcc
 - C:\msys64\usr\bin\pacman -Su --noconfirm diffutils patch pkg-config nasm yasm
 - C:\msys64\usr\bin\pacman -Scc --noconfirm
+
+- wget https://dl.google.com/android/repository/android-ndk-${NDK_VERSION:-r21}-${NDK_HOST}-x86_64.zip -O ndk.zip
+- 7z x ndk.zip -o/tmp &>/dev/null
+- mv /tmp/android-ndk-${NDK_VERSION:-r21} ${ANDROID_NDK:-/tmp/android-ndk}
+- set ANDROID_NDK=/tmp/android-ndk
 
 - set FF_VERSION=master
 - set FF_BRANCH=%FF_VERSION%
