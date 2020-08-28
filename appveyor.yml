@@ -10,7 +10,7 @@ environment:
   - _ARCH: arm64
     _CC: MinGW
  #   _CACHE: msys64
- #   _PLATFORM: android
+    _PLATFORM: phone
 
 matrix:
   fast_finish: false
