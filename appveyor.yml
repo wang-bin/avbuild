@@ -57,7 +57,7 @@ install:
 - C:\msys64\usr\bin\pacman -Su --noconfirm mingw-w64-x86_64-toolchain
 
 - C:\msys64\usr\bin\pacman -Su --noconfirm mingw-w64-x86_64-gcc
-- C:\msys64\usr\bin\pacman -Su --noconfirm diffutils patch pkg-config nasm yasm
+- C:\msys64\usr\bin\pacman -Su --noconfirm  wget diffutils patch pkg-config nasm yasm
 - C:\msys64\usr\bin\pacman -Scc --noconfirm
 
 - wget https://dl.google.com/android/repository/android-ndk-${NDK_VERSION:-r21}-${NDK_HOST}-x86_64.zip -O ndk.zip
