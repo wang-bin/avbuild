@@ -25,6 +25,19 @@ init:
 install:
 # can not starts with %
 - git submodule update --init
+# install latest pacman
+- bash 'pacman -Sy --noconfirm pacman pacman-mirrors'
+
+# update core packages
+- bash 'pacman -Syu --noconfirm'
+- bash 'pacman -Syu --noconfirm'
+ 
+ # install packages
+- bash 'pacman --sync --noconfirm VCS'
+- bash 'pacman --sync --noconfirm base-devel'
+- bash 'pacman --sync --noconfirm msys2-devel'
+- bash 'pacman --sync --noconfirm mingw-w64-x86_64-toolchain'
+
 - curl -O http://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
 - curl -O http://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig
 - sh pacman-key --verify msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig
@@ -57,7 +70,7 @@ build_script:
 - if /i %_CC%==MinGW (
       set VC_BUILD=false&&
       set MSYS2_PATH_TYPE=&&
-      C:\msys64\usr\bin\bash.exe --login avbuild.sh android "arm64-clang"
+      C:\msys64\usr\bin\bash.exe --login avbuild.sh android
  #   ) else (
  #     set BUILD_NOW=true&&
  #     tools\vcbuild.bat %_CC% %_PLATFORM% %_ARCH% all
