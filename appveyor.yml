@@ -25,6 +25,11 @@ init:
 install:
 # can not starts with %
 - git submodule update --init
+
+- curl -O http://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
+- curl -O http://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig
+# - sh pacman-key --verify msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig
+- C:\msys64\usr\bin\pacman -U --config <(echo) msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
 # install latest pacman
 - C:\msys64\usr\bin\pacman -Sy --noconfirm pacman pacman-mirrors
 
@@ -37,10 +42,6 @@ install:
 - bash "pacman --sync --noconfirm msys2-devel"
 - bash "pacman --sync --noconfirm mingw-w64-x86_64-toolchain"
 
-- curl -O http://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
-- curl -O http://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig
-- sh pacman-key --verify msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig
-#- C:\msys64\usr\bin\pacman -U msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
 - if /i %_CC%==MinGW (
       C:\msys64\usr\bin\pacman -Syu --noconfirm &&
       C:\msys64\usr\bin\pacman -Su --noconfirm &&
