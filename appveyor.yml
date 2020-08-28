@@ -29,26 +29,23 @@ install:
 - curl -O http://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
 - curl -O http://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig
 # - sh pacman-key --verify msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig
-- C:\msys64\usr\bin\pacman -U --config <(echo) msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
+- C:\msys64\usr\bin\pacman -U msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
 # install latest pacman
 - C:\msys64\usr\bin\pacman -S --noconfirm pacman pacman-mirrors
 
-- bash "pacman -Syu --noconfirm"
-- bash "pacman -Syu --noconfirm"
+- C:\msys64\usr\bin\pacman -Syu --noconfirm
+- C:\msys64\usr\bin\pacman -Syu --noconfirm
  
  # install packages
-- bash "pacman --sync --noconfirm VCS"
-- bash "pacman --sync --noconfirm base-devel"
-- bash "pacman --sync --noconfirm msys2-devel"
-- bash "pacman --sync --noconfirm mingw-w64-x86_64-toolchain"
+- C:\msys64\usr\bin\pacman --sync --noconfirm VCS
+- C:\msys64\usr\bin\pacman --sync --noconfirm base-devel
+- C:\msys64\usr\bin\pacman --sync --noconfirm msys2-devel
+- C:\msys64\usr\bin\pacman --sync --noconfirm mingw-w64-x86_64-toolchain
 
-- if /i %_CC%==MinGW (
-      C:\msys64\usr\bin\pacman -Syu --noconfirm &&
-      C:\msys64\usr\bin\pacman -Su --noconfirm &&
-      C:\msys64\usr\bin\pacman -S --noconfirm mingw-w64-i686-gcc mingw-w64-x86_64-gcc &&
-      C:\msys64\usr\bin\pacman -Sc --noconfirm
-    )
-- C:\msys64\usr\bin\pacman -S --noconfirm diffutils patch pkg-config nasm yasm
+- C:\msys64\usr\bin\pacman -S --noconfirm mingw-w64-i686-gcc mingw-w64-x86_64-gcc
+- C:\msys64\usr\bin\pacman -Sc --noconfirm
+ 
+- C:\msys64\usr\bin\pacman -Su --noconfirm diffutils patch pkg-config nasm yasm
 - set FF_BRANCH=master
 - if not [%FF_BRANCH%]==[master] set FF_BRANCH=release/%FF_VERSION%
 - git clone -b %FF_BRANCH% --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-master
