@@ -907,6 +907,7 @@ setup_ios_env() {
   ENC_OPT=$ENC_OPT_MOBILE
   MUX_OPT=$MUX_OPT_MOBILE
   enable_opt videotoolbox libxml2
+  disable_opt avdevice
   EXTRA_CFLAGS+=" -iwithsysroot /usr/include/libxml2"
   LIB_OPT= #static only
 # clang -arch i386 -arch x86_64
@@ -926,7 +927,7 @@ setup_ios_env() {
   local BITCODE_FLAGS=
   local ios5_lib_dir=
   if [ "${IOS_ARCH:0:3}" == "arm" ]; then
-    $enable_bitcode && BITCODE_FLAGS="-fembed-bitcode"
+    $enable_bitcode && BITCODE_FLAGS="-fembed-bitcode" # also works for new sdks
     if [ "${IOS_ARCH:3:2}" == "64" ]; then
       ios_min=7.0
     else
@@ -949,6 +950,7 @@ setup_ios_env() {
     elif [ "${IOS_ARCH}" == "x86" ]; then
       IOS_ARCH=i386
     fi
+    # TOOLCHAIN_OPT+=" --disable-asm" # if bitcode
   fi
   ios_ver=${2##ios}
   : ${ios_ver:=$ios_min}
@@ -1158,7 +1160,8 @@ setup_gnu_env(){
   #-lrt: clock_gettime in glibc2.17
   EXTRALIBS+=" -lrt"
   INSTALL_DIR=sdk-$2-${ARCH}-${gnu_cc}
-cat > "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
+  mkdir -p $THIS_DIR/build_$INSTALL_DIR
+  cat > "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
 export PKG_CONFIG_PATH=$PKG_CONFIG_PATH
 EOF
 }

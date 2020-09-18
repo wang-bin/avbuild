@@ -249,7 +249,6 @@ workflows:
   build_and_test:
     jobs:
       - build_gcc
-      - build_clang
       - build_win_static
       - build_uwp
       - build_uwp_static

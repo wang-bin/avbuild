@@ -33,7 +33,8 @@ fi
 wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7z
 7z x -y dep.7z -o/tmp &>/dev/null
 
-if [[ "$TARGET_OS" == "windows"* ]]; then
+if [[ "$SYSROOT_CACHE_HIT" != "true" ]]; then
+  if [[ "$TARGET_OS" == "windows"* ]]; then
     wget https://sourceforge.net/projects/avbuild/files/dep/msvcrt-dev.7z/download -O msvcrt-dev.7z
     echo 7z x msvcrt-dev.7z -o${WINDOWSSDKDIR%/?*} # VCDIR can be msvcrt-dev/120, but need to extract to msvcrt-dev
     7z x msvcrt-dev.7z -o${WINDOWSSDKDIR%/?*}
@@ -42,13 +43,15 @@ if [[ "$TARGET_OS" == "windows"* ]]; then
     7z x winsdk.7z -o${WINDOWSSDKDIR%/?*}
     ${WINDOWSSDKDIR}/lowercase.sh
     ${WINDOWSSDKDIR}/mkvfs.sh
-fi
+  fi
 
-if [ "$TARGET_OS" == "sunxi" -o "$TARGET_OS" == "raspberry-pi" -o "$TARGET_OS" == "linux" ]; then
+  if [ "$TARGET_OS" == "sunxi" -o "$TARGET_OS" == "raspberry-pi" -o "$TARGET_OS" == "linux" ]; then
     wget https://sourceforge.net/projects/avbuild/files/${TARGET_OS}/${TARGET_OS/r*pi/rpi}-sysroot.tar.xz/download -O sysroot.tar.xz
     tar Jxf sysroot.tar.xz -C /tmp
     export SYSROOT=/tmp/sysroot
+  fi
 fi
+
 
 if [ "$TARGET_OS" == "android" ]; then
     wget https://dl.google.com/android/repository/android-ndk-${NDK_VERSION:-r21}-${NDK_HOST}-x86_64.zip -O ndk.zip
