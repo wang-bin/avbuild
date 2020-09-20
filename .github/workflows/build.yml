@@ -50,7 +50,7 @@ jobs:
         path: ffmpeg-*.tar.xz
 
 
-  RaspberryPi_libcxx:
+  RaspberryPi_clang:
     runs-on: ubuntu-latest
     env:
       TARGET_OS: 'raspberry-pi'
@@ -133,7 +133,7 @@ jobs:
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export WindowsSdkDir=${WINDOWSSDKDIR}
         export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
-        USE_TOOLCHAIN=clang-${LLVM_VER:-11} ./avbuild.sh $TARGET_OS "arm64-clang-cl-${LLVM_VER:-11} x86 x64"
+        USE_TOOLCHAIN=clang-${LLVM_VER:-11} ./avbuild.sh $TARGET_OS "arm64-clang-cl-${LLVM_VER:-11} arm x86 x64"
     - name: Make SDK
       shell: bash
       run: ./tools/ci-after-build.sh
