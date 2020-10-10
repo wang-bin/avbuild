@@ -3,4 +3,4 @@
 	url = https://git.videolan.org/git/ffmpeg/nv-codec-headers.git
 [submodule "tools/gas-preprocessor"]
 	path = tools/gas-preprocessor
-	url = https://github.com/libav/gas-preprocessor.git
+	url = https://github.com/FFmpeg/gas-preprocessor.git
