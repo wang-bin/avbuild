@@ -229,6 +229,8 @@ if [ -f "$PWD/tools/nv-codec-headers/ffnvcodec.pc.in" ]; then
 fi
 ls "$PWD/tools/nv-codec-headers"
 sed -i $sed_bak 's/-lmfplat/-lMfplat/g' "$FFSRC/configure"
+sed -i $sed_bak '/check_cflags -Werror=partial-availability/d' "$FFSRC/configure" # for SSL, VT
+
 use_clang() {
   if [ -n "$CROSS_PREFIX" ]; then # TODO: "$CROSS_PREFIX" != $TARGET_TRIPLE
     CLANG_TARGET=${CROSS_PREFIX%%-}
@@ -909,7 +911,7 @@ setup_ios_env() {
   enable_opt videotoolbox libxml2
   disable_opt avdevice
   EXTRA_CFLAGS+=" -iwithsysroot /usr/include/libxml2"
-  LIB_OPT= #static only
+  #LIB_OPT= #static only
 # clang -arch i386 -arch x86_64
 ## cc="xcrun -sdk iphoneos clang" or cc=`xcrun -sdk iphoneos --find clang`
   local IOS_ARCH=$1
@@ -967,7 +969,6 @@ setup_ios_env() {
   INSTALL_DIR=sdk-ios-$IOS_ARCH
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   [ -n "$ios5_lib_dir" ] && echo "export LIBRARY_PATH=$ios5_lib_dir" >$THIS_DIR/build_$INSTALL_DIR/.env.sh
-  sed -i $sed_bak '/check_cflags -Werror=partial-availability/d' "$FFSRC/configure" # for SSL, VT
 }
 
 setup_macos_env(){
@@ -1022,7 +1023,6 @@ setup_macos_env(){
   EXTRA_CFLAGS+=" $ARCH_FLAG -mmacosx-version-min=$MACOS_VER"
   EXTRA_LDFLAGS+=" $ARCH_FLAG $LFLAG_VERSION_MIN$MACOS_VER ${LFLAG_PRE}-dead_strip $rpath_flags"
   INSTALL_DIR=sdk-macOS${MACOS_VER}${MACOS_ARCH}-${USE_TOOLCHAIN##*/}
-  sed -i $sed_bak '/check_cflags -Werror=partial-availability/d' "$FFSRC/configure" # for SSL, VT
 }
 
 # version_compare v1 "op" v2, e.g. version_compare 10.6 "<" 10.7
@@ -1503,6 +1503,16 @@ make_universal()
         lipo -info $OUT_DIR/lib/${a}.a
       }
     done
+    dylibs=
+    dylib=$(ls $d/lib/libffmpeg.?.dylib)
+    dylib=${dylib##*/}
+    for d in ${dirs[@]}; do
+      [ -f $d/lib/$dylib ] && dylibs+=" $d/lib/$dylib"
+    done
+    test -n "$dylibs" && {
+      lipo -create $dylibs -o $OUT_DIR/lib/$dylib
+      lipo -info $OUT_DIR/lib/$dylib
+    }
     cat build_sdk-${os}-*/config.txt >$OUT_DIR/config.txt
     cp -af $FFSRC/{Changelog,RELEASE_NOTES} $OUT_DIR
     [ -f "$FFSRC/$LICENSE_FILE" ] && cp -af "$FFSRC/$LICENSE_FILE" $OUT_DIR || touch $OUT_DIR/$LICENSE_FILE
