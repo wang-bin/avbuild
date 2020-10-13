@@ -1,17 +1,17 @@
-From 9b3b8ef53ded6357aa0690a713d3591e24670bfd Mon Sep 17 00:00:00 2001
+From 182dbdf7325e7ec2eecf2fc601a0829fcbf10883 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:19:07 +0800
-Subject: [PATCH 02/19] mmal: enable 0-copy for egl interop
+Subject: [PATCH 02/20] mmal: enable 0-copy for egl interop
 
 ---
  libavcodec/mmaldec.c | 5 ++++-
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/libavcodec/mmaldec.c b/libavcodec/mmaldec.c
-index 547bece576..1cb9cc2486 100644
+index cd2b263a98..5087ef9752 100644
 --- a/libavcodec/mmaldec.c
 +++ b/libavcodec/mmaldec.c
-@@ -296,6 +296,8 @@ static int ffmal_update_format(AVCodecContext *avctx)
+@@ -297,6 +297,8 @@ static int ffmal_update_format(AVCodecContext *avctx)
          goto fail;
  
      if (avctx->pix_fmt == AV_PIX_FMT_MMAL) {
@@ -20,7 +20,7 @@ index 547bece576..1cb9cc2486 100644
          format_out->encoding = MMAL_ENCODING_OPAQUE;
      } else {
          format_out->encoding_variant = format_out->encoding = MMAL_ENCODING_I420;
-@@ -333,7 +335,8 @@ static int ffmal_update_format(AVCodecContext *avctx)
+@@ -334,7 +336,8 @@ static int ffmal_update_format(AVCodecContext *avctx)
          FFMAX(decoder->output[0]->buffer_size_min, decoder->output[0]->buffer_size_recommended);
      decoder->output[0]->buffer_num =
          FFMAX(decoder->output[0]->buffer_num_min, decoder->output[0]->buffer_num_recommended) + ctx->extra_buffers;
@@ -31,5 +31,5 @@ index 547bece576..1cb9cc2486 100644
      if (!ctx->pool_out->pool) {
          ret = AVERROR(ENOMEM);
 -- 
-2.17.1
+2.24.3 (Apple Git-128)
 

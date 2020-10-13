@@ -1,20 +1,21 @@
-From dc18d14ee36360cb96f651a177ff6ab20344b2c0 Mon Sep 17 00:00:00 2001
+From e12875cde158efbeaabb9146cf2da66e270f3fd2 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Wed, 12 Jun 2019 10:43:50 +0800
-Subject: [PATCH 17/19] nvenc: use runtime api version to support old drivers
+Subject: [PATCH 17/20] nvenc: use runtime api version to work with old drivers
 
-nvEncoderAPI.h 7.0~9.x api and abi change rarely, so requesting runtime version should work,
-and does work in my tests.
+the document recommends to use build version, so using latest nvenc
+headers requires latest driver version. But api and abi change rarely,
+so requesting runtime version should work, and does work for my tests.
 ---
- libavcodec/nvenc.c | 72 ++++++++++++++++++++++++++--------------------
+ libavcodec/nvenc.c | 79 +++++++++++++++++++++++++++++-----------------
  libavcodec/nvenc.h |  3 ++
- 2 files changed, 44 insertions(+), 31 deletions(-)
+ 2 files changed, 53 insertions(+), 29 deletions(-)
 
 diff --git a/libavcodec/nvenc.c b/libavcodec/nvenc.c
-index c6740c1842..6aa070d3fc 100644
+index 887e11b1e2..263657c263 100644
 --- a/libavcodec/nvenc.c
 +++ b/libavcodec/nvenc.c
-@@ -193,14 +193,26 @@ static void nvenc_print_driver_requirement(AVCodecContext *avctx, int level)
+@@ -194,20 +194,35 @@ static void nvenc_print_driver_requirement(AVCodecContext *avctx, int level)
      av_log(avctx, level, "The minimum required Nvidia driver for nvenc is %s or newer\n", minver);
  }
  
@@ -40,58 +41,73 @@ index c6740c1842..6aa070d3fc 100644
      int ret;
 -
      ret = cuda_load_functions(&dl_fn->cuda_dl, avctx);
-     if (ret < 0)
+-    if (ret < 0)
++    if (ret < 0) {
++        av_log(avctx, AV_LOG_ERROR, "cuda_load_functions error");
          return ret;
-@@ -214,19 +226,17 @@ static av_cold int nvenc_load_libraries(AVCodecContext *avctx)
++    }
+ 
+     ret = nvenc_load_functions(&dl_fn->nvenc_dl, avctx);
+     if (ret < 0) {
++        av_log(avctx, AV_LOG_ERROR, "nvenc_load_functions error");
+         nvenc_print_driver_requirement(avctx, AV_LOG_ERROR);
+         return ret;
+     }
+@@ -215,19 +230,25 @@ static av_cold int nvenc_load_libraries(AVCodecContext *avctx)
      err = dl_fn->nvenc_dl->NvEncodeAPIGetMaxSupportedVersion(&nvenc_max_ver);
      if (err != NV_ENC_SUCCESS)
          return nvenc_print_error(avctx, err, "Failed to query nvenc max version");
+-
+-    av_log(avctx, AV_LOG_VERBOSE, "Loaded Nvenc version %d.%d\n", nvenc_max_ver >> 4, nvenc_max_ver & 0xf);
 +    nvenc_max_major = nvenc_max_ver >> 4;
 +    nvenc_max_minor = nvenc_max_ver & 0xf;
-+    av_log(avctx, AV_LOG_VERBOSE, "nvenc build version: %d.%d, runtime version: %d.%d\n", NVENCAPI_MAJOR_VERSION, NVENCAPI_MINOR_VERSION, nvenc_max_major, nvenc_max_minor);
- 
--    av_log(avctx, AV_LOG_VERBOSE, "Loaded Nvenc version %d.%d\n", nvenc_max_ver >> 4, nvenc_max_ver & 0xf);
--
--    if ((NVENCAPI_MAJOR_VERSION << 4 | NVENCAPI_MINOR_VERSION) > nvenc_max_ver) {
--        av_log(avctx, AV_LOG_ERROR, "Driver does not support the required nvenc API version. "
--               "Required: %d.%d Found: %d.%d\n",
--               NVENCAPI_MAJOR_VERSION, NVENCAPI_MINOR_VERSION,
--               nvenc_max_ver >> 4, nvenc_max_ver & 0xf);
--        nvenc_print_driver_requirement(avctx, AV_LOG_ERROR);
--        return AVERROR(ENOSYS);
--    }
-+    ctx->apiver_rt = api_ver(nvenc_max_major, nvenc_max_minor); /* NVENCAPI_VERSION */
-+    ctx->config_ver_rt = struct_ver_rt(ctx, 7) | (1<<31); /* NV_ENC_CONFIG_VER */
++    //ctx->apiver_rt = NVENCAPI_VERSION;
++    ctx->apiver_rt = api_ver(nvenc_max_major, nvenc_max_minor);
++    ctx->config_ver_rt = struct_ver_rt(ctx, 7) | (1<<31); /*NV_ENC_CONFIG_VER */
 +    if (ctx->apiver_rt < api_ver(8, 1))
 +        ctx->config_ver_rt = struct_ver_rt(ctx, 6) | (1<<31);
 +    func_ver = struct_ver_rt(ctx, 2);
++    av_log(avctx, AV_LOG_INFO, "Loaded Nvenc version %d.%d\n", nvenc_max_major, nvenc_max_minor);
  
+     if ((NVENCAPI_MAJOR_VERSION << 4 | NVENCAPI_MINOR_VERSION) > nvenc_max_ver) {
+-        av_log(avctx, AV_LOG_ERROR, "Driver does not support the required nvenc API version. "
++        av_log(avctx, AV_LOG_WARNING, "Driver does not support the required nvenc API version. "
+                "Required: %d.%d Found: %d.%d\n",
+                NVENCAPI_MAJOR_VERSION, NVENCAPI_MINOR_VERSION,
+-               nvenc_max_ver >> 4, nvenc_max_ver & 0xf);
+-        nvenc_print_driver_requirement(avctx, AV_LOG_ERROR);
+-        return AVERROR(ENOSYS);
++               nvenc_max_major, nvenc_max_minor);
++        nvenc_print_driver_requirement(avctx, AV_LOG_WARNING);
++        //return AVERROR(ENOSYS);
+     }
+-
 -    dl_fn->nvenc_funcs.version = NV_ENCODE_API_FUNCTION_LIST_VER;
 +    dl_fn->nvenc_funcs.version = func_ver;
  
      err = dl_fn->nvenc_dl->NvEncodeAPICreateInstance(&dl_fn->nvenc_funcs);
      if (err != NV_ENC_SUCCESS)
-@@ -267,8 +277,8 @@ static av_cold int nvenc_open_session(AVCodecContext *avctx)
+@@ -268,8 +289,8 @@ static av_cold int nvenc_open_session(AVCodecContext *avctx)
      NV_ENCODE_API_FUNCTION_LIST *p_nvenc = &ctx->nvenc_dload_funcs.nvenc_funcs;
      NVENCSTATUS ret;
  
 -    params.version    = NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS_VER;
 -    params.apiVersion = NVENCAPI_VERSION;
-+    params.version    = struct_ver_rt(ctx, 1); // NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS_VER
++    params.version    = struct_ver_rt(ctx, 1);
 +    params.apiVersion = ctx->apiver_rt;
      if (ctx->d3d11_device) {
          params.device     = ctx->d3d11_device;
          params.deviceType = NV_ENC_DEVICE_TYPE_DIRECTX;
-@@ -329,7 +339,7 @@ static int nvenc_check_cap(AVCodecContext *avctx, NV_ENC_CAPS cap)
+@@ -330,7 +351,7 @@ static int nvenc_check_cap(AVCodecContext *avctx, NV_ENC_CAPS cap)
      NV_ENC_CAPS_PARAM params        = { 0 };
      int ret, val = 0;
  
 -    params.version     = NV_ENC_CAPS_PARAM_VER;
-+    params.version     = struct_ver_rt(ctx, 1); // NV_ENC_CAPS_PARAM_VER;
++    params.version     = struct_ver_rt(ctx, 1);//NV_ENC_CAPS_PARAM_VER;
      params.capsToQuery = cap;
  
      ret = p_nvenc->nvEncGetEncodeCaps(ctx->nvencoder, ctx->init_encode_params.encodeGUID, &params, &val);
-@@ -688,7 +698,7 @@ static av_cold void set_constqp(AVCodecContext *avctx)
+@@ -689,7 +710,7 @@ static av_cold void set_constqp(AVCodecContext *avctx)
      NV_ENC_RC_PARAMS *rc = &ctx->encode_config.rcParams;
  
      rc->rateControlMode = NV_ENC_PARAMS_RC_CONSTQP;
@@ -100,7 +116,7 @@ index c6740c1842..6aa070d3fc 100644
      if (ctx->init_qp_p >= 0) {
          rc->constQP.qpInterP = ctx->init_qp_p;
          if (ctx->init_qp_i >= 0 && ctx->init_qp_b >= 0) {
-@@ -1221,8 +1231,8 @@ static av_cold int nvenc_setup_encoder(AVCodecContext *avctx)
+@@ -1222,8 +1243,8 @@ static av_cold int nvenc_setup_encoder(AVCodecContext *avctx)
      int res = 0;
      int dw, dh;
  
@@ -111,7 +127,7 @@ index c6740c1842..6aa070d3fc 100644
  
      ctx->init_encode_params.encodeHeight = avctx->height;
      ctx->init_encode_params.encodeWidth = avctx->width;
-@@ -1231,8 +1241,8 @@ static av_cold int nvenc_setup_encoder(AVCodecContext *avctx)
+@@ -1232,8 +1253,8 @@ static av_cold int nvenc_setup_encoder(AVCodecContext *avctx)
  
      nvenc_map_preset(ctx);
  
@@ -122,7 +138,7 @@ index c6740c1842..6aa070d3fc 100644
  
      if (IS_SDK10_PRESET(ctx->preset)) {
  #ifdef NVENC_HAVE_NEW_PRESETS
-@@ -1260,7 +1270,7 @@ static av_cold int nvenc_setup_encoder(AVCodecContext *avctx)
+@@ -1261,7 +1282,7 @@ static av_cold int nvenc_setup_encoder(AVCodecContext *avctx)
  
      memcpy(&ctx->encode_config, &preset_config.presetCfg, sizeof(ctx->encode_config));
  
@@ -131,7 +147,7 @@ index c6740c1842..6aa070d3fc 100644
  
      compute_dar(avctx, &dw, &dh);
      ctx->init_encode_params.darHeight = dh;
-@@ -1404,7 +1414,7 @@ static av_cold int nvenc_alloc_surface(AVCodecContext *avctx, int idx)
+@@ -1405,7 +1426,7 @@ static av_cold int nvenc_alloc_surface(AVCodecContext *avctx, int idx)
  
      NVENCSTATUS nv_status;
      NV_ENC_CREATE_BITSTREAM_BUFFER allocOut = { 0 };
@@ -140,7 +156,7 @@ index c6740c1842..6aa070d3fc 100644
  
      if (avctx->pix_fmt == AV_PIX_FMT_CUDA || avctx->pix_fmt == AV_PIX_FMT_D3D11) {
          ctx->surfaces[idx].in_ref = av_frame_alloc();
-@@ -1420,7 +1430,7 @@ static av_cold int nvenc_alloc_surface(AVCodecContext *avctx, int idx)
+@@ -1421,7 +1442,7 @@ static av_cold int nvenc_alloc_surface(AVCodecContext *avctx, int idx)
              return AVERROR(EINVAL);
          }
  
@@ -149,7 +165,7 @@ index c6740c1842..6aa070d3fc 100644
          allocSurf.width = avctx->width;
          allocSurf.height = avctx->height;
          allocSurf.bufferFmt = ctx->surfaces[idx].format;
-@@ -1503,7 +1513,7 @@ static av_cold int nvenc_setup_extradata(AVCodecContext *avctx)
+@@ -1504,7 +1525,7 @@ static av_cold int nvenc_setup_extradata(AVCodecContext *avctx)
      uint32_t outSize = 0;
      char tmpHeader[256];
      NV_ENC_SEQUENCE_PARAM_PAYLOAD payload = { 0 };
@@ -158,7 +174,7 @@ index c6740c1842..6aa070d3fc 100644
  
      payload.spsppsBuffer = tmpHeader;
      payload.inBufferSize = sizeof(tmpHeader);
-@@ -1535,7 +1545,7 @@ av_cold int ff_nvenc_encode_close(AVCodecContext *avctx)
+@@ -1536,7 +1557,7 @@ av_cold int ff_nvenc_encode_close(AVCodecContext *avctx)
  
      /* the encoder has to be flushed before it can be closed */
      if (ctx->nvencoder) {
@@ -167,7 +183,7 @@ index c6740c1842..6aa070d3fc 100644
                                              .encodePicFlags = NV_ENC_PIC_FLAG_EOS };
  
          res = nvenc_push_context(avctx);
-@@ -1747,7 +1757,7 @@ static int nvenc_register_frame(AVCodecContext *avctx, const AVFrame *frame)
+@@ -1748,7 +1769,7 @@ static int nvenc_register_frame(AVCodecContext *avctx, const AVFrame *frame)
      if (idx < 0)
          return idx;
  
@@ -176,7 +192,7 @@ index c6740c1842..6aa070d3fc 100644
      reg.width              = frames_ctx->width;
      reg.height             = frames_ctx->height;
      reg.pitch              = frame->linesize[0];
-@@ -1802,7 +1812,7 @@ static int nvenc_upload_frame(AVCodecContext *avctx, const AVFrame *frame,
+@@ -1803,7 +1824,7 @@ static int nvenc_upload_frame(AVCodecContext *avctx, const AVFrame *frame,
              return res;
  
          if (!ctx->registered_frames[reg_idx].mapped) {
@@ -185,7 +201,7 @@ index c6740c1842..6aa070d3fc 100644
              ctx->registered_frames[reg_idx].in_map.registeredResource = ctx->registered_frames[reg_idx].regptr;
              nv_status = p_nvenc->nvEncMapInputResource(ctx->nvencoder, &ctx->registered_frames[reg_idx].in_map);
              if (nv_status != NV_ENC_SUCCESS) {
-@@ -1822,7 +1832,7 @@ static int nvenc_upload_frame(AVCodecContext *avctx, const AVFrame *frame,
+@@ -1823,7 +1844,7 @@ static int nvenc_upload_frame(AVCodecContext *avctx, const AVFrame *frame,
      } else {
          NV_ENC_LOCK_INPUT_BUFFER lockBufferParams = { 0 };
  
@@ -194,7 +210,7 @@ index c6740c1842..6aa070d3fc 100644
          lockBufferParams.inputBuffer = nvenc_frame->input_surface;
  
          nv_status = p_nvenc->nvEncLockInputBuffer(ctx->nvencoder, &lockBufferParams);
-@@ -1936,7 +1946,7 @@ static int process_output_surface(AVCodecContext *avctx, AVPacket *pkt, NvencSur
+@@ -1937,7 +1958,7 @@ static int process_output_surface(AVCodecContext *avctx, AVPacket *pkt, NvencSur
          goto error;
      }
  
@@ -203,7 +219,7 @@ index c6740c1842..6aa070d3fc 100644
  
      lock_params.doNotWait = 0;
      lock_params.outputBitstream = tmpoutsurf->output_surface;
-@@ -2054,7 +2064,7 @@ static void reconfig_encoder(AVCodecContext *avctx, const AVFrame *frame)
+@@ -2055,7 +2076,7 @@ static void reconfig_encoder(AVCodecContext *avctx, const AVFrame *frame)
      int reconfig_bitrate = 0, reconfig_dar = 0;
      int dw, dh;
  
@@ -212,7 +228,7 @@ index c6740c1842..6aa070d3fc 100644
      params.reInitEncodeParams = ctx->init_encode_params;
  
      compute_dar(avctx, &dw, &dh);
-@@ -2148,7 +2158,7 @@ static int nvenc_send_frame(AVCodecContext *avctx, const AVFrame *frame)
+@@ -2149,7 +2170,7 @@ static int nvenc_send_frame(AVCodecContext *avctx, const AVFrame *frame)
      NV_ENCODE_API_FUNCTION_LIST *p_nvenc = &dl_fn->nvenc_funcs;
  
      NV_ENC_PIC_PARAMS pic_params = { 0 };
@@ -236,5 +252,5 @@ index fb3820f7cf..6a39391276 100644
  
      NV_ENC_INITIALIZE_PARAMS init_encode_params;
 -- 
-2.17.1
+2.24.3 (Apple Git-128)
 

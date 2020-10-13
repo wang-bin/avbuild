@@ -1,17 +1,17 @@
-From 6061fb780891aee8c9a7f86d0e5d818cc3f5ac97 Mon Sep 17 00:00:00 2001
+From eee22cf3f2d99a41b30edf10e609c28117751d70 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 11 Sep 2018 23:16:49 +0800
-Subject: [PATCH 14/19] configure: enable icf
+Subject: [PATCH 14/20] configure: enable icf
 
 ---
  configure | 3 +++
  1 file changed, 3 insertions(+)
 
 diff --git a/configure b/configure
-index 304ad1cd03..b398c0f4ad 100755
+index 1c2f8091c4..449d29ba35 100755
 --- a/configure
 +++ b/configure
-@@ -6883,6 +6883,9 @@ test_cc -mno-red-zone <<EOF && noredzone_flags="-mno-red-zone"
+@@ -6912,6 +6912,9 @@ test_cc -mno-red-zone <<EOF && noredzone_flags="-mno-red-zone"
  int x;
  EOF
  
@@ -22,5 +22,5 @@ index 304ad1cd03..b398c0f4ad 100755
  if enabled icc; then
      # Just warnings, no remarks
 -- 
-2.17.1
+2.24.3 (Apple Git-128)
 

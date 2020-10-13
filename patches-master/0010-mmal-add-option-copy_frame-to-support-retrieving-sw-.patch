@@ -1,7 +1,7 @@
-From 1f3a210c4edf260bcf7c70644013840de917ae91 Mon Sep 17 00:00:00 2001
+From 37f6cdaec6696e67690e3e88fc3104fb0ab255fc Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 17 Nov 2017 14:54:23 +0800
-Subject: [PATCH 10/19] mmal: add option copy_frame to support retrieving sw
+Subject: [PATCH 10/20] mmal: add option copy_frame to support retrieving sw
  frames w/o copy
 
 mmal buffer->data is already in host memory. AFAIK decoders implemented in omx must
@@ -14,10 +14,10 @@ turned off
  1 file changed, 23 insertions(+), 8 deletions(-)
 
 diff --git a/libavcodec/mmaldec.c b/libavcodec/mmaldec.c
-index 26faa9dffb..7c808f3e8e 100644
+index 0cf4b66363..8d5add324d 100644
 --- a/libavcodec/mmaldec.c
 +++ b/libavcodec/mmaldec.c
-@@ -69,6 +69,7 @@ typedef struct MMALDecodeContext {
+@@ -70,6 +70,7 @@ typedef struct MMALDecodeContext {
      AVClass *av_class;
      int extra_buffers;
      int extra_decoder_buffers;
@@ -25,7 +25,7 @@ index 26faa9dffb..7c808f3e8e 100644
  
      MMAL_COMPONENT_T *decoder;
      MMAL_QUEUE_T *queue_decoded_frames;
-@@ -139,7 +140,6 @@ static int ffmmal_set_ref(AVFrame *frame, FFPoolRef *pool,
+@@ -140,7 +141,6 @@ static int ffmmal_set_ref(AVFrame *frame, FFPoolRef *pool,
      atomic_fetch_add_explicit(&ref->pool->refcount, 1, memory_order_relaxed);
      mmal_buffer_header_acquire(buffer);
  
@@ -33,7 +33,7 @@ index 26faa9dffb..7c808f3e8e 100644
      frame->data[3] = (uint8_t *)ref->buffer;
      return 0;
  }
-@@ -650,20 +650,34 @@ static int ffmal_copy_frame(AVCodecContext *avctx,  AVFrame *frame,
+@@ -651,20 +651,34 @@ static int ffmal_copy_frame(AVCodecContext *avctx,  AVFrame *frame,
  
          if ((ret = ffmmal_set_ref(frame, ctx->pool_out, buffer)) < 0)
              goto done;
@@ -75,7 +75,7 @@ index 26faa9dffb..7c808f3e8e 100644
      }
  
      frame->pts = buffer->pts == MMAL_TIME_UNKNOWN ? AV_NOPTS_VALUE : buffer->pts;
-@@ -842,6 +856,7 @@ AVHWAccel ff_wmv3_mmal_hwaccel = {
+@@ -843,6 +857,7 @@ AVHWAccel ff_wmv3_mmal_hwaccel = {
  static const AVOption options[]={
      {"extra_buffers", "extra buffers", offsetof(MMALDecodeContext, extra_buffers), AV_OPT_TYPE_INT, {.i64 = 10}, 0, 256, 0},
      {"extra_decoder_buffers", "extra MMAL internal buffered frames", offsetof(MMALDecodeContext, extra_decoder_buffers), AV_OPT_TYPE_INT, {.i64 = 10}, 0, 256, 0},
@@ -84,5 +84,5 @@ index 26faa9dffb..7c808f3e8e 100644
  };
  
 -- 
-2.17.1
+2.24.3 (Apple Git-128)
 

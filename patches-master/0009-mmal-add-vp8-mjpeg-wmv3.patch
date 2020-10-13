@@ -1,19 +1,19 @@
-From 46e889e592e603778bdb3128da2c59cce467670d Mon Sep 17 00:00:00 2001
+From e0fed8deb2f3ce1a178494c47440b4c33be51fb8 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 13 Nov 2017 15:14:26 +0800
-Subject: [PATCH 09/19] mmal: add vp8, mjpeg, wmv3
+Subject: [PATCH 09/20] mmal: add vp8, mjpeg, wmv3
 
 ---
- configure              |  5 ++++-
+ configure              |  3 +++
  libavcodec/allcodecs.c |  3 +++
  libavcodec/mmaldec.c   | 26 ++++++++++++++++++++++++++
- 3 files changed, 33 insertions(+), 1 deletion(-)
+ 3 files changed, 32 insertions(+)
 
 diff --git a/configure b/configure
-index 8757cb6d8a..957ce69fec 100755
+index 0686ac0fcd..08c18c9816 100755
 --- a/configure
 +++ b/configure
-@@ -3081,6 +3081,7 @@ hevc_vaapi_encoder_select="cbs_h265 vaapi_encode"
+@@ -3090,6 +3090,7 @@ hevc_vaapi_encoder_select="cbs_h265 vaapi_encode"
  hevc_v4l2m2m_decoder_deps="v4l2_m2m hevc_v4l2_m2m"
  hevc_v4l2m2m_decoder_select="hevc_mp4toannexb_bsf"
  hevc_v4l2m2m_encoder_deps="v4l2_m2m hevc_v4l2_m2m"
@@ -21,33 +21,27 @@ index 8757cb6d8a..957ce69fec 100755
  mjpeg_cuvid_decoder_deps="cuvid"
  mjpeg_qsv_decoder_select="qsvdec"
  mjpeg_qsv_encoder_deps="libmfx"
-@@ -3108,11 +3109,12 @@ mpeg4_v4l2m2m_encoder_deps="v4l2_m2m mpeg4_v4l2_m2m"
- msmpeg4_crystalhd_decoder_select="crystalhd"
- nvenc_h264_encoder_select="h264_nvenc_encoder"
- nvenc_hevc_encoder_select="hevc_nvenc_encoder"
-+vc1_mmal_decoder_deps="mmal"
- vc1_crystalhd_decoder_select="crystalhd"
- vc1_cuvid_decoder_deps="cuvid"
--vc1_mmal_decoder_deps="mmal"
+@@ -3122,6 +3123,7 @@ vc1_cuvid_decoder_deps="cuvid"
+ vc1_mmal_decoder_deps="mmal"
  vc1_qsv_decoder_select="qsvdec"
  vc1_v4l2m2m_decoder_deps="v4l2_m2m vc1_v4l2_m2m"
 +vp8_mmal_decoder_deps="mmal"
  vp8_cuvid_decoder_deps="cuvid"
  vp8_mediacodec_decoder_deps="mediacodec"
  vp8_qsv_decoder_select="qsvdec"
-@@ -3131,6 +3133,7 @@ vp9_qsv_encoder_deps="libmfx MFX_CODEC_VP9"
+@@ -3140,6 +3142,7 @@ vp9_qsv_encoder_deps="libmfx MFX_CODEC_VP9"
  vp9_qsv_encoder_select="qsvenc"
  vp9_v4l2m2m_decoder_deps="v4l2_m2m vp9_v4l2_m2m"
  wmv3_crystalhd_decoder_select="crystalhd"
 +wmv3_mmal_decoder_deps="mmal"
+ av1_qsv_decoder_select="qsvdec"
  
  # parsers
- aac_parser_select="adts_header"
 diff --git a/libavcodec/allcodecs.c b/libavcodec/allcodecs.c
-index fa0c08d42e..fccf29a5e7 100644
+index fb8b2ad035..0be9a099d7 100644
 --- a/libavcodec/allcodecs.c
 +++ b/libavcodec/allcodecs.c
-@@ -343,6 +343,7 @@ extern AVCodec ff_vp6a_decoder;
+@@ -351,6 +351,7 @@ extern AVCodec ff_vp6a_decoder;
  extern AVCodec ff_vp6f_decoder;
  extern AVCodec ff_vp7_decoder;
  extern AVCodec ff_vp8_decoder;
@@ -55,7 +49,7 @@ index fa0c08d42e..fccf29a5e7 100644
  extern AVCodec ff_vp8_rkmpp_decoder;
  extern AVCodec ff_vp8_v4l2m2m_decoder;
  extern AVCodec ff_vp9_decoder;
-@@ -359,6 +360,7 @@ extern AVCodec ff_wmv2_encoder;
+@@ -367,6 +368,7 @@ extern AVCodec ff_wmv2_encoder;
  extern AVCodec ff_wmv2_decoder;
  extern AVCodec ff_wmv3_decoder;
  extern AVCodec ff_wmv3_crystalhd_decoder;
@@ -63,7 +57,7 @@ index fa0c08d42e..fccf29a5e7 100644
  extern AVCodec ff_wmv3image_decoder;
  extern AVCodec ff_wnv1_decoder;
  extern AVCodec ff_xan_wc3_decoder;
-@@ -785,6 +787,7 @@ extern AVCodec ff_hevc_vaapi_encoder;
+@@ -800,6 +802,7 @@ extern AVCodec ff_hevc_vaapi_encoder;
  extern AVCodec ff_hevc_videotoolbox_encoder;
  extern AVCodec ff_libkvazaar_encoder;
  extern AVCodec ff_mjpeg_cuvid_decoder;
@@ -72,10 +66,10 @@ index fa0c08d42e..fccf29a5e7 100644
  extern AVCodec ff_mjpeg_qsv_decoder;
  extern AVCodec ff_mjpeg_vaapi_encoder;
 diff --git a/libavcodec/mmaldec.c b/libavcodec/mmaldec.c
-index 1cb9cc2486..26faa9dffb 100644
+index 5087ef9752..0cf4b66363 100644
 --- a/libavcodec/mmaldec.c
 +++ b/libavcodec/mmaldec.c
-@@ -377,15 +377,24 @@ static av_cold int ffmmal_init_decoder(AVCodecContext *avctx)
+@@ -378,15 +378,24 @@ static av_cold int ffmmal_init_decoder(AVCodecContext *avctx)
      format_in = decoder->input[0]->format;
      format_in->type = MMAL_ES_TYPE_VIDEO;
      switch (avctx->codec_id) {
@@ -100,7 +94,7 @@ index 1cb9cc2486..26faa9dffb 100644
      case AV_CODEC_ID_H264:
      default:
          format_in->encoding = MMAL_ENCODING_H264;
-@@ -816,6 +825,20 @@ static const AVCodecHWConfigInternal *mmal_hw_configs[] = {
+@@ -817,6 +826,20 @@ static const AVCodecHWConfigInternal *mmal_hw_configs[] = {
      NULL
  };
  
@@ -121,7 +115,7 @@ index 1cb9cc2486..26faa9dffb 100644
  static const AVOption options[]={
      {"extra_buffers", "extra buffers", offsetof(MMALDecodeContext, extra_buffers), AV_OPT_TYPE_INT, {.i64 = 10}, 0, 256, 0},
      {"extra_decoder_buffers", "extra MMAL internal buffered frames", offsetof(MMALDecodeContext, extra_decoder_buffers), AV_OPT_TYPE_INT, {.i64 = 10}, 0, 256, 0},
-@@ -853,6 +876,9 @@ static const AVOption options[]={
+@@ -854,6 +877,9 @@ static const AVOption options[]={
      };
  
  FFMMAL_DEC(h264, AV_CODEC_ID_H264)
@@ -132,5 +126,5 @@ index 1cb9cc2486..26faa9dffb 100644
 +FFMMAL_DEC(vp8, AV_CODEC_ID_VP8)
 +FFMMAL_DEC(wmv3, AV_CODEC_ID_WMV3)
 -- 
-2.17.1
+2.24.3 (Apple Git-128)
 

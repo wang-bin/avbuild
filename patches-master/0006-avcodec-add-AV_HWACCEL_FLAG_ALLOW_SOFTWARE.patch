@@ -1,7 +1,7 @@
-From fa4f73d637afe4cdfa2e8fdca62dd5f5b27024fd Mon Sep 17 00:00:00 2001
+From 78c6c5e31ce409d0740386b76969af39664e5669 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 9 Nov 2017 14:56:53 +0800
-Subject: [PATCH 06/19] avcodec: add AV_HWACCEL_FLAG_ALLOW_SOFTWARE
+Subject: [PATCH 06/20] avcodec: add AV_HWACCEL_FLAG_ALLOW_SOFTWARE
 
 a hw decoder may have software or hybrid implementation, for example videotoolbox hevc.
 the performance may be better than ffmpeg sw decoder.
@@ -11,7 +11,7 @@ the performance may be better than ffmpeg sw decoder.
  2 files changed, 5 insertions(+)
 
 diff --git a/libavcodec/avcodec.h b/libavcodec/avcodec.h
-index c91b2fd169..8c5866f5dd 100644
+index 20af3ef00d..0b238fc71a 100644
 --- a/libavcodec/avcodec.h
 +++ b/libavcodec/avcodec.h
 @@ -2605,6 +2605,10 @@ typedef struct AVHWAccel {
@@ -26,10 +26,10 @@ index c91b2fd169..8c5866f5dd 100644
   * @}
   */
 diff --git a/libavcodec/options_table.h b/libavcodec/options_table.h
-index 8ba137f51e..b10d82b9e0 100644
+index 66bda42663..1834833b3e 100644
 --- a/libavcodec/options_table.h
 +++ b/libavcodec/options_table.h
-@@ -466,6 +466,7 @@ static const AVOption avcodec_options[] = {
+@@ -469,6 +469,7 @@ static const AVOption avcodec_options[] = {
  {"ignore_level", "ignore level even if the codec level used is unknown or higher than the maximum supported level reported by the hardware driver", 0, AV_OPT_TYPE_CONST, { .i64 = AV_HWACCEL_FLAG_IGNORE_LEVEL }, INT_MIN, INT_MAX, V | D, "hwaccel_flags" },
  {"allow_high_depth", "allow to output YUV pixel formats with a different chroma sampling than 4:2:0 and/or other than 8 bits per component", 0, AV_OPT_TYPE_CONST, {.i64 = AV_HWACCEL_FLAG_ALLOW_HIGH_DEPTH }, INT_MIN, INT_MAX, V | D, "hwaccel_flags"},
  {"allow_profile_mismatch", "attempt to decode anyway if HW accelerated decoder's supported profiles do not exactly match the stream", 0, AV_OPT_TYPE_CONST, {.i64 = AV_HWACCEL_FLAG_ALLOW_PROFILE_MISMATCH }, INT_MIN, INT_MAX, V | D, "hwaccel_flags"},
@@ -38,5 +38,5 @@ index 8ba137f51e..b10d82b9e0 100644
  {"discard_damaged_percentage", "Percentage of damaged samples to discard a frame", OFFSET(discard_damaged_percentage), AV_OPT_TYPE_INT, {.i64 = 95 }, 0, 100, V|D },
  {NULL},
 -- 
-2.17.1
+2.24.3 (Apple Git-128)
 

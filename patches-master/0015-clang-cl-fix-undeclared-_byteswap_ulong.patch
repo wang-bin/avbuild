@@ -1,7 +1,7 @@
-From fc5b9313fff62b25e58d927ffd85edb245fb190d Mon Sep 17 00:00:00 2001
+From e19438ab0b2bc367e99d1787b41c67260cbf6d88 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 24 Dec 2018 16:06:30 +0800
-Subject: [PATCH 15/19] clang-cl: fix undeclared _byteswap_ulong
+Subject: [PATCH 15/20] clang-cl: fix undeclared _byteswap_ulong
 
 ---
  libavutil/x86/bswap.h | 1 +
@@ -20,5 +20,5 @@ index b2f18b6c93..99273e69b2 100644
  #include "config.h"
  #include "libavutil/attributes.h"
 -- 
-2.17.1
+2.24.3 (Apple Git-128)
 
