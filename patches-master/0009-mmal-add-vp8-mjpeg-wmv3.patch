@@ -1,4 +1,4 @@
-From e0fed8deb2f3ce1a178494c47440b4c33be51fb8 Mon Sep 17 00:00:00 2001
+From 0d07566a069a73e27c8f429e368af2319c520bbf Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 13 Nov 2017 15:14:26 +0800
 Subject: [PATCH 09/20] mmal: add vp8, mjpeg, wmv3
@@ -10,7 +10,7 @@ Subject: [PATCH 09/20] mmal: add vp8, mjpeg, wmv3
  3 files changed, 32 insertions(+)
 
 diff --git a/configure b/configure
-index 0686ac0fcd..08c18c9816 100755
+index 0686ac0fcd..18ba1883dd 100755
 --- a/configure
 +++ b/configure
 @@ -3090,6 +3090,7 @@ hevc_vaapi_encoder_select="cbs_h265 vaapi_encode"
@@ -29,14 +29,14 @@ index 0686ac0fcd..08c18c9816 100755
  vp8_cuvid_decoder_deps="cuvid"
  vp8_mediacodec_decoder_deps="mediacodec"
  vp8_qsv_decoder_select="qsvdec"
-@@ -3140,6 +3142,7 @@ vp9_qsv_encoder_deps="libmfx MFX_CODEC_VP9"
+@@ -3139,6 +3141,7 @@ vp9_vaapi_encoder_select="vaapi_encode"
+ vp9_qsv_encoder_deps="libmfx MFX_CODEC_VP9"
  vp9_qsv_encoder_select="qsvenc"
  vp9_v4l2m2m_decoder_deps="v4l2_m2m vp9_v4l2_m2m"
- wmv3_crystalhd_decoder_select="crystalhd"
 +wmv3_mmal_decoder_deps="mmal"
+ wmv3_crystalhd_decoder_select="crystalhd"
  av1_qsv_decoder_select="qsvdec"
  
- # parsers
 diff --git a/libavcodec/allcodecs.c b/libavcodec/allcodecs.c
 index fb8b2ad035..0be9a099d7 100644
 --- a/libavcodec/allcodecs.c

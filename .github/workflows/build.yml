@@ -6,7 +6,7 @@ on:
     - cron: '0 12 * * 0'
 
 env:
-  FF_VERSION: master # TODO: latest release if triggered by schedule
+  FF_VERSION: ${{ secrets.FF_VER }} # TODO: latest release if triggered by schedule
   LLVM_VER: 11
   NDK_VERSION: r21d
   NINJA_STATUS: '[%f/%t %e %r]'
@@ -155,7 +155,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: [default,lite]
+        config: [lite]
     steps:
     - uses: actions/checkout@v2
       with:
