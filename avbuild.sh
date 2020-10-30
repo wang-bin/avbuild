@@ -918,6 +918,9 @@ setup_ios_env() {
   local cc_has_bitcode=false # bitcode since xcode 7
   clang -fembed-bitcode -E - </dev/null &>/dev/null && cc_has_bitcode=true
   : ${BITCODE:=true}
+  : ${TARGET_IOS5:=false}
+  ios_ver=${2##ios}
+  [ -n "$ios_ver" ] && compare_version $ios_ver "<" 6.0 && TARGET_IOS5=true
   local enable_bitcode=false
   $BITCODE && $cc_has_bitcode && enable_bitcode=true
   # bitcode link requires iOS>=6.0. Creating static lib is fine. So compiling with bitcode for <5.0 is fine. but ffmpeg config tests fails to create exe(ios10 sdk, no crt1.3.1.o), so 6.0 is required
@@ -930,18 +933,19 @@ setup_ios_env() {
   local ios5_lib_dir=
   if [ "${IOS_ARCH:0:3}" == "arm" ]; then
     $enable_bitcode && BITCODE_FLAGS="-fembed-bitcode" # also works for new sdks
+    BITCODE_LFLAGS=$BITCODE_FLAGS
     if [ "${IOS_ARCH:3:2}" == "64" ]; then
       ios_min=7.0
     else
       TOOLCHAIN_OPT+=" --disable-thumb"
       # armv7 since 3.2, but ios10 sdk does not have crt1.o/crt1.3.1.o, use 6.0 is ok. but we add these files in tools/lib/ios5, so 5.0 and older is fine
       local sdk_crt1_o=`xcrun --show-sdk-path --sdk iphoneos`/usr/lib/crt1.o
-      if [ -f $sdk_crt1_o -o -f $THIS_DIR/tools/lib/ios5/crt1.o ]; then
+      $TARGET_IOS5 && [ -f $sdk_crt1_o -o -f $THIS_DIR/tools/lib/ios5/crt1.o ] && {
         [ -f $sdk_crt1_o ] || ios5_lib_dir=$THIS_DIR/tools/lib/ios5
         ios_min=5.0
-      else
+      } || {
         ios_min=6.0
-      fi
+      }
       sed -i $sed_bak '/^_swri_oldapi_conv_fltp_to_s16_2ch_neon:$/d;/^_swri_oldapi_conv_flt_to_s16_neon:$/d' "$FFSRC/libswresample/arm/audio_convert_neon.S" # breaks armv7 since ffmpeg b22db4f4. restore after build/kill?
     fi
   else
@@ -954,12 +958,12 @@ setup_ios_env() {
     fi
     # TOOLCHAIN_OPT+=" --disable-asm" # if bitcode
   fi
-  ios_ver=${2##ios}
   : ${ios_ver:=$ios_min}
+  version_compare $ios_ver "<" 6.0 && BITCODE_LFLAGS=  ##No bitcode flags for iOS < 6.0. we always build static libs. but config test will try to create exe
   TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$IOS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
   disable_opt programs
   EXTRA_CFLAGS+=" -arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver $BITCODE_FLAGS" # -fvisibility=hidden -fvisibility-inlines-hidden"
-  EXTRA_LDFLAGS+=" -arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver -Wl,-dead_strip" # -fvisibility=hidden -fvisibility-inlines-hidden" #No bitcode flags for iOS < 6.0. we always build static libs. but config test will try to create exe
+  EXTRA_LDFLAGS+=" -arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver $BITCODE_LFLAGS -Wl,-dead_strip" # -fvisibility=hidden -fvisibility-inlines-hidden"
   if $FFGIT; then
     patch_clock_gettime=1
     [ -d $FFSRC/ffbuild ] && patch_clock_gettime=0 # since 3.3
