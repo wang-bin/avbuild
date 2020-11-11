@@ -989,8 +989,10 @@ setup_macos_env(){
       MACOS_VER=${2##macos}
       MACOS_VER=${MACOS_VER##osx}
     }
+    TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$MACOS_ARCH  --target-os=darwin"
   fi
   : ${MACOS_VER:=10.7}
+  [[ "$MACOS_ARCH" == arm64* ]] && version_compare $MACOS_VER "<" 11.0 && MACOS_VER=11.0
   enable_opt videotoolbox vda libxml2
   EXTRA_CFLAGS+=" -iwithsysroot /usr/include/libxml2"
   version_compare $MACOS_VER "<" 10.7 && disable_opt lzma avdevice #avfoundation is not supported on 10.6
@@ -1490,11 +1492,12 @@ make_universal()
   local dirs=($2)
   [ -z "$dirs" ] && return 0
   [ ${#dirs[@]} -le 1 ] && return 0
-  if [ "${os:0:3}" == ios ]; then
+# TODO: move to a new script
+  if [[ "$os" == ios* || "$os" == macos* || "$os" == osx* ]]; then
     local OUT_DIR=sdk-$os
     rm -rf $OUT_DIR
     cd $THIS_DIR
-    mkdir -p $OUT_DIR/lib
+    mkdir -p $OUT_DIR/{bin,lib}
     cp -af ${dirs[0]}/include $OUT_DIR
     for a in libavutil libavformat libavcodec libavfilter libavresample libavdevice libswscale libswresample; do
       libs=
@@ -1517,6 +1520,17 @@ make_universal()
       lipo -create $dylibs -o $OUT_DIR/lib/$dylib
       lipo -info $OUT_DIR/lib/$dylib
     }
+    for b in ffmpeg ffplay ffprobe; do
+      bins=
+      for d in ${dirs[@]}; do
+        [ -f "$d/bin/$b" ] && bins+=" $d/bin/$b"
+      done
+      #echo "lipo -create $bins -o $OUT_DIR/bin/$b"
+      test -n "$bins" && {
+        lipo -create $bins -o $OUT_DIR/bin/$b
+        lipo -info $OUT_DIR/bin/$b
+      }
+    done
     cat build_sdk-${os}-*/config.txt >$OUT_DIR/config.txt
     cp -af $FFSRC/{Changelog,RELEASE_NOTES} $OUT_DIR
     [ -f "$FFSRC/$LICENSE_FILE" ] && cp -af "$FFSRC/$LICENSE_FILE" $OUT_DIR || touch $OUT_DIR/$LICENSE_FILE
