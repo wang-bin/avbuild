@@ -1435,7 +1435,10 @@ build_all(){
       [ "${os:0:5}" == "mingw" ] && archs=(x86 x86_64)
       [ "${os:0:2}" == "vc" -o "${os:0:3}" == "win" ] && archs=(x86 x64 arm arm64)
       [[ "${os:0:5}" == "winrt" || "${os:0:3}" == "uwp" || "$os" == win*store* || "$os" == win*phone* ]] && archs=(x86 x64 arm arm64)
-      #[ "${os:0:5}" == "macos" ] && archs=(x86_64 i386)
+      [ "${os:0:5}" == "macos" ] && {
+        archs=
+        echo "#include <stdint.h> " |clang -arch arm64 -isysroot $(xcrun --sdk macosx --show-sdk-path) -x c -c - 2>/dev/null && archs=(x86_64 arm64)
+      }
     }
     echo ">>>>>archs: ${archs[@]}"
     [ -z "$archs" ] && {

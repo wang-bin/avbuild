@@ -16,7 +16,7 @@ env:
 jobs:
   Apple:
     # See: https://docs.github.com/en/actions/configuring-and-managing-workflows/configuring-a-workflow#configuring-a-build-matrix
-    runs-on: macos-latest
+    runs-on: macos-11.0
     env:
       TARGET_OS: ${{ matrix.target }}
       CONFIG_SUFFIX: -${{ matrix.config }}
@@ -27,6 +27,8 @@ jobs:
         target: [macOS,iOS]
     steps:
     - uses: actions/checkout@v2
+    - name: Setup Xcode
+      run: sudo xcode-select -s /Applications/Xcode_12.2.app
     - name: Create Build Environment
       shell: bash
       env:
