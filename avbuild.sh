@@ -1513,16 +1513,21 @@ make_universal()
         lipo -info $OUT_DIR/lib/${a}.a
       }
     done
-    dylibs=
-    dylib=$(ls $d/lib/libffmpeg.?.dylib)
-    dylib=${dylib##*/}
-    for d in ${dirs[@]}; do
-      [ -f $d/lib/$dylib ] && dylibs+=" $d/lib/$dylib"
+    for a in libavutil libavformat libavcodec libavfilter libavresample libavdevice libswscale libswresample libffmpeg; do
+      dylibs=
+      for d in ${dirs[@]}; do
+        dylib=$(ls $d/lib/${a}.*.*.dylib)
+        [ -n "$dylib" ] || dylib=$(ls $d/lib/${a}.*.dylib) # libffmpeg.4.dylib
+        dylib=${dylib##*/}
+        [ -f $d/lib/$dylib ] && dylibs+=" $d/lib/$dylib"
+      done
+      cp -af $d/lib/${a}.*.dylib $d/lib/${a}.dylib $OUT_DIR/lib/
+      #echo "lipo -create $dylibs -o $OUT_DIR/lib/$dylib"
+      test -n "$dylibs" && {
+        lipo -create $dylibs -o $OUT_DIR/lib/$dylib
+        lipo -info $OUT_DIR/lib/$dylib
+      }
     done
-    test -n "$dylibs" && {
-      lipo -create $dylibs -o $OUT_DIR/lib/$dylib
-      lipo -info $OUT_DIR/lib/$dylib
-    }
     for b in ffmpeg ffplay ffprobe; do
       bins=
       for d in ${dirs[@]}; do
@@ -1534,7 +1539,9 @@ make_universal()
         lipo -info $OUT_DIR/bin/$b
       }
     done
-    cat build_sdk-${os}-*/config.txt >$OUT_DIR/config.txt
+    for d in ${dirs[@]}; do
+      cat $d/config.txt >>$OUT_DIR/config.txt
+    done
     cp -af $FFSRC/{Changelog,RELEASE_NOTES} $OUT_DIR
     [ -f "$FFSRC/$LICENSE_FILE" ] && cp -af "$FFSRC/$LICENSE_FILE" $OUT_DIR || touch $OUT_DIR/$LICENSE_FILE
     echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt

@@ -11,7 +11,7 @@ Lite build of FFmpeg master branch **(recommended)**:
 [Raspberry Pi](https://sourceforge.net/projects/avbuild/files/raspberry-pi/ffmpeg-master-raspberry-pi-clang-lite.tar.xz/download), [Android](https://sourceforge.net/projects/avbuild/files/android/ffmpeg-master-android-clang-lite.tar.xz/download), [iOS](https://sourceforge.net/projects/avbuild/files/iOS/ffmpeg-master-iOS-lite.tar.xz/download), [macOS](https://sourceforge.net/projects/avbuild/files/macOS/ffmpeg-master-macOS-lite.tar.xz/download), [Linux](https://sourceforge.net/projects/avbuild/files/linux/ffmpeg-master-linux-gcc-lite.tar.xz/download),
 [MinGW](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-master-desktop-MINGW-lite.7z/download), [VS2019 Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-master-desktop-VS2019-lite.7z/download), [VS2019 UWP](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-master-store-VS2019-lite.7z/download), [Clang Windows Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-master-windows-desktop-clang-lite.tar.xz/download), [Clang UWP](https://sourceforge.net/projects/avbuild/files/windows-store/ffmpeg-master-windows-store-clang-lite.tar.xz/download)
 
-FFmpeg release(4.2) and others: https://sourceforge.net/projects/avbuild/files
+FFmpeg release(4.3) and others: https://sourceforge.net/projects/avbuild/files
 
 ***Build Details:***
 
@@ -29,6 +29,7 @@ windows mingw, vs2013~2019, desktop/store/phone: [![appveyor_ci](https://ci.appv
 - enable all gpu decoders and encoders if possible
 - nvidia driver version is not limited(nvcuvid, nvdec, nvenc)
 - ffmpeg patches
+- Universal binaries for apple platforms, including apple sillicon support
 
 ## Build Matrix
 
