@@ -24,7 +24,10 @@ jobs:
       fail-fast: false
       matrix:
         config: [default,lite]
-        target: [macOS,iOS]
+        target: [macOS,iOS,iOSSimulator]
+        exclude:
+          - config: default
+            target: iOSSimulator
     steps:
     - uses: actions/checkout@v2
     - name: Setup Xcode

@@ -16,7 +16,7 @@ echo "https://github.com/wang-bin/avbuild"
 
 THIS_NAME=${0##*/}
 THIS_DIR=$PWD
-PLATFORMS="ios|android|rpi|sunxi|vc|win|winrt|uwp|winphone|mingw"
+PLATFORMS="ios|iossimulator|android|rpi|sunxi|vc|win|winrt|uwp|winphone|mingw"
 echo "Usage:"
 test -d $PWD/FFmpeg || echo "  export FFSRC=/path/to/ffmpeg"
 cat<<HELP
@@ -921,6 +921,7 @@ setup_ios_env() {
   : ${BITCODE:=true}
   : ${TARGET_IOS5:=false}
   ios_ver=${2##ios}
+  ios_ver=${ios_ver/simulator/}
   [ -n "$ios_ver" ] && compare_version $ios_ver "<" 6.0 && TARGET_IOS5=true
   local enable_bitcode=false
   $BITCODE && $cc_has_bitcode && enable_bitcode=true
@@ -1429,7 +1430,9 @@ build_all(){
     local archs=($2)
     [ -z "$archs" ] && {
       echo ">>>>>no arch is set. setting default archs..."
-      [ "${os:0:3}" == "ios" ] && archs=(armv7 arm64 x86 x86_64)
+      [ "${os:0:3}" == "ios" ] && {
+        echo $os | grep simulator >/dev/null && archs=(x86 x86_64) || archs=(armv7 arm64)
+      }
       [ "${os:0:7}" == "android" ] && archs=(armv7 arm64 x86 x86_64)
       [ "${os:0:3}" == "rpi" -o "${os:0:9}" == "raspberry" ] && archs=(armv6zk armv7-a)
       [[ "$os" == "sunxi" ]] && archs=(armv7)
