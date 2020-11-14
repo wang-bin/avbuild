@@ -911,6 +911,7 @@ setup_ios_env() {
   enable_opt videotoolbox libxml2
   disable_opt avdevice
   EXTRA_CFLAGS+=" -iwithsysroot /usr/include/libxml2"
+  grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
   #LIB_OPT= #static only
 # clang -arch i386 -arch x86_64
 ## cc="xcrun -sdk iphoneos clang" or cc=`xcrun -sdk iphoneos --find clang`
@@ -1542,6 +1543,7 @@ make_universal()
     for d in ${dirs[@]}; do
       cat $d/config.txt >>$OUT_DIR/config.txt
     done
+  # TODO: create tbd
     cp -af $FFSRC/{Changelog,RELEASE_NOTES} $OUT_DIR
     [ -f "$FFSRC/$LICENSE_FILE" ] && cp -af "$FFSRC/$LICENSE_FILE" $OUT_DIR || touch $OUT_DIR/$LICENSE_FILE
     echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
