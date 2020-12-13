@@ -96,6 +96,53 @@ jobs:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
 
+  LAVFilters:
+    runs-on: ubuntu-latest
+    env:
+      FFREPO: 'git://git.1f0.de/ffmpeg'
+      TARGET_OS: 'windows-desktop'
+      COMPILER: clang
+      VCDIR: '/tmp/msvcrt-dev'
+      WINDOWSSDKDIR: '/tmp/winsdk'
+      VCVER: '14.27.29110'
+      WINSDKVER: '10.0.19041.0'
+      PKG_CONFIG_PATH_MFX: '/tmp/ClangCL/lib/pkgconfig'
+      CONFIG_SUFFIX: '-lavfilters'
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+    - name: 'Restore sysroot cache'
+      id: sysroot-cache
+      uses: actions/cache@v2
+      with:
+        path: |
+          /tmp/winsdk
+          /tmp/msvcrt-dev
+        key: sysroot-${{ env.TARGET_OS }}${{ env.WINSDKVER }}-vc${{ env.VCVER }}${{ env.CONFIG_SUFFIX }}
+    - name: Create Build Environment
+      shell: bash
+      env:
+        DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
+        SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
+        EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
+      run: ./tools/ci-before-build.sh
+    - name: Configure and Build
+      shell: bash
+      run: |
+        export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+        export WindowsSdkDir=${WINDOWSSDKDIR}
+        export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
+        USE_TOOLCHAIN=clang-${LLVM_VER:-11} ./avbuild.sh $TARGET_OS "x86 x64"
+    - name: Make SDK
+      shell: bash
+      run: ./tools/ci-after-build.sh
+    - name: Archieve SDK
+      uses: actions/upload-artifact@v2
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-lavfilters
+        path: ffmpeg-*.tar.xz
+
 
   Windows_clang:
     runs-on: ubuntu-latest

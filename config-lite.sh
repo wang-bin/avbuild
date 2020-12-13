@@ -12,7 +12,7 @@ $USER_OPT
 "
 ENC_OPT="--enable-encoder=aac,ff*,*yuv*,gif,h26[3-4]*,hevc*,mjpeg,*png,mpeg[2-4]*,nellymoser,nvenc*,opus,pcm*,rawvideo,speedhq,vorbis,vp[7-9],wrapped_avframe"
 MUX_OPT="--enable-muxer=dash,fifo,flv,gif,h264,hevc,hls,image2,*jpeg,matroska,mov,mp4,mpegts,nu*,og*,pcm*,rawvideo,spdif,wav,webm,*pipe"
-ENC_OPT_MOBILE="--enable-encoder=aac,ff*,*yuv*,gif,h264*,nellymoser,opus,pcm*,speedhq,*jpeg,*png,vp[7-9]"
+ENC_OPT_MOBILE="--enable-encoder=aac,ff*,*yuv*,gif,h264*,nellymoser,opus,pcm*,spdif,speedhq,*jpeg,*png,vp[7-9]"
 MUX_OPT_MOBILE="--enable-muxer=*jpeg,gif,hls,image2,mov,mp4,mpegts,matroska,webm,wav"
 android_OPT="--disable-avdevice"
 ios_OPT="--disable-avdevice"

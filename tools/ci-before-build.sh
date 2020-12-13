@@ -59,7 +59,6 @@ if [ "$TARGET_OS" == "android" ]; then
     mv /tmp/android-ndk-${NDK_VERSION:-r21} ${ANDROID_NDK:-/tmp/android-ndk}
 fi
 
-
 if [ -f ffmpeg-${FF_VERSION}/configure ]; then
   cd ffmpeg-${FF_VERSION}
   git reset --hard HEAD
@@ -69,7 +68,7 @@ if [ -f ffmpeg-${FF_VERSION}/configure ]; then
 else
   FF_BRANCH=${FF_VERSION}
   [ "$FF_BRANCH" == "master" ] || FF_BRANCH="release/$FF_BRANCH"
-  git clone -b ${FF_BRANCH} --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-${FF_VERSION}
+  git clone -b ${FF_BRANCH} --depth 1 --no-tags ${FFREPO:-https://git.ffmpeg.org/ffmpeg.git} ffmpeg-${FF_VERSION}
 fi
 
 if [ -n "${CONFIG_SUFFIX}" ]; then
