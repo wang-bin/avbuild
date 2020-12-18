@@ -24,14 +24,16 @@ jobs:
       fail-fast: false
       matrix:
         config: [default,lite]
-        target: [macOS,iOS,iOSSimulator]
+        target: [macOS,iOS,iOSSimulator,macCatalyst]
         exclude:
           - config: default
             target: iOSSimulator
+          - config: default
+            target: macCatalyst
     steps:
     - uses: actions/checkout@v2
     - name: Setup Xcode
-      run: sudo xcode-select -s /Applications/Xcode_12.2.app
+      run: sudo xcode-select -s /Applications/Xcode_12.3.app
     - name: Create Build Environment
       shell: bash
       env:

@@ -1020,7 +1020,7 @@ setup_macos_env(){
   $IS_APPLE_CLANG || $LD_IS_LLD || {
     TOOLCHAIN_OPT+=" --sysroot=\$(xcrun --sdk macosx --show-sdk-path)"
   }
-  local rpath_dirs=(@loader_path @loader_path/../Frameworks @loader_path/lib @loader_path/../lib)
+  local rpath_dirs=(@loader_path @executable_path/../Frameworks @loader_path/Libraries @loader_path/../lib)
   local rpath_flags=
   [ -n "$LFLAG_PRE" ] && {
     rpath_flags=${rpath_dirs[@]/#/${LFLAG_PRE}-rpath,}
@@ -1031,6 +1031,40 @@ setup_macos_env(){
   EXTRA_CFLAGS+=" $ARCH_FLAG -mmacosx-version-min=$MACOS_VER"
   EXTRA_LDFLAGS+=" $ARCH_FLAG $LFLAG_VERSION_MIN$MACOS_VER ${LFLAG_PRE}-dead_strip $rpath_flags"
   INSTALL_DIR=sdk-macOS${MACOS_VER}${MACOS_ARCH}-${USE_TOOLCHAIN##*/}
+}
+
+setup_maccatalyst_env(){
+  enable_opt videotoolbox libxml2
+  disable_opt avdevice appkit securetransport
+  EXTRA_CFLAGS+=" -iwithsysroot /usr/include/libxml2"
+  grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
+  local IOS_ARCH=$1
+  local cc_has_bitcode=false # bitcode since xcode 7
+  clang -fembed-bitcode -E - </dev/null &>/dev/null && cc_has_bitcode=true
+  : ${BITCODE:=true}
+  ios_ver=${2##*catalyst}
+  local enable_bitcode=false
+  $BITCODE && $cc_has_bitcode && enable_bitcode=true
+  $enable_bitcode && echo "Bitcode is enabled by default. set 'BITCODE=false' to disable"
+# http://iossupportmatrix.com
+  local ios_min=13.0
+  local SYSROOT_SDK=macosx
+  local VER_OS=iphoneos
+  local BITCODE_FLAGS=
+  $enable_bitcode && BITCODE_FLAGS="-fembed-bitcode" # also works for new sdks
+  BITCODE_LFLAGS=$BITCODE_FLAGS
+  : ${ios_ver:=$ios_min}
+  # x86 asm: https://stackoverflow.com/questions/58796267/building-for-macos-but-linking-in-object-file-built-for-free-standing/59103419#59103419
+  [[ "$IOS_ARCH" == x*64 || "$IOS_ARCH" == *86* ]] && ASM_OPT="--disable-asm"
+  local rpath_dirs=(@loader_path @executable_path/../Frameworks @loader_path/Libraries @loader_path/../lib)
+  local rpath_flags=${rpath_dirs[@]/#/-Wl,-rpath,}
+
+  SDK_DIR=$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)
+  TOOLCHAIN_OPT+=" --enable-cross-compile $ASM_OPT --arch=$IOS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
+  EXTRA_CFLAGS+=" -target ${IOS_ARCH}-apple-ios-macabi -m${VER_OS}-version-min=$ios_ver $BITCODE_FLAGS -iframework ${SDK_DIR}/System/iOSSupport/System/Library/Frameworks" # -fvisibility=hidden -fvisibility-inlines-hidden"
+  EXTRA_LDFLAGS+=" -target ${IOS_ARCH}-apple-ios-macabi -m${VER_OS}-version-min=$ios_ver $BITCODE_LFLAGS -Wl,-dead_strip $rpath_flags -iframework ${SDK_DIR}/System/iOSSupport/System/Library/Frameworks" # -fvisibility=hidden -fvisibility-inlines-hidden"
+  INSTALL_DIR=sdk-maccatalyst-$IOS_ARCH
+  mkdir -p $THIS_DIR/build_$INSTALL_DIR
 }
 
 # version_compare v1 "op" v2, e.g. version_compare 10.6 "<" 10.7
@@ -1250,6 +1284,7 @@ config1(){
     android*)    setup_android_env $TAGET_ARCH_FLAG $1 ;;
     ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
     osx*|macos*)     setup_macos_env $TAGET_ARCH_FLAG $1 ;;
+    *catalyst*) setup_maccatalyst_env $TAGET_ARCH_FLAG $1 ;;
     mingw*)     setup_mingw_env $TAGET_ARCH_FLAG ;;
     vc|win*|uwp*)  setup_win $TAGET_ARCH_FLAG $1 ;; # TODO: check cc
     rpi*|raspberry*) setup_rpi_env $TAGET_ARCH_FLAG $1 ;;
@@ -1439,7 +1474,7 @@ build_all(){
       [ "${os:0:5}" == "mingw" ] && archs=(x86 x86_64)
       [ "${os:0:2}" == "vc" -o "${os:0:3}" == "win" ] && archs=(x86 x64 arm arm64)
       [[ "${os:0:5}" == "winrt" || "${os:0:3}" == "uwp" || "$os" == win*store* || "$os" == win*phone* ]] && archs=(x86 x64 arm arm64)
-      [ "${os:0:5}" == "macos" ] && {
+      [[ "$os" == macos* || "$os" == *catalyst* ]] && {
         archs=
         echo "#include <stdint.h> " |clang -arch arm64 -isysroot $(xcrun --sdk macosx --show-sdk-path) -x c -c - 2>/dev/null && archs=(x86_64 arm64)
       }
@@ -1500,7 +1535,7 @@ make_universal()
   [ -z "$dirs" ] && return 0
   [ ${#dirs[@]} -le 1 ] && return 0
 # TODO: move to a new script
-  if [[ "$os" == ios* || "$os" == macos* || "$os" == osx* ]]; then
+  if [[ "$os" == ios* || "$os" == macos* || "$os" == osx* || "$os" == *catalyst* ]]; then
     local OUT_DIR=sdk-$os
     rm -rf $OUT_DIR
     cd $THIS_DIR
