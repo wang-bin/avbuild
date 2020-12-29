@@ -2,6 +2,7 @@
 LLVER=${LLVM_VER:-11}
 NDK_HOST=linux
 export XZ_OPT="--threads=`getconf _NPROCESSORS_ONLN` -9e" # -9e. -8/9 will disable mt?
+  ln -sf config{${CONFIG_SUFFIX},}.sh;
 
 git submodule update --init --recursive
 if [ `which dpkg` ]; then
@@ -54,9 +55,9 @@ fi
 
 
 if [ "$TARGET_OS" == "android" ]; then
-    wget https://dl.google.com/android/repository/android-ndk-${NDK_VERSION:-r21}-${NDK_HOST}-x86_64.zip -O ndk.zip
+    wget https://dl.google.com/android/repository/android-ndk-${NDK_VERSION:-r22}-${NDK_HOST}-x86_64.zip -O ndk.zip
     7z x ndk.zip -o/tmp &>/dev/null
-    mv /tmp/android-ndk-${NDK_VERSION:-r21} ${ANDROID_NDK:-/tmp/android-ndk}
+    mv /tmp/android-ndk-${NDK_VERSION:-r22} ${ANDROID_NDK:-/tmp/android-ndk}
 fi
 
 if [ -f ffmpeg-${FF_VERSION}/configure ]; then

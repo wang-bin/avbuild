@@ -8,7 +8,7 @@ on:
 env:
   FF_VERSION: ${{ secrets.FF_VER }} # TODO: latest release if triggered by schedule
   LLVM_VER: 11
-  NDK_VERSION: r21d
+  NDK_VERSION: r22
   NINJA_STATUS: '[%f/%t %e %r]'
   SF_PW_MAPPED: ${{ secrets.SF_PW }}
   SF_USER_MAPPED: ${{ secrets.SF_USER }}
