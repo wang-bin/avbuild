@@ -35,7 +35,7 @@ wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7
 7z x -y dep.7z -o/tmp &>/dev/null
 
 if [[ "$SYSROOT_CACHE_HIT" != "true" ]]; then
-  if [[ "$TARGET_OS" == "windows"* ]]; then
+  if [[ "$TARGET_OS" == "win"* || "$TARGET_OS" == "uwp"* ]]; then
     wget https://sourceforge.net/projects/avbuild/files/dep/msvcrt-dev.7z/download -O msvcrt-dev.7z
     echo 7z x msvcrt-dev.7z -o${WINDOWSSDKDIR%/?*} # VCDIR can be msvcrt-dev/120, but need to extract to msvcrt-dev
     7z x msvcrt-dev.7z -o${WINDOWSSDKDIR%/?*}

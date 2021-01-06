@@ -161,7 +161,7 @@ jobs:
       fail-fast: false
       matrix:
         config: [default,lite]
-        target: [windows-desktop,windows-store]
+        target: [windows-desktop,uwp]
     steps:
     - uses: actions/checkout@v2
       with:

@@ -38,7 +38,7 @@ jobs:
   pool:
     vmImage: 'ubuntu-18.04'
   variables:
-    TARGET_OS: windows-store
+    TARGET_OS: uwp
     VCDIR: '/tmp/msvcrt-dev'
     WINDOWSSDKDIR: '/tmp/winsdk' # always convet to upper case
     COMPILER: 'clang'
