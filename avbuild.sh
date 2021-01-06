@@ -1337,9 +1337,7 @@ config1(){
   is_libav || FEATURE_OPT+=" --enable-avresample --disable-postproc"
   local CONFIGURE="configure --extra-version=QtAV --disable-doc ${DEBUG_OPT} $LIB_OPT --enable-runtime-cpudetect $FEATURE_OPT $TOOLCHAIN_OPT $USER_OPT"
   : ${NO_ENC=false}
-  if ! $NO_ENC && [ -n "$ENC_OPT" ]; then
     CONFIGURE+=" $ENC_OPT $MUX_OPT"
-  fi
   CONFIGURE=`trim2 $CONFIGURE`
   # http://ffmpeg.org/platform.html
   # static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
