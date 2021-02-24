@@ -1,5 +1,5 @@
 #!/bin/bash
-LLVER=${LLVM_VER:-11}
+LLVER=${LLVM_VER:-12}
 NDK_HOST=linux
 export XZ_OPT="--threads=`getconf _NPROCESSORS_ONLN` -9e" # -9e. -8/9 will disable mt?
   ln -sf config{${CONFIG_SUFFIX},}.sh;
@@ -10,9 +10,9 @@ if [ `which dpkg` ]; then
     wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key |sudo apt-key add -
     #sudo apt update
     #sudo apt install -y software-properties-common # for add-apt-repository, ubuntu-tooolchain-r-test is required by trusty
-    sudo apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-11 main"
-    sudo apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main" # clang-12
-    sudo apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main" # for win arm32. https://bugs.llvm.org/show_bug.cgi?id=42711
+    sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-12 main"
+    sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal main" # clang-13
+    sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-8 main" # for rpi
     sudo apt update
     pkgs="sshpass nasm yasm p7zip-full lld-$LLVER clang-tools-$LLVER" # clang-tools: clang-cl
     if [ "$TARGET_OS" == "linux" ]; then
@@ -53,11 +53,12 @@ if [[ "$SYSROOT_CACHE_HIT" != "true" ]]; then
   fi
 fi
 
-
-if [ "$TARGET_OS" == "android" ]; then
+ANDROID_NDK=$ANDROID_NDK_LATEST_HOME
+if [ "$TARGET_OS" == "android" -a ! -d "$ANDROID_NDK_LATEST_HOME" ]; then
+    ANDROID_NDK=/tmp/android-ndk
     wget https://dl.google.com/android/repository/android-ndk-${NDK_VERSION:-r22}-${NDK_HOST}-x86_64.zip -O ndk.zip
     7z x ndk.zip -o/tmp &>/dev/null
-    mv /tmp/android-ndk-${NDK_VERSION:-r22} ${ANDROID_NDK:-/tmp/android-ndk}
+    mv /tmp/android-ndk-${NDK_VERSION:-r22} $ANDROID_NDK
 fi
 
 if [ -f ffmpeg-${FF_VERSION}/configure ]; then
@@ -77,4 +78,4 @@ if [ -n "${CONFIG_SUFFIX}" ]; then
 fi
 
 export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-export ANDROID_NDK=/tmp/android-ndk
+export ANDROID_NDK

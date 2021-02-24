@@ -194,7 +194,7 @@ jobs:
       - image: buildpack-deps:bionic
     environment:
       COMPILER: clang
-      TARGET_OS: windows-store
+      TARGET_OS: uwp
       LIB_OPT: --enable-static
       VCDIR: /tmp/msvcrt-dev
       WindowsSdkDir: /tmp/winsdk
@@ -222,7 +222,7 @@ jobs:
       - image: buildpack-deps:bionic
     environment:
       COMPILER: clang
-      TARGET_OS: windows-store
+      TARGET_OS: uwp
       VCDIR: /tmp/msvcrt-dev
       WindowsSdkDir: /tmp/winsdk
     steps:

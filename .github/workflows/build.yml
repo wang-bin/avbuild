@@ -7,8 +7,7 @@ on:
 
 env:
   FF_VERSION: ${{ secrets.FF_VER }} # TODO: latest release if triggered by schedule
-  LLVM_VER: 11
-  NDK_VERSION: r22
+  LLVM_VER: 12
   NINJA_STATUS: '[%f/%t %e %r]'
   SF_PW_MAPPED: ${{ secrets.SF_PW }}
   SF_USER_MAPPED: ${{ secrets.SF_USER }}
@@ -16,7 +15,7 @@ env:
 jobs:
   Apple:
     # See: https://docs.github.com/en/actions/configuring-and-managing-workflows/configuring-a-workflow#configuring-a-build-matrix
-    runs-on: macos-11.0
+    runs-on: macos-latest
     env:
       TARGET_OS: ${{ matrix.target }}
       CONFIG_SUFFIX: -${{ matrix.config }}
@@ -32,8 +31,6 @@ jobs:
             target: macCatalyst
     steps:
     - uses: actions/checkout@v2
-    - name: Setup Xcode
-      run: sudo xcode-select -s /Applications/Xcode_12.3.app
     - name: Create Build Environment
       shell: bash
       env:
@@ -58,7 +55,7 @@ jobs:
 
 
   RaspberryPi_clang:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       TARGET_OS: 'raspberry-pi'
       COMPILER: 'clang'
@@ -88,7 +85,7 @@ jobs:
       run: |
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export SYSROOT=/tmp/sysroot
-        USE_TOOLCHAIN=clang-${LLVM_VER:-11} ./avbuild.sh ${TARGET_OS}
+        USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh ${TARGET_OS}
     - name: Make SDK
       shell: bash
       run: ./tools/ci-after-build.sh
@@ -99,7 +96,7 @@ jobs:
         path: ffmpeg-*.tar.xz
 
   LAVFilters:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       FFREPO: 'git://git.1f0.de/ffmpeg'
       TARGET_OS: 'windows-desktop'
@@ -135,7 +132,7 @@ jobs:
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export WindowsSdkDir=${WINDOWSSDKDIR}
         export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
-        USE_TOOLCHAIN=clang-${LLVM_VER:-11} ./avbuild.sh $TARGET_OS "x86 x64"
+        USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh $TARGET_OS "x86 x64"
     - name: Make SDK
       shell: bash
       run: ./tools/ci-after-build.sh
@@ -147,7 +144,7 @@ jobs:
 
 
   Windows_clang:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       TARGET_OS: ${{ matrix.target }}
       COMPILER: clang
@@ -187,7 +184,7 @@ jobs:
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export WindowsSdkDir=${WINDOWSSDKDIR}
         export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
-        USE_TOOLCHAIN=clang-${LLVM_VER:-11} ./avbuild.sh $TARGET_OS "arm64-clang-cl-${LLVM_VER:-11} arm x86 x64"
+        USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh $TARGET_OS "arm64-clang-cl-${LLVM_VER} arm x86 x64"
     - name: Make SDK
       shell: bash
       run: ./tools/ci-after-build.sh
@@ -199,7 +196,7 @@ jobs:
 
 
   VCRT120_clang:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       TARGET_OS: windows-desktop
       COMPILER: 'clang-vcrt120'
@@ -235,7 +232,7 @@ jobs:
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export WindowsSdkDir=${WINDOWSSDKDIR}
         export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
-        USE_TOOLCHAIN=clang-${LLVM_VER:-11} ./avbuild.sh $TARGET_OS "arm64-clang-cl-${LLVM_VER:-11} x86 x64"
+        USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh $TARGET_OS "arm64-clang-cl-${LLVM_VER} x86 x64"
     - name: Make SDK
       shell: bash
       run: ./tools/ci-after-build.sh
@@ -246,7 +243,7 @@ jobs:
         path: ffmpeg-*.tar.xz
 
   Linux_clang:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       TARGET_OS: linux
       COMPILER: clang
@@ -278,7 +275,7 @@ jobs:
       run: |
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export SYSROOT=/tmp/sysroot
-        USE_TOOLCHAIN=clang-${LLVM_VER:-11} ./avbuild.sh linux "amd64 arm64 armhf"
+        USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh linux "amd64 arm64 armhf"
     - name: Make SDK
       shell: bash
       run: ./tools/ci-after-build.sh
@@ -289,10 +286,9 @@ jobs:
         path: ffmpeg-*.tar.xz
 
   Android:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       TARGET_OS: android
-      ANDROID_NDK: /tmp/android-ndk
       CONFIG_SUFFIX: -${{ matrix.config }}
     strategy:
       fail-fast: false
@@ -316,6 +312,7 @@ jobs:
     - name: Configure and Build
       shell: bash
       run: |
+        export ANDROID_NDK=$ANDROID_NDK_LATEST_HOME
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         ./avbuild.sh ${TARGET_OS}
     - name: Make SDK
