@@ -397,6 +397,10 @@ setup_win(){
   else
     setup_vc_env $@
   fi
+  dxva_h=$(find "$WindowsSdkDir/Include" -name dxva.h)
+  [ -f "$dxva_h" ] && {
+      grep -n DXVA_Tile_AV1 "$dxva_h" &>/dev/null || patch -p1 "$dxva_h" <patches/dxva-av1.diff
+  }
 }
 
 setup_win_clang(){
