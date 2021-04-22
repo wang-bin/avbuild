@@ -8,6 +8,8 @@ on:
 env:
   FF_VERSION: ${{ secrets.FF_VER }} # TODO: latest release if triggered by schedule
   LLVM_VER: 12
+  VCVER: '14.27.29110'
+  WINSDKVER: '10.0.19041.0'
   NINJA_STATUS: '[%f/%t %e %r]'
   SF_PW_MAPPED: ${{ secrets.SF_PW }}
   SF_USER_MAPPED: ${{ secrets.SF_USER }}
@@ -98,13 +100,12 @@ jobs:
   LAVFilters:
     runs-on: ubuntu-20.04
     env:
+      LLVM_VER: 11
       FFREPO: 'git://git.1f0.de/ffmpeg'
       TARGET_OS: 'windows-desktop'
       COMPILER: clang
       VCDIR: '/tmp/msvcrt-dev'
       WINDOWSSDKDIR: '/tmp/winsdk'
-      VCVER: '14.27.29110'
-      WINSDKVER: '10.0.19041.0'
       PKG_CONFIG_PATH_MFX: '/tmp/ClangCL/lib/pkgconfig'
       CONFIG_SUFFIX: '-lavfilters'
     steps:
@@ -118,7 +119,7 @@ jobs:
         path: |
           /tmp/winsdk
           /tmp/msvcrt-dev
-        key: sysroot-${{ env.TARGET_OS }}${{ env.WINSDKVER }}-vc${{ env.VCVER }}${{ env.CONFIG_SUFFIX }}
+        key: sysroot-${{ env.TARGET_OS }}${{ secrets.WINSDKVER }}-vc${{ secrets.VCVER }}${{ env.CONFIG_SUFFIX }}
     - name: Create Build Environment
       shell: bash
       env:
@@ -150,10 +151,9 @@ jobs:
       COMPILER: clang
       VCDIR: '/tmp/msvcrt-dev'
       WINDOWSSDKDIR: '/tmp/winsdk'
-      VCVER: '14.27.29110'
-      WINSDKVER: '10.0.19041.0'
       PKG_CONFIG_PATH_MFX: '/tmp/ClangCL/lib/pkgconfig'
       CONFIG_SUFFIX: -${{ matrix.config }}
+      LLVM_VER: 11
     strategy:
       fail-fast: false
       matrix:
@@ -170,7 +170,7 @@ jobs:
         path: |
           /tmp/winsdk
           /tmp/msvcrt-dev
-        key: sysroot-${{ env.TARGET_OS }}${{ env.WINSDKVER }}-vc${{ env.VCVER }}
+        key: sysroot-${{ env.TARGET_OS }}${{ secrets.WINSDKVER }}-vc${{ secrets.VCVER }}
     - name: Create Build Environment
       shell: bash
       env:
@@ -198,6 +198,7 @@ jobs:
   VCRT120_clang:
     runs-on: ubuntu-20.04
     env:
+      LLVM_VER: 11
       TARGET_OS: windows-desktop
       COMPILER: 'clang-vcrt120'
       VCDIR: '/tmp/msvcrt-dev/120'
@@ -218,7 +219,7 @@ jobs:
         path: |
           /tmp/winsdk
           /tmp/msvcrt-dev
-        key: sysroot-${{ env.TARGET_OS }}${{ env.WINSDKVER }}-vc${{ env.VCVER }}
+        key: sysroot-${{ env.TARGET_OS }}${{ secrets.WINSDKVER }}-vc${{ secrets.VCVER }}
     - name: Create Build Environment
       shell: bash
       env:
