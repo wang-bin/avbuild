@@ -1,34 +1,37 @@
-From a894084ac74c4ebb0068e512265f9b9507a56749 Mon Sep 17 00:00:00 2001
+From c40d302e8fa5fa4d280882f9eb36ea7592a52feb Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 3 Jul 2020 14:09:54 +0800
 Subject: [PATCH 19/20] nvenc: check sdk 10.0 ptrs at runtime
 
 ---
- libavcodec/nvenc.c | 11 ++++++-----
- 1 file changed, 6 insertions(+), 5 deletions(-)
+ libavcodec/nvenc.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/libavcodec/nvenc.c b/libavcodec/nvenc.c
-index c809a5c907..d27191ee55 100644
+index 6e3a5f7710..c0e2087a39 100644
 --- a/libavcodec/nvenc.c
 +++ b/libavcodec/nvenc.c
-@@ -1260,11 +1260,12 @@ static av_cold int nvenc_setup_encoder(AVCodecContext *avctx)
- #ifdef NVENC_HAVE_NEW_PRESETS
-         ctx->init_encode_params.tuningInfo = ctx->tuning_info;
+@@ -1296,17 +1296,18 @@ static av_cold int nvenc_setup_encoder(AVCodecContext *avctx)
+     else if (ctx->flags & NVENC_LOWLATENCY)
+         ctx->init_encode_params.tuningInfo = NV_ENC_TUNING_INFO_LOW_LATENCY;
  
--        nv_status = p_nvenc->nvEncGetEncodePresetConfigEx(ctx->nvencoder,
--            ctx->init_encode_params.encodeGUID,
--            ctx->init_encode_params.presetGUID,
--            ctx->init_encode_params.tuningInfo,
--            &preset_config);
-+        if (p_nvenc->nvEncGetEncodePresetConfigEx)
-+            nv_status = p_nvenc->nvEncGetEncodePresetConfigEx(ctx->nvencoder,
-+                ctx->init_encode_params.encodeGUID,
-+                ctx->init_encode_params.presetGUID,
-+                ctx->init_encode_params.tuningInfo,
-+                &preset_config);
- #endif
-     } else {
- #ifdef NVENC_HAVE_NEW_PRESETS
++    if (p_nvenc->nvEncGetEncodePresetConfigEx)
+     nv_status = p_nvenc->nvEncGetEncodePresetConfigEx(ctx->nvencoder,
+         ctx->init_encode_params.encodeGUID,
+         ctx->init_encode_params.presetGUID,
+         ctx->init_encode_params.tuningInfo,
+         &preset_config);
+-#else
++    else
++#endif
+     nv_status = p_nvenc->nvEncGetEncodePresetConfig(ctx->nvencoder,
+         ctx->init_encode_params.encodeGUID,
+         ctx->init_encode_params.presetGUID,
+         &preset_config);
+-#endif
+     if (nv_status != NV_ENC_SUCCESS)
+         return nvenc_print_error(avctx, nv_status, "Cannot get the preset configuration");
+ 
 -- 
 2.24.3 (Apple Git-128)
 
