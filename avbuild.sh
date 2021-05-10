@@ -79,7 +79,8 @@ FFVERSION_FULL=`./$VER_SH`
 FFMAJOR=`echo $FFVERSION_FULL |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
 FFMINOR=`echo $FFVERSION_FULL |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
 FFGIT=false
-[ ${#FFMAJOR} -gt 3 ] && FFGIT=true
+echo $FFMAJOR |grep '\-' &>/dev/null && FFGIT=true
+! $FFGIT && [ ${FFMAJOR} -gt 3 ] && FFGIT=true
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR  git: $FFGIT"
 : ${PATCH_MASTER:=true}
 if $FFGIT && $PATCH_MASTER ; then
@@ -1393,7 +1394,7 @@ config1(){
       fi
     fi
     # FIXME: not atomic, lock, or move to windows only
-    if [ ${#FFMAJOR} -lt 4 ] && ! $FFGIT && ! `grep -q SETDLLDIRECTORY_PATCHED $FFSRC_TOOLS/cmdutils.c`; then # cl, clang and clang-cl
+    if [ ${FFMAJOR} -lt 4 ] && ! $FFGIT && ! `grep -q SETDLLDIRECTORY_PATCHED $FFSRC_TOOLS/cmdutils.c`; then # cl, clang and clang-cl
       sed -i $sed_bak "/SetDllDirectory(\"\")/i\\
 \#if (_WIN32_WINNT+0) >= 0x0502  \/\/SETDLLDIRECTORY_PATCHED\\
 " "$FFSRC_TOOLS/cmdutils.c"
