@@ -10,9 +10,11 @@
 @echo off
 set MSYS2_PATH_TYPE=inherit
 set PATH_CLEAN=%PATH%
+SET WSLENV=WindowsSdkDir:Platform:VC_BUILD:VisualStudioVersion:INCLUDE:LIB:LIBPATH:PATH_arm:LIB_arm:LIBPATH_arm:PATH_arm64:LIB_arm64:LIBPATH_arm64:PATH_x86:LIB_x86:LIBPATH_x86:PATH_x64:LIB_x64:LIBPATH_x64
+
 set VC_BUILD=true
 set VS_CL=%1
-if [%VS_CL%] == [] set /P VS_CL="VS CL name, e.g. vs2019 vs2017 vs2015, vs140, cl1900: "
+if [%VS_CL%] == [] set /P VS_CL="VS CL name, e.g. vs2022 vs2019 vs2017 vs2015, vs140, cl1900: "
 
 set VSVER=150
 set CL_VER=191
@@ -29,6 +31,11 @@ if /i [%VS_CL:~0,2%] == [vs] (
     if [%VS_CL:~2%] == [2019] (
         set VSVER=160
         set VCRT_VER=142
+    )
+	if [%VS_CL:~2%] == [2022] (
+        set VSVER=170
+        set VCRT_VER=143
+		set VSWHERE_CMD_EXTRA=-prerelease
     )
 )
 :: vs2017 cl1910
@@ -80,6 +87,8 @@ if not [%OS%] == [%OS:phone=%] (
     if [%VSVER%] == [120] set OS_VER=81
     if [%VSVER%] == [110] set OS_VER=80
 )
+set HOST_WSL=fase
+if not [%OS%] == [%OS:wsl=%] set HOST_WSL=true
 
 set ARCH=%3
 if [%ARCH%] == [] set /P ARCH="architecture (x86, x64, arm, arm64): "
@@ -97,14 +106,16 @@ if "%ARCH%" == "x64" (
 
 if [%VSVER%] == [150] goto SetupVC150Env
 if [%VSVER%] == [160] goto SetupVC160Env
+if [%VSVER%] == [170] goto SetupVC160Env
 
 goto SetupVCEnvLegacy
 
 :SetupVC160Env
-for /f "usebackq tokens=*" %%i in (`%~dp0vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
+for /f "usebackq tokens=*" %%i in (`%~dp0vswhere %VSWHERE_CMD_EXTRA% -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
   set VS_INSTALL_DIR=%%i
 )
 set VCVARSALL_BAT=%VS_INSTALL_DIR%\VC\Auxiliary\Build\vcvarsall.bat
+echo VCVARSALL_BAT=%VCVARSALL_BAT%
 goto SetupVCEnv
 
 :SetupVC150Env

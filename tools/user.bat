@@ -1,7 +1,11 @@
 :: set PKG_CONFIG_PATH_MFX=%CD%\VS2019\lib\pkgconfig
-if [%MSYSTEM%] == [] goto SetupMSYS2
+echo user.bat
 
-:SetupAV
+if  /i [%HOST_WSL%] == [true] goto SetWSL
+
+:SetMSYS
+echo msys host
+if [%MSYSTEM%] == [] goto SetupMSYS2
 set CPP_DIR=
 :: Platform is defined by vcvarsall.bat. use %ARCH% is fine too
 if /i "%Platform%" == "arm" (
@@ -10,23 +14,36 @@ if /i "%Platform%" == "arm" (
 )
 set PATH_CLEAN=%PATH_CLEAN%;%CPP_DIR%
 set PATH=%PATH%;%CPP_DIR%
+set BASH_CMD=%MSYS2_DIR%\usr\bin\bash.exe --login
+goto SetupAV
+
+:SetWSL
+set BASH_CMD=bash
+echo DO NOT forget to install nasm yasm pkg-config
+goto SetupAV
+
+
+
+:SetupAV
 set HOME=%~dp0..
+set PWD=%~dp0..
 set TARGET_PARAM=
 if [%VC_BUILD%] == [true] set TARGET_PARAM=vc
 if [%WINRT%] == [true] set TARGET_PARAM=winstore
 if /i not [%ARCH%] == [all] set TARGET_PARAM=%TARGET_PARAM% %ARCH%
 @echo Now you can run:
 @echo export FFSRC=/path/to/ffmpeg
-@echo ./avbuild.sh
+@echo ./avbuild.sh #%TARGET_PARAM%
 
 :: --login -x is verbose
 if [%BUILD_NOW%] == [] goto StartBash
 
-%MSYS2_DIR%\usr\bin\bash.exe --login avbuild.sh %TARGET_PARAM%
+%BASH_CMD% avbuild.sh %TARGET_PARAM%
+
 goto end
 
 :StartBash
-%MSYS2_DIR%\usr\bin\bash.exe --login -i
+%BASH_CMD%  -i
 
 goto END
 
