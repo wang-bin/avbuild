@@ -4,8 +4,10 @@ echo user.bat
 if  /i [%HOST_WSL%] == [true] goto SetWSL
 
 :SetMSYS
-echo msys host
+echo SetMSYS
 if [%MSYSTEM%] == [] goto SetupMSYS2
+dir %MSYS2_DIR%
+
 set CPP_DIR=
 :: Platform is defined by vcvarsall.bat. use %ARCH% is fine too
 if /i "%Platform%" == "arm" (
@@ -38,16 +40,19 @@ if /i not [%ARCH%] == [all] set TARGET_PARAM=%TARGET_PARAM% %ARCH%
 :: --login -x is verbose
 if [%BUILD_NOW%] == [] goto StartBash
 
+echo Start to build: %BASH_CMD% avbuild.sh %TARGET_PARAM%
 %BASH_CMD% avbuild.sh %TARGET_PARAM%
 
 goto end
 
 :StartBash
+echo StartBash %BASH_CMD%  -i
 %BASH_CMD%  -i
 
 goto END
 
 :SetupMSYS2
+echo SetupMSYS2
 if exist %~dp0msys2.bat call %~dp0msys2.bat
 goto END
 

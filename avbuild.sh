@@ -9,7 +9,6 @@
 #PS4='+ $(gdate "+%s.%N")\011 '
 #exec 3>&2 2>/tmp/bashstart.$$.log
 #set -x
-
 echo
 echo "FFmpeg build tool for all platforms. Author: wbsecg1@gmail.com 2013-2020"
 echo "https://github.com/wang-bin/avbuild"
@@ -132,7 +131,10 @@ is_libav() {
 BUILD_TOOLS=gcc
 host_is MinGW32 && BUILD_TOOLS=mingw-w64-i686-gcc
 host_is MinGW64 && BUILD_TOOLS=mingw-w64-x86_64-gcc
-host_is MinGW || host_is MSYS && echo "install msys2 packages: pacman -Sy --needed make diffutils gawk patch pkg-config nasm yasm $BUILD_TOOLS"
+host_is MinGW || host_is MSYS && {
+  echo "install msys2 packages: pacman -Sy --needed make diffutils patch pkg-config nasm yasm $BUILD_TOOLS"
+  which nasm || pacman -Sy --noconfirm --needed make diffutils patch pkg-config nasm yasm $BUILD_TOOLS
+}
 
 android_arch(){
   # emulate hash in bash3
@@ -1366,7 +1368,6 @@ config1(){
   echo $CONFIGURE |tee config-new.txt
   echo $FFVERSION_FULL >>config-new.txt
   local reconf=true
-  ls -l config{-new,}.txt
   if diff -NrubB config{-new,}.txt >/dev/null; then
     [ -f config.h ] && echo configuration does not change. skip configure && reconf=false
   fi

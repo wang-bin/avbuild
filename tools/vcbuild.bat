@@ -58,7 +58,7 @@ echo VSVER=%VSVER%
 :: ------OS----------
 :: only check winphone? desktop compiler is not limited
 set OS=%2
-if [%OS%] == [] set /P OS="OS name (xp, vista, win7, win8, win8.1, win10, winphone80, winphone81, winstore10, winphone, winstore): "
+if [%OS%] == [] set /P OS="OS name (xp, vista, win7, win8, win8.1, win10, winphone80, winphone81, winstore10, winphone, winstore, uwp): "
 
 set WINRT=false
 set WINSTORE=false
@@ -87,11 +87,16 @@ if not [%OS%] == [%OS:phone=%] (
     if [%VSVER%] == [120] set OS_VER=81
     if [%VSVER%] == [110] set OS_VER=80
 )
+if not [%OS%] == [%OS:uwp=%] (
+    set OS_VER=10
+    set WINRT=true
+    set WINSTORE=true
+)
 set HOST_WSL=fase
 if not [%OS%] == [%OS:wsl=%] set HOST_WSL=true
 
 set ARCH=%3
-if [%ARCH%] == [] set /P ARCH="architecture (x86, x64, arm, arm64): "
+if [%ARCH%] == [] set /P ARCH="architecture (x86, x64, arm, arm64, all): "
 
 set ARCH2=%ARCH%
 set ARG=x86_%ARCH%
@@ -177,7 +182,7 @@ call "%VCVARSALL_BAT%" %ARG%
 :: default is win10 desktop sdk
 if [%WINRT%] == [false] (
 	goto SetEnvDesktop
-	
+
 )
 if [%WINPHONE%] == [true] goto SetEnvPhone81SDK
 if [%OS_VER%] == [81] goto SetEnv81SDK

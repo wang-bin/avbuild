@@ -97,6 +97,66 @@ jobs:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
 
+
+  VS2019:
+    runs-on: windows-latest
+    env:
+      TARGET_OS: ${{ matrix.target }}
+      CONFIG_SUFFIX: -${{ matrix.config }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [default,lite]
+        target: [windows-desktop,uwp]
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+    - name: Create Build Environment
+      shell: cmd
+      run: |
+        set FF_BRANCH=%FF_VERSION%
+        if not [%FF_BRANCH%]==[master] set FF_BRANCH=release/%FF_VERSION%
+        git clone -b %FF_BRANCH% --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-%FF_VERSION%
+        if not [%CONFIG_SUFFIX%]==[-default] copy /y config%CONFIG_SUFFIX%.sh config.sh
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: MSYS
+        update: true
+        install: >-
+          make
+          diffutils
+          patch
+          pkg-config
+          nasm
+          yasm
+    - name: Install dev packages
+      shell: msys2 {0}
+      run: |
+        wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7z
+    - name: Configure and Build
+      shell: cmd
+      run: |
+        7z x -y dep.7z -otools
+        set PKG_CONFIG_PATH_MFX=%CD%\tools\VS2019\lib\pkgconfig
+        set MSYS2_DIR=C:\msys64
+        set HOME=%CD%
+        set FFSRC=%CD%\ffmpeg-%FF_VERSION%
+        set BUILD_NOW=true
+        tools\vcbuild.bat VS2019 %TARGET_OS%10 all
+    - name: Make SDK
+      shell: cmd
+      run: |
+        set SDK_NAME=ffmpeg-%FF_VERSION%-%TARGET_OS%-vs2019%CONFIG_SUFFIX%
+        move sdk* %SDK_NAME%
+        7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off %SDK_NAME%.7z %SDK_NAME%
+    - name: Archieve SDK
+      uses: actions/upload-artifact@v2
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-VS2019${{ matrix.config }}
+        path: ffmpeg-*.7z
+
+
   LAVFilters:
     runs-on: ubuntu-20.04
     env:
@@ -243,6 +303,7 @@ jobs:
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
+
 
   Linux_clang:
     runs-on: ubuntu-20.04
