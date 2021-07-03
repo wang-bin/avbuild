@@ -133,6 +133,7 @@ jobs:
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export WindowsSdkDir=${WINDOWSSDKDIR}
         export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
+        export V=1
         USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh $TARGET_OS "x86 x64"
     - name: Make SDK
       shell: bash

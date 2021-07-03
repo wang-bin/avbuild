@@ -51,7 +51,7 @@ MAJOR_GUESS=`cat libavutil/libavutil.version |grep MAJOR |cut -d '=' -f 2`
 MAJOR_GUESS=$((MAJOR_GUESS-52))
 LIBVERSION=${MAJOR_GUESS}.0.0
 RELEASE=`cat Makefile |sed 's/^include //;s/Makefile$/RELEASE/'`
-[ -f $RELEASE ] && {
+[ -f "$RELEASE" ] && {
   RELVERSION=`cat $RELEASE |sed 's/git/0/'`
   RELMAJOR=`echo $RELVERSION |cut -d . -f 1`
   [[ "$RELMAJOR" == "$MAJOR_GUESS" ]] && LIBVERSION=$RELVERSION

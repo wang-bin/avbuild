@@ -51,6 +51,7 @@ export PATH_EXTRA="$PWD/tools/gas-preprocessor"
 export PATH=$PWD/tools/gas-preprocessor:$PATH
 
 echo FFSRC=$FFSRC
+[[ "$FFSRC" == "$PWD" ]] && BUILD_DIR=$PWD
 [ -f $FFSRC/configure ] && {
   cd $FFSRC
   export PATH=$PWD:$PATH # convert win path to unix path
@@ -78,8 +79,13 @@ VER_SH=version.sh
 FFVERSION_FULL=`./$VER_SH`
 FFMAJOR=`echo $FFVERSION_FULL |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
 FFMINOR=`echo $FFVERSION_FULL |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
+MAJOR_GUESS=`cat libavutil/libavutil.version |grep MAJOR |cut -d '=' -f 2`
+MAJOR_GUESS=$((MAJOR_GUESS-52))
 FFGIT=false
-echo $FFMAJOR |grep '\-' &>/dev/null && FFGIT=true
+echo $FFMAJOR |grep '\-' &>/dev/null && {
+  FFGIT=true
+  FFMAJOR=$MAJOR_GUESS
+}
 ! $FFGIT && [ ${FFMAJOR} -gt 3 ] && FFGIT=true
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR  git: $FFGIT"
 : ${PATCH_MASTER:=true}
@@ -247,7 +253,7 @@ probe_cc() {
   local flags=$2
   $cc -v 2>&1 |grep -q clang && IS_CLANG=true
   $cc -v 2>&1 |grep -q "Apple LLVM" && IS_APPLE_CLANG=true
-  $cc -? 2>/dev/null |grep LLVM &>/dev/null && IS_CLANG_CL=true
+  $cc -v 2>/dev/null |grep msvc &>/dev/null && IS_CLANG_CL=true # /openmp:llvm ....
   if $IS_CLANG_CL; then
     IS_CLANG=true
     HAVE_LLD=true
@@ -398,7 +404,9 @@ setup_win(){
   else
     setup_vc_env $@
   fi
-  dxva_h=$(find "$WindowsSdkDir/Include" -name dxva.h)
+  # FIXME: wslpath
+  WinSdkDir=$(to_unix_path $WindowsSdkDir)
+  dxva_h=$(find "$WinSdkDir/Include" -name dxva.h)
   [ -f "$dxva_h" ] && {
       grep -n DXVA_Tile_AV1 "$dxva_h" &>/dev/null || patch -p1 "$dxva_h" <patches/dxva-av1.diff
   }
@@ -564,8 +572,10 @@ setup_vc_env() {
   EXTRA_CFLAGS+=" -D_WIN32_WINNT=$WIN_VER" #  -DWINAPI_FAMILY=WINAPI_FAMILY${FAMILY}_APP is not required for desktop
   INSTALL_DIR="`tolower sdk-$osver-$Platform-cl${VS_CL}`"
 
-  rm -rf $THIS_DIR/build_$INSTALL_DIR/.env.sh
-  mkdir -p $THIS_DIR/build_$INSTALL_DIR
+  local BDIR=$BUILD_DIR
+  [ -d "$BDIR" ] || BDIR=$THIS_DIR/build_$INSTALL_DIR
+  rm -rf $BDIR/.env.sh
+  mkdir -p $BDIR
 # get env vars for given arch, and export for build
   local PATH_arch=PATH_$platform
   PATH_arch=${!PATH_arch}
@@ -580,12 +590,12 @@ setup_vc_env() {
   # msvc exes are used by script, so must be converted to posix paths
     PATH_arch=$(to_unix_path "$PATH_arch" |sed 's/\([a-zA-Z]\):/\/\1/g;s/\;/:/g;s/(/\\\(/g;s/)/\\\)/g;s/ /\\ /g')
   # PATH_arch is set before bash environment, so must manually add bash paths
-    echo "export PATH=$PATH_EXTRA:/usr/local/bin:/usr/bin:/bin:/opt/bin:$PATH_arch" >"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
+    echo "export PATH=$PATH_EXTRA:/usr/local/bin:/usr/bin:/bin:/opt/bin:$PATH_arch" >"$BDIR/.env.sh"
   }
-  [ -n "$LIB_arch" ] && echo "export LIB=$LIB_arch" >>"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
-  [ -n "$LIBPATH_arch" ] && echo "export LIBPATH=$LIBPATH_arch" >>"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
-  [ -n "$INCLUDE_arch" ] && echo "export INCLUDE=$INCLUDE_arch" >>"$THIS_DIR/build_$INSTALL_DIR/.env.sh"
-  cat >> "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
+  [ -n "$LIB_arch" ] && echo "export LIB=$LIB_arch" >>"$BDIR/.env.sh"
+  [ -n "$LIBPATH_arch" ] && echo "export LIBPATH=$LIBPATH_arch" >>"$BDIR/.env.sh"
+  [ -n "$INCLUDE_arch" ] && echo "export INCLUDE=$INCLUDE_arch" >>"$BDIR/.env.sh"
+  cat >> "$BDIR/.env.sh" <<EOF
 export PKG_CONFIG_PATH=$PKG_CONFIG_PATH
 EOF
 }
@@ -1348,12 +1358,14 @@ config1(){
   # static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
 #set +x
 #exec 2>&3 3>&-
-
-  mkdir -p build_$INSTALL_DIR
-  cd build_$INSTALL_DIR
+  local BDIR=$BUILD_DIR
+  [ -d "$BDIR" ] || BDIR=$THIS_DIR/build_$INSTALL_DIR
+  mkdir -p $BDIR
+  cd $BDIR
   echo $CONFIGURE |tee config-new.txt
   echo $FFVERSION_FULL >>config-new.txt
   local reconf=true
+  ls -l config{-new,}.txt
   if diff -NrubB config{-new,}.txt >/dev/null; then
     [ -f config.h ] && echo configuration does not change. skip configure && reconf=false
   fi
@@ -1513,28 +1525,38 @@ build_all(){
     }
   }
   cd $THIS_DIR
-  dirs=`ls .dir`
+  echo BUILD_DIR=$BUILD_DIR
+  [ -d "$BUILD_DIR" ] && {
+	dirs=($BUILD_DIR)
+    local INSTALL_DIR0=`ls .dir`
+  } || {
+    dirs=(`ls .dir`)
+    build_dirs=${dirs[@]/#/build_}
+  }
   rm -rf .dir
-  for d in $dirs; do
-    cd build_$d
-    local INSTALL_DIR=$d
+  echo dirs: ${dirs[@]}
+  echo build_dirs: ${build_dirs[@]}
+  for d in $build_dirs; do
+    cd $d
     CONFIGURE=`cat config-new.txt`
     # "$CONFIGURE" is not empty, so check -z is enough
     [ -z "${CONFIGURE/*--enable-gpl*/}" ] && LICENSE=GPL || LICENSE=LGPL
     [ -z "${CONFIGURE/*--enable-version3*/}" ] && LICENSE=${LICENSE}v3 || LICENSE=${LICENSE}v2.1
     [ -z "${CONFIGURE/*--enable-nonfree*/}" ] && LICENSE=nonfree
     LICENSE_FILE=COPYING.$LICENSE
-    echo building $d...
+    local INSTALL_DIR=${INSTALL_DIR0:-${d##build_}}
+    echo building $INSTALL_DIR...
     build1
     cd $THIS_DIR
   done
-  make_universal $os "$dirs"
+  make_universal $os "${dirs[@]}"
 }
 
 make_universal()
 {
   local os=$1
-  local dirs=($2)
+  shift 1
+  local dirs=($@)
   [ -z "$dirs" ] && return 0
   [ ${#dirs[@]} -le 1 ] && return 0
 # TODO: move to a new script
