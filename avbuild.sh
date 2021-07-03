@@ -79,7 +79,8 @@ VER_SH=version.sh
 FFVERSION_FULL=`./$VER_SH`
 FFMAJOR=`echo $FFVERSION_FULL |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
 FFMINOR=`echo $FFVERSION_FULL |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
-MAJOR_GUESS=`cat libavutil/libavutil.version |grep MAJOR |cut -d '=' -f 2`
+MAJOR_GUESS=`cat libavutil/version.h |grep LIBAVUTIL_VERSION_MAJOR |head -n 1`
+MAJOR_GUESS=${MAJOR_GUESS##* }
 MAJOR_GUESS=$((MAJOR_GUESS-52))
 FFGIT=false
 echo $FFMAJOR |grep '\-' &>/dev/null && {
