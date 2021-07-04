@@ -386,3 +386,35 @@ jobs:
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
+
+  Upload:
+    runs-on: ubuntu-latest
+    needs: [VS2019]
+    steps:
+    - name: Download vs2019 desktop
+      uses: actions/download-artifact@v2
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2019default
+    - name: Download vs2019 desktop lite
+      uses: actions/download-artifact@v2
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2019lite
+    - name: Download vs2019 uwp
+      uses: actions/download-artifact@v2
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-uwp-VS2019default
+    - name: Download vs2019 uwp lite
+      uses: actions/download-artifact@v2
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-uwp-VS2019lite
+    - name: Upload to SourceForge
+      shell: bash
+      run:  |
+        sudo apt update
+        sudo apt install -y sshpass
+        FFV=${{ env.FF_VERSION }}
+        for f in `ls ffmpeg-*.7z`; do
+          OS=${f%%-vs*}
+          OS=${OS##*${FFV}-}
+          sshpass -p $SF_PW_MAPPED scp -o StrictHostKeyChecking=no $f $SF_USER_MAPPED,avbuild@frs.sourceforge.net:/home/frs/project/a/av/avbuild/$OS
+        done
