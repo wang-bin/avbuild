@@ -433,12 +433,12 @@ setup_win_clang(){
   #$FORCE_LTO && LTO_CFLAGS=-flto=thin # win lto binary size is larger
   LTO_LFLAGS="/opt:lldltojobs=`getconf _NPROCESSORS_ONLN`" # only affects thin lto?
   enable_opt dxva2
-  enable_cuda_llvm
   # TODO: unify setup_vc/wnrt
   : ${ONECORE:=}
   STORE=
   VS_VER=15
   local IS_STORE=false
+  local HAS_CUDA=true
   local os=$2
   [[ "$os"  == win*store || "$os" == win*phone || "${os:0:3}" == uwp || "${os:0:5}" == winrt ]] && IS_STORE=true
   local WINPHONE=false
@@ -453,6 +453,7 @@ setup_win_clang(){
     arch=$platform
     #  --as='clang -target aarch64-win32-gnu' --cc='clang -target aarch64-win32-msvc' : https://fate.libav.org/aarch64-win32-clang-6.0/20190219163918
     [ -z "${platform/*64*/}" ] ||  MACHINE=arm
+    HAS_CUDA=false
   elif [ -z "${Platform/*64/}" ]; then
     arch=x86_64
     Platform=x64
@@ -464,12 +465,14 @@ setup_win_clang(){
   : ${Platform:=$arch}
   echo IS_STORE=$IS_STORE
   $IS_STORE && {
+    HAS_CUDA=false
     setup_winrt_env
     # onecore/vcruntime.lib imports symbols from vcruntime140.dll, while store/vcruntime.lib imports them from vcruntime140_app.dll, both dlls can run in desktop mode
     [[ "$ONECORE" == onecore ]] && EXTRALIBS+=" OneCoreUAP.Lib" || STORE=store
   } || {
     [[ "$ONECORE" == onecore ]] && EXTRALIBS+=" OneCore.Lib"
   }
+  $HAS_CUDA && enable_cuda_llvm || disable_opt cuda-llvm
   # environment var LIB is used by lld-link, in windows style, i.e. export LIB=dir1;dir2;...
   # makedef: define env AR=llvm-ar, NM=llvm-nm
   # --windres=rc option is broken and not recognized
@@ -497,7 +500,7 @@ setup_win_clang(){
   PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
 echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX
-  enable_libmfx
+  $IS_STORE || enable_libmfx
 
   [ -f "$WindowsSdkDir/Include/$WindowsSDKVersion/um/WINDOWS.H" ] || { # case sensitive file system
   echo "CASE SENSITIVE FS!!!!!!!"
@@ -563,14 +566,18 @@ setup_vc_env() {
   PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
   FAMILY=
+  local HAS_CUDA=true
+  [ "${platform:0:3}" = "arm" ] && HAS_CUDA=false
   if ${WINRT:-false}; then
     [ -z "$osver" ] && osver=winrt
     setup_vc_winrt_env $arch
+    HAS_CUDA=false
   else
     [ -z "$osver" ] && osver=win
     FAMILY=_DESKTOP
     setup_vc_desktop_env $arch
   fi
+  $HAS_CUDA || disable_opt cuda-llvm
 
   EXTRA_CFLAGS+=" -D_WIN32_WINNT=$WIN_VER" #  -DWINAPI_FAMILY=WINAPI_FAMILY${FAMILY}_APP is not required for desktop
   INSTALL_DIR="`tolower sdk-$osver-$Platform-cl${VS_CL}`"
