@@ -76,6 +76,7 @@ VER_SH=version.sh
 [ -f $VER_SH ] || VER_SH=ffbuild/version.sh
 [ -f $VER_SH ] || VER_SH=avbuild/version.sh
 FFVERSION_FULL=`./$VER_SH`
+echo $FFVERSION_FULL |grep '\.' || FFVERSION_FULL=`head -n 1 RELEASE`
 FFMAJOR=`echo $FFVERSION_FULL |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
 FFMINOR=`echo $FFVERSION_FULL |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
 MAJOR_GUESS=`cat libavutil/version.h |grep LIBAVUTIL_VERSION_MAJOR |head -n 1`
