@@ -1,5 +1,5 @@
 #!/bin/bash
-LLVER=${LLVM_VER:-12}
+LLVER=${LLVM_VER:-13}
 NDK_HOST=linux
 export XZ_OPT="--threads=`getconf _NPROCESSORS_ONLN` -9e" # -9e. -8/9 will disable mt?
   ln -sf config{${CONFIG_SUFFIX},}.sh;
@@ -10,8 +10,8 @@ if [ `which dpkg` ]; then
     wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key |sudo apt-key add -
     #sudo apt update
     #sudo apt install -y software-properties-common # for add-apt-repository, ubuntu-tooolchain-r-test is required by trusty
-    sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-12 main"
-    sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal main" # clang-13
+    sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main"
+    sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal main" # clang-14
     sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-8 main" # for rpi
     sudo apt update
     pkgs="sshpass nasm yasm p7zip-full lld-$LLVER clang-tools-$LLVER" # clang-tools: clang-cl

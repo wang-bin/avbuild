@@ -7,7 +7,7 @@ on:
 
 env:
   FF_VERSION: ${{ secrets.FF_VER }} # TODO: latest release if triggered by schedule
-  LLVM_VER: 12
+  LLVM_VER: 13
   VCVER: '14.27.29110'
   WINSDKVER: '10.0.19041.0'
   NINJA_STATUS: '[%f/%t %e %r]'
@@ -160,7 +160,6 @@ jobs:
   LAVFilters:
     runs-on: ubuntu-20.04
     env:
-      LLVM_VER: 11
       FFREPO: 'git://git.1f0.de/ffmpeg'
       TARGET_OS: 'windows-desktop'
       COMPILER: clang
@@ -214,7 +213,6 @@ jobs:
       WINDOWSSDKDIR: '/tmp/winsdk'
       PKG_CONFIG_PATH_MFX: '/tmp/ClangCL/lib/pkgconfig'
       CONFIG_SUFFIX: -${{ matrix.config }}
-      LLVM_VER: 11
     strategy:
       fail-fast: false
       matrix:
@@ -259,7 +257,6 @@ jobs:
   VCRT120_clang:
     runs-on: ubuntu-20.04
     env:
-      LLVM_VER: 11
       TARGET_OS: windows-desktop
       COMPILER: 'clang-vcrt120'
       VCDIR: '/tmp/msvcrt-dev/120'
