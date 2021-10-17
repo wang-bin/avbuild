@@ -857,6 +857,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   gxx=`find ${ANDROID_GCC_DIR} -name "*g++*" 2>/dev/null` # can not use "*-gcc*": can be -gcc-ar, stdint-gcc.h
   as=`find ${ANDROID_GCC_DIR} -name "*-as" -o -name "*-as.exe" 2>/dev/null`
   clangxxs=(`find $NDK_ROOT/toolchains/llvm/prebuilt -name "clang++*"`) # can not be "clang*": clang-tidy
+  gnu_nm=(`find $NDK_ROOT/toolchains/llvm/prebuilt -name "*-android*nm"`) # can not be "clang*": clang-tidy
   clangxx=${clangxxs[0]}
   ld_lld=${clangxx/clang++/ld.lld}
   [ -f "$ld_lld" ] || ld_lld=
@@ -867,6 +868,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   echo "g++: $gxx, clang++: $clangxx IS_CLANG:$IS_CLANG, ld_lld: $ld_lld, as: $as"
   $IS_CLANG && probe_cc $clangxx || probe_cc $gxx
   ANDROID_GCC_DIR=${as%bin*}
+  [ -z "$gnu_nm" ] && TOOLCHAIN_OPT+=" --ar=llvm-ar --ranlib=llvm-ranlib --nm=llvm-nm"
   local ANDROID_LLVM_DIR=${clangxx%bin*}
   echo "ANDROID_GCC_DIR=${ANDROID_GCC_DIR}"
   echo "ANDROID_LLVM_DIR=${ANDROID_LLVM_DIR}"
@@ -896,10 +898,10 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
     else
         EXTRA_LDFLAGS+=" --sysroot \$NDK_ROOT/$ANDROID_SYSROOT_LIB_REL" # linker need crt objects in platform-$API_LEVEL dir, must set the dir as sysroot. but --sysroot in extra-ldflags comes before configure --sysroot= and has no effect
     fi
-    [ -d "$ANDROID_SYSROOT_LIB" ] && { # ndk r19+ has built-in sysroot and api level support
+    [ -d "$ANDROID_SYSROOT_LIB" -a -z "$API_SUFFIX" ] && { # ndk r19+ has built-in sysroot and api level support
       EXTRA_CFLAGS+=" -D__ANDROID_API__=$API_LEVEL --sysroot \$SYSROOT" # TODO: not required if api level is set in --target=
     }
-    include_with_sysroot_compat /usr/include/$ANDROID_HEADER_TRIPLE # TODO: not required if api level is set in --target=
+    [ -z "$API_SUFFIX" ] && include_with_sysroot_compat /usr/include/$ANDROID_HEADER_TRIPLE # TODO: not required if api level is set in --target=
   else
     ANDROID_SYSROOT_REL=${ANDROID_SYSROOT_LIB_REL}
     TOOLCHAIN_OPT+=" --sysroot=\$NDK_ROOT/$ANDROID_SYSROOT_REL"
@@ -925,8 +927,10 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   $IS_CLANG && INSTALL_DIR="${INSTALL_DIR}-clang" || INSTALL_DIR="${INSTALL_DIR}-gcc"
   enable_opt jni mediacodec
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
+  PATHS=$ANDROID_LLVM_DIR/bin
+  [ -n "$ANDROID_GCC_DIR" ] && PATHS="$ANDROID_GCC_DIR/bin:$PATHS"
   cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
-export PATH=$ANDROID_GCC_DIR/bin:$ANDROID_LLVM_DIR/bin:$PATH
+export PATH=$PATHS:$PATH
 EOF
 }
 #  --toolchain=hardened : https://wiki.debian.org/Hardening
@@ -1380,7 +1384,7 @@ config1(){
     [ -f config.h ] && echo configuration does not change. skip configure && reconf=false
   fi
   if $reconf; then
-    [ -f .env.sh ] && . .env.sh && cat .env.sh
+    [ -f .env.sh ] && . .env.sh && cat .env.sh && type -a clang
     echo configuration changes
 	rm -f config-utf8.h
     time eval $CONFIGURE
