@@ -27,7 +27,7 @@ windows mingw, vs2013~2019, desktop/store/phone: [![appveyor_ci](https://ci.appv
 - support SSL for macOS & iOS
 - enable all gpu decoders and encoders if possible
 - nvidia driver version is not limited(nvcuvid, nvdec, nvenc)
-- ffmpeg patches
+- ffmpeg patches: flv+hevc
 - Universal binaries for apple platforms, including apple sillicon support
 
 ## Build Matrix

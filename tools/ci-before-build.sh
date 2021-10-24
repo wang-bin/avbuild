@@ -5,6 +5,10 @@ export XZ_OPT="--threads=`getconf _NPROCESSORS_ONLN` -9e" # -9e. -8/9 will disab
   ln -sf config{${CONFIG_SUFFIX},}.sh;
 
 git submodule update --init --recursive
+pkgs="nasm yasm"
+if [ "$TARGET_OS" == "wasm" ]; then
+  pkgs+=" emscripten"
+fi
 if [ `which dpkg` ]; then
     #wget https://apt.llvm.org/llvm.sh
     wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key |sudo apt-key add -
@@ -14,7 +18,7 @@ if [ `which dpkg` ]; then
     sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal main" # clang-14
     sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-8 main" # for rpi
     sudo apt update
-    pkgs="sshpass nasm yasm p7zip-full lld-$LLVER clang-tools-$LLVER" # clang-tools: clang-cl
+    pkgs+=" sshpass p7zip-full lld-$LLVER clang-tools-$LLVER" # clang-tools: clang-cl
     if [ "$TARGET_OS" == "linux" ]; then
         pkgs+=" libstdc++-7-dev libxv-dev libva-dev libvdpau-dev libbz2-dev zlib1g-dev"
         if [ "$COMPILER" == "gcc" ]; then
@@ -25,7 +29,7 @@ if [ `which dpkg` ]; then
     fi
     sudo apt install -y $pkgs
 elif [ `which brew` ]; then
-    pkgs="pkg-config nasm yasm perl hudochenkov/sshpass/sshpass xz p7zip"
+    pkgs+=" pkg-config perl hudochenkov/sshpass/sshpass xz p7zip"
     brew install $pkgs
     NDK_HOST=darwin
 fi

@@ -1281,6 +1281,11 @@ setup_linux_env() {
   INSTALL_DIR=sdk-linux-${ARCH}-${INSTALL_DIR}
 }
 
+setup_wasm_env(){
+  TOOLCHAIN_OPT+=" --cc=emcc  --ar=emar --ranlib=emranlib   --enable-cross-compile --target-os=none --arch=x86_32 --cpu=generic --disable-asm"
+  EXTRA_CFLAGS+=" -ffast-math -fstrict-aliasing"
+  INSTALL_DIR=sdk-wasm
+}
 # 1 target os & 1 target arch
 config1(){
   local TAGET_FLAG=$1
@@ -1323,6 +1328,7 @@ config1(){
       setup_linux_env $TAGET_ARCH_FLAG $1
       add_librt
       ;;
+    wasm) setup_wasm_env $TAGET_ARCH_FLAG $1 ;;
     *) # assume host build. use "") ?
       if $VC_BUILD; then
         setup_win $TAGET_ARCH_FLAG

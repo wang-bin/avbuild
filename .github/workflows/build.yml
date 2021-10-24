@@ -55,9 +55,34 @@ jobs:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
 
+  Wasm:
+    runs-on: macos-latest
+    env:
+      TARGET_OS: 'wasm'
+    steps:
+    - uses: actions/checkout@v2
+    - name: Create Build Environment
+      shell: bash
+      env:
+        DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
+        EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
+      run: ./tools/ci-before-build.sh
+    - name: Configure and Build
+      shell: bash
+      run: |
+        export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+        ./avbuild.sh ${TARGET_OS}
+    - name: Make SDK
+      shell: bash
+      run: ./tools/ci-after-build.sh
+    - name: Archieve SDK
+      uses: actions/upload-artifact@v2
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}
+        path: ffmpeg-*.tar.xz
 
   RaspberryPi_clang:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       TARGET_OS: 'raspberry-pi'
       COMPILER: 'clang'
@@ -158,7 +183,7 @@ jobs:
 
 
   LAVFilters:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       FFREPO: 'git://git.1f0.de/ffmpeg'
       TARGET_OS: 'windows-desktop'
@@ -205,7 +230,7 @@ jobs:
 
 
   Windows_clang:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       TARGET_OS: ${{ matrix.target }}
       COMPILER: clang
@@ -255,7 +280,7 @@ jobs:
 
 
   VCRT120_clang:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       TARGET_OS: windows-desktop
       COMPILER: 'clang-vcrt120'
@@ -291,7 +316,7 @@ jobs:
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export WindowsSdkDir=${WINDOWSSDKDIR}
         export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
-        USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh $TARGET_OS "arm64-clang-cl-${LLVM_VER} x86 x64"
+        USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh $TARGET_OS "x86 x64"
     - name: Make SDK
       shell: bash
       run: ./tools/ci-after-build.sh
@@ -303,7 +328,7 @@ jobs:
 
 
   Linux_clang:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       TARGET_OS: linux
       COMPILER: clang
@@ -346,7 +371,7 @@ jobs:
         path: ffmpeg-*.tar.xz
 
   Android:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       TARGET_OS: android
       CONFIG_SUFFIX: -${{ matrix.config }}
