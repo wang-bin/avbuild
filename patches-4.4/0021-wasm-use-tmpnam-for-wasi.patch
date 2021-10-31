@@ -1,4 +1,4 @@
-From 9e7cdacec4437f595b69f13515130b014872ca73 Mon Sep 17 00:00:00 2001
+From b47143bc5d3ae07f3cb431128230f09aa62ed608 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 20 Sep 2021 21:18:07 +0800
 Subject: [PATCH 21/22] wasm: use tmpnam for wasi

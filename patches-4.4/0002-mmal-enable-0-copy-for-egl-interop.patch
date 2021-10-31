@@ -1,4 +1,4 @@
-From 836dac1578d485e35b05c471f224fda320aa5fc5 Mon Sep 17 00:00:00 2001
+From cd5a27e9e2204f7bc9764426364112033251886e Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:19:07 +0800
 Subject: [PATCH 02/22] mmal: enable 0-copy for egl interop
@@ -8,7 +8,7 @@ Subject: [PATCH 02/22] mmal: enable 0-copy for egl interop
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/libavcodec/mmaldec.c b/libavcodec/mmaldec.c
-index 8c7d749742..9818e4ef04 100644
+index cb15ac072a..a00b57ae2f 100644
 --- a/libavcodec/mmaldec.c
 +++ b/libavcodec/mmaldec.c
 @@ -297,6 +297,8 @@ static int ffmal_update_format(AVCodecContext *avctx)

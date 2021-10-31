@@ -1,4 +1,4 @@
-From 5035dd83d5bb71a5e4d9f9494b22a61c6ec82686 Mon Sep 17 00:00:00 2001
+From 31042dce027991cceefb6ea8b58733626aeff0a3 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:22:25 +0800
 Subject: [PATCH 03/22] configure: fix mmal probing in cross build
@@ -8,10 +8,10 @@ Subject: [PATCH 03/22] configure: fix mmal probing in cross build
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/configure b/configure
-index ede8f9777b..5604517256 100755
+index 4ba72bf84b..de86c0c352 100755
 --- a/configure
 +++ b/configure
-@@ -6556,11 +6556,11 @@ enabled mbedtls           && { check_pkg_config mbedtls mbedtls mbedtls/x509_crt
+@@ -6492,11 +6492,11 @@ enabled mbedtls           && { check_pkg_config mbedtls mbedtls mbedtls/x509_crt
                                 check_lib mbedtls mbedtls/ssl.h mbedtls_ssl_init -lmbedtls -lmbedx509 -lmbedcrypto ||
                                 die "ERROR: mbedTLS not found"; }
  enabled mediacodec        && { enabled jni || die "ERROR: mediacodec requires --enable-jni"; }

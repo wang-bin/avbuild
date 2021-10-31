@@ -1,4 +1,4 @@
-From 16cf38646ef17d81de27ed4eb3d02102e458715a Mon Sep 17 00:00:00 2001
+From c47c095010147ea029409fc927c6376c750410ca Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 3 Jul 2020 14:09:54 +0800
 Subject: [PATCH 19/22] nvenc: check sdk 10.0 ptrs at runtime
@@ -8,10 +8,10 @@ Subject: [PATCH 19/22] nvenc: check sdk 10.0 ptrs at runtime
  1 file changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/libavcodec/nvenc.c b/libavcodec/nvenc.c
-index c86e21ac38..042dd563bf 100644
+index 6e3a5f7710..c0e2087a39 100644
 --- a/libavcodec/nvenc.c
 +++ b/libavcodec/nvenc.c
-@@ -1381,17 +1381,18 @@ static av_cold int nvenc_setup_encoder(AVCodecContext *avctx)
+@@ -1296,17 +1296,18 @@ static av_cold int nvenc_setup_encoder(AVCodecContext *avctx)
      else if (ctx->flags & NVENC_LOWLATENCY)
          ctx->init_encode_params.tuningInfo = NV_ENC_TUNING_INFO_LOW_LATENCY;
  

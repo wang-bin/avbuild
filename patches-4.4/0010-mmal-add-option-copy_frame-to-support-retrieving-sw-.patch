@@ -1,4 +1,4 @@
-From 16028c5d9557e21a2736aae97cca389ad49022b8 Mon Sep 17 00:00:00 2001
+From db513a68cdcb7f4d0693095f8aaaa1a551db4c21 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 17 Nov 2017 14:54:23 +0800
 Subject: [PATCH 10/22] mmal: add option copy_frame to support retrieving sw
@@ -14,7 +14,7 @@ turned off
  1 file changed, 23 insertions(+), 8 deletions(-)
 
 diff --git a/libavcodec/mmaldec.c b/libavcodec/mmaldec.c
-index e4b930d9f5..6cce503495 100644
+index 14e203a717..6132bc0c0a 100644
 --- a/libavcodec/mmaldec.c
 +++ b/libavcodec/mmaldec.c
 @@ -70,6 +70,7 @@ typedef struct MMALDecodeContext {
@@ -75,7 +75,7 @@ index e4b930d9f5..6cce503495 100644
      }
  
      frame->pts = buffer->pts == MMAL_TIME_UNKNOWN ? AV_NOPTS_VALUE : buffer->pts;
-@@ -838,6 +852,7 @@ AVHWAccel ff_wmv3_mmal_hwaccel = {
+@@ -843,6 +857,7 @@ AVHWAccel ff_wmv3_mmal_hwaccel = {
  static const AVOption options[]={
      {"extra_buffers", "extra buffers", offsetof(MMALDecodeContext, extra_buffers), AV_OPT_TYPE_INT, {.i64 = 10}, 0, 256, 0},
      {"extra_decoder_buffers", "extra MMAL internal buffered frames", offsetof(MMALDecodeContext, extra_decoder_buffers), AV_OPT_TYPE_INT, {.i64 = 10}, 0, 256, 0},

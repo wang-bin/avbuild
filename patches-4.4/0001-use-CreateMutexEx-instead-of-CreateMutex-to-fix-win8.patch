@@ -1,4 +1,4 @@
-From 072d9b7ae4e861395bf8a0c87845ae84d0a19950 Mon Sep 17 00:00:00 2001
+From c3e916dbc63b2cfb79303d1fe51a34c324ea1460 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sat, 28 Oct 2017 20:26:50 +0800
 Subject: [PATCH 01/22] use CreateMutexEx instead of CreateMutex to fix win8
@@ -9,7 +9,7 @@ Subject: [PATCH 01/22] use CreateMutexEx instead of CreateMutex to fix win8
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/libavutil/hwcontext_d3d11va.c b/libavutil/hwcontext_d3d11va.c
-index 8ab96bad25..9fa58506af 100644
+index 2a3549ebd8..aecf2df42b 100644
 --- a/libavutil/hwcontext_d3d11va.c
 +++ b/libavutil/hwcontext_d3d11va.c
 @@ -41,6 +41,10 @@
@@ -23,7 +23,7 @@ index 8ab96bad25..9fa58506af 100644
  typedef HRESULT(WINAPI *PFN_CREATE_DXGI_FACTORY)(REFIID riid, void **ppFactory);
  
  static AVOnce functions_loaded = AV_ONCE_INIT;
-@@ -462,7 +466,7 @@ static int d3d11va_device_init(AVHWDeviceContext *hwdev)
+@@ -448,7 +452,7 @@ static int d3d11va_device_init(AVHWDeviceContext *hwdev)
      HRESULT hr;
  
      if (!device_hwctx->lock) {

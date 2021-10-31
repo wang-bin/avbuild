@@ -1,7 +1,7 @@
-From 2143902fc810f002c8effa667bca4e40fc688e38 Mon Sep 17 00:00:00 2001
+From 80a8695ca2d8bf819004d281f1b6554732195087 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 13 Nov 2017 15:14:26 +0800
-Subject: [PATCH 09/20] mmal: add vp8, mjpeg, wmv3
+Subject: [PATCH 09/22] mmal: add vp8, mjpeg, wmv3
 
 ---
  configure              |  3 +++
@@ -10,10 +10,10 @@ Subject: [PATCH 09/20] mmal: add vp8, mjpeg, wmv3
  3 files changed, 32 insertions(+)
 
 diff --git a/configure b/configure
-index a6a138e686..ba662df8e7 100755
+index 5604517256..245a182ce2 100755
 --- a/configure
 +++ b/configure
-@@ -3133,6 +3133,7 @@ hevc_vaapi_encoder_select="cbs_h265 vaapi_encode"
+@@ -3145,6 +3145,7 @@ hevc_vaapi_encoder_select="cbs_h265 vaapi_encode"
  hevc_v4l2m2m_decoder_deps="v4l2_m2m hevc_v4l2_m2m"
  hevc_v4l2m2m_decoder_select="hevc_mp4toannexb_bsf"
  hevc_v4l2m2m_encoder_deps="v4l2_m2m hevc_v4l2_m2m"
@@ -21,7 +21,7 @@ index a6a138e686..ba662df8e7 100755
  mjpeg_cuvid_decoder_deps="cuvid"
  mjpeg_qsv_decoder_select="qsvdec"
  mjpeg_qsv_encoder_deps="libmfx"
-@@ -3163,6 +3164,7 @@ vc1_cuvid_decoder_deps="cuvid"
+@@ -3175,6 +3176,7 @@ vc1_cuvid_decoder_deps="cuvid"
  vc1_mmal_decoder_deps="mmal"
  vc1_qsv_decoder_select="qsvdec"
  vc1_v4l2m2m_decoder_deps="v4l2_m2m vc1_v4l2_m2m"
@@ -29,7 +29,7 @@ index a6a138e686..ba662df8e7 100755
  vp8_cuvid_decoder_deps="cuvid"
  vp8_mediacodec_decoder_deps="mediacodec"
  vp8_qsv_decoder_select="qsvdec"
-@@ -3181,6 +3183,7 @@ vp9_qsv_encoder_deps="libmfx MFX_CODEC_VP9"
+@@ -3193,6 +3195,7 @@ vp9_qsv_encoder_deps="libmfx MFX_CODEC_VP9"
  vp9_qsv_encoder_select="qsvenc"
  vp9_v4l2m2m_decoder_deps="v4l2_m2m vp9_v4l2_m2m"
  wmv3_crystalhd_decoder_select="crystalhd"
@@ -38,10 +38,10 @@ index a6a138e686..ba662df8e7 100755
  
  # parsers
 diff --git a/libavcodec/allcodecs.c b/libavcodec/allcodecs.c
-index 623db2a9fa..94f9a1e57c 100644
+index 9ede09be17..a7b3b66c62 100644
 --- a/libavcodec/allcodecs.c
 +++ b/libavcodec/allcodecs.c
-@@ -816,6 +816,7 @@ extern const AVCodec ff_hevc_vaapi_encoder;
+@@ -824,6 +824,7 @@ extern const AVCodec ff_hevc_vaapi_encoder;
  extern const AVCodec ff_hevc_videotoolbox_encoder;
  extern const AVCodec ff_libkvazaar_encoder;
  extern const AVCodec ff_mjpeg_cuvid_decoder;
@@ -49,7 +49,7 @@ index 623db2a9fa..94f9a1e57c 100644
  extern const AVCodec ff_mjpeg_qsv_encoder;
  extern const AVCodec ff_mjpeg_qsv_decoder;
  extern const AVCodec ff_mjpeg_vaapi_encoder;
-@@ -831,6 +832,7 @@ extern const AVCodec ff_mpeg4_v4l2m2m_encoder;
+@@ -839,6 +840,7 @@ extern const AVCodec ff_mpeg4_v4l2m2m_encoder;
  extern const AVCodec ff_vc1_cuvid_decoder;
  extern const AVCodec ff_vp8_cuvid_decoder;
  extern const AVCodec ff_vp8_mediacodec_decoder;
@@ -57,7 +57,7 @@ index 623db2a9fa..94f9a1e57c 100644
  extern const AVCodec ff_vp8_qsv_decoder;
  extern const AVCodec ff_vp8_v4l2m2m_encoder;
  extern const AVCodec ff_vp8_vaapi_encoder;
-@@ -839,6 +841,7 @@ extern const AVCodec ff_vp9_mediacodec_decoder;
+@@ -847,6 +849,7 @@ extern const AVCodec ff_vp9_mediacodec_decoder;
  extern const AVCodec ff_vp9_qsv_decoder;
  extern const AVCodec ff_vp9_vaapi_encoder;
  extern const AVCodec ff_vp9_qsv_encoder;
@@ -126,5 +126,5 @@ index 9818e4ef04..e4b930d9f5 100644
 +FFMMAL_DEC(vp8, AV_CODEC_ID_VP8)
 +FFMMAL_DEC(wmv3, AV_CODEC_ID_WMV3)
 -- 
-2.24.3 (Apple Git-128)
+2.30.1 (Apple Git-130)
 

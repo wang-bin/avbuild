@@ -1,4 +1,4 @@
-From ec064cac996d2b06e84705560cb01fdad66be221 Mon Sep 17 00:00:00 2001
+From 6c47b227d211b69f0b0cbd8f1a7b7a4c8f50aec9 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:52:35 +0800
 Subject: [PATCH 05/22] mediacodec: check whether cropping is set before use
@@ -8,10 +8,10 @@ Subject: [PATCH 05/22] mediacodec: check whether cropping is set before use
  1 file changed, 9 insertions(+), 7 deletions(-)
 
 diff --git a/libavcodec/mediacodecdec_common.c b/libavcodec/mediacodecdec_common.c
-index cb18aed401..58ffdba255 100644
+index 404ed28227..9fca9263c3 100644
 --- a/libavcodec/mediacodecdec_common.c
 +++ b/libavcodec/mediacodecdec_common.c
-@@ -484,13 +484,15 @@ static int mediacodec_dec_parse_format(AVCodecContext *avctx, MediaCodecDecConte
+@@ -494,13 +494,15 @@ static int mediacodec_dec_parse_format(AVCodecContext *avctx, MediaCodecDecConte
      }
  
      /* Optional fields */

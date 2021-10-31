@@ -1,7 +1,7 @@
-From 894358d9f99508119cf7abeb6eb7cc55f65cba4b Mon Sep 17 00:00:00 2001
+From a26fd2b722122fb4fd3f5ac781f1c1620c1d94ec Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 13 Nov 2017 15:14:26 +0800
-Subject: [PATCH 09/20] mmal: add vp8, mjpeg, wmv3
+Subject: [PATCH 09/22] mmal: add vp8, mjpeg, wmv3
 
 ---
  configure              |  3 +++
@@ -10,7 +10,7 @@ Subject: [PATCH 09/20] mmal: add vp8, mjpeg, wmv3
  3 files changed, 32 insertions(+)
 
 diff --git a/configure b/configure
-index 403a212031..262089f041 100755
+index de86c0c352..75fe31efa6 100755
 --- a/configure
 +++ b/configure
 @@ -3108,6 +3108,7 @@ hevc_vaapi_encoder_select="cbs_h265 vaapi_encode"
@@ -126,5 +126,5 @@ index a00b57ae2f..14e203a717 100644
 +FFMMAL_DEC(vp8, AV_CODEC_ID_VP8)
 +FFMMAL_DEC(wmv3, AV_CODEC_ID_WMV3)
 -- 
-2.24.3 (Apple Git-128)
+2.30.1 (Apple Git-130)
 

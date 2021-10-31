@@ -1,4 +1,4 @@
-From b10c59483da1c0718a6375e7683a5dc40af6045e Mon Sep 17 00:00:00 2001
+From 0f184160e2875ee5878d73530ab0142d5e5123d0 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 9 Nov 2017 15:05:26 +0800
 Subject: [PATCH 07/22] videotoolbox: allow software implementation

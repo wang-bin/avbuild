@@ -1,4 +1,4 @@
-From bc508e3d2df7df140e5fe7cbdb907b0768268356 Mon Sep 17 00:00:00 2001
+From 0022d9ddf4762dd1a4f548e4b39c310cbe2cb5ee Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 24 Dec 2018 16:06:30 +0800
 Subject: [PATCH 15/22] clang-cl: fix undeclared _byteswap_ulong

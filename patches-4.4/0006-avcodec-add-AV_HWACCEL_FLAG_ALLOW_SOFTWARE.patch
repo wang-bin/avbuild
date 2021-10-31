@@ -1,4 +1,4 @@
-From ebfdeb183238a44ae40781254122494874eee2d8 Mon Sep 17 00:00:00 2001
+From 784ec22c08fa2a399fca666c18b69fb31bc63b6a Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 9 Nov 2017 14:56:53 +0800
 Subject: [PATCH 06/22] avcodec: add AV_HWACCEL_FLAG_ALLOW_SOFTWARE
@@ -11,10 +11,10 @@ the performance may be better than ffmpeg sw decoder.
  2 files changed, 5 insertions(+)
 
 diff --git a/libavcodec/avcodec.h b/libavcodec/avcodec.h
-index 7ee8bc2b7c..93e825950d 100644
+index 8a71c04230..d41a6c5a22 100644
 --- a/libavcodec/avcodec.h
 +++ b/libavcodec/avcodec.h
-@@ -2234,6 +2234,10 @@ typedef struct AVHWAccel {
+@@ -2633,6 +2633,10 @@ typedef struct AVHWAccel {
   */
  #define AV_HWACCEL_FLAG_ALLOW_PROFILE_MISMATCH (1 << 2)
  
@@ -26,10 +26,10 @@ index 7ee8bc2b7c..93e825950d 100644
   * @}
   */
 diff --git a/libavcodec/options_table.h b/libavcodec/options_table.h
-index 130341a2ec..5371d42b3a 100644
+index e12159f734..a835f39a8b 100644
 --- a/libavcodec/options_table.h
 +++ b/libavcodec/options_table.h
-@@ -390,6 +390,7 @@ static const AVOption avcodec_options[] = {
+@@ -465,6 +465,7 @@ static const AVOption avcodec_options[] = {
  {"ignore_level", "ignore level even if the codec level used is unknown or higher than the maximum supported level reported by the hardware driver", 0, AV_OPT_TYPE_CONST, { .i64 = AV_HWACCEL_FLAG_IGNORE_LEVEL }, INT_MIN, INT_MAX, V | D, "hwaccel_flags" },
  {"allow_high_depth", "allow to output YUV pixel formats with a different chroma sampling than 4:2:0 and/or other than 8 bits per component", 0, AV_OPT_TYPE_CONST, {.i64 = AV_HWACCEL_FLAG_ALLOW_HIGH_DEPTH }, INT_MIN, INT_MAX, V | D, "hwaccel_flags"},
  {"allow_profile_mismatch", "attempt to decode anyway if HW accelerated decoder's supported profiles do not exactly match the stream", 0, AV_OPT_TYPE_CONST, {.i64 = AV_HWACCEL_FLAG_ALLOW_PROFILE_MISMATCH }, INT_MIN, INT_MAX, V | D, "hwaccel_flags"},

@@ -87,11 +87,18 @@ echo $FFMAJOR |grep '\-' &>/dev/null && {
   FFGIT=true
   FFMAJOR=$MAJOR_GUESS
 }
+[ $MAJOR_GUESS -gt $FFMAJOR ] && {
+  echo "before major bump to $MAJOR_GUESS"
+  FFMAJOR=$MAJOR_GUESS
+  FFMINOR=0
+}
 ! $FFGIT && [ ${FFMAJOR} -gt 3 ] && FFGIT=true
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR  git: $FFGIT"
-: ${PATCH_MASTER:=true}
-if $FFGIT && $PATCH_MASTER ; then
-  for p in $(find "$THIS_DIR/patches-master" -name "*.patch"); do
+PATCH_BRANCH=master
+[ $FFMAJOR -lt 5 ] && PATCH_BRANCH=4.4
+if $FFGIT; then
+  for p in $(find "$THIS_DIR/patches-$PATCH_BRANCH" -name "*.patch"); do
+      echo $p
     patch -p1 -N < $p
   done
 fi

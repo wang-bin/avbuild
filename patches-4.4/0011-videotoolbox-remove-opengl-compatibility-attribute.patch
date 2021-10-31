@@ -1,4 +1,4 @@
-From c2fd18c0153ef866bf410577b4860deddfb2d5f4 Mon Sep 17 00:00:00 2001
+From a7be9edfb03be8bc7cb27446b705b90fcf0fff3f Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 15 Dec 2017 11:34:06 +0800
 Subject: [PATCH 11/22] videotoolbox: remove opengl compatibility attribute

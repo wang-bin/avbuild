@@ -1,4 +1,4 @@
-From 268b5420edb1b5ceb065463c870e72cb6f6cc009 Mon Sep 17 00:00:00 2001
+From 15ad69775014eadb4286f1ecbb446719f95b1074 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 29 Mar 2018 15:21:04 +0800
 Subject: [PATCH 12/22] mediacodec: remove unused MediaCodec.getName

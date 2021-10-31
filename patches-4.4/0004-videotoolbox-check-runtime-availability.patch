@@ -1,4 +1,4 @@
-From ec369810526ca8e8a1afe6073d8ffb75678b5586 Mon Sep 17 00:00:00 2001
+From da4fdddc5a0e436a660a85ce43e4abbd0d5500e4 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:35:28 +0800
 Subject: [PATCH 04/22] videotoolbox: check runtime availability

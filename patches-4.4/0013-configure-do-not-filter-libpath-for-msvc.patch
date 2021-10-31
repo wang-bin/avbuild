@@ -1,4 +1,4 @@
-From 2cc2fa6b26b7a7a3488a5c3fa6fba74a02e870b4 Mon Sep 17 00:00:00 2001
+From 9ad2b0e3c9bb21234ae09c1afd94e308e010a90b Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 30 Mar 2018 10:46:43 +0800
 Subject: [PATCH 13/22] configure: do not filter -libpath for msvc
@@ -8,10 +8,10 @@ Subject: [PATCH 13/22] configure: do not filter -libpath for msvc
  1 file changed, 1 insertion(+)
 
 diff --git a/configure b/configure
-index 245a182ce2..464df3bd4a 100755
+index 75fe31efa6..14a5e4e463 100755
 --- a/configure
 +++ b/configure
-@@ -4528,6 +4528,7 @@ msvc_common_flags(){
+@@ -4497,6 +4497,7 @@ msvc_common_flags(){
              -lz)                  echo zlib.lib ;;
              -lx264)               echo libx264.lib ;;
              -lstdc++)             ;;
