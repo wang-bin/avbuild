@@ -123,8 +123,8 @@ jobs:
         path: ffmpeg-*.tar.xz
 
 
-  VS2019:
-    runs-on: windows-latest
+  VS2022:
+    runs-on: windows-2022
     env:
       TARGET_OS: ${{ matrix.target }}
       CONFIG_SUFFIX: -${{ matrix.config }}
@@ -168,17 +168,17 @@ jobs:
         set HOME=%CD%
         set FFSRC=%CD%\ffmpeg-%FF_VERSION%
         set BUILD_NOW=true
-        tools\vcbuild.bat VS2019 %TARGET_OS%10 all
+        tools\vcbuild.bat VS2022 %TARGET_OS%10 all
     - name: Make SDK
       shell: cmd
       run: |
-        set SDK_NAME=ffmpeg-%FF_VERSION%-%TARGET_OS%-vs2019%CONFIG_SUFFIX%
+        set SDK_NAME=ffmpeg-%FF_VERSION%-%TARGET_OS%-vs2022%CONFIG_SUFFIX%
         move sdk* %SDK_NAME%
         7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off %SDK_NAME%.7z %SDK_NAME%
     - name: Archieve SDK
       uses: actions/upload-artifact@v2
       with:
-        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-VS2019${{ matrix.config }}
+        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-VS2022${{ matrix.config }}
         path: ffmpeg-*.7z
 
 
@@ -411,24 +411,24 @@ jobs:
 
   Upload:
     runs-on: ubuntu-latest
-    needs: [VS2019]
+    needs: [VS2022]
     steps:
-    - name: Download vs2019 desktop
+    - name: Download vs2022 desktop
       uses: actions/download-artifact@v2
       with:
-        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2019default
-    - name: Download vs2019 desktop lite
+        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2022default
+    - name: Download vs2022 desktop lite
       uses: actions/download-artifact@v2
       with:
-        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2019lite
-    - name: Download vs2019 uwp
+        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2022lite
+    - name: Download vs2022 uwp
       uses: actions/download-artifact@v2
       with:
-        name: ffmpeg-${{ env.FF_VERSION }}-uwp-VS2019default
-    - name: Download vs2019 uwp lite
+        name: ffmpeg-${{ env.FF_VERSION }}-uwp-VS2022default
+    - name: Download vs2022 uwp lite
       uses: actions/download-artifact@v2
       with:
-        name: ffmpeg-${{ env.FF_VERSION }}-uwp-VS2019lite
+        name: ffmpeg-${{ env.FF_VERSION }}-uwp-VS2022lite
     - name: Upload to SourceForge
       shell: bash
       run:  |

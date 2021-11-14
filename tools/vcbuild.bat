@@ -118,7 +118,7 @@ goto SetupVCEnvLegacy
 for /f "usebackq tokens=*" %%i in (`%~dp0vswhere  -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
   set VS_INSTALL_DIR=%%i
 )
-if [%VS_INSTALL_DIR%] == [] (
+if ["%VS_INSTALL_DIR%"] == [""] (
   for /f "usebackq tokens=*" %%i in (`%~dp0vswhere -prerelease -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
     set VS_INSTALL_DIR=%%i
   )
