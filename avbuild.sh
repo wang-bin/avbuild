@@ -24,7 +24,7 @@ target_platform can be: ${PLATFORMS}
 target_architecture can be: x86, x86_64, armv5, armv6, armv7, armv8, arm64
 Build for host if no parameter is set.
 Use a shortcut in tools dir if build for windows using MSVC.
-Environment vars: USE_TOOLCHAIN(clang, gcc etc.), USE_LD(clang, lld etc.), USER_OPT, ANDROID_NDK, SYSROOT, ONECORE(="onecore")
+Environment vars: USE_TOOLCHAIN(clang, gcc etc.), USE_LD(clang, lld etc.), USER_OPT, ANDROID_NDK, SYSROOT, ONECORE(="onecore", "onecore-$arch")
 Add options via USER_OPT, \${platform}_OPT
 config.sh and config-${target_platform}.sh is automatically included. config-lite.sh is for building smaller libraries.
 HELP
@@ -476,9 +476,9 @@ setup_win_clang(){
     HAS_CUDA=false
     setup_winrt_env
     # onecore/vcruntime.lib imports symbols from vcruntime140.dll, while store/vcruntime.lib imports them from vcruntime140_app.dll, both dlls can run in desktop mode
-    [[ "$ONECORE" == onecore ]] && EXTRALIBS+=" OneCoreUAP.Lib" || STORE=store
+    [[ "$ONECORE" == onecore || "$ONECORE" == *-"$Platform" ]] && EXTRALIBS+=" OneCoreUAP.Lib" || STORE=store
   } || {
-    [[ "$ONECORE" == onecore ]] && EXTRALIBS+=" OneCore.Lib"
+    [[ "$ONECORE" == onecore || "$ONECORE" == *-"$Platform" ]] && EXTRALIBS+=" OneCore.Lib"
   }
   $HAS_CUDA && enable_cuda_llvm || disable_opt cuda-llvm
   # environment var LIB is used by lld-link, in windows style, i.e. export LIB=dir1;dir2;...
@@ -519,7 +519,7 @@ echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG
   win10inc=(shared ucrt um winrt)
   win10inc=(${win10inc[@]/#/$WindowsSdkDir/Include/$WindowsSDKVersion/})
   IFS=\; eval 'INCLUDE="${win10inc[*]}"'
-  local VCDIR_LIB=$VCDIR/lib/$ONECORE/${MACHINE/86_/}/$STORE
+  local VCDIR_LIB=$VCDIR/lib/${ONECORE%%-*}/${MACHINE/86_/}/$STORE
   ARCH120=${MACHINE/*86_*/amd64} #vc120 sdk layout
   ARCH120=${ARCH120/x64/amd64}
   ARCH120=${ARCH120/x86/}

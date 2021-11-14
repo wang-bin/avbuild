@@ -35,7 +35,6 @@ if /i [%VS_CL:~0,2%] == [vs] (
 	if [%VS_CL:~2%] == [2022] (
         set VSVER=170
         set VCRT_VER=143
-		set VSWHERE_CMD_EXTRA=-prerelease
     )
 )
 :: vs2017 cl1910
@@ -116,8 +115,13 @@ if [%VSVER%] == [170] goto SetupVC160Env
 goto SetupVCEnvLegacy
 
 :SetupVC160Env
-for /f "usebackq tokens=*" %%i in (`%~dp0vswhere %VSWHERE_CMD_EXTRA% -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
+for /f "usebackq tokens=*" %%i in (`%~dp0vswhere  -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
   set VS_INSTALL_DIR=%%i
+)
+if [%VS_INSTALL_DIR%] == [] (
+  for /f "usebackq tokens=*" %%i in (`%~dp0vswhere -prerelease -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
+    set VS_INSTALL_DIR=%%i
+  )
 )
 set VCVARSALL_BAT=%VS_INSTALL_DIR%\VC\Auxiliary\Build\vcvarsall.bat
 echo VCVARSALL_BAT=%VCVARSALL_BAT%
