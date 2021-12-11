@@ -620,7 +620,7 @@ EOF
 
 setup_vc_desktop_env() {
 # http://ffmpeg.org/platform.html#Microsoft-Visual-C_002b_002b-or-Intel-C_002b_002b-Compiler-for-Windows
-  enable_libmfx
+  #enable_libmfx # msys2: -I -libpath path starts with X:/. wsl: -libpath:X:/ is ignored
   enable_opt dxva2
   # ldflags prepends flags. extralibs appends libs and add to pkg-config
   # can not use -luser32 because extralibs will not be filter -l to .lib (ldflags_filter is not ready, ffmpeg bug)
