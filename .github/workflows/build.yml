@@ -146,6 +146,7 @@ jobs:
         if not [%CONFIG_SUFFIX%]==[-default] copy /y config%CONFIG_SUFFIX%.sh config.sh
     - uses: msys2/setup-msys2@v2
       with:
+        release: false # disable installation cache, so exe path in avbuild.sh is correct
         msystem: MSYS
         update: true
         install: >-
