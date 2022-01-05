@@ -1,4 +1,4 @@
-# A script to create libffmpeg single shared library. Author: 'wbsecg1 at gmail.com' 2019. MIT license
+# A script to create libffmpeg single shared library. Author: 'wbsecg1 at gmail.com' 2019-2022. MIT license
 BUILD_DIR=$1
 INSTALL_DIR=$2
 cd "$BUILD_DIR"
@@ -43,6 +43,12 @@ DUP_OBJS=(libswscale/log2_tab.o libswresample/log2_tab.o libavcodec/log2_tab.o l
   libavcodec/file_open.o libavformat/file_open.o libavdevice/file_open.o
   libavformat/golomb_tab.o
   libavcodec/reverse.o libavdevice/reverse.o
+  libavformat/to_upper4.o
+  libavformat/dca_sample_rate_tab.o
+  libavformat/ac3_channel_layout_tab.o
+  libavformat/jpegtables.o
+  libavformat/mpegaudiotabs.o
+  libavformat/mpeg4audio_sample_rates.o
   )
 OBJS=`find compat lib* -name "*.o" |grep -vE "$(join '|' ${DUP_OBJS[@]})"`
 # appveyor PATH value is very large, xargs gets error "environment is too large for exec", so use echo
