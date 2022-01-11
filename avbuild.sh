@@ -421,6 +421,8 @@ setup_win(){
   [ -f "$dxva_h" ] && {
       grep -n DXVA_Tile_AV1 "$dxva_h" &>/dev/null || patch -p1 "$dxva_h" <patches/dxva-av1.diff
   }
+  # LLVM for windows (on github ci /C/Program Files/LLVM/bin/clang) fail to build ffmpeg 4.4 libavfilter/vf_scale_cuda_bicubic.ptx.c(3625): fatal error C1060: compiler is out of heap space
+  [ -n "$MSYSTEM" -a $FFMAJOR = 4 ]  && USER_OPT+=" --disable-filter=scale_cuda"
 }
 
 setup_win_clang(){
