@@ -164,7 +164,7 @@ jobs:
       shell: cmd
       run: |
         7z x -y dep.7z -otools
-        set PKG_CONFIG_PATH_MFX=%CD%\tools\VS2019\lib\pkgconfig
+        set PKG_CONFIG_PATH_MFX=%CD%\tools\VS2022\lib\pkgconfig
         set MSYS2_DIR=C:\msys64
         set HOME=%CD%
         set FFSRC=%CD%\ffmpeg-%FF_VERSION%
