@@ -8,7 +8,7 @@ How: https://github.com/wang-bin/avbuild/wiki
 
 Lite build of FFmpeg master branch **(recommended)**:
 
-[Raspberry Pi](https://sourceforge.net/projects/avbuild/files/raspberry-pi/ffmpeg-master-raspberry-pi-clang-lite.tar.xz/download), [Android](https://sourceforge.net/projects/avbuild/files/android/ffmpeg-master-android-clang-lite.tar.xz/download), [iOS](https://sourceforge.net/projects/avbuild/files/iOS/ffmpeg-master-iOS-lite.tar.xz/download), [macOS](https://sourceforge.net/projects/avbuild/files/macOS/ffmpeg-master-macOS-lite.tar.xz/download), [Linux](https://sourceforge.net/projects/avbuild/files/linux/ffmpeg-master-linux-gcc-lite.tar.xz/download), [VS2019 Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-master-windows-desktop-vs2019-lite.7z/download), [VS2019 UWP](https://sourceforge.net/projects/avbuild/files/uwp/ffmpeg-master-uwp-vs2019-lite.7z/download), [Clang Windows Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-master-windows-desktop-clang-lite.tar.xz/download), [Clang UWP](https://sourceforge.net/projects/avbuild/files/uwp/ffmpeg-master-uwp-clang-lite.tar.xz/download)
+[Raspberry Pi](https://sourceforge.net/projects/avbuild/files/raspberry-pi/ffmpeg-master-raspberry-pi-clang-lite.tar.xz/download), [Android](https://sourceforge.net/projects/avbuild/files/android/ffmpeg-master-android-clang-lite.tar.xz/download), [iOS](https://sourceforge.net/projects/avbuild/files/iOS/ffmpeg-master-iOS-lite.tar.xz/download), [macOS](https://sourceforge.net/projects/avbuild/files/macOS/ffmpeg-master-macOS-lite.tar.xz/download), [Linux](https://sourceforge.net/projects/avbuild/files/linux/ffmpeg-master-linux-gcc-lite.tar.xz/download), [VS2022 Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-master-windows-desktop-vs2022-lite.7z/download), [VS2022 UWP](https://sourceforge.net/projects/avbuild/files/uwp/ffmpeg-master-uwp-vs2022-lite.7z/download), [Clang Windows Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-master-windows-desktop-clang-lite.tar.xz/download), [Clang UWP](https://sourceforge.net/projects/avbuild/files/uwp/ffmpeg-master-uwp-clang-lite.tar.xz/download)
 
 FFmpeg releases and others: https://sourceforge.net/projects/avbuild/files
 
@@ -16,7 +16,7 @@ FFmpeg releases and others: https://sourceforge.net/projects/avbuild/files
 
 Linux, android, macOS, iOS, raspberry pi, windows cross build:**[![Build status github](https://github.com/wang-bin/avbuild/workflows/Build/badge.svg)](https://github.com/wang-bin/avbuild/actions)** [![Build Status](https://dev.azure.com/kb137035/github/_apis/build/status/wang-bin.avbuild?branchName=master)](https://dev.azure.com/kb137035/github/_build/latest?definitionId=5&branchName=master), [CircleCI](https://circleci.com/gh/wang-bin/avbuild)
 
-windows mingw, vs2013~2019, desktop/store/phone: [![appveyor_ci](https://ci.appveyor.com/api/projects/status/github/wang-bin/avbuild?branch=master&svg=true)](https://ci.appveyor.com/project/wang-bin/avbuild)
+windows mingw, vs2013~2022, desktop/store/phone: [![appveyor_ci](https://ci.appveyor.com/api/projects/status/github/wang-bin/avbuild?branch=master&svg=true)](https://ci.appveyor.com/project/wang-bin/avbuild)
 
 ## Features
 
@@ -49,4 +49,4 @@ windows mingw, vs2013~2019, desktop/store/phone: [![appveyor_ci](https://ci.appv
 
 ## TODO
 - single package for windows including shared and static libs
-- Azure pipeline/github action: vs2019+WSL, MinGW
+- Azure pipeline/github action: vs2022+WSL, MinGW
