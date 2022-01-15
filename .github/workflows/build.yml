@@ -20,12 +20,12 @@ jobs:
     runs-on: macos-11
     env:
       TARGET_OS: ${{ matrix.target }}
-      CONFIG_SUFFIX: -${{ matrix.config }}
+      CONFIG_SUFFIX: -gpl-${{ matrix.config }}
     strategy:
       fail-fast: false
       matrix:
-        config: [default,lite]
-        target: [macOS,iOS,iOSSimulator,macCatalyst]
+        config: [lite]
+        target: [macOS,iOS]
         exclude:
           - config: default
             target: iOSSimulator
@@ -38,14 +38,26 @@ jobs:
       env:
         DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
         EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
-      run: ./tools/ci-before-build.sh
-    - name: Configure and Build
+      run: |
+        ./tools/ci-before-build.sh
+        wget https://sourceforge.net/projects/avbuild/files/dep/dep_gpl.7z/download -O dep_gpl.7z
+        7z x -y dep_gpl.7z -otools
+    - name: Configure and Build macOS
+      if: ${{ matrix.target == 'macOS' }}
       # Use a bash shell so we can use the same syntax for environment variable
       # access regardless of the host operating system
       shell: bash
       run: |
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         ./avbuild.sh ${TARGET_OS}
+    - name: Configure and Build iOS arm64
+      if: ${{ matrix.target == 'iOS' }}
+      # Use a bash shell so we can use the same syntax for environment variable
+      # access regardless of the host operating system
+      shell: bash
+      run: |
+        export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+        ./avbuild.sh ${TARGET_OS} arm64
     - name: Make SDK
       shell: bash
       run: ./tools/ci-after-build.sh
@@ -54,85 +66,17 @@ jobs:
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
-
-  Wasm:
-    runs-on: macos-11
-    env:
-      TARGET_OS: 'wasm'
-    steps:
-    - uses: actions/checkout@v2
-    - name: Create Build Environment
-      shell: bash
-      env:
-        DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
-        EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
-      run: ./tools/ci-before-build.sh
-    - name: Configure and Build
-      shell: bash
-      run: |
-        export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-        ./avbuild.sh ${TARGET_OS}
-    - name: Make SDK
-      shell: bash
-      run: ./tools/ci-after-build.sh
-    - name: Archieve SDK
-      uses: actions/upload-artifact@v2
-      with:
-        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}
-        path: ffmpeg-*.tar.xz
-
-  RaspberryPi_clang:
-    runs-on: ubuntu-latest
-    env:
-      TARGET_OS: 'raspberry-pi'
-      COMPILER: 'clang'
-      LLVM_VER: 8
-      CONFIG_SUFFIX: -${{ matrix.config }}
-    strategy:
-      fail-fast: false
-      matrix:
-        config: [default,lite,lite-lto]
-    steps:
-    - uses: actions/checkout@v2
-    - name: 'Restore sysroot cache'
-      id: sysroot-cache
-      uses: actions/cache@v2
-      with:
-        path: /tmp/sysroot
-        key: sysroot-${{ env.TARGET_OS }}-${{ secrets.LINUX_SYSROOT_ID }}
-    - name: Create Build Environment
-      shell: bash
-      env:
-        DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
-        SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
-        EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
-      run: ./tools/ci-before-build.sh
-    - name: Configure and Build
-      shell: bash
-      run: |
-        export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-        export SYSROOT=/tmp/sysroot
-        USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh ${TARGET_OS}
-    - name: Make SDK
-      shell: bash
-      run: ./tools/ci-after-build.sh
-    - name: Archieve SDK
-      uses: actions/upload-artifact@v2
-      with:
-        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
-        path: ffmpeg-*.tar.xz
-
 
   VS2022:
     runs-on: windows-2022
     env:
       TARGET_OS: ${{ matrix.target }}
-      CONFIG_SUFFIX: -${{ matrix.config }}
+      CONFIG_SUFFIX: -gpl-${{ matrix.config }}
     strategy:
       fail-fast: false
       matrix:
-        config: [default,lite]
-        target: [windows-desktop,uwp]
+        config: [lite]
+        target: [windows-desktop]
     steps:
     - uses: actions/checkout@v2
       with:
@@ -160,16 +104,18 @@ jobs:
       shell: msys2 {0}
       run: |
         wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7z
+        wget https://sourceforge.net/projects/avbuild/files/dep/dep_gpl.7z/download -O dep_gpl.7z
     - name: Configure and Build
       shell: cmd
       run: |
         7z x -y dep.7z -otools
+        7z x -y dep_gpl.7z -otools
         set PKG_CONFIG_PATH_MFX=%CD%\tools\VS2022\lib\pkgconfig
         set MSYS2_DIR=C:\msys64
         set HOME=%CD%
         set FFSRC=%CD%\ffmpeg-%FF_VERSION%
         set BUILD_NOW=true
-        tools\vcbuild.bat VS2022 %TARGET_OS%10 all
+        tools\vcbuild.bat VS2022 %TARGET_OS%10 x64
     - name: Make SDK
       shell: cmd
       run: |
@@ -183,53 +129,6 @@ jobs:
         path: ffmpeg-*.7z
 
 
-  LAVFilters:
-    runs-on: ubuntu-latest
-    env:
-      FFREPO: 'git://git.1f0.de/ffmpeg'
-      TARGET_OS: 'windows-desktop'
-      COMPILER: clang
-      VCDIR: '/tmp/msvcrt-dev'
-      WINDOWSSDKDIR: '/tmp/winsdk'
-      PKG_CONFIG_PATH_MFX: '/tmp/ClangCL/lib/pkgconfig'
-      CONFIG_SUFFIX: '-lavfilters'
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: 'recursive'
-    - name: 'Restore sysroot cache'
-      id: sysroot-cache
-      uses: actions/cache@v2
-      with:
-        path: |
-          /tmp/winsdk
-          /tmp/msvcrt-dev
-        key: sysroot-${{ env.TARGET_OS }}${{ secrets.WINSDKVER }}-vc${{ secrets.VCVER }}${{ env.CONFIG_SUFFIX }}
-    - name: Create Build Environment
-      shell: bash
-      env:
-        DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
-        SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
-        EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
-      run: ./tools/ci-before-build.sh
-    - name: Configure and Build
-      shell: bash
-      run: |
-        export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-        export WindowsSdkDir=${WINDOWSSDKDIR}
-        export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
-        export V=1
-        USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh $TARGET_OS "x86 x64"
-    - name: Make SDK
-      shell: bash
-      run: ./tools/ci-after-build.sh
-    - name: Archieve SDK
-      uses: actions/upload-artifact@v2
-      with:
-        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-lavfilters
-        path: ffmpeg-*.tar.xz
-
-
   Windows_clang:
     runs-on: ubuntu-latest
     env:
@@ -238,60 +137,12 @@ jobs:
       VCDIR: '/tmp/msvcrt-dev'
       WINDOWSSDKDIR: '/tmp/winsdk'
       PKG_CONFIG_PATH_MFX: '/tmp/ClangCL/lib/pkgconfig'
-      CONFIG_SUFFIX: -${{ matrix.config }}
-    strategy:
-      fail-fast: false
-      matrix:
-        config: [default,lite]
-        target: [windows-desktop,uwp]
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: 'recursive'
-    - name: 'Restore sysroot cache'
-      id: sysroot-cache
-      uses: actions/cache@v2
-      with:
-        path: |
-          /tmp/winsdk
-          /tmp/msvcrt-dev
-        key: sysroot-${{ env.TARGET_OS }}${{ secrets.WINSDKVER }}-vc${{ secrets.VCVER }}
-    - name: Create Build Environment
-      shell: bash
-      env:
-        DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
-        SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
-        EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
-      run: ./tools/ci-before-build.sh
-    - name: Configure and Build
-      shell: bash
-      run: |
-        export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-        export WindowsSdkDir=${WINDOWSSDKDIR}
-        export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
-        USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh $TARGET_OS "arm64-clang-cl-${LLVM_VER} arm x86 x64"
-    - name: Make SDK
-      shell: bash
-      run: ./tools/ci-after-build.sh
-    - name: Archieve SDK
-      uses: actions/upload-artifact@v2
-      with:
-        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
-        path: ffmpeg-*.tar.xz
-
-
-  VCRT120_clang:
-    runs-on: ubuntu-latest
-    env:
-      TARGET_OS: windows-desktop
-      COMPILER: 'clang-vcrt120'
-      VCDIR: '/tmp/msvcrt-dev/120'
-      WINDOWSSDKDIR: '/tmp/winsdk'
-      CONFIG_SUFFIX: -${{ matrix.config }}
+      CONFIG_SUFFIX: -gpl-${{ matrix.config }}
     strategy:
       fail-fast: false
       matrix:
         config: [lite]
+        target: [windows-desktop]
     steps:
     - uses: actions/checkout@v2
       with:
@@ -310,14 +161,17 @@ jobs:
         DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
         SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
         EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
-      run: ./tools/ci-before-build.sh
+      run: |
+        ./tools/ci-before-build.sh
+        wget https://sourceforge.net/projects/avbuild/files/dep/dep_gpl.7z/download -O dep_gpl.7z
+        7z x -y dep_gpl.7z -otools
     - name: Configure and Build
       shell: bash
       run: |
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export WindowsSdkDir=${WINDOWSSDKDIR}
         export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
-        USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh $TARGET_OS "x86 x64"
+        USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh $TARGET_OS x64
     - name: Make SDK
       shell: bash
       run: ./tools/ci-after-build.sh
@@ -334,11 +188,11 @@ jobs:
       TARGET_OS: linux
       COMPILER: clang
       PKG_CONFIG_PATH_MFX: "/tmp/linux64-gcc/lib/pkgconfig"
-      CONFIG_SUFFIX: -${{ matrix.config }}
+      CONFIG_SUFFIX: -gpl-${{ matrix.config }}
     strategy:
       fail-fast: false
       matrix:
-        config: [default,lite,lite-lto]
+        config: [lite]
     steps:
     - uses: actions/checkout@v2
       with:
@@ -355,13 +209,16 @@ jobs:
         DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
         SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
         EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
-      run: ./tools/ci-before-build.sh
+      run: |
+        ./tools/ci-before-build.sh
+        wget https://sourceforge.net/projects/avbuild/files/dep/dep_gpl.7z/download -O dep_gpl.7z
+        7z x -y dep_gpl.7z -otools
     - name: Configure and Build
       shell: bash
       run: |
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export SYSROOT=/tmp/sysroot
-        USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh linux "amd64 arm64 armhf"
+        USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh linux "amd64"
     - name: Make SDK
       shell: bash
       run: ./tools/ci-after-build.sh
@@ -375,11 +232,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TARGET_OS: android
-      CONFIG_SUFFIX: -${{ matrix.config }}
+      CONFIG_SUFFIX: -gpl-${{ matrix.config }}
     strategy:
       fail-fast: false
       matrix:
-        config: [default,lite,lite-lto]
+        config: [lite]
     steps:
     - uses: actions/checkout@v2
     - name: 'Restore sysroot cache'
@@ -394,13 +251,16 @@ jobs:
         DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
         SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
         EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
-      run: ./tools/ci-before-build.sh
+      run: |
+        ./tools/ci-before-build.sh
+        wget https://sourceforge.net/projects/avbuild/files/dep/dep_gpl.7z/download -O dep_gpl.7z
+        7z x -y dep_gpl.7z -otools
     - name: Configure and Build
       shell: bash
       run: |
         export ANDROID_NDK=$ANDROID_NDK_LATEST_HOME
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-        ./avbuild.sh ${TARGET_OS}
+        ./avbuild.sh ${TARGET_OS} arm64
     - name: Make SDK
       shell: bash
       run: ./tools/ci-after-build.sh
@@ -414,22 +274,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [VS2022]
     steps:
-    - name: Download vs2022 desktop
-      uses: actions/download-artifact@v2
-      with:
-        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2022default
     - name: Download vs2022 desktop lite
       uses: actions/download-artifact@v2
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2022lite
-    - name: Download vs2022 uwp
-      uses: actions/download-artifact@v2
-      with:
-        name: ffmpeg-${{ env.FF_VERSION }}-uwp-VS2022default
-    - name: Download vs2022 uwp lite
-      uses: actions/download-artifact@v2
-      with:
-        name: ffmpeg-${{ env.FF_VERSION }}-uwp-VS2022lite
     - name: Upload to SourceForge
       shell: bash
       run:  |
