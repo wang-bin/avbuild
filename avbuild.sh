@@ -303,7 +303,7 @@ use_llvm_binutils() {
   local clang_dir=${USE_TOOLCHAIN%clang*}
   local clang_name=${USE_TOOLCHAIN##*/}
   local clang=$clang_dir${clang_name/-cl/}
-  local CLANG_FALLBACK=clang-10
+  local CLANG_FALLBACK=clang-13
   $IS_APPLE_CLANG && CLANG_FALLBACK=/usr/local/opt/llvm/bin/clang
   echo "clang: `$clang --version`"
   # -print-prog-name= prints native dir format(on windows) and `which` fails
@@ -547,7 +547,7 @@ export LIB="$VCDIR_LIB;$WindowsSdkDir/Lib/$WindowsSDKVersion/ucrt/${MACHINE/86_/
 export AR=$LLVM_AR
 export NM=$LLVM_NM
 #export V=1 # FFmpeg BUG: AR is overriden in common.mak and becomes an invalid command in makedef(@printf works in makefiles but not sh scripts)
-export PKG_CONFIG_PATH=$PKG_CONFIG_PATH
+export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/windows-desktop/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/windows-desktop/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
 # [ expr1 ] && ... at end returns error if expr1 is false
 }
@@ -616,7 +616,7 @@ setup_vc_env() {
   [ -n "$LIBPATH_arch" ] && echo "export LIBPATH=$LIBPATH_arch" >>"$BDIR/.env.sh"
   [ -n "$INCLUDE_arch" ] && echo "export INCLUDE=$INCLUDE_arch" >>"$BDIR/.env.sh"
   cat >> "$BDIR/.env.sh" <<EOF
-export PKG_CONFIG_PATH=$PKG_CONFIG_PATH
+export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/windows-desktop/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/windows-desktop/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
 }
 
@@ -940,6 +940,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   [ -n "$ANDROID_GCC_DIR" ] && PATHS="$ANDROID_GCC_DIR/bin:$PATHS"
   cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
 export PATH=$PATHS:$PATH
+export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/android_${ANDROID_ARCH}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/android_${ANDROID_ARCH}/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
 }
 #  --toolchain=hardened : https://wiki.debian.org/Hardening
@@ -1014,6 +1015,9 @@ setup_ios_env() {
   INSTALL_DIR=sdk-ios-$IOS_ARCH
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   [ -n "$ios5_lib_dir" ] && echo "export LIBRARY_PATH=$ios5_lib_dir" >$THIS_DIR/build_$INSTALL_DIR/.env.sh
+  cat>>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
+export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/iOS/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/iOS/lib/pkgconfig:$PKG_CONFIG_PATH
+EOF
 }
 
 setup_macos_env(){
@@ -1070,6 +1074,10 @@ setup_macos_env(){
   EXTRA_CFLAGS+=" $ARCH_FLAG -mmacosx-version-min=$MACOS_VER"
   EXTRA_LDFLAGS+=" $ARCH_FLAG $LFLAG_VERSION_MIN$MACOS_VER ${LFLAG_PRE}-dead_strip $rpath_flags"
   INSTALL_DIR=sdk-macOS${MACOS_VER}${MACOS_ARCH}-${USE_TOOLCHAIN##*/}
+  mkdir -p $THIS_DIR/build_$INSTALL_DIR
+  cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
+export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/macOS/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/macOS/lib/pkgconfig:$PKG_CONFIG_PATH
+EOF
 }
 
 setup_maccatalyst_env(){
@@ -1267,6 +1275,9 @@ setup_linux_env() {
   if [ -n "$SYSROOT" ]; then
     CROSS_PREFIX=$(linux_gnu_triple $ARCH)-
     setup_gnu_env $ARCH linux
+  cat>>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
+export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/linux_${ARCH}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/linux_${ARCH}/lib/pkgconfig:$PKG_CONFIG_PATH
+EOF
     return 0
   fi
 
@@ -1288,6 +1299,10 @@ setup_linux_env() {
   INSTALL_DIR=${USE_TOOLCHAIN##*/}
   INSTALL_DIR=${INSTALL_DIR%%-*}
   INSTALL_DIR=sdk-linux-${ARCH}-${INSTALL_DIR}
+  mkdir -p $THIS_DIR/build_$INSTALL_DIR
+  cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
+export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/linux_${ARCH}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/linux_${ARCH}/lib/pkgconfig:$PKG_CONFIG_PATH
+EOF
 }
 
 setup_wasm_env(){
