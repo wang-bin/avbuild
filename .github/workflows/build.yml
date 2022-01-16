@@ -195,9 +195,11 @@ jobs:
       CONFIG_SUFFIX: '-lavfilters'
     steps:
     - uses: actions/checkout@v2
+      if: ${{ env.FF_VERSION == 'master' }}
       with:
         submodules: 'recursive'
     - name: 'Restore sysroot cache'
+      if: ${{ env.FF_VERSION == 'master' }}
       id: sysroot-cache
       uses: actions/cache@v2
       with:
@@ -206,6 +208,7 @@ jobs:
           /tmp/msvcrt-dev
         key: sysroot-${{ env.TARGET_OS }}${{ secrets.WINSDKVER }}-vc${{ secrets.VCVER }}${{ env.CONFIG_SUFFIX }}
     - name: Create Build Environment
+      if: ${{ env.FF_VERSION == 'master' }}
       shell: bash
       env:
         DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
@@ -213,6 +216,7 @@ jobs:
         EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
       run: ./tools/ci-before-build.sh
     - name: Configure and Build
+      if: ${{ env.FF_VERSION == 'master' }}
       shell: bash
       run: |
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
@@ -221,9 +225,11 @@ jobs:
         export V=1
         USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh $TARGET_OS "x86 x64"
     - name: Make SDK
+      if: ${{ env.FF_VERSION == 'master' }}
       shell: bash
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
+      if: ${{ env.FF_VERSION == 'master' }}
       uses: actions/upload-artifact@v2
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-lavfilters
