@@ -198,7 +198,7 @@ enable_opt() {
 disable_opt() {
   # grep -m1
   for OPT in $@; do
-    grep -q "\-\-disable\-$OPT" $FFSRC/configure && FEATURE_OPT="--disable-$OPT $FEATURE_OPT" # prepend to support override
+    grep -qE "\-\-disable\-${OPT}|\-\-enable\-${OPT}.*\[autodetect\]" $FFSRC/configure && FEATURE_OPT="--disable-$OPT $FEATURE_OPT" # prepend to support override
   done
 }
 
@@ -1038,6 +1038,7 @@ setup_macos_env(){
   fi
   : ${MACOS_VER:=10.7}
   [[ "$MACOS_ARCH" == arm64* ]] && version_compare $MACOS_VER "<" 11.0 && MACOS_VER=11.0
+  disable_opt xlib libxcb # installed by github action macos-11
   enable_opt videotoolbox vda libxml2
   EXTRA_CFLAGS+=" -iwithsysroot /usr/include/libxml2"
   version_compare $MACOS_VER "<" 10.7 && disable_opt lzma avdevice #avfoundation is not supported on 10.6

@@ -18,7 +18,7 @@ env:
 jobs:
   Apple:
     # See: https://docs.github.com/en/actions/configuring-and-managing-workflows/configuring-a-workflow#configuring-a-build-matrix
-    runs-on: macos-11
+    runs-on: macos-latest
     env:
       TARGET_OS: ${{ matrix.target }}
       CONFIG_SUFFIX: -${{ matrix.config }}
@@ -57,7 +57,7 @@ jobs:
         path: ffmpeg-*.tar.xz
 
   Wasm:
-    runs-on: macos-11
+    runs-on: macos-latest
     env:
       TARGET_OS: 'wasm'
     steps:
