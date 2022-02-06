@@ -663,6 +663,7 @@ setup_winrt_env() {
     fi
   fi
   #http://fate.libav.org/arm-msvc-14-wp
+  disable_opt ffnvcodec
   disable_opt programs avdevice
   TOOLCHAIN_OPT+=" --enable-cross-compile --target-os=win32"
   EXTRA_LDFLAGS+=" -APPCONTAINER"
