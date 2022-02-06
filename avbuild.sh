@@ -48,6 +48,8 @@ trap "kill -- -$$; rm -rf $THIS_DIR/.dir exit 3" SIGTERM SIGINT SIGKILL
 
 export PATH_EXTRA="$PWD/tools/gas-preprocessor"
 export PATH=$PWD/tools/gas-preprocessor:$PATH
+: ${AMF_DIR:="$PWD/tools/dep/include"}
+test -f $AMF_DIR/AMF/core/Version.h || unset AMF_DIR
 
 echo FFSRC=$FFSRC
 [[ "$FFSRC" == "$PWD" ]] && BUILD_DIR=$PWD
@@ -509,8 +511,11 @@ setup_win_clang(){
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] || PKG_CONFIG_PATH_MFX_UNIX=${PKG_CONFIG_PATH_MFX_UNIX/\/lib\/pkgconfig/$Platform\/lib\/pkgconfig}
   PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
-echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX
-  $IS_STORE || enable_libmfx
+echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX PKG_CONFIG_PATH=$PKG_CONFIG_PATH
+  $IS_STORE || {
+    [ -d "$AMF_DIR" -a "${platform:0:3}" != "arm" ] && EXTRA_CFLAGS+=" -I$AMF_DIR"
+    enable_libmfx
+  }
 
   [ -f "$WindowsSdkDir/Include/$WindowsSDKVersion/um/WINDOWS.H" ] || { # case sensitive file system
   echo "CASE SENSITIVE FS!!!!!!!"
@@ -623,6 +628,7 @@ EOF
 setup_vc_desktop_env() {
 # http://ffmpeg.org/platform.html#Microsoft-Visual-C_002b_002b-or-Intel-C_002b_002b-Compiler-for-Windows
   [ -z "$WSL_DISTRO_NAME" ] && [[ "$platform" != arm* ]] && enable_libmfx # msys2: -I -libpath path starts with X:/. wsl: -libpath:X:/ is ignored
+  [ -d "$AMF_DIR" -a "${platform:0:3}" != "arm" ] && EXTRA_CFLAGS+=" -I$AMF_DIR"
   enable_opt dxva2
   # ldflags prepends flags. extralibs appends libs and add to pkg-config
   # can not use -luser32 because extralibs will not be filter -l to .lib (ldflags_filter is not ready, ffmpeg bug)
@@ -756,6 +762,7 @@ setup_mingw_env() {
   PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
 
+  [ -d "$AMF_DIR" ] && EXTRA_CFLAGS+=" -I$AMF_DIR"
   enable_libmfx
   enable_opt dxva2
   enable_opt mediafoundation
@@ -1272,7 +1279,10 @@ setup_linux_env() {
   local BIT=64
   [ -z "$ARCH" -o "$ARCH" == "linux" ] && ARCH=$CC_ARCH
   ARCH=$(linux_arch $ARCH)
-  [[ "$ARCH" == amd64  || "$ARCH" == x*64 ]] && enable_libmfx
+  [[ "$ARCH" == amd64  || "$ARCH" == x*6* ]] && {
+    [ -d "$AMF_DIR" ] && EXTRA_CFLAGS+=" -I$AMF_DIR"
+    enable_libmfx
+  }
   if [ -n "$SYSROOT" ]; then
     CROSS_PREFIX=$(linux_gnu_triple $ARCH)-
     setup_gnu_env $ARCH linux

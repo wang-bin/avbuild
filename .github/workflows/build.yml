@@ -165,7 +165,7 @@ jobs:
       shell: cmd
       run: |
         7z x -y dep.7z -otools
-        set PKG_CONFIG_PATH_MFX=%CD%\tools\VS2022\lib\pkgconfig
+        set PKG_CONFIG_PATH_MFX=%CD%\tools\dep\VS2022\lib\pkgconfig
         set MSYS2_DIR=C:\msys64
         set HOME=%CD%
         set FFSRC=%CD%\ffmpeg-%FF_VERSION%
@@ -192,7 +192,8 @@ jobs:
       COMPILER: clang
       VCDIR: '/tmp/msvcrt-dev'
       WINDOWSSDKDIR: '/tmp/winsdk'
-      PKG_CONFIG_PATH_MFX: '/tmp/ClangCL/lib/pkgconfig'
+      PKG_CONFIG_PATH_MFX: '/tmp/dep/ClangCL/lib/pkgconfig'
+      AMF_DIR: "/tmp/dep/include"
       CONFIG_SUFFIX: '-lavfilters'
     steps:
     - uses: actions/checkout@v2
@@ -244,7 +245,8 @@ jobs:
       COMPILER: clang
       VCDIR: '/tmp/msvcrt-dev'
       WINDOWSSDKDIR: '/tmp/winsdk'
-      PKG_CONFIG_PATH_MFX: '/tmp/ClangCL/lib/pkgconfig'
+      PKG_CONFIG_PATH_MFX: '/tmp/dep/ClangCL/lib/pkgconfig'
+      AMF_DIR: "/tmp/dep/include"
       CONFIG_SUFFIX: -${{ matrix.config }}
     strategy:
       fail-fast: false
@@ -294,6 +296,7 @@ jobs:
       COMPILER: 'clang-vcrt120'
       VCDIR: '/tmp/msvcrt-dev/120'
       WINDOWSSDKDIR: '/tmp/winsdk'
+      AMF_DIR: "/tmp/dep/include"
       CONFIG_SUFFIX: -${{ matrix.config }}
     strategy:
       fail-fast: false
@@ -340,7 +343,8 @@ jobs:
     env:
       TARGET_OS: linux
       COMPILER: clang
-      PKG_CONFIG_PATH_MFX: "/tmp/linux64-gcc/lib/pkgconfig"
+      PKG_CONFIG_PATH_MFX: "/tmp/dep/linux64-gcc/lib/pkgconfig"
+      AMF_DIR: "/tmp/dep/include"
       CONFIG_SUFFIX: -${{ matrix.config }}
     strategy:
       fail-fast: false

@@ -36,7 +36,8 @@ custom-steps:
         export VCDIR=/tmp/msvcrt-dev
         export WindowsSDKVersion=$(cat /tmp/winsdk/.version)
         export WindowsSdkDir=/tmp/winsdk
-        export PKG_CONFIG_PATH_MFX=/tmp/ClangCL/lib/pkgconfig
+        export PKG_CONFIG_PATH_MFX=/tmp/dep/ClangCL/lib/pkgconfig
+        export AMF_DIR=/tmp/dep/include
   - &upload
     run:
       name: upload
@@ -73,7 +74,7 @@ jobs:
             fi
             wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7z
             7z x -y dep.7z -otools &>/dev/null
-            export PKG_CONFIG_PATH_MFX=$PWD/tools/linux64-gcc/lib/pkgconfig
+            export PKG_CONFIG_PATH_MFX=$PWD/tools/dep/linux64-gcc/lib/pkgconfig
             export FFSRC=$PWD/ffmpeg-${FF_VERSION}
             ./avbuild.sh
       - *upload
@@ -97,7 +98,7 @@ jobs:
             fi
             wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7z
             7z x -y dep.7z -otools &>/dev/null
-            export PKG_CONFIG_PATH_MFX=$PWD/tools/linux64-gcc/lib/pkgconfig
+            export PKG_CONFIG_PATH_MFX=$PWD/tools/dep/linux64-gcc/lib/pkgconfig
             export FFSRC=$PWD/ffmpeg-${FF_VERSION}
             USE_TOOLCHAIN=clang-${LLVM_VER:-13} ./avbuild.sh
       - *upload
@@ -167,7 +168,8 @@ jobs:
       LIB_OPT: --enable-static
       VCDIR: /tmp/msvcrt-dev
       WindowsSdkDir: /tmp/winsdk
-      PKG_CONFIG_PATH_MFX: /tmp/ClangCL/lib/pkgconfig
+      PKG_CONFIG_PATH_MFX: /tmp/dep/ClangCL/lib/pkgconfig
+      AMF_DIR: /tmp/dep/include
     steps:
       - checkout
       - run: git submodule update --init --recursive
