@@ -1,0 +1,310 @@
+name: Build GPL
+
+on:
+  push:
+  schedule:
+    - cron: '0 12 * * 0'
+
+env:
+#  if: (github.event_name == 'schedule')
+#  GITHUB_ENV: https://docs.github.com/en/actions/learn-github-actions/environment-variables#about-environment-variables
+  FF_VERSION: ${{ vars.FF_VER }} # TODO: latest release if triggered by schedule
+  LLVM_VER: ${{ vars.LLVM_VER }}
+  LLVM_VER_DEFAULT: 17
+  NINJA_STATUS: '[%f/%t %e %r]'
+  SF_PW_MAPPED: ${{ secrets.SF_PW }}
+  SF_USER_MAPPED: ${{ secrets.SF_USER }}
+
+jobs:
+  Apple:
+    # See: https://docs.github.com/en/actions/configuring-and-managing-workflows/configuring-a-workflow#configuring-a-build-matrix
+    runs-on: macos-latest
+    env:
+      TARGET_OS: ${{ matrix.target }}
+      CONFIG_SUFFIX: -gpl-${{ matrix.config }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [lite]
+        target: [macOS,iOS]
+        exclude:
+          - config: default
+            target: iOSSimulator
+          - config: default
+            target: macCatalyst
+    steps:
+    - uses: actions/checkout@v3
+    - name: Create Build Environment
+      shell: bash
+      env:
+        DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
+        EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
+      run: |
+        ./tools/ci-before-build.sh
+        wget https://sourceforge.net/projects/avbuild/files/dep/dep_gpl.7z/download -O dep_gpl.7z
+        7z x -y dep_gpl.7z -otools
+    - name: Configure and Build macOS
+      if: ${{ matrix.target == 'macOS' }}
+      # Use a bash shell so we can use the same syntax for environment variable
+      # access regardless of the host operating system
+      shell: bash
+      run: |
+        export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+        ./avbuild.sh ${TARGET_OS}
+    - name: Configure and Build iOS arm64
+      if: ${{ matrix.target == 'iOS' }}
+      # Use a bash shell so we can use the same syntax for environment variable
+      # access regardless of the host operating system
+      shell: bash
+      run: |
+        export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+        ./avbuild.sh ${TARGET_OS} arm64
+        find sdk-* -name "*.dylib" -delete
+    - name: Make SDK
+      shell: bash
+      run: |
+        cp -avf tools/dep_gpl/${{ env.TARGET_OS }}/lib/* sdk-*/lib/
+        ./tools/ci-after-build.sh
+    - name: Archieve SDK
+      uses: actions/upload-artifact@v3
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
+        path: ffmpeg-*.tar.xz
+
+
+  VS2022:
+    runs-on: windows-2022
+    env:
+      TARGET_OS: ${{ matrix.target }}
+      CONFIG_SUFFIX: -gpl-${{ matrix.config }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [lite]
+        target: [windows-desktop]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: 'recursive'
+    - name: Create Build Environment
+      shell: cmd
+      run: |
+        set FF_BRANCH=%FF_VERSION%
+        if not [%FF_BRANCH%]==[master] set FF_BRANCH=release/%FF_VERSION%
+        git clone -b %FF_BRANCH% --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-%FF_VERSION%
+        if not [%CONFIG_SUFFIX%]==[-default] copy /y config%CONFIG_SUFFIX%.sh config.sh
+    - uses: msys2/setup-msys2@v2
+      with:
+        release: false # disable installation cache, so exe path in avbuild.sh is correct
+        msystem: MSYS
+        update: true
+        install: >-
+          make
+          diffutils
+          patch
+          pkg-config
+          nasm
+          yasm
+    - name: Install dev packages
+      shell: msys2 {0}
+      run: |
+        wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7z
+        wget https://sourceforge.net/projects/avbuild/files/dep/dep_gpl.7z/download -O dep_gpl.7z
+        sed -i '/X264_API_IMPORTS/d' "ffmpeg-${FF_VERSION}/libavcodec/libx264.c" # we link against static libx264
+    - name: Configure and Build
+      shell: cmd
+      run: |
+        7z x -y dep.7z -otools
+        7z x -y dep_gpl.7z -otools
+        set PKG_CONFIG_PATH_MFX=%CD%\tools\dep\VS2022\lib\pkgconfig
+        set MSYS2_DIR=C:\msys64
+        set HOME=%CD%
+        set FFSRC=%CD%\ffmpeg-%FF_VERSION%
+        set BUILD_NOW=true
+        tools\vcbuild.bat VS2022 %TARGET_OS%10 x64
+    - name: Make SDK
+      shell: cmd
+      run: |
+        set SDK_NAME=ffmpeg-%FF_VERSION%-%TARGET_OS%-vs2022%CONFIG_SUFFIX%
+        move sdk* %SDK_NAME%
+        xcopy /s /f /y tools\dep_gpl\${{ env.TARGET_OS }}\lib\* %SDK_NAME%\lib\
+        7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off %SDK_NAME%.7z %SDK_NAME%
+    - name: Archieve SDK
+      uses: actions/upload-artifact@v3
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-VS2022${{ matrix.config }}
+        path: ffmpeg-*.7z
+
+
+  Windows_clang:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_OS: ${{ matrix.target }}
+      COMPILER: clang
+      VCDIR: '/tmp/msvcrt-dev'
+      WINDOWSSDKDIR: '/tmp/winsdk'
+      PKG_CONFIG_PATH_MFX: '/tmp/dep/ClangCL/lib/pkgconfig'
+      AMF_DIR: "/tmp/dep/include"
+      CONFIG_SUFFIX: -gpl-${{ matrix.config }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [lite]
+        target: [windows-desktop]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: 'recursive'
+    - name: 'Restore sysroot cache'
+      id: sysroot-cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          /tmp/winsdk
+          /tmp/msvcrt-dev
+        key: sysroot-${{ env.TARGET_OS }}${{ vars.WINSDKVER }}-vc${{ vars.VCVER }}
+    - name: Create Build Environment
+      shell: bash
+      env:
+        DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
+        SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
+        EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
+      run: |
+        sudo apt remove -y libc++1-14 libc++abi1-14 libunwind-14 python3-lldb-14 # conflict with latest llvm
+        ./tools/ci-before-build.sh
+        wget https://sourceforge.net/projects/avbuild/files/dep/dep_gpl.7z/download -O dep_gpl.7z
+        7z x -y dep_gpl.7z -otools
+        sed -i '/X264_API_IMPORTS/d' "ffmpeg-${FF_VERSION}/libavcodec/libx264.c" # we link against static libx264
+    - name: Configure and Build
+      shell: bash
+      run: |
+        export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+        export WindowsSdkDir=${WINDOWSSDKDIR}
+        export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
+        USE_TOOLCHAIN=clang-${LLVM_VER:-$LLVM_VER_DEFAULT} ./avbuild.sh $TARGET_OS x64
+    - name: Make SDK
+      shell: bash
+      run: |
+        cp -avf tools/dep_gpl/${{ env.TARGET_OS }}/lib/* sdk-*/lib/
+        ./tools/ci-after-build.sh
+    - name: Archieve SDK
+      uses: actions/upload-artifact@v3
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
+        path: ffmpeg-*.tar.xz
+
+
+  Linux_clang:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_OS: linux
+      COMPILER: clang
+      PKG_CONFIG_PATH_MFX: "/tmp/dep/linux64-gcc/lib/pkgconfig"
+      AMF_DIR: "/tmp/dep/include"
+      CONFIG_SUFFIX: -gpl-${{ matrix.config }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [lite]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: 'recursive'
+    - name: 'Restore sysroot cache'
+      id: sysroot-cache
+      uses: actions/cache@v3
+      with:
+        path: /tmp/sysroot
+        key: sysroot-${{ env.TARGET_OS }}-${{ vars.LINUX_SYSROOT_ID }}
+    - name: Create Build Environment
+      shell: bash
+      env:
+        DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
+        SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
+        EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
+      run: |
+        sudo apt remove -y libc++1-14 libc++abi1-14 libunwind-14 python3-lldb-14 # conflict with latest llvm
+        ./tools/ci-before-build.sh
+        wget https://sourceforge.net/projects/avbuild/files/dep/dep_gpl.7z/download -O dep_gpl.7z
+        7z x -y dep_gpl.7z -otools
+    - name: Configure and Build
+      shell: bash
+      run: |
+        export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+        export SYSROOT=/tmp/sysroot
+        USE_TOOLCHAIN=clang-${LLVM_VER:-$LLVM_VER_DEFAULT} ./avbuild.sh linux "amd64"
+    - name: Make SDK
+      shell: bash
+      run: |
+        cp -avf tools/dep_gpl/${{ env.TARGET_OS }}_amd64/lib/* sdk-*/lib/
+        ./tools/ci-after-build.sh
+    - name: Archieve SDK
+      uses: actions/upload-artifact@v3
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
+        path: ffmpeg-*.tar.xz
+
+  Android:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_OS: android
+      CONFIG_SUFFIX: -gpl-${{ matrix.config }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [lite]
+    steps:
+    - uses: actions/checkout@v3
+    - name: 'Restore sysroot cache'
+      id: sysroot-cache
+      uses: actions/cache@v3
+      with:
+        path: /tmp/sysroot
+        key: sysroot-${{ env.TARGET_OS }}-${{ vars.LINUX_SYSROOT_ID }}
+    - name: Create Build Environment
+      shell: bash
+      env:
+        DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
+        SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
+        EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
+      run: |
+        ./tools/ci-before-build.sh
+        wget https://sourceforge.net/projects/avbuild/files/dep/dep_gpl.7z/download -O dep_gpl.7z
+        7z x -y dep_gpl.7z -otools
+    - name: Configure and Build
+      shell: bash
+      run: |
+        export ANDROID_NDK=$ANDROID_NDK_LATEST_HOME
+        export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+        ./avbuild.sh ${TARGET_OS} arm64
+    - name: Make SDK
+      shell: bash
+      run: |
+        cp -avf tools/dep_gpl/${{ env.TARGET_OS }}_arm64/lib/* sdk-*/lib/
+        ./tools/ci-after-build.sh
+    - name: Archieve SDK
+      uses: actions/upload-artifact@v3
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
+        path: ffmpeg-*.tar.xz
+
+  Upload:
+    runs-on: ubuntu-latest
+    needs: [VS2022]
+    steps:
+    - name: Download vs2022 desktop lite
+      uses: actions/download-artifact@v3
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2022lite
+    - name: Upload to SourceForge
+      if: (github.event_name != 'pull_request')
+      shell: bash
+      run:  |
+        sudo apt update
+        sudo apt install -y sshpass
+        FFV=${{ env.FF_VERSION }}
+        for f in `ls ffmpeg-*.7z`; do
+          OS=${f%%-vs*}
+          OS=${OS##*${FFV}-}
+          sshpass -p $SF_PW_MAPPED scp -o StrictHostKeyChecking=no $f $SF_USER_MAPPED,avbuild@frs.sourceforge.net:/home/frs/project/a/av/avbuild/$OS
+        done

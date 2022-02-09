@@ -53,7 +53,7 @@ DUP_OBJS=(libswscale/log2_tab.o libswresample/log2_tab.o libavcodec/log2_tab.o l
   libavformat/mpegaudiotabs.o
   libavformat/mpeg4audio_sample_rates.o
   libavformat/rangecoder_dec.o
-  libavformat/jpegxl_parse.o
+  libavformat/jpegxl_parse.o  # what if jpegxl parser is disabled? remove 1 if both libavcodec and libavformat has jpegxl_parse.o
   libavutil/avutilres.o
   libavcodec/avcodecres.o
   libavcodec/half2float.o   # half2float.c is in libavutil, but not built into libavutil, always built in swscale
