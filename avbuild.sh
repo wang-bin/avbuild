@@ -412,6 +412,8 @@ setup_win(){
   : ${USE_TOOLCHAIN:=$win_cc}
   probe_cc $USE_TOOLCHAIN
   enable_opt mediafoundation
+  disable_opt ptx-compression # libavfilter link error (zlib used in ff_cuda_load_module but no lib dep)
+
   if $IS_CLANG ; then
     setup_win_clang $@
   else
@@ -425,6 +427,7 @@ setup_win(){
   }
   # LLVM for windows (on github ci /C/Program Files/LLVM/bin/clang) fail to build ffmpeg 4.4 libavfilter/vf_scale_cuda_bicubic.ptx.c(3625): fatal error C1060: compiler is out of heap space
   [ -n "$MSYSTEM" -a $FFMAJOR = 4 ]  && USER_OPT+=" --disable-filter=scale_cuda"
+
 }
 
 setup_win_clang(){
