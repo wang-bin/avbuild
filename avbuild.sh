@@ -311,7 +311,7 @@ use_llvm_binutils() {
   # -print-prog-name= prints native dir format(on windows) and `which` fails
   `$clang -print-prog-name=llvm-ar` --version &>/dev/null || $(to_unix_path "`$clang -print-prog-name=llvm-ar`") --version &>/dev/null || clang=$CLANG_FALLBACK
   echo clang=$clang
-  for tool in ar nm ranlib; do # strip
+  for tool in ar nm ranlib $@; do # strip
     local tool_path=`eval 'which ${LLVM_'$(toupper $tool)'}'`
     local tool_path_print=$($clang -print-prog-name=llvm-$tool)
   # -print-prog-name= prints non-versioned path if exists, which may be wrong on linux
@@ -439,7 +439,7 @@ setup_win_clang(){
   local clang=$clang_dir${clang_name/-cl/}
   USE_LD=$($clang -print-prog-name=lld-link) use_lld # lld 6.0 fixes undefined __enclave_config in msvcrt14.12. `lld -flavor link` just warns --version-script and results in link error
   enable_pic=false
-  use_llvm_binutils
+  use_llvm_binutils windres
   #use_lld # --target=i386-pc-windows-msvc -fuse-ld=lld: must use with -Wl,
   enable_lto=false # ffmpeg: "LTO requires same compiler and linker"
   # lto: link error if clang and lld version does not mach?
