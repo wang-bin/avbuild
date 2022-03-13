@@ -625,7 +625,6 @@ setup_vc_env() {
   #for inc in ${incs[@]}; do
   for ((i=0;i<nb_incs;i++)); do
     inc=${incs[$i]}
-    echo inc=$inc
 #    WINDRESFLAGS+=" -I\"`cygpath "$inc"`\""
     WINDRESFLAGS+=" -I`to_unix_path "$inc" |sed 's, ,\\\\ ,g;s,(,\\\\(,g;s,),\\\\),g'`"
   done
@@ -1441,7 +1440,7 @@ config1(){
   test -n "$EXTRALIBS" && TOOLCHAIN_OPT+=" --extra-libs=\"$EXTRALIBS\""
   echo INSTALL_DIR: $INSTALL_DIR
   is_libav || FEATURE_OPT+=" --disable-postproc"
-  local CONFIGURE="configure --extra-version=QtAV --disable-doc ${DEBUG_OPT} $LIB_OPT --enable-runtime-cpudetect $FEATURE_OPT $TOOLCHAIN_OPT $USER_OPT"
+  local CONFIGURE="configure --extra-version=avbuild --disable-doc ${DEBUG_OPT} $LIB_OPT --enable-runtime-cpudetect $FEATURE_OPT $TOOLCHAIN_OPT $USER_OPT"
   : ${NO_ENC=false}
     CONFIGURE+=" $ENC_OPT $MUX_OPT"
   CONFIGURE=`trim2 $CONFIGURE`
