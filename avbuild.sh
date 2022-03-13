@@ -426,7 +426,8 @@ setup_win(){
       grep -n DXVA_Tile_AV1 "$dxva_h" &>/dev/null || patch -p1 "$dxva_h" <patches/dxva-av1.diff
   }
   # LLVM for windows (on github ci /C/Program Files/LLVM/bin/clang) fail to build ffmpeg 4.4 libavfilter/vf_scale_cuda_bicubic.ptx.c(3625): fatal error C1060: compiler is out of heap space
-  [ -n "$MSYSTEM" -a $FFMAJOR = 4 ]  && USER_OPT+=" --disable-filter=scale_cuda"
+  # master libavfilter/vf_scale_cuda.ptx.c: fatal error C1033: cannot open program database 'D:\a\avbuild\avbuild\build_sdk-vc-x64-clvs2022\vc140.pdb'
+  [ -n "$MSYSTEM" ]  && USER_OPT+=" --disable-filter=scale_cuda"
 
 }
 
