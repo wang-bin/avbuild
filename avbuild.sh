@@ -603,6 +603,33 @@ setup_vc_env() {
   EXTRA_CFLAGS+=" -D_WIN32_WINNT=$WIN_VER" #  -DWINAPI_FAMILY=WINAPI_FAMILY${FAMILY}_APP is not required for desktop
   INSTALL_DIR="`tolower sdk-$osver-$Platform-cl${VS_CL}`"
 
+  [ -n "$MSYSTEM" ] && {
+      mkdir -p /usr/local/bin
+      llvm_rc=`which llvm-rc.exe` && cp "$llvm_rc" /usr/local/bin/llvm-windres.exe
+      which llvm-windres
+  }
+  if [ "${platform:0:3}" = "arm" ]; then
+    target_tripple_arch=$platform
+  elif [ -z "${Platform/*64/}" ]; then
+    target_tripple_arch=x86_64
+  else
+    target_tripple_arch=i386
+  fi
+  TARGET_TRIPLE=${target_tripple_arch}-pc-windows-msvc
+  readarray -d ';' -t incs <<< "$INCLUDE"
+  echo incs:  = ${incs[2]}
+  nb_incs=${#incs[@]}
+  WINDRESFLAGS="--target=$TARGET_TRIPLE ${win10inc[@]/#/-I}"
+  #incs_unix=`cygpath "${incs[@]}"`
+  #for inc in ${incs[@]}; do
+  for ((i=0;i<nb_incs;i++)); do
+    inc=${incs[$i]}
+    echo inc=$inc
+#    WINDRESFLAGS+=" -I\"`cygpath "$inc"`\""
+    WINDRESFLAGS+=" -I`to_unix_path "$inc" |sed 's, ,\\\\ ,g;s,(,\\\\(,g;s,),\\\\),g'`"
+  done
+  grep -q "\-\-extra\-windresflags" $FFSRC/configure && TOOLCHAIN_OPT+=" --windres=llvm-windres --extra-windresflags='$WINDRESFLAGS'"
+
   local BDIR=$BUILD_DIR
   [ -d "$BDIR" ] || BDIR=$THIS_DIR/build_$INSTALL_DIR
   rm -rf $BDIR/.env.sh
