@@ -16,7 +16,7 @@ FILETYPE        VFT_DLL
         {
             VALUE "CompanyName",      "FFmpeg Project. Built by https://github.com/wang-bin/avbuild"
             VALUE "FileDescription",  "FFmpeg library"
-            VALUE "FileVersion",      AV_STRINGIFY(LIBFFMPEG_VERSION)
+            VALUE "FileVersion",      "LIBFFMPEG_VERSION"
             VALUE "InternalName",     "libffmpeg"
             VALUE "LegalCopyright",   "Copyright (C) 2000-" AV_STRINGIFY(CONFIG_THIS_YEAR) " FFmpeg Project"
             VALUE "OriginalFilename", "ffmpeg" BUILDSUF "-LIBFFMPEG_VERSION_MAJOR" SLIBSUF
