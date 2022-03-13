@@ -1,0 +1,32 @@
+#include <windows.h>
+#include "libavutil/version.h"
+#include "libavutil/ffversion.h"
+#include "config.h"
+
+1 VERSIONINFO
+FILEVERSION     LIBFFMPEG_VERSION_MAJOR, LIBFFMPEG_VERSION_MINOR, LIBFFMPEG_VERSION_MICRO, 0
+PRODUCTVERSION  LIBFFMPEG_VERSION_MAJOR, LIBFFMPEG_VERSION_MINOR, LIBFFMPEG_VERSION_MICRO, 0
+FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+FILEOS          VOS_NT_WINDOWS32
+FILETYPE        VFT_DLL
+{
+    BLOCK "StringFileInfo"
+    {
+        BLOCK "040904B0"
+        {
+            VALUE "CompanyName",      "FFmpeg Project. Built by https://github.com/wang-bin/avbuild"
+            VALUE "FileDescription",  "FFmpeg library"
+            VALUE "FileVersion",      AV_STRINGIFY(LIBFFMPEG_VERSION)
+            VALUE "InternalName",     "libffmpeg"
+            VALUE "LegalCopyright",   "Copyright (C) 2000-" AV_STRINGIFY(CONFIG_THIS_YEAR) " FFmpeg Project"
+            VALUE "OriginalFilename", "ffmpeg" BUILDSUF "-LIBFFMPEG_VERSION_MAJOR" SLIBSUF
+            VALUE "ProductName",      "FFmpeg"
+            VALUE "ProductVersion",   FFMPEG_VERSION
+        }
+    }
+
+    BLOCK "VarFileInfo"
+    {
+        VALUE "Translation", 0x0409, 0x04B0
+    }
+}

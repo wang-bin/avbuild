@@ -529,6 +529,9 @@ echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG
   win10inc=(shared ucrt um winrt)
   win10inc=(${win10inc[@]/#/$WindowsSdkDir/Include/$WindowsSDKVersion/})
   IFS=\; eval 'INCLUDE="${win10inc[*]}"'
+  WINDRESFLAGS="--target=$TARGET_TRIPLE ${win10inc[@]/#/-I}"
+  grep -q "\-\-extra\-windresflags" $FFSRC/configure && TOOLCHAIN_OPT+=" --extra-windresflags='$WINDRESFLAGS'"
+
   local VCDIR_LIB=$VCDIR/lib/${ONECORE%%-*}/${MACHINE/86_/}/$STORE
   ARCH120=${MACHINE/*86_*/amd64} #vc120 sdk layout
   ARCH120=${ARCH120/x64/amd64}

@@ -1,6 +1,8 @@
 # A script to create libffmpeg single shared library. Author: 'wbsecg1 at gmail.com' 2019-2022. MIT license
 BUILD_DIR=$1
 INSTALL_DIR=$2
+THIS_DIR="$(cd "$(dirname ${BASH_SOURCE[0]})";pwd -P)"
+
 cd "$BUILD_DIR"
 
 # TODO: win dllimport LNK4217 fix (lib.exe tt.obj /export:func /def, static lib?). also make it possible to build both static and shared lib for ffmpeg modules
@@ -49,6 +51,15 @@ DUP_OBJS=(libswscale/log2_tab.o libswresample/log2_tab.o libavcodec/log2_tab.o l
   libavformat/jpegtables.o
   libavformat/mpegaudiotabs.o
   libavformat/mpeg4audio_sample_rates.o
+  libavutil/avutilres.o
+  libavcodec/avcodecres.o
+  libavdevice/avdeviceres.o
+  libavformat/avformatres.o
+  libavfilter/avfilterres.o
+  libavresample/avresample.o
+  libswscale/swscaleres.o
+  libswresample/swresampleres.o
+  libpostproc/postprocres.o
   )
 OBJS=`find compat lib* -name "*.o" |grep -vE "$(join '|' ${DUP_OBJS[@]})"`
 # appveyor PATH value is very large, xargs gets error "environment is too large for exec", so use echo
@@ -64,6 +75,9 @@ RELEASE=`cat Makefile |sed 's/^include //;s/Makefile$/RELEASE/'`
 }
 LIBMAJOR=`echo $LIBVERSION |cut -d . -f 1`
 LIBMINOR=`echo $LIBVERSION |cut -d . -f 2`
+LIBMICRO=`echo $LIBVERSION |cut -d . -f 3`
+
+sed "s,LIBFFMPEG_VERSION_MAJOR,$LIBMAJOR,g;s,LIBFFMPEG_VERSION_MINOR,$LIBMINOR,g;s,LIBFFMPEG_VERSION_MICRO,$LIBMICRO,g" "$THIS_DIR/libffmpegres.rc.in" >libffmpegres.rc
 
 cat >libffmpeg.mk <<EOF
 LIBVERSION=$LIBVERSION
@@ -80,12 +94,21 @@ ECHO   = printf "$(1)\t%s\n" $(2)
 M      = @$(call ECHO,$(TAG),$@);
 %.c %.h %.pc %.ver %.version: TAG = GEN
 
+IFLAGS     := -I. -I$(SRC_LINK)/
+vpath %.rc   $(SRC_PATH)
+
+%.o: %.rc
+	$(WINDRES) $(WINDRESFLAGS) $(IFLAGS) $(foreach ARG,$(CC_DEPFLAGS),--preprocessor-arg "$(ARG)") -o $@ $<
+
+# Windows resource file
+SLIBOBJS-$(HAVE_GNU_WINDRES)                 += lib$(NAME)res.o
+
 define DOBUILD
 SUBDIR :=
 $(SUBDIR)$(SLIBNAME): $(SUBDIR)$(SLIBNAME_WITH_MAJOR)
 	$(Q)cd ./$(SUBDIR) && $(LN_S) $(SLIBNAME_WITH_MAJOR) $(SLIBNAME)
 
-$(SUBDIR)$(SLIBNAME_WITH_MAJOR): $(OBJS) lib$(NAME).ver
+$(SUBDIR)$(SLIBNAME_WITH_MAJOR): $(OBJS) $(SLIBOBJS-yes) lib$(NAME).ver
 	$(SLIB_CREATE_DEF_CMD)
 	$$(LD) $(SHFLAGS) $(LDFLAGS) $(LDSOFLAGS) $$(LD_O) $$(filter %.o,$$^) $(FFEXTRALIBS)
 	$(SLIB_EXTRA_CMD)
