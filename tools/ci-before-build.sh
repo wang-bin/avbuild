@@ -1,5 +1,5 @@
 #!/bin/bash
-LLVER=${LLVM_VER:-13}
+LLVER=${LLVM_VER:-14}
 NDK_HOST=linux
 export XZ_OPT="--threads=`getconf _NPROCESSORS_ONLN` -9e" # -9e. -8/9 will disable mt?
   ln -sf config{${CONFIG_SUFFIX},}.sh;
@@ -14,8 +14,8 @@ if [ `which dpkg` ]; then
     wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key |sudo apt-key add -
     #sudo apt update
     #sudo apt install -y software-properties-common # for add-apt-repository, ubuntu-tooolchain-r-test is required by trusty
-    sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main"
-    sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal main" # clang-14
+    sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-14 main"
+    sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal main" # clang-15
     sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-8 main" # for rpi
     sudo apt update
     pkgs+=" sshpass p7zip-full lld-$LLVER clang-tools-$LLVER" # clang-tools: clang-cl
@@ -61,9 +61,9 @@ fi
 ANDROID_NDK=$ANDROID_NDK_LATEST_HOME
 if [ "$TARGET_OS" == "android" -a ! -d "$ANDROID_NDK_LATEST_HOME" ]; then
     ANDROID_NDK=/tmp/android-ndk
-    wget https://dl.google.com/android/repository/android-ndk-${NDK_VERSION:-r22}-${NDK_HOST}-x86_64.zip -O ndk.zip
+    wget https://dl.google.com/android/repository/android-ndk-${NDK_VERSION:-r24}-${NDK_HOST}-x86_64.zip -O ndk.zip
     7z x ndk.zip -o/tmp &>/dev/null
-    mv /tmp/android-ndk-${NDK_VERSION:-r22} $ANDROID_NDK
+    mv /tmp/android-ndk-${NDK_VERSION:-r24} $ANDROID_NDK
 fi
 
 if [ -f ffmpeg-${FF_VERSION}/configure ]; then

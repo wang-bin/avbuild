@@ -25,7 +25,7 @@ jobs:
       export FFSRC=$PWD/ffmpeg-${FF_VERSION}
       export WindowsSdkDir=${WINDOWSSDKDIR}
       export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
-      USE_TOOLCHAIN=clang-${LLVM_VER:-12} ./avbuild.sh $TARGET_OS "arm64-clang-cl-${LLVM_VER:-12} x86 x64"
+      USE_TOOLCHAIN=clang-${LLVM_VER:-14} ./avbuild.sh $TARGET_OS "arm64-clang-cl-${LLVM_VER:-14} x86 x64"
     displayName: 'Build'
   - bash: ./tools/ci-after-build.sh
     env:
@@ -50,7 +50,7 @@ jobs:
       export FFSRC=$PWD/ffmpeg-${FF_VERSION}
       export WindowsSdkDir=${WINDOWSSDKDIR}
       export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
-      USE_TOOLCHAIN=clang-${LLVM_VER:-12} ./avbuild.sh ${TARGET_OS} "arm64-clang-cl-${LLVM_VER:-12} arm x86 x64"
+      USE_TOOLCHAIN=clang-${LLVM_VER:-14} ./avbuild.sh ${TARGET_OS} "arm64-clang-cl-${LLVM_VER:-14} arm x86 x64"
     displayName: 'Build'
   - bash: ./tools/ci-after-build.sh
     env:
@@ -73,7 +73,7 @@ jobs:
       export FFSRC=$PWD/ffmpeg-${FF_VERSION}
       export WindowsSdkDir=${WINDOWSSDKDIR}
       export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
-      USE_TOOLCHAIN=clang-${LLVM_VER:-12} ./avbuild.sh $TARGET_OS "x86 x64"
+      USE_TOOLCHAIN=clang-${LLVM_VER:-14} ./avbuild.sh $TARGET_OS "x86 x64"
     displayName: 'Build'
   - bash: ./tools/ci-after-build.sh
     env:
@@ -114,7 +114,7 @@ jobs:
   - bash: |
       export FFSRC=$PWD/ffmpeg-${FF_VERSION}
       export SYSROOT=/tmp/sysroot
-      USE_TOOLCHAIN=clang-${LLVM_VER:-12} ./avbuild.sh linux "amd64 arm64 armhf"
+      USE_TOOLCHAIN=clang-${LLVM_VER:-14} ./avbuild.sh linux "amd64 arm64 armhf"
     displayName: 'Build'
   - bash: ./tools/ci-after-build.sh
     env:
@@ -135,7 +135,7 @@ jobs:
   - bash: |
       export FFSRC=$PWD/ffmpeg-${FF_VERSION}
       export SYSROOT=/tmp/sysroot
-      USE_TOOLCHAIN=clang-${LLVM_VER:-12} ./avbuild.sh ${TARGET_OS}
+      USE_TOOLCHAIN=clang-${LLVM_VER:-14} ./avbuild.sh ${TARGET_OS}
     displayName: 'Build'
   - bash: ./tools/ci-after-build.sh
     env:
@@ -155,7 +155,7 @@ jobs:
   - bash: |
       export FFSRC=$PWD/ffmpeg-${FF_VERSION}
       export SYSROOT=/tmp/sysroot
-      USE_TOOLCHAIN=clang-${LLVM_VER:-12} ./avbuild.sh ${TARGET_OS}
+      USE_TOOLCHAIN=clang-${LLVM_VER:-14} ./avbuild.sh ${TARGET_OS}
     displayName: 'Build'
   - bash: ./tools/ci-after-build.sh
     env:
