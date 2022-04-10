@@ -801,7 +801,7 @@ setup_mingw_env() {
   enable_opt dxva2
   enable_opt mediafoundation
   disable_opt iconv
-  EXTRA_LDFLAGS+=" -static-libgcc -Wl,-Bstatic"
+  EXTRA_LDFLAGS+=" -static-libgcc"
   INSTALL_DIR="${INSTALL_DIR}-mingw-$1-gcc"
   rm -rf $THIS_DIR/build_$INSTALL_DIR/.env.sh
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
