@@ -43,6 +43,7 @@ function join { local IFS="$1"; shift; echo "$*"; }
 # MUST remove OBJS-$(CONFIG_SHARED) OBJS-$(HAVE_LIBC_MSVCRT) in $(SUBDIR)/Makefile, which are duplicated with ones in avutil
 DUP_OBJS=(libswscale/log2_tab.o libswresample/log2_tab.o libavcodec/log2_tab.o libavformat/log2_tab.o libavfilter/log2_tab.o
   libavcodec/file_open.o libavformat/file_open.o libavdevice/file_open.o
+  libavfilter/file_open.o
   libavformat/golomb_tab.o
   libavcodec/reverse.o libavdevice/reverse.o
   libavformat/to_upper4.o
