@@ -1,6 +1,7 @@
 USER_OPT="--enable-small \
+--disable-outdevs \
 --disable-filters \
---enable-filter=*null*,*fade,*fifo,*format,*resample,aeval,all*,atempo,pan,*bars,testsrc*,color,*key,crop,draw*,eq*,framerate,*_cuda,*_qsv,*_vaapi,*v4l2*,hw*,scale,volume,test* \
+--enable-filter=*null*,afade,*fifo,*format,*resample,aeval,allrgb,allyuv,atempo,pan,*bars,color,*key,crop,draw*,eq*,framerate,*_qsv,*_vaapi,*v4l2*,hw*,scale,volume,test* \
 --disable-muxers \
 --disable-encoders \
 --disable-decoders \
