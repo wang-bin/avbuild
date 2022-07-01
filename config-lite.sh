@@ -1,4 +1,5 @@
-USER_OPT="--enable-small \
+USER_OPT="--h264-max-bit-depth=10 \
+--enable-small \
 --disable-outdevs \
 --disable-filters \
 --enable-filter=*null*,afade,*fifo,*format,*resample,aeval,allrgb,allyuv,atempo,pan,*bars,color,*key,crop,draw*,eq*,framerate,*_qsv,*_vaapi,*v4l2*,hw*,scale,volume,test* \
