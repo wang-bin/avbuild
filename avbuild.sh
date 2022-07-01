@@ -518,6 +518,10 @@ setup_win_clang(){
 echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX PKG_CONFIG_PATH=$PKG_CONFIG_PATH
   $IS_STORE || {
     [ -d "$AMF_DIR" -a "${platform:0:3}" != "arm" ] && EXTRA_CFLAGS+=" -I$AMF_DIR"
+    [ -d "$SDL2_DIR" -a "${platform:0:3}" != "arm" ] && {
+        EXTRA_CFLAGS+=" -I$SDL2_DIR/include"
+        EXTRA_LDFLAGS+=" -L$SDL2_DIR/lib/${platform}"
+    }
     enable_libmfx
   }
 
@@ -662,6 +666,10 @@ setup_vc_desktop_env() {
 # http://ffmpeg.org/platform.html#Microsoft-Visual-C_002b_002b-or-Intel-C_002b_002b-Compiler-for-Windows
   [ -z "$WSL_DISTRO_NAME" ] && [[ "$platform" != arm* ]] && enable_libmfx # msys2: -I -libpath path starts with X:/. wsl: -libpath:X:/ is ignored
   [ -d "$AMF_DIR" -a "${platform:0:3}" != "arm" ] && EXTRA_CFLAGS+=" -I$AMF_DIR"
+  [ -d "$SDL2_DIR" -a "${platform:0:3}" != "arm" ] && {
+    EXTRA_CFLAGS+=" -I$SDL2_DIR/include"
+    EXTRA_LDFLAGS+=" -L$SDL2_DIR/lib/${platform}"
+  }
   enable_opt dxva2
   # ldflags prepends flags. extralibs appends libs and add to pkg-config
   # can not use -luser32 because extralibs will not be filter -l to .lib (ldflags_filter is not ready, ffmpeg bug)
@@ -832,6 +840,7 @@ setup_android_env() {
   [ -z "$API_LEVEL" ] && {
     API_LEVEL=14
     [ $NDK_VER -gt 17 ] && API_LEVEL=16
+    [ $NDK_VER -gt 23 ] && API_LEVEL=19
   }
   local UNIFIED_SYSROOT="$NDK_ROOT/sysroot"
   [ -d "$UNIFIED_SYSROOT" ] || UNIFIED_SYSROOT=
@@ -1353,7 +1362,7 @@ EOF
 setup_wasm_env(){
   TOOLCHAIN_OPT+=" --cc=emcc  --ar=emar --ranlib=emranlib   --enable-cross-compile --target-os=none --arch=x86_32 --cpu=generic --disable-asm"
   EXTRA_CFLAGS+=" -ffast-math -fstrict-aliasing"
-  INSTALL_DIR=sdk-wasm
+  INSTALL_DIR=sdk-$1
 }
 # 1 target os & 1 target arch
 config1(){
@@ -1397,7 +1406,7 @@ config1(){
       setup_linux_env $TAGET_ARCH_FLAG $1
       add_librt
       ;;
-    wasm) setup_wasm_env $TAGET_ARCH_FLAG $1 ;;
+    was*) setup_wasm_env $TAGET_ARCH_FLAG $1 ;;
     *) # assume host build. use "") ?
       if $VC_BUILD; then
         setup_win $TAGET_ARCH_FLAG
@@ -1413,7 +1422,7 @@ config1(){
         fi
         add_librt
       elif host_is Darwin; then
-        setup_macos_env
+        setup_macos_env $TAGET_ARCH_FLAG
       elif host_is Sailfish; then
         echo "Build in Sailfish SDK"
         INSTALL_DIR=sdk-sailfish
