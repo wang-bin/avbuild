@@ -76,6 +76,7 @@ jobs:
             7z x -y dep.7z -otools &>/dev/null
             export PKG_CONFIG_PATH_MFX=$PWD/tools/dep/linux64-gcc/lib/pkgconfig
             export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+            export USER_OPT="--enable-wolfssl"
             ./avbuild.sh
       - *upload
   build_clang:
@@ -100,6 +101,7 @@ jobs:
             7z x -y dep.7z -otools &>/dev/null
             export PKG_CONFIG_PATH_MFX=$PWD/tools/dep/linux64-gcc/lib/pkgconfig
             export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+            export USER_OPT="--enable-wolfssl"
             USE_TOOLCHAIN=clang-${LLVM_VER:-14} ./avbuild.sh
       - *upload
 

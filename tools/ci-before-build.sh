@@ -38,6 +38,7 @@ fi
 wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7z
 7z x -y dep.7z -o/tmp
 find /tmp/dep/ClangCLx64 /tmp/dep/include /tmp/dep/linux*
+ln -sf /tmp/dep tools/
 
 if [[ "$SYSROOT_CACHE_HIT" != "true" ]]; then
   if [[ "$TARGET_OS" == "win"* || "$TARGET_OS" == "uwp"* ]]; then
@@ -51,6 +52,7 @@ if [[ "$SYSROOT_CACHE_HIT" != "true" ]]; then
     ${WINDOWSSDKDIR}/mkvfs.sh
   fi
 
+  # https://www.libsdl.org/release/SDL2-devel-2.0.22-VC.zip
   if [ "$TARGET_OS" == "sunxi" -o "$TARGET_OS" == "raspberry-pi" -o "$TARGET_OS" == "linux" ]; then
     wget https://sourceforge.net/projects/avbuild/files/${TARGET_OS}/${TARGET_OS/r*pi/rpi}-sysroot.tar.xz/download -O sysroot.tar.xz
     tar Jxf sysroot.tar.xz -C /tmp

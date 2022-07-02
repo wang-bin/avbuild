@@ -1,16 +1,19 @@
-From 4ea6bd1afbde12496a0c53783e65ee0dcd7113c3 Mon Sep 17 00:00:00 2001
+From 2ae804674b8f5257066f331a9b64c171e7ef2285 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 1 Jul 2022 16:03:06 +0800
-Subject: [PATCH 27/27] add h264-max-bit-depth to disable rarely depths
+Subject: [PATCH 27/29] add h264-max-bit-depth to disable rarely used depths
 
 ---
- configure               |  6 ++++++
- libavcodec/h264chroma.c |  4 ++++
- libavcodec/h264dsp.c    | 20 ++++++++++++++++++++
- libavcodec/h264idct.c   |  8 ++++++++
- libavcodec/h264pred.c   | 16 ++++++++++++++++
- libavcodec/h264qpel.c   | 17 +++++++++++++++++
- 6 files changed, 71 insertions(+)
+ configure                            |  6 ++++++
+ libavcodec/h264chroma.c              |  4 ++++
+ libavcodec/h264dsp.c                 | 20 ++++++++++++++++++++
+ libavcodec/h264idct.c                |  8 ++++++++
+ libavcodec/h264pred.c                | 16 ++++++++++++++++
+ libavcodec/h264qpel.c                | 17 +++++++++++++++++
+ libavcodec/x86/h264_intrapred_init.c |  2 ++
+ libavcodec/x86/h264chroma_init.c     |  3 ++-
+ libavcodec/x86/h264dsp_init.c        |  2 ++
+ 9 files changed, 77 insertions(+), 1 deletion(-)
 
 diff --git a/configure b/configure
 index cc41306d52..af2a3ffe67 100755
@@ -313,6 +316,64 @@ index 65fef03304..5a91b695b1 100644
      }
  
  #if ARCH_AARCH64
+diff --git a/libavcodec/x86/h264_intrapred_init.c b/libavcodec/x86/h264_intrapred_init.c
+index ee46927a24..f7e0f4a1b2 100644
+--- a/libavcodec/x86/h264_intrapred_init.c
++++ b/libavcodec/x86/h264_intrapred_init.c
+@@ -269,6 +269,7 @@ av_cold void ff_h264_pred_init_x86(H264PredContext *h, int codec_id,
+             }
+         }
+     } else if (bit_depth == 10) {
++#if H264_MAX_BIT_DEPTH >= 10
+         if (EXTERNAL_MMXEXT(cpu_flags)) {
+             h->pred4x4[DC_PRED             ] = ff_pred4x4_dc_10_mmxext;
+             h->pred4x4[HOR_UP_PRED         ] = ff_pred4x4_horizontal_up_10_mmxext;
+@@ -332,5 +333,6 @@ av_cold void ff_h264_pred_init_x86(H264PredContext *h, int codec_id,
+             h->pred8x8l[VERT_RIGHT_PRED     ] = ff_pred8x8l_vertical_right_10_avx;
+             h->pred8x8l[HOR_UP_PRED         ] = ff_pred8x8l_horizontal_up_10_avx;
+         }
++#endif /* H264_MAX_BIT_DEPTH >= 10 */
+     }
+ }
+diff --git a/libavcodec/x86/h264chroma_init.c b/libavcodec/x86/h264chroma_init.c
+index 7c0f492178..ea91fd136f 100644
+--- a/libavcodec/x86/h264chroma_init.c
++++ b/libavcodec/x86/h264chroma_init.c
+@@ -79,7 +79,7 @@ av_cold void ff_h264chroma_init_x86(H264ChromaContext *c, int bit_depth)
+         c->avg_h264_chroma_pixels_tab[2] = ff_avg_h264_chroma_mc2_mmxext;
+         c->put_h264_chroma_pixels_tab[2] = ff_put_h264_chroma_mc2_mmxext;
+     }
+-
++#if H264_MAX_BIT_DEPTH > 8
+     if (EXTERNAL_MMXEXT(cpu_flags) && bit_depth > 8 && bit_depth <= 10) {
+         c->put_h264_chroma_pixels_tab[2] = ff_put_h264_chroma_mc2_10_mmxext;
+         c->avg_h264_chroma_pixels_tab[2] = ff_avg_h264_chroma_mc2_10_mmxext;
+@@ -105,4 +105,5 @@ av_cold void ff_h264chroma_init_x86(H264ChromaContext *c, int bit_depth)
+         c->put_h264_chroma_pixels_tab[0] = ff_put_h264_chroma_mc8_10_avx;
+         c->avg_h264_chroma_pixels_tab[0] = ff_avg_h264_chroma_mc8_10_avx;
+     }
++#endif /* H264_MAX_BIT_DEPTH > 8 */
+ }
+diff --git a/libavcodec/x86/h264dsp_init.c b/libavcodec/x86/h264dsp_init.c
+index dc8fc4f720..39999bd2d2 100644
+--- a/libavcodec/x86/h264dsp_init.c
++++ b/libavcodec/x86/h264dsp_init.c
+@@ -275,6 +275,7 @@ av_cold void ff_h264dsp_init_x86(H264DSPContext *c, const int bit_depth,
+             c->h264_idct_dc_add     = ff_h264_idct_dc_add_8_avx;
+         }
+     } else if (bit_depth == 10) {
++#if H264_MAX_BIT_DEPTH >= 10
+         if (EXTERNAL_MMXEXT(cpu_flags)) {
+ #if ARCH_X86_32 && !HAVE_ALIGNED_STACK
+             c->h264_v_loop_filter_luma         = ff_deblock_v_luma_10_mmxext;
+@@ -362,6 +363,7 @@ av_cold void ff_h264dsp_init_x86(H264DSPContext *c, const int bit_depth,
+             c->h264_h_loop_filter_luma_intra   = ff_deblock_h_luma_intra_10_avx;
+ #endif /* HAVE_ALIGNED_STACK */
+         }
++#endif /* H264_MAX_BIT_DEPTH >= 10 */
+     }
+ #endif
+ }
 -- 
 2.32.0 (Apple Git-132)
 

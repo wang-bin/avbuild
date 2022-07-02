@@ -1533,7 +1533,7 @@ config1(){
       sed -i $sed_bak 's/\(#define HAVE_MMAP\) .*/\1 0/' config.h
     fi
   else
-    tail -n 20 ffbuild/config.log 2>/dev/null || tail -n 20 avbuild/config.log 2>/dev/null || tail -n 20 config.log 2>/dev/null #libav moves config.log to avbuild dir
+    tail -n 40 ffbuild/config.log 2>/dev/null || tail -n 40 avbuild/config.log 2>/dev/null || tail -n 40 config.log 2>/dev/null #libav moves config.log to avbuild dir
     exit 1
   fi
   touch $THIS_DIR/.dir/$INSTALL_DIR
@@ -1561,7 +1561,11 @@ EOF
       cp -af config.txt $THIS_DIR/$INSTALL_DIR
       cp -af $FFBUILD/config.log $THIS_DIR/$INSTALL_DIR
   })
-  [ $? -eq 0 ] || exit 2
+  [ $? -eq 0 ] || {
+    cp -af config.txt $THIS_DIR/$INSTALL_DIR
+    cp -af $FFBUILD/config.log $THIS_DIR/$INSTALL_DIR
+    exit 2
+  }
   $THIS_DIR/tools/mklibffmpeg.sh $PWD $THIS_DIR/$INSTALL_DIR
   cd $THIS_DIR/$INSTALL_DIR
   echo "https://github.com/wang-bin/avbuild" > README.txt
