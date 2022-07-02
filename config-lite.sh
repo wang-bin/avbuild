@@ -13,7 +13,7 @@ USER_OPT="--h264-max-bit-depth=10 \
 $USER_OPT
 "
 ENC_OPT_MOBILE="--enable-encoder=aac,dnxhd,exr,ff*,*yuv*,gif,h26[3-4]*,hevc*,mjpeg,*png,opus,pcm*,prores*,rawvideo,spdif,speedhq,*jpeg,*png,vp[7-9],wrapped_avframe"
-MUX_OPT_MOBILE="--enable-muxer=*jpeg,dnxhd,fifo,flv,gif,hls,h264,hevc,image2,mov,mp4,mpegts,matroska,null,og*,pcm*,rawvideo,spdif,*pipe,webm,wav"
+MUX_OPT_MOBILE="--enable-muxer=*jpeg,dnxhd,fifo,flv,gif,hls,h264,hevc,image2,mov,mp4,mpegts,matroska,null,og*,pcm*,rawvideo,spdif,*pipe,*segment,webm,wav"
 ENC_OPT="${ENC_OPT_MOBILE},nvenc*,vorbis"
 MUX_OPT="${MUX_OPT_MOBILE},dash,nu*"
 android_OPT="--disable-avdevice"
