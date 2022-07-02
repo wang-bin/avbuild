@@ -1087,6 +1087,8 @@ setup_macos_env(){
     }
     TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$MACOS_ARCH  --target-os=darwin"
   fi
+
+  [ -z "$MACOS_ARCH" ] && MACOS_ARCH=$(cc -dumpmachine |cut -d '-' -f 1)
   : ${MACOS_VER:=10.7}
   [[ "$MACOS_ARCH" == arm64* ]] && version_compare $MACOS_VER "<" 11.0 && MACOS_VER=11.0
   disable_opt xlib libxcb # installed by github action macos-11
