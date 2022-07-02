@@ -305,7 +305,7 @@ use_llvm_binutils() {
   local clang_dir=${USE_TOOLCHAIN%clang*}
   local clang_name=${USE_TOOLCHAIN##*/}
   local clang=$clang_dir${clang_name/-cl/}
-  local CLANG_FALLBACK=clang-13
+  local CLANG_FALLBACK=clang-14
   $IS_APPLE_CLANG && CLANG_FALLBACK=/usr/local/opt/llvm/bin/clang
   echo "clang: `$clang --version`"
   # -print-prog-name= prints native dir format(on windows) and `which` fails
@@ -965,7 +965,8 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
     ANDROID_SYSROOT_REL=${ANDROID_SYSROOT_LIB_REL}
     TOOLCHAIN_OPT+=" --sysroot=\$NDK_ROOT/$ANDROID_SYSROOT_REL"
   fi
-  TOOLCHAIN_OPT+=" --target-os=android --arch=${FFARCH} --enable-cross-compile --cross-prefix=$CROSS_PREFIX"
+  # pkg-config w/o cross_prefix
+  TOOLCHAIN_OPT+=" --target-os=android --arch=${FFARCH} --enable-cross-compile --cross-prefix=$CROSS_PREFIX --pkg-config=pkg-config"
   if $IS_CLANG ; then
     TOOLCHAIN_OPT+=" --cc=clang"
     EXTRA_CFLAGS+=" $CFLAGS_CLANG $CLANG_FLAGS"
@@ -990,7 +991,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   [ -n "$ANDROID_GCC_DIR" ] && PATHS="$ANDROID_GCC_DIR/bin:$PATHS"
   cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
 export PATH=$PATHS:$PATH
-export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/android_${ANDROID_ARCH}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/android_${ANDROID_ARCH}/lib/pkgconfig:$PKG_CONFIG_PATH
+export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/android/${ANDROID_ARCH}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/android_${ANDROID_ARCH}/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
 }
 #  --toolchain=hardened : https://wiki.debian.org/Hardening
@@ -1242,7 +1243,8 @@ setup_gnu_env(){
   $IS_CROSS_BUILD && {
     IS_CROSS_BUILD=true
     echo "gnu cross build"
-    TOOLCHAIN_OPT+=" --enable-cross-compile --target-os=linux --arch=$ARCH"
+    # pkg-config w/o cross_prefox
+    TOOLCHAIN_OPT+=" --enable-cross-compile --target-os=linux --arch=$ARCH --pkg-config=pkg-config"
     which "${CROSS_PREFIX}gcc" && SYSROOT_CC=`${CROSS_PREFIX}gcc -print-sysroot` # TODO: not for clang
   } || {
     echo "gnu host build"
@@ -1330,7 +1332,7 @@ setup_linux_env() {
     CROSS_PREFIX=$(linux_gnu_triple $ARCH)-
     setup_gnu_env $ARCH linux
   cat>>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
-export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/linux_${ARCH}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/linux_${ARCH}/lib/pkgconfig:$PKG_CONFIG_PATH
+export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/linux/${ARCH}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/linux_${ARCH}/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
     return 0
   fi
