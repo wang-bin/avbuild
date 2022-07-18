@@ -993,6 +993,8 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
 export PATH=$PATHS:$PATH
 export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/android/${ANDROID_ARCH}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/android_${ANDROID_ARCH}/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
+  LIBWOLFSSL="${THIS_DIR}/tools/dep/android/${ANDROID_ARCH}/lib/libwolfssl.a"
+  [ -f "$LIBWOLFSSL" ] && cp -avf "$LIBWOLFSSL" $THIS_DIR/build_$INSTALL_DIR/libwolfssl.a
 }
 #  --toolchain=hardened : https://wiki.debian.org/Hardening
 
@@ -1069,6 +1071,8 @@ setup_ios_env() {
   cat>>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
 export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/iOS/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/iOS/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
+  LIBWOLFSSL="${THIS_DIR}/tools/dep/iOS/lib/libwolfssl.a"
+  [ -f "$LIBWOLFSSL" ] && lipo -thin $IOS_ARCH "$LIBWOLFSSL" -output $THIS_DIR/build_$INSTALL_DIR/libwolfssl.a
 }
 
 setup_macos_env(){
@@ -1308,6 +1312,9 @@ setup_gnu_env(){
   cat > "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
 export PKG_CONFIG_PATH=$PKG_CONFIG_PATH
 EOF
+  LIBWOLFSSL="${THIS_DIR}/tools/dep/$2/${ARCH}/lib/libwolfssl.a"
+  [ -f "$LIBWOLFSSL" ] && cp -avf "$LIBWOLFSSL" $THIS_DIR/build_$INSTALL_DIR/libwolfssl.a
+  # TODO: copy mfx
 }
 
 # TODO: generic linux for all archs
@@ -1359,8 +1366,11 @@ EOF
   INSTALL_DIR=sdk-linux-${ARCH}-${INSTALL_DIR}
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
-export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/linux_${ARCH}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/linux_${ARCH}/lib/pkgconfig:$PKG_CONFIG_PATH
+export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/linux/${ARCH}/lib/pkgconfig:${THIS_DIR}/tools/dep/linux_${ARCH}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/linux_${ARCH}/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
+  LIBWOLFSSL="${THIS_DIR}/tools/dep/linux/${ARCH}/lib/libwolfssl.a"
+  [ -f "$LIBWOLFSSL" ] && cp -avf "$LIBWOLFSSL" $THIS_DIR/build_$INSTALL_DIR/libwolfssl.a
+  # TODO: copy mfx
 }
 
 setup_wasm_env(){
@@ -1560,6 +1570,12 @@ EOF
   time (make -j${JOBS:-`getconf _NPROCESSORS_ONLN`} install prefix="$THIS_DIR/$INSTALL_DIR" && {
       cp -af config.txt $THIS_DIR/$INSTALL_DIR
       cp -af $FFBUILD/config.log $THIS_DIR/$INSTALL_DIR
+      # wolfssl. TODO: mfx
+      LIBAVFORMAT="$THIS_DIR/$INSTALL_DIR/lib/libavformat.a"
+      if (nm -u "$LIBAVFORMAT"  2>&1 |grep -q wolfSSL) && [ -f "$THIS_DIR/build_${INSTALL_DIR}/libwolfssl.a" ]; then
+        $THIS_DIR/tools/mergea.sh "$THIS_DIR/$INSTALL_DIR/lib/libavformat_full.a" "$LIBAVFORMAT" "$THIS_DIR/build_${INSTALL_DIR}/libwolfssl.a"
+        mv "$THIS_DIR/$INSTALL_DIR/lib/libavformat_full.a" "$LIBAVFORMAT"
+      fi
   })
   [ $? -eq 0 ] || {
     cp -af config.txt $THIS_DIR/$INSTALL_DIR
