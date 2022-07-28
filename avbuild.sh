@@ -706,6 +706,7 @@ setup_winrt_env() {
   #http://fate.libav.org/arm-msvc-14-wp
   disable_opt ffnvcodec
   disable_opt programs avdevice
+  FEATURE_OPT+=" --disable-filter=ddagrab"
   TOOLCHAIN_OPT+=" --enable-cross-compile --target-os=win32"
   EXTRA_LDFLAGS+=" -APPCONTAINER"
   $WIN_VER_SET || {
