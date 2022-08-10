@@ -209,6 +209,7 @@ enable_libmfx(){ # TODO: which pkg-config to use for cross build
 }
 
 enable_opt hwaccels
+disable_opt vulkan # can not enable VK_ENABLE_BETA_EXTENSIONS for android
 
 add_elf_flags() {
   # -Wl,-z,noexecstack -Wl,--as-needed is added by configure
