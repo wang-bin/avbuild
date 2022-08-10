@@ -12,7 +12,7 @@ USER_OPT="--h264-max-bit-depth=10 \
 --disable-parsers --enable-parser=*sub*,aac*,ac3,cook,dnxhd,flac,h26[3-4],hevc,m*,opus,rv*,vc1,vorbis,vp[8-9] \
 $USER_OPT
 "
-ENC_OPT_MOBILE="--enable-encoder=aac,dnxhd,exr,ff*,*yuv*,gif,h26[3-4]*,hevc*,mjpeg,*png,opus,pcm*,prores*,rawvideo,spdif,speedhq,*jpeg,*png,vp[7-9],wrapped_avframe"
+ENC_OPT_MOBILE="--enable-encoder=aac,dnxhd,exr,ff*,*yuv*,gif,h26[3-4]*,hevc*,mjpeg,*png,opus,pcm*,prores*,rawvideo,spdif,speedhq,*jpeg,*png,tiff,vp[7-9],wrapped_avframe"
 MUX_OPT_MOBILE="--enable-muxer=*jpeg,dnxhd,fifo,flv,gif,hls,h264,hevc,image2,mov,mp4,mpegts,matroska,null,og*,pcm*,rawvideo,spdif,*pipe,*segment,webm,wav"
 ENC_OPT="${ENC_OPT_MOBILE},nvenc*,vorbis"
 MUX_OPT="${MUX_OPT_MOBILE},dash,nu*"
