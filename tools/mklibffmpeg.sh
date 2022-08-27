@@ -54,6 +54,7 @@ DUP_OBJS=(libswscale/log2_tab.o libswresample/log2_tab.o libavcodec/log2_tab.o l
   libavformat/mpeg4audio_sample_rates.o
   libavutil/avutilres.o
   libavcodec/avcodecres.o
+  libavcodec/half2float.o   # half2float.c is in libavutil, but not built into libavutil, always built in swscale
   libavdevice/avdeviceres.o
   libavformat/avformatres.o
   libavfilter/avfilterres.o
