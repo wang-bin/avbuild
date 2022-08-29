@@ -1,30 +1,31 @@
-From afa86aa794498a94d8ec426924851b3e7628ff0a Mon Sep 17 00:00:00 2001
+From 8108675b83ffa330afd472b67d15143083bb0738 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 13 Mar 2022 11:15:15 +0800
-Subject: [PATCH 25/26] win: enable windres for small and msvc
+Subject: [PATCH 25/29] win: enable windres for small and msvc
 
 ---
- configure | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ configure | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/configure b/configure
-index 4978304477..1d4c1ed2b2 100755
+index 7d7359f4c2..073541897c 100755
 --- a/configure
 +++ b/configure
-@@ -5547,7 +5547,7 @@ case $target_os in
+@@ -5580,7 +5580,7 @@ case $target_os in
              # Cannot build both shared and static libs when using dllimport.
              disable static
          fi
--        enabled shared && ! enabled small && test_cmd $windres --version && enable gnu_windres
-+        enabled shared && test_cmd $windres --version && enable gnu_windres
+-        ! enabled small && test_cmd $windres --version && enable gnu_windres
++        test_cmd $windres --version && enable gnu_windres
          enabled x86_32 && check_ldflags -Wl,--large-address-aware
          shlibdir_default="$bindir_default"
          SLIBPREF=""
-@@ -5597,6 +5597,7 @@ case $target_os in
+@@ -5630,7 +5630,7 @@ case $target_os in
              # Cannot build both shared and static libs with MSVC or icl.
              disable static
          fi
-+        enabled shared && test_cmd $windres --version && enable gnu_windres
+-        ! enabled small && test_cmd $windres --version && enable gnu_windres
++        test_cmd $windres --version && enable gnu_windres
          enabled x86_32 && check_ldflags -LARGEADDRESSAWARE
          shlibdir_default="$bindir_default"
          SLIBPREF=""

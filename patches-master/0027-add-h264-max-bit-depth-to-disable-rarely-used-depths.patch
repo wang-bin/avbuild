@@ -1,4 +1,4 @@
-From 2ae804674b8f5257066f331a9b64c171e7ef2285 Mon Sep 17 00:00:00 2001
+From ec1ec3d02fdfc07069dbe434fbf0181f6c82708f Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 1 Jul 2022 16:03:06 +0800
 Subject: [PATCH 27/29] add h264-max-bit-depth to disable rarely used depths
@@ -16,10 +16,10 @@ Subject: [PATCH 27/29] add h264-max-bit-depth to disable rarely used depths
  9 files changed, 77 insertions(+), 1 deletion(-)
 
 diff --git a/configure b/configure
-index cc41306d52..af2a3ffe67 100755
+index bbeddbc403..e6d2f93d67 100755
 --- a/configure
 +++ b/configure
-@@ -424,6 +424,7 @@ Advanced options (experts only):
+@@ -425,6 +425,7 @@ Advanced options (experts only):
                             disable buffer boundary checking in bitreaders
                             (faster, but may crash)
    --sws-max-filter-size=N  the max filter size swscale uses [$sws_max_filter_size_default]
@@ -27,7 +27,7 @@ index cc41306d52..af2a3ffe67 100755
  
  Optimization options (experts only):
    --disable-asm            disable all assembly optimizations
-@@ -2572,6 +2573,7 @@ CMDLINE_SET="
+@@ -2578,6 +2579,7 @@ CMDLINE_SET="
      env
      extra_version
      gas
@@ -35,17 +35,17 @@ index cc41306d52..af2a3ffe67 100755
      host_cc
      host_cflags
      host_extralibs
-@@ -3910,6 +3912,9 @@ enable valgrind_backtrace
+@@ -3922,6 +3924,9 @@ enable valgrind_backtrace
  sws_max_filter_size_default=256
  set_default sws_max_filter_size
  
-+h264_max_bit_depth_default=16
++h264_max_bit_depth_default=10
 +set_default h264_max_bit_depth
 +
  # internal components are enabled by default
  enable $EXTRALIBS_LIST
  
-@@ -7819,6 +7824,7 @@ cat > $TMPH <<EOF
+@@ -7865,6 +7870,7 @@ cat > $TMPH <<EOF
  #define SLIBSUF "$SLIBSUF"
  #define HAVE_MMX2 HAVE_MMXEXT
  #define SWS_MAX_FILTER_SIZE $sws_max_filter_size
@@ -336,7 +336,7 @@ index ee46927a24..f7e0f4a1b2 100644
      }
  }
 diff --git a/libavcodec/x86/h264chroma_init.c b/libavcodec/x86/h264chroma_init.c
-index 7c0f492178..ea91fd136f 100644
+index 34934b6ad0..c0d6e13886 100644
 --- a/libavcodec/x86/h264chroma_init.c
 +++ b/libavcodec/x86/h264chroma_init.c
 @@ -79,7 +79,7 @@ av_cold void ff_h264chroma_init_x86(H264ChromaContext *c, int bit_depth)
