@@ -8,7 +8,7 @@ make_mri() {
   echo end
 }
 
-LLVM_AR=llvm-ar-${LLVM_VER}
+LLVM_AR=llvm-ar-${LLVM_VER:-14}
 which $LLVM_AR || LLVM_AR=llvm-ar
 which $LLVM_AR || LLVM_AR=/usr/local/opt/llvm/bin/llvm-ar
 which $LLVM_AR || LLVM_AR=/opt/homebrew/opt/llvm/bin/llvm-ar
