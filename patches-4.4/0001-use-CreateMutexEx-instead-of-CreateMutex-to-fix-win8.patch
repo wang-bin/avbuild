@@ -1,7 +1,7 @@
-From c3e916dbc63b2cfb79303d1fe51a34c324ea1460 Mon Sep 17 00:00:00 2001
+From c9753d68df0d600f824ae6adc14fc9704fe78e67 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sat, 28 Oct 2017 20:26:50 +0800
-Subject: [PATCH 01/22] use CreateMutexEx instead of CreateMutex to fix win8
+Subject: [PATCH 01/28] use CreateMutexEx instead of CreateMutex to fix win8
  store app link error
 
 ---
@@ -9,7 +9,7 @@ Subject: [PATCH 01/22] use CreateMutexEx instead of CreateMutex to fix win8
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/libavutil/hwcontext_d3d11va.c b/libavutil/hwcontext_d3d11va.c
-index 2a3549ebd8..aecf2df42b 100644
+index 2a3549ebd8..26aff6ebb0 100644
 --- a/libavutil/hwcontext_d3d11va.c
 +++ b/libavutil/hwcontext_d3d11va.c
 @@ -41,6 +41,10 @@
@@ -28,10 +28,10 @@ index 2a3549ebd8..aecf2df42b 100644
  
      if (!device_hwctx->lock) {
 -        device_hwctx->lock_ctx = CreateMutex(NULL, 0, NULL);
-+        device_hwctx->lock_ctx = CreateMutexEx(NULL, 0, NULL, 0);
++        device_hwctx->lock_ctx = CreateMutexEx(NULL, NULL, 0, 0);
          if (device_hwctx->lock_ctx == INVALID_HANDLE_VALUE) {
              av_log(NULL, AV_LOG_ERROR, "Failed to create a mutex\n");
              return AVERROR(EINVAL);
 -- 
-2.30.1 (Apple Git-130)
+2.32.0 (Apple Git-132)
 
