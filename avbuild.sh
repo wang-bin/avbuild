@@ -1011,9 +1011,9 @@ setup_ios_env() {
 # clang -arch i386 -arch x86_64
 ## cc="xcrun -sdk iphoneos clang" or cc=`xcrun -sdk iphoneos --find clang`
   local IOS_ARCH=$1
-  local cc_has_bitcode=false # bitcode since xcode 7
+  local cc_has_bitcode=false # bitcode since xcode 7. deprecated in xcode14
   clang -fembed-bitcode -E - </dev/null &>/dev/null && cc_has_bitcode=true
-  : ${BITCODE:=true}
+  : ${BITCODE:=false}
   : ${TARGET_IOS5:=false}
   ios_ver=${2##ios}
   ios_ver=${ios_ver/simulator/}
@@ -1146,9 +1146,9 @@ setup_maccatalyst_env(){
   EXTRA_CFLAGS+=" -iwithsysroot /usr/include/libxml2"
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
   local IOS_ARCH=$1
-  local cc_has_bitcode=false # bitcode since xcode 7
+  local cc_has_bitcode=false # bitcode since xcode 7. deprecated in xcode14
   clang -fembed-bitcode -E - </dev/null &>/dev/null && cc_has_bitcode=true
-  : ${BITCODE:=true}
+  : ${BITCODE:=false}
   ios_ver=${2##*catalyst}
   local enable_bitcode=false
   $BITCODE && $cc_has_bitcode && enable_bitcode=true
