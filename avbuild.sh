@@ -826,6 +826,8 @@ EOF
 # TOOLCHAIN_OPT+=" --enable-cross-compile --cross-prefix=arm-mingw32ce- --target-os=mingw32ce --arch=arm --cpu=arm"
 
 setup_android_env() {
+  DEC_OPT=$DEC_OPT_MOBILE
+  DEMUX_OPT=$DEMUX_OPT_MOBILE
   ENC_OPT=$ENC_OPT_MOBILE
   MUX_OPT=$MUX_OPT_MOBILE
   # fbdev & v4l2 build error and not supported on android. camera requores api level 24, ./avbuild.sh android24
@@ -1001,6 +1003,8 @@ EOF
 #  --toolchain=hardened : https://wiki.debian.org/Hardening
 
 setup_ios_env() {
+  DEC_OPT=$DEC_OPT_MOBILE
+  DEMUX_OPT=$DEMUX_OPT_MOBILE
   ENC_OPT=$ENC_OPT_MOBILE
   MUX_OPT=$MUX_OPT_MOBILE
   enable_opt videotoolbox libxml2
@@ -1467,7 +1471,7 @@ config1(){
   is_libav || FEATURE_OPT+=" --disable-postproc"
   local CONFIGURE="configure --extra-version=avbuild --disable-doc ${DEBUG_OPT} $LIB_OPT --enable-runtime-cpudetect $FEATURE_OPT $TOOLCHAIN_OPT $USER_OPT"
   : ${NO_ENC=false}
-    CONFIGURE+=" $ENC_OPT $MUX_OPT"
+    CONFIGURE+=" $DEC_OPT $DEMUX_OPT $ENC_OPT $MUX_OPT"
   CONFIGURE=`trim2 $CONFIGURE`
   # http://ffmpeg.org/platform.html
   # static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
