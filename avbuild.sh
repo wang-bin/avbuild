@@ -1158,7 +1158,7 @@ setup_maccatalyst_env(){
   $BITCODE && $cc_has_bitcode && enable_bitcode=true
   $enable_bitcode && echo "Bitcode is enabled by default. set 'BITCODE=false' to disable"
 # http://iossupportmatrix.com
-  local ios_min=13.0
+  local ios_min=13.1 # xcode14 requires 13.1+
   local SYSROOT_SDK=macosx
   local VER_OS=iphoneos
   local BITCODE_FLAGS=
