@@ -35,7 +35,7 @@ jobs:
           - config: default
             target: macCatalyst
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Create Build Environment
       shell: bash
       env:
@@ -64,7 +64,7 @@ jobs:
     env:
       TARGET_OS: 'wasm'
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Create Build Environment
       shell: bash
       env:
@@ -97,7 +97,7 @@ jobs:
       matrix:
         config: [default,lite,lite-lto]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: 'Restore sysroot cache'
       id: sysroot-cache
       uses: actions/cache@v2
@@ -138,7 +138,7 @@ jobs:
         config: [default,lite]
         target: [windows-desktop,uwp]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: 'recursive'
     - name: Create Build Environment
@@ -199,7 +199,7 @@ jobs:
       AMF_DIR: "/tmp/dep/include"
       CONFIG_SUFFIX: '-lavfilters'
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       if: ${{ env.FF_VERSION == 'master' }}
       with:
         submodules: 'recursive'
@@ -257,7 +257,7 @@ jobs:
         config: [default,lite]
         target: [windows-desktop,uwp]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: 'recursive'
     - name: 'Restore sysroot cache'
@@ -306,7 +306,7 @@ jobs:
       matrix:
         config: [lite]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: 'recursive'
     - name: 'Restore sysroot cache'
@@ -354,7 +354,7 @@ jobs:
       matrix:
         config: [default,lite,lite-lto]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: 'recursive'
     - name: 'Restore sysroot cache'
@@ -396,7 +396,7 @@ jobs:
       matrix:
         config: [default,lite,lite-lto]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: 'Restore sysroot cache'
       id: sysroot-cache
       uses: actions/cache@v2
