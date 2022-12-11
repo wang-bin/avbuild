@@ -14,13 +14,13 @@ if [ `which dpkg` ]; then
     wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key |sudo apt-key add -
     #sudo apt update
     #sudo apt install -y software-properties-common # for add-apt-repository, ubuntu-tooolchain-r-test is required by trusty
-    sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-15 main"
-    sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal main" # clang-16
-    sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-8 main" # for rpi
+    sudo apt-add-repository "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-15 main"
+    sudo apt-add-repository "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy main" # clang-16
+    #sudo apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main" # for rpi
     sudo apt update
     pkgs+=" sshpass p7zip-full lld-$LLVER clang-tools-$LLVER" # clang-tools: clang-cl
     if [ "$TARGET_OS" == "linux" ]; then
-        pkgs+=" libstdc++-7-dev libxv-dev libva-dev libvdpau-dev libbz2-dev zlib1g-dev"
+        pkgs+=" libstdc++-11-dev libxv-dev libva-dev libvdpau-dev libbz2-dev zlib1g-dev"
         if [ "$COMPILER" == "gcc" ]; then
             pkgs+=" gcc"
         fi

@@ -90,7 +90,6 @@ jobs:
     env:
       TARGET_OS: 'raspberry-pi'
       COMPILER: 'clang'
-      LLVM_VER: 8
       CONFIG_SUFFIX: -${{ matrix.config }}
     strategy:
       fail-fast: false
