@@ -54,7 +54,7 @@ jobs:
       shell: bash
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
@@ -80,7 +80,7 @@ jobs:
       shell: bash
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}
         path: ffmpeg-*.tar.xz
@@ -99,7 +99,7 @@ jobs:
     - uses: actions/checkout@v3
     - name: 'Restore sysroot cache'
       id: sysroot-cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: /tmp/sysroot
         key: sysroot-${{ env.TARGET_OS }}-${{ secrets.LINUX_SYSROOT_ID }}
@@ -115,12 +115,12 @@ jobs:
       run: |
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export SYSROOT=/tmp/sysroot
-        USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh ${TARGET_OS}
+        V=1 USE_TOOLCHAIN=clang-${LLVM_VER} ./avbuild.sh ${TARGET_OS}
     - name: Make SDK
       shell: bash
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
@@ -180,7 +180,7 @@ jobs:
         move sdk* %SDK_NAME%
         7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off %SDK_NAME%.7z %SDK_NAME%
     - name: Archieve SDK
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-VS2022${{ matrix.config }}
         path: ffmpeg-*.7z
@@ -205,7 +205,7 @@ jobs:
     - name: 'Restore sysroot cache'
       if: ${{ env.FF_VERSION == 'master' }}
       id: sysroot-cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           /tmp/winsdk
@@ -234,7 +234,7 @@ jobs:
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
       if: ${{ env.FF_VERSION == 'master' }}
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-lavfilters
         path: ffmpeg-*.tar.xz
@@ -261,7 +261,7 @@ jobs:
         submodules: 'recursive'
     - name: 'Restore sysroot cache'
       id: sysroot-cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           /tmp/winsdk
@@ -285,7 +285,7 @@ jobs:
       shell: bash
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
@@ -310,7 +310,7 @@ jobs:
         submodules: 'recursive'
     - name: 'Restore sysroot cache'
       id: sysroot-cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           /tmp/winsdk
@@ -334,7 +334,7 @@ jobs:
       shell: bash
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
@@ -358,7 +358,7 @@ jobs:
         submodules: 'recursive'
     - name: 'Restore sysroot cache'
       id: sysroot-cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: /tmp/sysroot
         key: sysroot-${{ env.TARGET_OS }}-${{ secrets.LINUX_SYSROOT_ID }}
@@ -380,7 +380,7 @@ jobs:
       shell: bash
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
@@ -398,7 +398,7 @@ jobs:
     - uses: actions/checkout@v3
     - name: 'Restore sysroot cache'
       id: sysroot-cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: /tmp/sysroot
         key: sysroot-${{ env.TARGET_OS }}-${{ secrets.LINUX_SYSROOT_ID }}
@@ -420,7 +420,7 @@ jobs:
       shell: bash
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
@@ -430,19 +430,19 @@ jobs:
     needs: [VS2022]
     steps:
     - name: Download vs2022 desktop
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2022default
     - name: Download vs2022 desktop lite
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2022lite
     - name: Download vs2022 uwp
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-uwp-VS2022default
     - name: Download vs2022 uwp lite
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-uwp-VS2022lite
     - name: Upload to SourceForge
