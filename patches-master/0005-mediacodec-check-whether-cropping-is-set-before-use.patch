@@ -1,17 +1,17 @@
-From ec064cac996d2b06e84705560cb01fdad66be221 Mon Sep 17 00:00:00 2001
+From 216d074294df01c81d72954862b4eebab2e82530 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:52:35 +0800
-Subject: [PATCH 05/22] mediacodec: check whether cropping is set before use
+Subject: [PATCH 05/29] mediacodec: check whether cropping is set before use
 
 ---
- libavcodec/mediacodecdec_common.c | 16 +++++++++-------
- 1 file changed, 9 insertions(+), 7 deletions(-)
+ libavcodec/mediacodecdec_common.c | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
 
 diff --git a/libavcodec/mediacodecdec_common.c b/libavcodec/mediacodecdec_common.c
-index cb18aed401..58ffdba255 100644
+index 03bee11918..94e7668bf3 100644
 --- a/libavcodec/mediacodecdec_common.c
 +++ b/libavcodec/mediacodecdec_common.c
-@@ -484,13 +484,15 @@ static int mediacodec_dec_parse_format(AVCodecContext *avctx, MediaCodecDecConte
+@@ -481,10 +481,15 @@ static int mediacodec_dec_parse_format(AVCodecContext *avctx, MediaCodecDecConte
      }
  
      /* Optional fields */
@@ -19,9 +19,6 @@ index cb18aed401..58ffdba255 100644
 -    AMEDIAFORMAT_GET_INT32(s->crop_bottom, "crop-bottom", 0);
 -    AMEDIAFORMAT_GET_INT32(s->crop_left,   "crop-left",   0);
 -    AMEDIAFORMAT_GET_INT32(s->crop_right,  "crop-right",  0);
--
--    width = s->crop_right + 1 - s->crop_left;
--    height = s->crop_bottom + 1 - s->crop_top;
 +    if (ff_AMediaFormat_getInt32(s->format, "crop-top", &s->crop_top) && ff_AMediaFormat_getInt32(s->format, "crop-bottom", &s->crop_bottom))
 +        height = s->crop_bottom + 1 - s->crop_top;
 +    else
@@ -32,8 +29,8 @@ index cb18aed401..58ffdba255 100644
 +    else
 +        width = s->width;
  
-     AMEDIAFORMAT_GET_INT32(s->display_width,  "display-width",  0);
-     AMEDIAFORMAT_GET_INT32(s->display_height, "display-height", 0);
+     // Try "crop" for NDK
+     if (!(s->crop_right && s->crop_bottom) && s->use_ndk_codec)
 -- 
-2.30.1 (Apple Git-130)
+2.37.1 (Apple Git-137.1)
 

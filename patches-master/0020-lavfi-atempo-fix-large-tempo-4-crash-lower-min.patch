@@ -1,17 +1,17 @@
-From a65f95f314a4eb729c4cdd642f4a65588bd78c6c Mon Sep 17 00:00:00 2001
+From bf597feb5f8a1b3aac71da694392cef434287b8a Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 9 Aug 2020 23:35:08 +0800
-Subject: [PATCH 20/22] lavfi/atempo: fix large tempo(>4) crash, lower min
+Subject: [PATCH 20/29] lavfi/atempo: fix large tempo(>4) crash, lower min
 
 ---
- libavfilter/af_atempo.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ libavfilter/af_atempo.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/libavfilter/af_atempo.c b/libavfilter/af_atempo.c
-index e9a6da7970..152367114f 100644
+index 27f13638b0..eada3f0d1d 100644
 --- a/libavfilter/af_atempo.c
 +++ b/libavfilter/af_atempo.c
-@@ -152,7 +152,7 @@ typedef struct ATempoContext {
+@@ -155,7 +155,7 @@ typedef struct ATempoContext {
      uint64_t nsamples_out;
  } ATempoContext;
  
@@ -20,7 +20,16 @@ index e9a6da7970..152367114f 100644
  #define YAE_ATEMPO_MAX 100.0
  
  #define OFFSET(x) offsetof(ATempoContext, x)
-@@ -532,7 +532,7 @@ static int yae_load_frag(ATempoContext *atempo,
+@@ -439,7 +439,7 @@ static int yae_load_data(ATempoContext *atempo,
+     }
+ 
+     // samples are not expected to be skipped, unless tempo is greater than 2:
+-    av_assert0(read_size <= atempo->ring || atempo->tempo > 2.0);
++    //av_assert0(read_size <= atempo->ring || atempo->tempo > 2.0);
+ 
+     while (atempo->position[0] < stop_here && src < src_end) {
+         int src_samples = (src_end - src) / atempo->stride;
+@@ -536,7 +536,7 @@ static int yae_load_frag(ATempoContext *atempo,
      if (frag->position[0] < start) {
          // what we don't have we substitute with zeros:
          zeros = FFMIN(start - frag->position[0], (int64_t)nsamples);
@@ -30,5 +39,5 @@ index e9a6da7970..152367114f 100644
          memset(dst, 0, zeros * atempo->stride);
          dst += zeros * atempo->stride;
 -- 
-2.30.1 (Apple Git-130)
+2.37.1 (Apple Git-137.1)
 
