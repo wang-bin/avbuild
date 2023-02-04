@@ -98,6 +98,7 @@ echo $FFMAJOR |grep '\-' &>/dev/null && {
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR  git: $FFGIT"
 PATCH_BRANCH=master
 [ $FFMAJOR -lt 5 ] && PATCH_BRANCH=4.4
+# FIXME: 0026 windres ffmpeg5.x apply error
 if $FFGIT; then
   for p in $(find "$THIS_DIR/patches-$PATCH_BRANCH" -name "*.patch"); do
       echo $p
@@ -204,8 +205,10 @@ disable_opt() {
   done
 }
 
-enable_libmfx(){ # TODO: which pkg-config to use for cross build
-  pkg-config --libs libmfx && enable_opt libmfx
+enable_libmfx(){
+  pkg-config --libs vpl && enable_opt libvpl || {
+    pkg-config --libs libmfx && enable_opt libmfx
+  }
 }
 
 enable_opt hwaccels
@@ -529,6 +532,7 @@ echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG
   [ -f "$WindowsSdkDir/Include/$WindowsSDKVersion/um/WINDOWS.H" ] || { # case sensitive file system
   echo "CASE SENSITIVE FS!!!!!!!"
     [ -f "$WindowsSdkDir/vfs.yaml" ] && EXTRA_CFLAGS+=" -Xclang -ivfsoverlay -Xclang \\\"\$WindowsSdkDir/vfs.yaml\\\""
+    # TODO: gen vfs.yaml
   }
   cfguard=true
   # vcrt and win sdk dirs
