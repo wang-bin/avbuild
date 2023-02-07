@@ -11,6 +11,7 @@
 set MSYS2_PATH_TYPE=inherit
 set PATH_CLEAN=%PATH%
 SET WSLENV=WindowsSdkDir:Platform:VC_BUILD:VisualStudioVersion:INCLUDE:LIB:LIBPATH:PATH_arm:LIB_arm:LIBPATH_arm:PATH_arm64:LIB_arm64:LIBPATH_arm64:PATH_x86:LIB_x86:LIBPATH_x86:PATH_x64:LIB_x64:LIBPATH_x64
+set VC_LTL_LIB=%VC_LTL_DIR%\TargetPlatform\6.0.6000.0\lib
 
 set VC_BUILD=true
 set VS_CL=%1
@@ -203,7 +204,7 @@ if [%OS_VER%] == [10] (
 call "%VCVARSALL_BAT%" x86_amd64 %EXTRA_ARGS%
 set PATH_x64=%PATH%
 set LIBPATH_x64=%LIBPATH%
-set LIB_x64=%LIB%
+set LIB_x64=%VC_LTL_LIB%\x64;%LIB%
 set INCLUDE_x64=%INCLUDE%
 set PATH=%PATH_CLEAN%
 set LIB=
@@ -224,7 +225,7 @@ set INCLUDE=
 call "%VCVARSALL_BAT%" x86 %EXTRA_ARGS%
 set PATH_x86=%PATH%
 set LIBPATH_x86=%LIBPATH%
-set LIB_x86=%LIB%
+set LIB_x86=%VC_LTL_LIB%\Win32;%LIB%
 set INCLUDE_x86=%INCLUDE%
 
 goto end
@@ -269,6 +270,11 @@ echo win10 desktop sdk
 SET LIB=%VSINSTALLDIR%VC\lib\%ARCH2%;%UniversalCRTSdkDir%lib\%UCRTVersion%\ucrt\%ARCH%;;%UniversalCRTSdkDir%lib\%UCRTVersion%\um\%ARCH%
 SET LIBPATH=%VSINSTALLDIR%VC\lib\%ARCH2%;
 SET INCLUDE=%VSINSTALLDIR%VC\include;%UniversalCRTSdkDir%Include\%UCRTVersion%\ucrt;%UniversalCRTSdkDir%Include\%UCRTVersion%\um;%UniversalCRTSdkDir%Include\%UCRTVersion%\shared;%UniversalCRTSdkDir%Include\%UCRTVersion%\winrt
+
+if exist "%VC_LTL_DIR%\VC-LTL helper for nmake.cmd" (
+  echo using VC-LTL
+  call "%VC_LTL_DIR%\VC-LTL helper for nmake.cmd"
+)
 goto end
 
 :end

@@ -466,6 +466,7 @@ setup_win_clang(){
   : ${Platform:=$arch}
   platform=$(tolower $Platform)
   MACHINE=$Platform
+  LTL_Platform=$Platform
   if [ "${platform:0:3}" = "arm" ]; then
     $WIN_VER_SET || WIN_VER="0x0A00"
     $IS_STORE || EXTRA_CFLAGS+=" -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE=1"
@@ -474,12 +475,15 @@ setup_win_clang(){
     #  --as='clang -target aarch64-win32-gnu' --cc='clang -target aarch64-win32-msvc' : https://fate.libav.org/aarch64-win32-clang-6.0/20190219163918
     [ -z "${platform/*64*/}" ] ||  MACHINE=arm
     HAS_CUDA=false
+    LTL_Platform=$(toupper $MACHINE)
   elif [ -z "${Platform/*64/}" ]; then
     arch=x86_64
     Platform=x64
+    LTL_Platform=x64
   else
     arch=x86
     target_tripple_arch=i386
+    LTL_Platform=Win32
   fi
   : ${target_tripple_arch:=$arch}
   : ${Platform:=$arch}
@@ -511,7 +515,7 @@ setup_win_clang(){
   [ -n "$WIN_VER_LD" ] && TOOLCHAIN_OPT+=" --extra-ldexeflags='-SUBSYSTEM:CONSOLE,$WIN_VER_LD'"
   EXTRA_CFLAGS+=" $LTO_CFLAGS $TARGET_OPT -DWIN32 -D_WIN32 -D_WIN32_WINNT=$WIN_VER -Wno-nonportable-include-path -Wno-deprecated-declarations" # -Wno-deprecated-declarations: avoid clang crash
   $FORCE_LTO || $enable_lto && EXTRA_LDFLAGS+=" -MACHINE:$MACHINE" # lto is compiled as ir but not coff object and lld can not determin thw target arch
-  EXTRA_LDFLAGS+=' -DEBUG -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt -DEFAULTLIB:msvcrt'
+  EXTRA_LDFLAGS+=' -DEBUG -OPT:REF -SUBSYSTEM:CONSOLE -DEFAULTLIB:msvcrt'
   EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
   INSTALL_DIR="sdk-$2-$Platform-clang"
   # pkgconf: check_func_headers() includes lflags "mfx.lib" which can not be in -c. fallbck to header and lib check.
@@ -552,19 +556,26 @@ echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG
     cp -af patches/0001-define-timespec-for-vcrt-140.patch "$FFSRC/tmp.patch"
     (cd "$FFSRC" && patch -p1 -N <"tmp.patch")
   }
+  local VC_LTL_LIB=${VC_LTL_DIR}/TargetPlatform/${VC_LTL_VER:-6.0.6000.0}/lib/${LTL_Platform}
   $IS_CLANG_CL && {
-	EXTRA_CFLAGS+=" -MD"
+    if [ -d "$VC_LTL_LIB" ]; then
+      EXTRA_CFLAGS+=" -MT"
+    else
+	  EXTRA_CFLAGS+=" -MD"
+	  EXTRA_LDFLAGS+=" -NODEFAULTLIB:libcmt"
+    fi
 	[ "$MACHINE" == arm ] || EXTRA_CFLAGS+=" -Zi" # codeview is not implemented for arm(clang-10)
 	$cfguard && EXTRA_CFLAGS+=" /guard:cf"
   }	|| {
 	[ "$MACHINE" == arm ] || EXTRA_CFLAGS+=" -g -gcodeview"
 	$cfguard && EXTRA_CFLAGS+=" -Xclang -cfguard"
+	#EXTRA_LDFLAGS+=" -NODEFAULTLIB:libcmt" #?
   }
   $cfguard && EXTRA_LDFLAGS+=' -guard:cf'
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat > "$THIS_DIR/build_$INSTALL_DIR/.env.sh" <<EOF
 export INCLUDE="$VCDIR/include;$INCLUDE;$PKG_CONFIG_PATH_MFX_UNIX/../../include"
-export LIB="$VCDIR_LIB;$WindowsSdkDir/Lib/$WindowsSDKVersion/ucrt/${MACHINE/86_/};$WindowsSdkDir/Lib/$WindowsSDKVersion/um/${MACHINE/86_/};$PKG_CONFIG_PATH_MFX_UNIX/../../lib"
+export LIB="$VC_LTL_LIB;$VCDIR_LIB;$WindowsSdkDir/Lib/$WindowsSDKVersion/ucrt/${MACHINE/86_/};$WindowsSdkDir/Lib/$WindowsSDKVersion/um/${MACHINE/86_/};$PKG_CONFIG_PATH_MFX_UNIX/../../lib"
 export AR=$LLVM_AR
 export NM=$LLVM_NM
 #export V=1 # FFmpeg BUG: AR is overriden in common.mak and becomes an invalid command in makedef(@printf works in makefiles but not sh scripts)
@@ -583,8 +594,14 @@ setup_vc_env() {
   echo Call "set MSYS2_PATH_TYPE=inherit" before msys2 sh.exe if cl.exe is not found!
   enable_lto=false # ffmpeg requires DCE, while vc with LTCG (-GL) does not support DCE
   # dylink crt
-  EXTRA_CFLAGS+=" -Zi -FS -MD -guard:cf" # /Zi: https://scc.ustc.edu.cn/zlsc/tc4600/intel/2017.0.098/compiler_f/common/core/GUID-CA811CC8-A2C1-4DFF-AC39-DF7E1EEAF30E.html
-  EXTRA_LDFLAGS+=" -DEBUG -guard:cf -OPT:REF -SUBSYSTEM:CONSOLE -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
+  if [ -d "$VC_LTL_DIR/TargetPlatform" ]; then
+    EXTRA_CFLAGS+=" -MT"
+  else
+    EXTRA_CFLAGS+=" -MD"
+    EXTRA_LDFLAGS+=" -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
+  fi
+  EXTRA_CFLAGS+=" -Zi -FS -guard:cf" # /Zi: https://scc.ustc.edu.cn/zlsc/tc4600/intel/2017.0.098/compiler_f/common/core/GUID-CA811CC8-A2C1-4DFF-AC39-DF7E1EEAF30E.html
+  EXTRA_LDFLAGS+=" -DEBUG -guard:cf -OPT:REF -SUBSYSTEM:CONSOLE"
   TOOLCHAIN_OPT+=" --toolchain=msvc"
   VS_VER=${VisualStudioVersion:0:2}
   : ${Platform:=x86} #Platform is empty(native) or x86(cross using 64bit toolchain)
@@ -1619,7 +1636,10 @@ build_all(){
       [ "${os:0:3}" == "rpi" -o "${os:0:9}" == "raspberry" ] && archs=(armv6zk armv7-a)
       [[ "$os" == "sunxi" ]] && archs=(armv7)
       [ "${os:0:5}" == "mingw" ] && archs=(x86 x86_64)
-      [ "${os:0:2}" == "vc" -o "${os:0:3}" == "win" ] && archs=(x86 x64 arm arm64)
+      [ "${os:0:2}" == "vc" -o "${os:0:3}" == "win" ] && {
+        archs=(x86 x64 arm arm64)
+        [ -d "$VC_LTL_DIR" ] && archs=(x86 x64)
+      }
       [[ "${os:0:5}" == "winrt" || "${os:0:3}" == "uwp" || "$os" == win*store* || "$os" == win*phone* ]] && archs=(x86 x64 arm arm64)
       [[ "$os" == macos* || "$os" == *catalyst* ]] && {
         archs=
