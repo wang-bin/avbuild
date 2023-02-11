@@ -1,0 +1,76 @@
+From 5c6aca86940b7fc4acaa81eda4a5f039977a1702 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Sun, 29 Oct 2017 23:35:28 +0800
+Subject: [PATCH 04/30] videotoolbox: check runtime availability
+
+fix warnings/errors for new compiler (since xcode9) if targeting
+macOS<10.8
+---
+ libavcodec/videotoolbox.c | 19 +++++++++++++------
+ 1 file changed, 13 insertions(+), 6 deletions(-)
+
+diff --git a/libavcodec/videotoolbox.c b/libavcodec/videotoolbox.c
+index d61d310600..cf8b1ef3d4 100644
+--- a/libavcodec/videotoolbox.c
++++ b/libavcodec/videotoolbox.c
+@@ -39,6 +39,10 @@
+ #include <AvailabilityMacros.h>
+ #include <TargetConditionals.h>
+ 
++#if !__has_builtin(__builtin_available)
++#define __builtin_available(...) (true)
++#endif
++
+ #ifndef kVTVideoDecoderSpecification_RequireHardwareAcceleratedVideoDecoder
+ #  define kVTVideoDecoderSpecification_RequireHardwareAcceleratedVideoDecoder CFSTR("RequireHardwareAcceleratedVideoDecoder")
+ #endif
+@@ -708,7 +712,7 @@ static void videotoolbox_decoder_callback(void *opaque,
+ 
+ static OSStatus videotoolbox_session_decode_frame(AVCodecContext *avctx)
+ {
+-    OSStatus status;
++    OSStatus status = kVTInvalidSessionErr;
+     CMSampleBufferRef sample_buf;
+     AVVideotoolboxContext *videotoolbox = videotoolbox_get_context(avctx);
+     VTContext *vtctx = avctx->internal->hwaccel_priv_data;
+@@ -720,13 +724,15 @@ static OSStatus videotoolbox_session_decode_frame(AVCodecContext *avctx)
+     if (!sample_buf)
+         return -1;
+ 
+-    status = VTDecompressionSessionDecodeFrame(videotoolbox->session,
++    if (__builtin_available(macOS 10.8, iOS 8.0, tvOS 10.2, *)) {
++        status = VTDecompressionSessionDecodeFrame(videotoolbox->session,
+                                                sample_buf,
+                                                0,       // decodeFlags
+                                                NULL,    // sourceFrameRefCon
+                                                0);      // infoFlagsOut
+-    if (status == noErr)
+-        status = VTDecompressionSessionWaitForAsynchronousFrames(videotoolbox->session);
++        if (status == noErr)
++            status = VTDecompressionSessionWaitForAsynchronousFrames(videotoolbox->session);
++    }
+ 
+     CFRelease(sample_buf);
+ 
+@@ -860,7 +866,7 @@ static CFDictionaryRef videotoolbox_decoder_config_create(CMVideoCodecType codec
+ static int videotoolbox_start(AVCodecContext *avctx)
+ {
+     AVVideotoolboxContext *videotoolbox = videotoolbox_get_context(avctx);
+-    OSStatus status;
++    OSStatus status = kVTInvalidSessionErr;
+     VTDecompressionOutputCallbackRecord decoder_cb;
+     CFDictionaryRef decoder_spec;
+     CFDictionaryRef buf_attr;
+@@ -951,7 +957,8 @@ static int videotoolbox_start(AVCodecContext *avctx)
+     decoder_cb.decompressionOutputCallback = videotoolbox_decoder_callback;
+     decoder_cb.decompressionOutputRefCon   = avctx->internal->hwaccel_priv_data;
+ 
+-    status = VTDecompressionSessionCreate(NULL,                      // allocator
++    if (__builtin_available(macOS 10.8, iOS 8.0, tvOS 10.2, *))
++        status = VTDecompressionSessionCreate(NULL,                      // allocator
+                                           videotoolbox->cm_fmt_desc, // videoFormatDescription
+                                           decoder_spec,              // videoDecoderSpecification
+                                           buf_attr,                  // destinationImageBufferAttributes
+-- 
+2.37.1 (Apple Git-137.1)
+

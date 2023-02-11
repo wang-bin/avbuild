@@ -98,7 +98,7 @@ echo $FFMAJOR |grep '\-' &>/dev/null && {
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR  git: $FFGIT"
 PATCH_BRANCH=master
 [ $FFMAJOR -lt 5 ] && PATCH_BRANCH=4.4
-# FIXME: 0026 windres ffmpeg5.x apply error
+[ $FFMAJOR -eq 5 ] && PATCH_BRANCH=5.1
 if $FFGIT; then
   for p in $(find "$THIS_DIR/patches-$PATCH_BRANCH" -name "*.patch"); do
       echo $p
@@ -556,7 +556,7 @@ echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG
     cp -af patches/0001-define-timespec-for-vcrt-140.patch "$FFSRC/tmp.patch"
     (cd "$FFSRC" && patch -p1 -N <"tmp.patch")
   }
-  local VC_LTL_LIB=${VC_LTL_DIR}/TargetPlatform/${VC_LTL_VER:-6.0.6000.0}/lib/${LTL_Platform}
+  local VC_LTL_LIB=${VC_LTL_DIR}/TargetPlatform/${VC_LTL_VER:-10.0.19041.0}/lib/${LTL_Platform} #/CleanImport
   $IS_CLANG_CL && {
     if [ -d "$VC_LTL_LIB" ]; then
       EXTRA_CFLAGS+=" -MT"

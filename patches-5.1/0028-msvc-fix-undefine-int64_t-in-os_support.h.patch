@@ -1,0 +1,24 @@
+From 76b0e5bdfc6d590de68949b699c55a285029c351 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Sat, 2 Jul 2022 15:04:42 +0800
+Subject: [PATCH 28/30] msvc: fix undefine int64_t in os_support.h
+
+---
+ libavformat/os_support.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/libavformat/os_support.h b/libavformat/os_support.h
+index b419efa408..069356f2ed 100644
+--- a/libavformat/os_support.h
++++ b/libavformat/os_support.h
+@@ -41,6 +41,7 @@
+ #endif
+ 
+ #ifdef _WIN32
++#  include <stdint.h>
+ #  include <fcntl.h>
+ #  ifdef lseek
+ #   undef lseek
+-- 
+2.37.1 (Apple Git-137.1)
+
