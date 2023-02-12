@@ -95,10 +95,10 @@ echo $FFMAJOR |grep '\-' &>/dev/null && {
   FFMINOR=0
 }
 ! $FFGIT && [ ${FFMAJOR} -gt 3 ] && FFGIT=true
-echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR  git: $FFGIT"
 PATCH_BRANCH=master
 [ $FFMAJOR -lt 5 ] && PATCH_BRANCH=4.4
 [ $FFMAJOR -eq 5 ] && PATCH_BRANCH=5.1
+echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR  git: $FFGIT. patch set version: $PATCH_BRANCH"
 if $FFGIT; then
   for p in $(find "$THIS_DIR/patches-$PATCH_BRANCH" -name "*.patch"); do
       echo $p
@@ -309,7 +309,7 @@ use_llvm_binutils() {
   local clang_dir=${USE_TOOLCHAIN%clang*}
   local clang_name=${USE_TOOLCHAIN##*/}
   local clang=$clang_dir${clang_name/-cl/}
-  local CLANG_FALLBACK=clang-${LLVM_VER:-15}
+  local CLANG_FALLBACK=clang-${LLVM_VER:-16}
   $IS_APPLE_CLANG && CLANG_FALLBACK=/usr/local/opt/llvm/bin/clang
   echo "clang: `$clang --version`"
   # -print-prog-name= prints native dir format(on windows) and `which` fails

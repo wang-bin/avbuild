@@ -1,5 +1,5 @@
 #!/bin/bash
-LLVER=${LLVM_VER:-14}
+LLVER=${LLVM_VER:-16}
 NDK_HOST=linux
 export XZ_OPT="--threads=`getconf _NPROCESSORS_ONLN` -9e" # -9e. -8/9 will disable mt?
   ln -sf config{${CONFIG_SUFFIX},}.sh;
@@ -10,14 +10,11 @@ if [ "$TARGET_OS" == "wasm" ]; then
   pkgs+=" emscripten"
 fi
 if [ `which dpkg` ]; then
-    #wget https://apt.llvm.org/llvm.sh
-    wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key |sudo apt-key add -
-    #sudo apt update
-    #sudo apt install -y software-properties-common # for add-apt-repository, ubuntu-tooolchain-r-test is required by trusty
-    sudo apt-add-repository "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-15 main"
-    sudo apt-add-repository "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy main" # clang-16
-    #sudo apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main" # for rpi
-    sudo apt update
+    #sudo apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main" # for rpi1
+    #bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
+    wget https://apt.llvm.org/llvm.sh
+    chmod +x llvm.sh
+    sudo ./llvm.sh ${LLVM_VER}
     pkgs+=" sshpass p7zip-full lld-$LLVER clang-tools-$LLVER" # clang-tools: clang-cl
     if [ "$TARGET_OS" == "linux" ]; then
         pkgs+=" libstdc++-11-dev libxv-dev libva-dev libvdpau-dev libbz2-dev zlib1g-dev"
