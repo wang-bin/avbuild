@@ -65,15 +65,24 @@ if [ "$TARGET_OS" == "android" -a ! -d "$ANDROID_NDK_LATEST_HOME" ]; then
     mv /tmp/android-ndk-${NDK_VERSION:-r24} $ANDROID_NDK
 fi
 
+FF_BRANCH=${FF_VERSION}
+[ "$FF_BRANCH" == "master" ] || FF_BRANCH="release/$FF_BRANCH"
 if [ -f ffmpeg-${FF_VERSION}/configure ]; then
+  echo "ffmpeg src exists"
   cd ffmpeg-${FF_VERSION}
   git reset --hard HEAD
   git fetch
   git checkout origin/master
+  [ -n "$FF_COMMIT" ] && git checkout $FF_COMMIT
+  cd -
+elif [ -n "$FF_COMMIT" ]; then
+  echo "no ffmpeg src. clone and checkout $FF_COMMIT"
+  git clone -b ${FF_BRANCH} ${FFREPO:-https://git.ffmpeg.org/ffmpeg.git} ffmpeg-${FF_VERSION}
+  cd ffmpeg-${FF_VERSION}
+  git checkout $FF_COMMIT
   cd -
 else
-  FF_BRANCH=${FF_VERSION}
-  [ "$FF_BRANCH" == "master" ] || FF_BRANCH="release/$FF_BRANCH"
+  echo "no ffmpeg src. clone"
   git clone -b ${FF_BRANCH} --depth 1 --no-tags ${FFREPO:-https://git.ffmpeg.org/ffmpeg.git} ffmpeg-${FF_VERSION}
 fi
 
