@@ -4,8 +4,6 @@ on:
   push:
   schedule:
     - cron: '0 12 * * 0'
-    - cron: '0 0 * * 3'
-      branchs: [master, gpl]
 
 
 env:
@@ -53,6 +51,9 @@ jobs:
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         [ "${TARGET_OS}" = iOS ] && export USER_OPT="--enable-wolfssl"
         ./avbuild.sh ${TARGET_OS}
+        if [ "${TARGET_OS}" = iOS ]; then
+          find sdk-* -name "*.dylib" -delete
+        fi
     - name: Make SDK
       shell: bash
       run: ./tools/ci-after-build.sh

@@ -1032,7 +1032,7 @@ setup_ios_env() {
   disable_opt avdevice
   EXTRA_CFLAGS+=" -iwithsysroot /usr/include/libxml2"
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
-  #LIB_OPT= #static only
+  LIB_OPT= #static only
 # clang -arch i386 -arch x86_64
 ## cc="xcrun -sdk iphoneos clang" or cc=`xcrun -sdk iphoneos --find clang`
   local IOS_ARCH=$1
@@ -1612,7 +1612,8 @@ EOF
   $THIS_DIR/tools/mklibffmpeg.sh $PWD $THIS_DIR/$INSTALL_DIR
   cd $THIS_DIR/$INSTALL_DIR
   echo "https://github.com/wang-bin/avbuild" > README.txt
-  cp -af $FFSRC/{Changelog,RELEASE_NOTES} .
+  cp -af "$FFSRC/Changelog" $OUT_DIR
+  [ -f "$FFSRC/RELEASE_NOTES" ] && cp -af "$FFSRC/RELEASE_NOTES" $OUT_DIR
   [ -f "$FFSRC/$LICENSE_FILE" ] && cp -af "$FFSRC/$LICENSE_FILE" . || touch $LICENSE_FILE
   if [ -f bin/avutil.lib ]; then
     mv bin/*.lib lib
@@ -1718,7 +1719,7 @@ make_universal()
     cd $THIS_DIR
     mkdir -p $OUT_DIR/{bin,lib}
     cp -af ${dirs[0]}/include $OUT_DIR
-    for a in libavutil libavformat libavcodec libavfilter libavresample libavdevice libswscale libswresample; do
+    for a in libavutil libavformat libavcodec libavfilter libavdevice libswscale libswresample; do
       libs=
       for d in ${dirs[@]}; do
         [ -f $d/lib/${a}.a ] && libs+=" $d/lib/${a}.a"
@@ -1729,15 +1730,17 @@ make_universal()
         lipo -info $OUT_DIR/lib/${a}.a
       }
     done
-    for a in libavutil libavformat libavcodec libavfilter libavresample libavdevice libswscale libswresample libffmpeg; do
+    for a in libavutil libavformat libavcodec libavfilter libavdevice libswscale libswresample libffmpeg; do
       dylibs=
       for d in ${dirs[@]}; do
-        dylib=$(ls $d/lib/${a}.*.*.dylib)
-        [ -n "$dylib" ] || dylib=$(ls $d/lib/${a}.*.dylib) # libffmpeg.4.dylib
-        dylib=${dylib##*/}
-        [ -f $d/lib/$dylib ] && dylibs+=" $d/lib/$dylib"
+        if [ -f "$d/lib/${a}.dylib" ]; then
+          dylib=$(ls $d/lib/${a}.*.*.dylib)
+          [ -n "$dylib" ] || dylib=$(ls $d/lib/${a}.*.dylib) # libffmpeg.4.dylib
+          dylib=${dylib##*/}
+          [ -f $d/lib/$dylib ] && dylibs+=" $d/lib/$dylib"
+          cp -af $d/lib/${a}.*.dylib $d/lib/${a}.dylib $OUT_DIR/lib/
+        fi
       done
-      cp -af $d/lib/${a}.*.dylib $d/lib/${a}.dylib $OUT_DIR/lib/
       #echo "lipo -create $dylibs -o $OUT_DIR/lib/$dylib"
       test -n "$dylibs" && {
         lipo -create $dylibs -o $OUT_DIR/lib/$dylib
@@ -1759,7 +1762,8 @@ make_universal()
       cat $d/config.txt >>$OUT_DIR/config.txt
     done
   # TODO: create tbd
-    cp -af $FFSRC/{Changelog,RELEASE_NOTES} $OUT_DIR
+    cp -af "$FFSRC/Changelog" $OUT_DIR
+    [ -f "$FFSRC/RELEASE_NOTES" ] && cp -af "$FFSRC/RELEASE_NOTES" $OUT_DIR
     [ -f "$FFSRC/$LICENSE_FILE" ] && cp -af "$FFSRC/$LICENSE_FILE" $OUT_DIR || touch $OUT_DIR/$LICENSE_FILE
     echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
     rm -rf ${dirs[@]}
@@ -1782,7 +1786,8 @@ make_universal()
       cp -af $d/lib/* $OUT_DIR/lib/$arch
       cat $d/config.txt >$OUT_DIR/config-$arch.txt
       cat $d/config.log >$OUT_DIR/config-$arch.log
-      cp -af $FFSRC/{Changelog,RELEASE_NOTES} $OUT_DIR
+      cp -af "$FFSRC/Changelog" $OUT_DIR
+      [ -f "$FFSRC/RELEASE_NOTES" ] && cp -af "$FFSRC/RELEASE_NOTES" $OUT_DIR
       [ -f "$FFSRC/$LICENSE_FILE" ] && cp -af "$FFSRC/$LICENSE_FILE" $OUT_DIR || touch $OUT_DIR/$LICENSE_FILE
       echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
       rm -rf $d
