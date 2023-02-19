@@ -1349,8 +1349,9 @@ setup_linux_env() {
   : ${USE_TOOLCHAIN:=gcc}
   probe_cc $USE_TOOLCHAIN
   add_elf_flags
-  enable_opt vaapi vdpau
+  enable_opt vaapi vdpau libdrm
   $IS_CLANG && enable_cuda_llvm
+  $IS_CLANG && EXTRA_CFLAGS+=" -iwithsysroot /usr/include/libdrm"
 
   local CC_ARCH=`$USE_TOOLCHAIN -dumpmachine`
   CC_ARCH=${CC_ARCH%%-*}
@@ -1612,8 +1613,8 @@ EOF
   $THIS_DIR/tools/mklibffmpeg.sh $PWD $THIS_DIR/$INSTALL_DIR
   cd $THIS_DIR/$INSTALL_DIR
   echo "https://github.com/wang-bin/avbuild" > README.txt
-  cp -af "$FFSRC/Changelog" $OUT_DIR
-  [ -f "$FFSRC/RELEASE_NOTES" ] && cp -af "$FFSRC/RELEASE_NOTES" $OUT_DIR
+  cp -af "$FFSRC/Changelog" .
+  [ -f "$FFSRC/RELEASE_NOTES" ] && cp -af "$FFSRC/RELEASE_NOTES" .
   [ -f "$FFSRC/$LICENSE_FILE" ] && cp -af "$FFSRC/$LICENSE_FILE" . || touch $LICENSE_FILE
   if [ -f bin/avutil.lib ]; then
     mv bin/*.lib lib
