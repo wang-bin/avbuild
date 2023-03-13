@@ -78,6 +78,7 @@ RELEASE=`cat Makefile |sed 's/^include //;s/Makefile$/RELEASE/'`
 LIBMAJOR=`echo $LIBVERSION |cut -d . -f 1`
 LIBMINOR=`echo $LIBVERSION |cut -d . -f 2`
 LIBMICRO=`echo $LIBVERSION |cut -d . -f 3`
+test -z "$LIBMICRO" && LIBMICRO=0
 
 sed "s,LIBFFMPEG_VERSION_MAJOR,$LIBMAJOR,g;s,LIBFFMPEG_VERSION_MINOR,$LIBMINOR,g;s,LIBFFMPEG_VERSION_MICRO,$LIBMICRO,g;s,LIBFFMPEG_VERSION,$LIBVERSION,g" "$THIS_DIR/libffmpegres.rc.in" >libffmpegres.rc
 
