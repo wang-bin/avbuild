@@ -228,13 +228,11 @@ fi
 sed_bak=
 host_is darwin && sed_bak=".bak"
 
-CFLAG_IWITHSYSROOT_GCC="-isystem=" # not work for win dir
-CFLAG_IWITHSYSROOT_CLANG="-iwithsysroot "
 CFLAGS_CLANG=
 LFLAGS_CLANG=
 CFLAGS_GCC=
 LFLAGS_GCC=
-CFLAG_IWITHSYSROOT=$CFLAG_IWITHSYSROOT_GCC
+CFLAG_IWITHSYSROOT="-I="
 IS_CLANG=false
 IS_APPLE_CLANG=false
 IS_CLANG_CL=false
@@ -275,7 +273,6 @@ probe_cc() {
     IS_CLANG=true
     HAVE_LLD=true
   elif $IS_CLANG; then
-    CFLAG_IWITHSYSROOT=$CFLAG_IWITHSYSROOT_CLANG
     LLD=$($cc -print-prog-name=lld)
     # check file existence?
     $LLD -flavor gnu -v >/dev/null && HAVE_LLD=true
@@ -1030,7 +1027,7 @@ setup_ios_env() {
   MUX_OPT=$MUX_OPT_MOBILE
   enable_opt videotoolbox libxml2
   disable_opt avdevice
-  EXTRA_CFLAGS+=" -iwithsysroot /usr/include/libxml2"
+  EXTRA_CFLAGS+=" -I=/usr/include/libxml2"
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
   LIB_OPT= #static only
 # clang -arch i386 -arch x86_64
@@ -1124,7 +1121,7 @@ setup_macos_env(){
   [[ "$MACOS_ARCH" == arm64* ]] && version_compare $MACOS_VER "<" 11.0 && MACOS_VER=11.0
   disable_opt xlib libxcb # installed by github action macos-11
   enable_opt videotoolbox vda libxml2
-  EXTRA_CFLAGS+=" -iwithsysroot /usr/include/libxml2"
+  EXTRA_CFLAGS+=" -I=/usr/include/libxml2"
   version_compare $MACOS_VER "<" 10.7 && disable_opt lzma avdevice #avfoundation is not supported on 10.6
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
   if $FFGIT; then
@@ -1168,7 +1165,7 @@ EOF
 setup_maccatalyst_env(){
   enable_opt videotoolbox libxml2
   disable_opt avdevice appkit securetransport
-  EXTRA_CFLAGS+=" -iwithsysroot /usr/include/libxml2"
+  EXTRA_CFLAGS+=" -I=/usr/include/libxml2"
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
   local IOS_ARCH=$1
   local cc_has_bitcode=false # bitcode since xcode 7. deprecated in xcode14
@@ -1349,9 +1346,10 @@ setup_linux_env() {
   : ${USE_TOOLCHAIN:=gcc}
   probe_cc $USE_TOOLCHAIN
   add_elf_flags
+  enable_opt v4l2-request libudev
   enable_opt vaapi vdpau libdrm
   $IS_CLANG && enable_cuda_llvm
-  $IS_CLANG && EXTRA_CFLAGS+=" -iwithsysroot /usr/include/libdrm"
+  $IS_CLANG && EXTRA_CFLAGS+=" -I=/usr/include/libdrm"
 
   local CC_ARCH=`$USE_TOOLCHAIN -dumpmachine`
   CC_ARCH=${CC_ARCH%%-*}
@@ -1455,7 +1453,7 @@ config1(){
       elif host_is MinGW || host_is MSYS; then
         setup_mingw_env
       elif host_is Linux; then
-        if [ -c /dev/vchiq ]; then
+        if [ -c /dev/vchiq -a -f /opt/vc/lib/libbcm_host.so ]; then # libbcm_host.so is not available for rpi4
           setup_rpi_env armv6zk rpi
         elif [ -d /allwinner ]; then
           setup_sunxi_env armv7 sunxi
