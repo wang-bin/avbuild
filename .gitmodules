@@ -4,3 +4,6 @@
 [submodule "tools/gas-preprocessor"]
 	path = tools/gas-preprocessor
 	url = https://github.com/FFmpeg/gas-preprocessor.git
+[submodule "tools/Vulkan-Headers"]
+	path = tools/Vulkan-Headers
+	url = https://github.com/KhronosGroup/Vulkan-Headers.git

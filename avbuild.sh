@@ -99,12 +99,16 @@ PATCH_BRANCH=master
 [ $FFMAJOR -lt 5 ] && PATCH_BRANCH=4.4
 [ $FFMAJOR -eq 5 ] && PATCH_BRANCH=5.1
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR  git: $FFGIT. patch set version: $PATCH_BRANCH"
+USE_VK=false
 if $FFGIT; then
+  USE_VK=true
   for p in $(find "$THIS_DIR/patches-$PATCH_BRANCH" -name "*.patch"); do
       echo $p
     patch -p1 -N < $p
   done
 fi
+[ $FFMAJOR -ge 6 -a $FFMAJOR -ge 1 ] && USE_VK=true
+$USE_VK || disable_opt vulkan
 cd -
 
 toupper(){
@@ -201,7 +205,9 @@ enable_opt() {
 disable_opt() {
   # grep -m1
   for OPT in $@; do
-    grep -qE "\-\-disable\-${OPT}|\-\-enable\-${OPT}.*\[autodetect\]" $FFSRC/configure && FEATURE_OPT="--disable-$OPT $FEATURE_OPT" # prepend to support override
+    grep -qE "\-\-disable\-${OPT}|\-\-enable\-${OPT}.*\[autodetect\]" $FFSRC/configure && {
+        echo $FEATURE_OPT |grep -q "disable-$OPT"  || FEATURE_OPT="--disable-$OPT $FEATURE_OPT" # prepend to support override
+    }
   done
 }
 
@@ -212,7 +218,6 @@ enable_libmfx(){
 }
 
 enable_opt hwaccels
-disable_opt vulkan # can not enable VK_ENABLE_BETA_EXTENSIONS for android
 
 add_elf_flags() {
   # -Wl,-z,noexecstack -Wl,--as-needed is added by configure
@@ -414,6 +419,7 @@ setup_win(){
   probe_cc $USE_TOOLCHAIN
   enable_opt mediafoundation
   disable_opt ptx-compression # libavfilter link error (zlib used in ff_cuda_load_module but no lib dep)
+  $USE_VK && EXTRA_CFLAGS+=" -I\$THIS_DIR/tools/Vulkan-Headers/include"
 
   if $IS_CLANG ; then
     setup_win_clang $@
@@ -724,6 +730,7 @@ setup_winrt_env() {
   fi
   #http://fate.libav.org/arm-msvc-14-wp
   disable_opt ffnvcodec
+  disable_opt vulkan
   disable_opt programs avdevice
   FEATURE_OPT+=" --disable-filter=ddagrab"
   TOOLCHAIN_OPT+=" --enable-cross-compile --target-os=win32"
@@ -825,6 +832,7 @@ setup_mingw_env() {
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
 
   [ -d "$AMF_DIR" ] && EXTRA_CFLAGS+=" -I$AMF_DIR"
+  $USE_VK && EXTRA_CFLAGS+=" -I\$THIS_DIR/tools/Vulkan-Headers/include"
   enable_libmfx
   enable_opt dxva2
   enable_opt mediafoundation
@@ -851,6 +859,7 @@ setup_android_env() {
   # fbdev & v4l2 build error and not supported on android. camera requores api level 24, ./avbuild.sh android24
   FEATURE_OPT+=" --disable-indevs --enable-indev=android_camera --disable-outdevs"
   disable_opt v4l2_m2m v4l2-m2m
+  disable_opt vulkan # can not enable VK_ENABLE_BETA_EXTENSIONS for android
   sed -i $sed_bak 's/^check_cc v4l2_m2m/enabled v4l2_m2m \&\& check_cc v4l2_m2m/' "$FFSRC/configure"
   local ANDROID_ARCH=${1:=arm}
   TRIPLE_ARCH=$ANDROID_ARCH
@@ -1027,6 +1036,7 @@ setup_ios_env() {
   MUX_OPT=$MUX_OPT_MOBILE
   enable_opt videotoolbox libxml2
   disable_opt avdevice
+  disable_opt vulkan
   EXTRA_CFLAGS+=" -I=/usr/include/libxml2"
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
   LIB_OPT= #static only
@@ -1121,6 +1131,7 @@ setup_macos_env(){
   [[ "$MACOS_ARCH" == arm64* ]] && version_compare $MACOS_VER "<" 11.0 && MACOS_VER=11.0
   disable_opt xlib libxcb # installed by github action macos-11
   enable_opt videotoolbox vda libxml2
+  disable_opt vulkan
   EXTRA_CFLAGS+=" -I=/usr/include/libxml2"
   version_compare $MACOS_VER "<" 10.7 && disable_opt lzma avdevice #avfoundation is not supported on 10.6
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
@@ -1348,6 +1359,7 @@ setup_linux_env() {
   add_elf_flags
   enable_opt v4l2-request libudev
   enable_opt vaapi vdpau libdrm
+  $USE_VK && EXTRA_CFLAGS+=" -I\$THIS_DIR/tools/Vulkan-Headers/include"
   $IS_CLANG && enable_cuda_llvm
   $IS_CLANG && EXTRA_CFLAGS+=" -I=/usr/include/libdrm"
 
