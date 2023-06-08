@@ -264,6 +264,7 @@ jobs:
 
 
   LAVFilters:
+    if: false
     runs-on: ubuntu-latest
     env:
       FFREPO: 'git://git.1f0.de/ffmpeg'
