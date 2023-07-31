@@ -15,7 +15,7 @@ env:
   NINJA_STATUS: '[%f/%t %e %r]'
   SF_PW_MAPPED: ${{ secrets.SF_PW }}
   SF_USER_MAPPED: ${{ secrets.SF_USER }}
-  VC_LTL_VER: 5.0.5
+  VC_LTL_VER: ${{ vars.VC_LTL_VER }}
 
 jobs:
   Apple:
@@ -112,7 +112,9 @@ jobs:
         DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
         SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
         EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
-      run: ./tools/ci-before-build.sh
+      run: |
+        sudo apt remove -y libc++1-14 libc++abi1-14 libunwind-14 python3-lldb-14 # conflict with latest llvm
+        ./tools/ci-before-build.sh
     - name: Configure and Build
       shell: bash
       run: |
@@ -208,12 +210,12 @@ jobs:
       uses: actions/cache@v3
       with:
         path: VC-LTL
-        key: dep-${{ env.VC_LTL_VER }}
+        key: dep-${{ vars.VC_LTL_VER }}
     - if: ${{ steps.dep-cache.outputs.cache-hit != 'true' }}
       name: Get VC-LTL
       shell: bash
       run: |
-        curl -kL -o ltl.7z https://github.com/Chuyu-Team/VC-LTL5/releases/download/v${VC_LTL_VER}/VC-LTL-${VC_LTL_VER}-Binary.7z
+        curl -kL -o ltl.7z https://github.com/Chuyu-Team/VC-LTL5/releases/download/v${{ vars.VC_LTL_VER }}/VC-LTL-${{ vars.VC_LTL_VER }}-Binary.7z
         7z x ltl.7z -oVC-LTL
     - name: Create Build Environment
       shell: cmd
@@ -295,7 +297,9 @@ jobs:
         DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
         SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
         EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
-      run: ./tools/ci-before-build.sh
+      run: |
+        sudo apt remove -y libc++1-14 libc++abi1-14 libunwind-14 python3-lldb-14 # conflict with latest llvm
+        ./tools/ci-before-build.sh
     - name: Configure and Build
       if: ${{ env.FF_VERSION == 'master' }}
       shell: bash
@@ -350,7 +354,9 @@ jobs:
         DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
         SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
         EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
-      run: ./tools/ci-before-build.sh
+      run: |
+        sudo apt remove -y libc++1-14 libc++abi1-14 libunwind-14 python3-lldb-14 # conflict with latest llvm
+        ./tools/ci-before-build.sh
     - name: Configure and Build
       shell: bash
       run: |
@@ -399,7 +405,9 @@ jobs:
         DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
         SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
         EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
-      run: ./tools/ci-before-build.sh
+      run: |
+        sudo apt remove -y libc++1-14 libc++abi1-14 libunwind-14 python3-lldb-14 # conflict with latest llvm
+        ./tools/ci-before-build.sh
     - name: Configure and Build
       shell: bash
       run: |
@@ -445,7 +453,9 @@ jobs:
         DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
         SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
         EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
-      run: ./tools/ci-before-build.sh
+      run: |
+        sudo apt remove -y libc++1-14 libc++abi1-14 libunwind-14 python3-lldb-14 # conflict with latest llvm
+        ./tools/ci-before-build.sh
     - name: Configure and Build
       shell: bash
       run: |
