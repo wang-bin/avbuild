@@ -1,16 +1,16 @@
-From 5081514d2ad65a7bca8ef9c7cf879b757053b65e Mon Sep 17 00:00:00 2001
+From aebdb1664d3fb98662790b9286dc0a0c3c0834bb Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 27 Sep 2021 17:35:17 +0800
-Subject: [PATCH 22/31] flv: support hevc, opus
+Subject: [PATCH 22/33] flv: support hevc, opus
 
 ---
  libavformat/flv.h    |  2 ++
- libavformat/flvdec.c | 20 +++++++++++++++++++-
+ libavformat/flvdec.c | 19 ++++++++++++++++++-
  libavformat/flvenc.c |  4 ++++
- 3 files changed, 25 insertions(+), 1 deletion(-)
+ 3 files changed, 24 insertions(+), 1 deletion(-)
 
 diff --git a/libavformat/flv.h b/libavformat/flv.h
-index 91e0a4140c..039ef63eef 100644
+index f710963b92..8e72d62a5f 100644
 --- a/libavformat/flv.h
 +++ b/libavformat/flv.h
 @@ -105,6 +105,7 @@ enum {
@@ -30,10 +30,10 @@ index 91e0a4140c..039ef63eef 100644
  
  enum {
 diff --git a/libavformat/flvdec.c b/libavformat/flvdec.c
-index a6a94a4021..7b66a3f597 100644
+index e25b5bd163..4f6f220ae6 100644
 --- a/libavformat/flvdec.c
 +++ b/libavformat/flvdec.c
-@@ -239,6 +239,11 @@ static int flv_same_audio_codec(AVCodecParameters *apar, int flags)
+@@ -238,6 +238,11 @@ static int flv_same_audio_codec(AVCodecParameters *apar, int flags)
      case FLV_CODECID_PCM_ALAW:
          return apar->sample_rate == 8000 &&
                 apar->codec_id    == AV_CODEC_ID_PCM_ALAW;
@@ -45,7 +45,7 @@ index a6a94a4021..7b66a3f597 100644
      default:
          return apar->codec_tag == (flv_codecid >> FLV_AUDIO_CODECID_OFFSET);
      }
-@@ -297,6 +302,12 @@ static void flv_set_audio_codec(AVFormatContext *s, AVStream *astream,
+@@ -296,6 +301,12 @@ static void flv_set_audio_codec(AVFormatContext *s, AVStream *astream,
          apar->sample_rate = 8000;
          apar->codec_id    = AV_CODEC_ID_PCM_ALAW;
          break;
@@ -58,7 +58,7 @@ index a6a94a4021..7b66a3f597 100644
      default:
          avpriv_request_sample(s, "Audio codec (%x)",
                 flv_codecid >> FLV_AUDIO_CODECID_OFFSET);
-@@ -340,6 +351,8 @@ static int flv_same_video_codec(AVFormatContext *s, AVCodecParameters *vpar, int
+@@ -327,6 +338,8 @@ static int flv_same_video_codec(AVCodecParameters *vpar, uint32_t flv_codecid)
          return vpar->codec_id == AV_CODEC_ID_VP6A;
      case FLV_CODECID_H264:
          return vpar->codec_id == AV_CODEC_ID_H264;
@@ -67,29 +67,28 @@ index a6a94a4021..7b66a3f597 100644
      default:
          return vpar->codec_tag == flv_codecid;
      }
-@@ -413,6 +426,11 @@ static int flv_set_video_codec(AVFormatContext *s, AVStream *vstream,
+@@ -388,6 +401,10 @@ static int flv_set_video_codec(AVFormatContext *s, AVStream *vstream,
+     case FLV_CODECID_MPEG4:
          par->codec_id = AV_CODEC_ID_MPEG4;
-         ret = 3;
          break;
 +    case FLV_CODECID_HEVC:
 +        par->codec_id = AV_CODEC_ID_HEVC;
 +        vstreami->need_parsing = AVSTREAM_PARSE_NONE;
-+        ret = 3;
 +        break;
      default:
          avpriv_request_sample(s, "Video codec (%x)", flv_codecid);
          par->codec_tag = flv_codecid;
-@@ -1307,7 +1325,7 @@ retry_duration:
+@@ -1288,7 +1305,7 @@ retry_duration:
          }
  
          if (st->codecpar->codec_id == AV_CODEC_ID_H264 || st->codecpar->codec_id == AV_CODEC_ID_MPEG4 ||
 -            (st->codecpar->codec_id == AV_CODEC_ID_HEVC && type == PacketTypeCodedFrames)) {
-+            (st->codecpar->codec_id == AV_CODEC_ID_HEVC && (!flv->exheader || type == PacketTypeCodedFrames))) {
++            (st->codecpar->codec_id == AV_CODEC_ID_HEVC && (!enhanced_flv || type == PacketTypeCodedFrames))) {
              // sign extension
              int32_t cts = (avio_rb24(s->pb) + 0xff800000) ^ 0xff800000;
              pts = av_sat_add64(dts, cts);
 diff --git a/libavformat/flvenc.c b/libavformat/flvenc.c
-index 335d900415..4a45aeae34 100644
+index f6d10f331c..2a1776ecb4 100644
 --- a/libavformat/flvenc.c
 +++ b/libavformat/flvenc.c
 @@ -66,6 +66,7 @@ static const AVCodecTag flv_audio_codec_ids[] = {
