@@ -1623,7 +1623,7 @@ EOF
     cp -af $FFBUILD/config.log $THIS_DIR/$INSTALL_DIR
     exit 2
   }
-  $THIS_DIR/tools/mklibffmpeg.sh $PWD $THIS_DIR/$INSTALL_DIR
+  $THIS_DIR/tools/mklibffmpeg.sh $PWD $THIS_DIR/$INSTALL_DIR || exit 3
   cd $THIS_DIR/$INSTALL_DIR
   echo "https://github.com/wang-bin/avbuild" > README.txt
   cp -af "$FFSRC/Changelog" .
