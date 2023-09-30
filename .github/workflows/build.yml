@@ -502,13 +502,23 @@ jobs:
         SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
         EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
       run: ./tools/ci-before-build.sh
-    - name: Configure and Build
+    - name: Configure and Build 32bit
+      shell: bash
+      run: |
+        export ANDROID_NDK=$ANDROID_NDK_HOME   # ndk25, api19
+        export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+        export USER_OPT="--enable-wolfssl"
+        ./avbuild.sh ${TARGET_OS} "armv7 x86"
+        mv sdk-android-clang{,32}
+    - name: Configure and Build 64bit
       shell: bash
       run: |
         export ANDROID_NDK=$ANDROID_NDK_LATEST_HOME
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export USER_OPT="--enable-wolfssl"
-        ./avbuild.sh ${TARGET_OS}
+        ./avbuild.sh ${TARGET_OS} "arm64 x86_64"
+        rsync -auv --ignore-existing  sdk-android-clang{32/*,}
+        rm -rf sdk-android-clang32
     - name: Make SDK
       shell: bash
       run: ./tools/ci-after-build.sh

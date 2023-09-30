@@ -872,6 +872,7 @@ setup_android_env() {
     API_LEVEL=14
     [ $NDK_VER -gt 17 ] && API_LEVEL=16
     [ $NDK_VER -gt 23 ] && API_LEVEL=19
+    [ $NDK_VER -gt 25 ] && API_LEVEL=21  # TODO: always neon
   }
   local UNIFIED_SYSROOT="$NDK_ROOT/sysroot"
   [ -d "$UNIFIED_SYSROOT" ] || UNIFIED_SYSROOT=
