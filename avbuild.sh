@@ -891,6 +891,7 @@ setup_android_env() {
     # clang error: inline assembly requires more registers than available ("movzbl "statep"    , "ret")
     CFLAGS_GCC+=" -mstackrealign"
     enable_lto=false
+    TOOLCHAIN_OPT+=" --disable-asm" # FIXME: text relocations in x86/tx_float.asm
   elif [ -z "${ANDROID_ARCH/x*64/}" ]; then
     [ $API_LEVEL -lt 21 ] && API_LEVEL=21
     ANDROID_ARCH=x86_64
@@ -965,7 +966,6 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   echo "ANDROID_LLVM_DIR=${ANDROID_LLVM_DIR}"
   ANDROID_GCC_DIR_REL=${ANDROID_GCC_DIR#$NDK_ROOT}
   [ -n "$ld_lld" ] && {
-    TOOLCHAIN_OPT+=" --disable-asm" # FIXME: text relocations in x86/tx_float.asm
     TRY_FIX_CORTEX_A8=false
     TOOLCHAIN_OPT+=" --strip=$LLVM_STRIP" # https://github.com/android/ndk/issues/1148  TODO: add in use_llvm_binutils if llvm-strip works for other platforms
     LFLAGS_CLANG+=" -fuse-ld=lld -rtlib=compiler-rt" # use compiler-rt instead of default libgcc.a so -gcc-toolchain is not required
