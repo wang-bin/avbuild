@@ -45,5 +45,4 @@ Linux, android, macOS, iOS, raspberry pi, windows build:**[![Build status github
 - Empty: won't support
 
 ## TODO
-- single package for windows including shared and static libs
 - Azure pipeline/github action: vs2022+WSL, MinGW

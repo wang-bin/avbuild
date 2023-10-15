@@ -1,0 +1,55 @@
+From 3b979d3516f374273a5a7c04b9d2c01f58b94e17 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Sun, 15 Oct 2023 13:22:34 +0800
+Subject: [PATCH 31/31] windows: shared + static libs in one build
+
+av_export_avutil avpriv_vga16_font will result in LINK4217 warning when building ffmpeg.dll, and undefined dllimport avpriv_vga16_font error when linking exe
+---
+ configure                 | 8 +++++---
+ libavutil/xga_font_data.h | 4 ++--
+ 2 files changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/configure b/configure
+index 3eda049d5c..8f9ab629e0 100755
+--- a/configure
++++ b/configure
+@@ -5633,8 +5633,12 @@ case $target_os in
+             # for shared libs.
+             LD_LIB='%.lib'
+             # Cannot build both shared and static libs with MSVC or icl.
+-            disable static
++            #disable static  # we can build shared and static libs. let user disable it explicitly
++            LIBPREF=lib #already defined. use lib as prefix to match windows system static lib name pattern(libcmt.lib, libucrt.lib etc.)
++        else
++            LIBPREF=    # if only build static libs, fftools exes always link to .lib without lib prefix
+         fi
++        LIBSUF=.lib
+         enabled shared && test_cmd $windres --version && enable gnu_windres
+         enabled x86_32 && check_ldflags -LARGEADDRESSAWARE
+         shlibdir_default="$bindir_default"
+@@ -5653,8 +5657,6 @@ case $target_os in
+         [ "$toolchain" = msvc ] && {
+           ranlib=:
+         } || {
+-          LIBPREF= # patch win clang static lib
+-          LIBSUF=.lib
+           LD_LIB='%.lib'
+           SLIB_CREATE_DEF_CMD='EXTERN_PREFIX="$(EXTERN_PREFIX)" AR="$(AR_CMD)" NM="$(NM_CMD)" $(SRC_PATH)/compat/windows/makedef $(SUBDIR)lib$(NAME).ver $(OBJS) > $$(@:$(SLIBSUF)=.def)'
+         }
+diff --git a/libavutil/xga_font_data.h b/libavutil/xga_font_data.h
+index 69dc337120..decbf6e0c2 100644
+--- a/libavutil/xga_font_data.h
++++ b/libavutil/xga_font_data.h
+@@ -29,7 +29,7 @@
+ #include <stdint.h>
+ #include "internal.h"
+ 
+-extern av_export_avutil const uint8_t avpriv_cga_font[2048];
+-extern av_export_avutil const uint8_t avpriv_vga16_font[4096];
++extern const uint8_t avpriv_cga_font[2048];
++extern const uint8_t avpriv_vga16_font[4096];
+ 
+ #endif /* AVUTIL_XGA_FONT_DATA_H */
+-- 
+2.39.3 (Apple Git-145)
+

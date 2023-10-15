@@ -1,7 +1,7 @@
-From f4aa1564ff37a8c583172cf2c276d227e06fd45b Mon Sep 17 00:00:00 2001
+From 1040bc20a08fea454cce52e2603861b06195cf7f Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 17 Nov 2017 14:54:23 +0800
-Subject: [PATCH 10/23] mmal: add option copy_frame to support retrieving sw
+Subject: [PATCH 10/34] mmal: add option copy_frame to support retrieving sw
  frames w/o copy
 
 mmal buffer->data is already in host memory. AFAIK decoders implemented in omx must
@@ -14,10 +14,10 @@ turned off
  1 file changed, 18 insertions(+), 3 deletions(-)
 
 diff --git a/libavcodec/mmaldec.c b/libavcodec/mmaldec.c
-index 6b3808e015..900035fff0 100644
+index aa9335bd20..11f64e1f40 100644
 --- a/libavcodec/mmaldec.c
 +++ b/libavcodec/mmaldec.c
-@@ -70,6 +70,7 @@ typedef struct MMALDecodeContext {
+@@ -71,6 +71,7 @@ typedef struct MMALDecodeContext {
      AVClass *av_class;
      int extra_buffers;
      int extra_decoder_buffers;
@@ -25,7 +25,7 @@ index 6b3808e015..900035fff0 100644
  
      MMAL_COMPONENT_T *decoder;
      MMAL_QUEUE_T *queue_decoded_frames;
-@@ -142,7 +143,6 @@ static int ffmmal_set_ref(AVFrame *frame, FFPoolRef *pool,
+@@ -143,7 +144,6 @@ static int ffmmal_set_ref(AVFrame *frame, FFPoolRef *pool,
      atomic_fetch_add_explicit(&ref->pool->refcount, 1, memory_order_relaxed);
      mmal_buffer_header_acquire(buffer);
  
@@ -33,7 +33,7 @@ index 6b3808e015..900035fff0 100644
      frame->data[3] = (uint8_t *)ref->buffer;
      return 0;
  }
-@@ -645,20 +645,34 @@ static int ffmal_copy_frame(AVCodecContext *avctx,  AVFrame *frame,
+@@ -648,20 +648,34 @@ static int ffmal_copy_frame(AVCodecContext *avctx,  AVFrame *frame,
  
          if ((ret = ffmmal_set_ref(frame, ctx->pool_out, buffer)) < 0)
              goto done;
@@ -53,8 +53,8 @@ index 6b3808e015..900035fff0 100644
          av_image_fill_arrays(src, linesize,
                               buffer->data + buffer->type->video.offset[0],
                               avctx->pix_fmt, w, h, 1);
-         av_image_copy(frame->data, frame->linesize, (const uint8_t **)src, linesize,
-                       avctx->pix_fmt, avctx->width, avctx->height);
+         av_image_copy2(frame->data, frame->linesize, src, linesize,
+                        avctx->pix_fmt, avctx->width, avctx->height);
 +        } else {
 +            if ((ret = ff_decode_frame_props(avctx, frame)) < 0)
 +                goto done;
@@ -70,7 +70,7 @@ index 6b3808e015..900035fff0 100644
      }
  
      frame->sample_aspect_ratio = avctx->sample_aspect_ratio;
-@@ -843,6 +857,7 @@ AVHWAccel ff_wmv3_mmal_hwaccel = {
+@@ -846,6 +860,7 @@ AVHWAccel ff_wmv3_mmal_hwaccel = {
  static const AVOption options[]={
      {"extra_buffers", "extra buffers", offsetof(MMALDecodeContext, extra_buffers), AV_OPT_TYPE_INT, {.i64 = 10}, 0, 256, 0},
      {"extra_decoder_buffers", "extra MMAL internal buffered frames", offsetof(MMALDecodeContext, extra_decoder_buffers), AV_OPT_TYPE_INT, {.i64 = 10}, 0, 256, 0},
@@ -79,5 +79,5 @@ index 6b3808e015..900035fff0 100644
  };
  
 -- 
-2.30.1 (Apple Git-130)
+2.39.3 (Apple Git-145)
 
