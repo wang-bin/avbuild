@@ -205,7 +205,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: [lite]
+        config: [lite,default]
         target: [windows-desktop]
     steps:
     - uses: actions/checkout@v4
@@ -544,6 +544,10 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2022ltllite
+    - name: Download vs2022 LTL desktop
+      uses: actions/download-artifact@v3
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2022ltldefault
     - name: Download vs2022 uwp lite
       uses: actions/download-artifact@v3
       with:
