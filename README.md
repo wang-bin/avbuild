@@ -45,4 +45,4 @@ Linux, android, macOS, iOS, raspberry pi(legacy OSes), windows build:**[![Build 
 - Empty: won't support
 
 ## TODO
-- Azure pipeline/github action: vs2022+WSL, MinGW
+- Azure pipeline/github action: vs2022+WSL

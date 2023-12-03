@@ -823,7 +823,7 @@ setup_mingw_env() {
       [ -d $MINGW_BIN ] && export PATH=$MINGW_BIN:$PATH
     } || {
       echo "mingw cross build for $arch"
-      TOOLCHAIN_OPT+=" --enable-cross-compile --cross-prefix=${arch}-w64-mingw32- --target-os=mingw$BIT --arch=$arch"
+      TOOLCHAIN_OPT+=" --enable-cross-compile --cross-prefix=${arch}-w64-mingw32- --target-os=mingw$BIT --arch=$arch --pkg-config=pkg-config"
     }
   }
   [ -n "$PKG_CONFIG_PATH_MFX" ] && PKG_CONFIG_PATH_MFX_UNIX=$(to_unix_path "$PKG_CONFIG_PATH_MFX")
@@ -835,7 +835,7 @@ setup_mingw_env() {
   $USE_VK && EXTRA_CFLAGS+=" -I\$THIS_DIR/tools/Vulkan-Headers/include"
   enable_libmfx
   enable_opt dxva2
-  enable_opt mediafoundation
+  #enable_opt mediafoundation # MFCreateAlignedMemoryBuffer
   disable_opt iconv
   EXTRA_LDFLAGS+=" -static-libgcc"
   INSTALL_DIR="${INSTALL_DIR}-mingw-$1-gcc"

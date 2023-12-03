@@ -16,4 +16,4 @@ ls -lh *.xz
 [ "$GITHUB_EVENT_NAME" == "pull_request" ] && exit 0
 
 echo "SF_USER_MAPPED: $SF_USER_MAPPED"
-sshpass -p $SF_PW_MAPPED scp -o StrictHostKeyChecking=no ffmpeg-${SUFFIX}.tar.xz $SF_USER_MAPPED,avbuild@frs.sourceforge.net:/home/frs/project/a/av/avbuild/${TARGET_OS}
+sshpass -p $SF_PW_MAPPED scp -o StrictHostKeyChecking=no ffmpeg-${SUFFIX}.tar.xz $SF_USER_MAPPED,avbuild@frs.sourceforge.net:/home/frs/project/a/av/avbuild/${TARGET_OS/mingw/windows-desktop}

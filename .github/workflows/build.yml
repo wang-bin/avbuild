@@ -112,9 +112,7 @@ jobs:
     - name: Create Build Environment
       shell: bash
       env:
-        DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
         SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
-        EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
       run: |
         sudo apt remove -y libc++1-14 libc++abi1-14 libunwind-14 python3-lldb-14 # conflict with latest llvm
         ./tools/ci-before-build.sh
@@ -300,9 +298,7 @@ jobs:
       if: ${{ env.FF_VERSION == 'master' }}
       shell: bash
       env:
-        DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
         SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
-        EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
       run: |
         sudo apt remove -y libc++1-14 libc++abi1-14 libunwind-14 python3-lldb-14 # conflict with latest llvm
         ./tools/ci-before-build.sh
@@ -357,9 +353,7 @@ jobs:
     - name: Create Build Environment
       shell: bash
       env:
-        DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
         SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
-        EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
       run: |
         sudo apt remove -y libc++1-14 libc++abi1-14 libunwind-14 python3-lldb-14 # conflict with latest llvm
         ./tools/ci-before-build.sh
@@ -408,9 +402,7 @@ jobs:
     - name: Create Build Environment
       shell: bash
       env:
-        DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
         SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
-        EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
       run: |
         sudo apt remove -y libc++1-14 libc++abi1-14 libunwind-14 python3-lldb-14 # conflict with latest llvm
         ./tools/ci-before-build.sh
@@ -431,12 +423,47 @@ jobs:
         path: ffmpeg-*.tar.xz
 
 
+  MinGW_GCC:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_OS: mingw
+      COMPILER: gcc
+      PKG_CONFIG_PATH_MFX: "/tmp/dep/MinGW/lib/pkgconfig"
+      AMF_DIR: "/tmp/dep/include"
+      CONFIG_SUFFIX: -${{ matrix.config }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [lite]
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+    - name: Create Build Environment
+      shell: bash
+      run: |
+        sudo apt remove -y libc++1-14 libc++abi1-14 libunwind-14 python3-lldb-14 # conflict with latest llvm
+        ./tools/ci-before-build.sh
+    - name: Configure and Build
+      shell: bash
+      run: |
+        export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+        ./avbuild.sh $TARGET_OS
+    - name: Make SDK
+      shell: bash
+      run: ./tools/ci-after-build.sh
+    - name: Archieve SDK
+      uses: actions/upload-artifact@v3
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
+        path: ffmpeg-*.tar.xz
+
   Linux_clang:
     runs-on: ubuntu-latest
     env:
       TARGET_OS: linux
       COMPILER: clang
-      PKG_CONFIG_PATH_MFX: "/tmp/dep/linux64-gcc/lib/pkgconfig"
+      PKG_CONFIG_PATH_MFX: "/tmp/dep/linux64-gcc/lib/pkgconfig"  # TODO:
       AMF_DIR: "/tmp/dep/include"
       CONFIG_SUFFIX: -${{ matrix.config }}
     strategy:
@@ -456,9 +483,7 @@ jobs:
     - name: Create Build Environment
       shell: bash
       env:
-        DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
         SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
-        EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
       run: |
         sudo apt remove -y libc++1-14 libc++abi1-14 libunwind-14 python3-lldb-14 # conflict with latest llvm
         ./tools/ci-before-build.sh
@@ -498,9 +523,7 @@ jobs:
     - name: Create Build Environment
       shell: bash
       env:
-        DEVTOOLS_CACHE_HIT: ${{ steps.devtools-cache.outputs.cache-hit }}
         SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
-        EXTERNAL_DEP_CACHE_HIT: ${{ steps.external-dep-cache.outputs.cache-hit }}
       run: ./tools/ci-before-build.sh
     - name: Configure and Build 32bit
       shell: bash

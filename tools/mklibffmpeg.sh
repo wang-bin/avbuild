@@ -6,11 +6,7 @@ THIS_DIR="$(cd "$(dirname ${BASH_SOURCE[0]})";pwd -P)"
 cd "$BUILD_DIR"
 
 # msvc shared+static in one build requires https://github.com/wang-bin/avbuild/commit/65cb54ec6c2c19852cad78d9863aff3c17934c73
-if [ -f libavutil/libavutil.dll.a ]; then
-# avpriv_ are declared as av_export_avcodec/avutil, mingw link error, undefined '_imp__avpriv_mpa_freq_tab' etc.. this also results in ffmpeg can not be built both static and shared for windows
-  echo "mingw ld does not support linking a single ffmpeg dll"
-  exit 0
-fi
+
 if ! `ls libavutil/*.def &>/dev/null`; then
   if [ -f libavutil/avutil.lib ]; then
     echo "windows static build. no need to create ffmpeg dll"
