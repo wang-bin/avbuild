@@ -8,17 +8,17 @@ How: https://github.com/wang-bin/avbuild/wiki
 
 Lite build of FFmpeg master branch **(recommended)**:
 
-[Android](https://sourceforge.net/projects/avbuild/files/android/ffmpeg-master-android-clang-lite.tar.xz/download), [iOS](https://sourceforge.net/projects/avbuild/files/iOS/ffmpeg-master-iOS-lite.tar.xz/download), [macOS](https://sourceforge.net/projects/avbuild/files/macOS/ffmpeg-master-macOS-lite.tar.xz/download), [Linux](https://sourceforge.net/projects/avbuild/files/linux/ffmpeg-master-linux-clang-lite.tar.xz/download), [VS2022 Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-master-windows-desktop-vs2022-lite.7z/download), [VS2022 UWP](https://sourceforge.net/projects/avbuild/files/uwp/ffmpeg-master-uwp-vs2022-lite.7z/download), [Clang Windows Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-master-windows-desktop-clang-lite.tar.xz/download)
+[Android](https://sourceforge.net/projects/avbuild/files/android/ffmpeg-master-android-lite.tar.xz/download), [iOS](https://sourceforge.net/projects/avbuild/files/iOS/ffmpeg-master-iOS-lite.tar.xz/download), [macOS](https://sourceforge.net/projects/avbuild/files/macOS/ffmpeg-master-macOS-lite.tar.xz/download), [Linux](https://sourceforge.net/projects/avbuild/files/linux/ffmpeg-master-linux-clang-lite.tar.xz/download), [VS2022 Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-master-windows-desktop-vs2022-lite.7z/download), [VS2022 UWP](https://sourceforge.net/projects/avbuild/files/uwp/ffmpeg-master-uwp-vs2022-lite.7z/download), [Clang Windows Desktop](https://sourceforge.net/projects/avbuild/files/windows-desktop/ffmpeg-master-windows-desktop-clang-lite.tar.xz/download)
 
 FFmpeg releases and others: https://sourceforge.net/projects/avbuild/files
 
 ***Build Details:***
 
-Linux, android, macOS, iOS, raspberry pi, windows build:**[![Build status github](https://github.com/wang-bin/avbuild/workflows/Build/badge.svg)](https://github.com/wang-bin/avbuild/actions)** [![Build Status](https://dev.azure.com/kb137035/github/_apis/build/status/wang-bin.avbuild?branchName=master)](https://dev.azure.com/kb137035/github/_build/latest?definitionId=5&branchName=master), [CircleCI](https://circleci.com/gh/wang-bin/avbuild)
+Linux, android, macOS, iOS, raspberry pi(legacy OSes), windows build:**[![Build status github](https://github.com/wang-bin/avbuild/workflows/Build/badge.svg)](https://github.com/wang-bin/avbuild/actions)** [![Build Status](https://dev.azure.com/kb137035/github/_apis/build/status/wang-bin.avbuild?branchName=master)](https://dev.azure.com/kb137035/github/_build/latest?definitionId=5&branchName=master), [CircleCI](https://circleci.com/gh/wang-bin/avbuild)
 
 ## Features
 
-- Support single FFmpeg shared library: ffmpeg.dll, libffmpeg.so, libffmpeg.dylib
+- [Support single FFmpeg shared library](tools/mklibffmpeg.sh): ffmpeg.dll, libffmpeg.so, libffmpeg.dylib
 - modern toolchain support: clang+lld, cross build for almost all platforms on any host OS
 - multiple targets build and configure simultaneously
 - ssl

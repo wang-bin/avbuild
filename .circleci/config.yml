@@ -15,7 +15,7 @@ custom-steps:
     run:
       name: install dev packages
       command: |
-        apt install -y libstdc++-7-dev p7zip-full nasm yasm libxv-dev libva-dev libvdpau-dev libbz2-dev zlib1g-dev sshpass
+        apt install -y libstdc++-7-dev p7zip-full nasm yasm libdrm-dev libxv-dev libva-dev libvdpau-dev libbz2-dev zlib1g-dev sshpass
   - &get-ffmpeg
     run:
       name: get ffmpeg source
@@ -253,6 +253,3 @@ workflows:
   build_and_test:
     jobs:
       - build_gcc
-      - build_win_static
-      - build_uwp
-      - build_uwp_static
