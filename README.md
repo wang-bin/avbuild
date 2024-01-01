@@ -4,6 +4,7 @@ How: https://github.com/wang-bin/avbuild/wiki
 
 ### Download prebuilt packages
 
+[![Totoal Downloads](https://img.shields.io/sourceforge/dt/avbuild)](https://sourceforge.net/projects/avbuild/files)
 
 
 Lite build of FFmpeg master branch **(recommended)**:

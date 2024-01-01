@@ -37,7 +37,7 @@ fi
 
 wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7z
 7z x -y dep.7z -o/tmp
-find /tmp/dep/ClangCLx64 /tmp/dep/include /tmp/dep/linux*
+find /tmp/dep
 ln -sf /tmp/dep tools/
 
 if [[ "$SYSROOT_CACHE_HIT" != "true" ]]; then

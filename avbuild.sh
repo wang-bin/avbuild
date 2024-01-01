@@ -15,7 +15,7 @@ echo "https://github.com/wang-bin/avbuild"
 
 THIS_NAME=${0##*/}
 THIS_DIR=$PWD
-PLATFORMS="ios|iossimulator|android|rpi|sunxi|vc|win|winrt|uwp|winphone|mingw"
+PLATFORMS="ios|iossimulator|tvos|tvossimulator|android|rpi|sunxi|vc|win|winrt|uwp|winphone|mingw"
 echo "Usage:"
 test -d $PWD/FFmpeg || echo "  export FFSRC=/path/to/ffmpeg"
 cat<<HELP
@@ -1040,7 +1040,7 @@ setup_ios_env() {
   disable_opt vulkan
   EXTRA_CFLAGS+=" -I=/usr/include/libxml2"
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
-  LIB_OPT= #static only
+  LIB_OPT=--enable-shared
 # clang -arch i386 -arch x86_64
 ## cc="xcrun -sdk iphoneos clang" or cc=`xcrun -sdk iphoneos --find clang`
   local IOS_ARCH=$1
@@ -1062,7 +1062,8 @@ setup_ios_env() {
   local VER_OS=iphoneos
   local BITCODE_FLAGS=
   local ios5_lib_dir=
-  if [[ "$IOS_ARCH" == "arm"* && "$OS" != *"simulator"* ]]; then
+  local Simulator=
+  if [[ "$OS" != *"simulator"* ]]; then
     $enable_bitcode && BITCODE_FLAGS="-fembed-bitcode" # also works for new sdks
     BITCODE_LFLAGS=$BITCODE_FLAGS
     if [ "${IOS_ARCH:3:2}" == "64" ]; then
@@ -1082,6 +1083,7 @@ setup_ios_env() {
   else
     SYSROOT_SDK=iphonesimulator
     VER_OS=ios-simulator
+    Simulator=Simulator
     if [ "${IOS_ARCH}" == "x86_64" ]; then
       ios_min=7.0
     elif [ "${IOS_ARCH}" == "x86" ]; then
@@ -1103,14 +1105,56 @@ setup_ios_env() {
   else
     apple_sdk_version ">=" ios 10.0 && patch_clock_gettime=$(($FFMAJOR == 3 && $FFMINOR < 3 || $FFMAJOR < 3)) # my patch is in >3.2
   fi
-  INSTALL_DIR=sdk-ios-$IOS_ARCH
+  INSTALL_DIR=sdk-ios$Simulator-$IOS_ARCH
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   [ -n "$ios5_lib_dir" ] && echo "export LIBRARY_PATH=$ios5_lib_dir" >$THIS_DIR/build_$INSTALL_DIR/.env.sh
   cat>>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
-export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/iOS/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/iOS/lib/pkgconfig:$PKG_CONFIG_PATH
+export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/iOS$Simulator/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/iOS$Simulator/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
-  LIBWOLFSSL="${THIS_DIR}/tools/dep/iOS/lib/libwolfssl.a"
+  LIBWOLFSSL="${THIS_DIR}/tools/dep/iOS$Simulator/lib/libwolfssl.a"
+  cp -avf "$LIBWOLFSSL" $THIS_DIR/build_$INSTALL_DIR/libwolfssl.a
   [ -f "$LIBWOLFSSL" ] && lipo -thin $IOS_ARCH "$LIBWOLFSSL" -output $THIS_DIR/build_$INSTALL_DIR/libwolfssl.a
+}
+
+setup_tvos_env() {
+  DEC_OPT=$DEC_OPT_MOBILE
+  DEMUX_OPT=$DEMUX_OPT_MOBILE
+  ENC_OPT=
+  MUX_OPT=
+  enable_opt videotoolbox libxml2
+  disable_opt avdevice
+  disable_opt vulkan
+  EXTRA_CFLAGS+=" -I=/usr/include/libxml2"
+  grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
+  LIB_OPT=--enable-shared
+  local OS_ARCH=$1
+  local OS=$2
+  os_ver=${2##tvos}
+  os_ver=${os_ver/simulator/}
+  local os_min=11.0
+  local SYSROOT_SDK=appletvos
+  local VER_OS=tvos
+  local enable_bitcode=false
+  if [[ "$OS" != *"simulator"* ]]; then
+    $enable_bitcode && BITCODE_FLAGS="-fembed-bitcode" # also works for new sdks
+  else
+    SYSROOT_SDK=appletvsimulator
+    VER_OS=tvos-simulator
+    Simulator=Simulator
+  fi
+  : ${os_ver:=$os_min}
+  TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$OS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
+  disable_opt programs
+  EXTRA_CFLAGS+=" -arch $OS_ARCH -m${VER_OS}-version-min=$os_ver $BITCODE_FLAGS" # -fvisibility=hidden -fvisibility-inlines-hidden"
+  EXTRA_LDFLAGS+=" -arch $OS_ARCH -m${VER_OS}-version-min=$os_ver $BITCODE_LFLAGS -Wl,-dead_strip" # -fvisibility=hidden -fvisibility-inlines-hidden"
+  INSTALL_DIR=sdk-tvos$Simulator-$OS_ARCH
+  mkdir -p $THIS_DIR/build_$INSTALL_DIR
+  cat>>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
+export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/tvOS$Simulator/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/tvOS$Simulator/lib/pkgconfig:$PKG_CONFIG_PATH
+EOF
+  LIBWOLFSSL="${THIS_DIR}/tools/dep/tvOS$Simulator/lib/libwolfssl.a"
+  cp -avf "$LIBWOLFSSL" $THIS_DIR/build_$INSTALL_DIR/libwolfssl.a
+  [ -f "$LIBWOLFSSL" ] && lipo -thin $OS_ARCH "$LIBWOLFSSL" -output $THIS_DIR/build_$INSTALL_DIR/libwolfssl.a
 }
 
 setup_macos_env(){
@@ -1180,6 +1224,7 @@ EOF
 setup_maccatalyst_env(){
   enable_opt videotoolbox libxml2
   disable_opt avdevice appkit securetransport
+  disable_opt vulkan
   EXTRA_CFLAGS+=" -I=/usr/include/libxml2"
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
   local IOS_ARCH=$1
@@ -1225,6 +1270,7 @@ apple_sdk_version(){
   #$2: os name used by xcrun (ios, macos, iphoneos, macosx ...)
   #$3: version number (x.y)
   local ios=iphoneos
+  local tvos=appletvos
   local macos=macosx
   local os=${!2}
   os=${os:=$2}
@@ -1454,6 +1500,7 @@ config1(){
     ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
     osx*|macos*)     setup_macos_env $TAGET_ARCH_FLAG $1 ;;
     *catalyst*) setup_maccatalyst_env $TAGET_ARCH_FLAG $1 ;;
+    tvos*)      setup_tvos_env $TAGET_ARCH_FLAG $1 ;;
     mingw*)     setup_mingw_env $TAGET_ARCH_FLAG ;;
     vc|win*|uwp*)  setup_win $TAGET_ARCH_FLAG $1 ;; # TODO: check cc
     rpi*|raspberry*) setup_rpi_env $TAGET_ARCH_FLAG $1 ;;
@@ -1645,7 +1692,7 @@ build_all(){
     local archs=($2)
     [ -z "$archs" ] && {
       echo ">>>>>no arch is set. setting default archs..."
-      [ "${os:0:3}" == "ios" ] && {
+      [[ "$os" == ios* || "$os" == tvos* ]] && {
         echo $os | grep simulator >/dev/null && archs=(arm64 x86_64) || archs=(arm64)
       }
       [ "${os:0:7}" == "android" ] && archs=(armv7 arm64 x86 x86_64)
@@ -1728,7 +1775,7 @@ make_universal()
   [ -z "$dirs" ] && return 0
   [ ${#dirs[@]} -le 1 ] && return 0
 # TODO: move to a new script
-  if [[ "$os" == ios* || "$os" == macos* || "$os" == osx* || "$os" == *catalyst* ]]; then
+  if [[ "$os" == ios* || "$os" == macos* || "$os" == osx* || "$os" == *catalyst* || "$os" == tvos* ]]; then
     local OUT_DIR=sdk-$os
     rm -rf $OUT_DIR
     cd $THIS_DIR
