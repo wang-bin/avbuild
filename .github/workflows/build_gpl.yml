@@ -10,7 +10,7 @@ env:
 #  GITHUB_ENV: https://docs.github.com/en/actions/learn-github-actions/environment-variables#about-environment-variables
   FF_VERSION: ${{ vars.FF_VER }} # TODO: latest release if triggered by schedule
   LLVM_VER: ${{ vars.LLVM_VER }}
-  LLVM_VER_DEFAULT: 17
+  LLVM_VER_DEFAULT: 18
   NINJA_STATUS: '[%f/%t %e %r]'
   SF_PW_MAPPED: ${{ secrets.SF_PW }}
   SF_USER_MAPPED: ${{ secrets.SF_USER }}
@@ -18,7 +18,7 @@ env:
 jobs:
   Apple:
     # See: https://docs.github.com/en/actions/configuring-and-managing-workflows/configuring-a-workflow#configuring-a-build-matrix
-    runs-on: macos-latest
+    runs-on: macos-14
     env:
       TARGET_OS: ${{ matrix.target }}
       CONFIG_SUFFIX: -gpl-${{ matrix.config }}
@@ -34,6 +34,8 @@ jobs:
             target: macCatalyst
     steps:
     - uses: actions/checkout@v3
+    - name: Setup Xcode
+      run: sudo xcode-select -s /Applications/Xcode_15.2.app
     - name: Create Build Environment
       shell: bash
       env:
@@ -66,7 +68,7 @@ jobs:
         cp -avf tools/dep_gpl/${{ env.TARGET_OS }}/lib/* sdk-*/lib/
         ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
@@ -130,7 +132,7 @@ jobs:
         xcopy /s /f /y tools\dep_gpl\${{ env.TARGET_OS }}\lib\* %SDK_NAME%\lib\
         7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off %SDK_NAME%.7z %SDK_NAME%
     - name: Archieve SDK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-VS2022${{ matrix.config }}
         path: ffmpeg-*.7z
@@ -157,7 +159,7 @@ jobs:
         submodules: 'recursive'
     - name: 'Restore sysroot cache'
       id: sysroot-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           /tmp/winsdk
@@ -188,7 +190,7 @@ jobs:
         cp -avf tools/dep_gpl/${{ env.TARGET_OS }}/lib/* sdk-*/lib/
         ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
@@ -212,7 +214,7 @@ jobs:
         submodules: 'recursive'
     - name: 'Restore sysroot cache'
       id: sysroot-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: /tmp/sysroot
         key: sysroot-${{ env.TARGET_OS }}-${{ vars.LINUX_SYSROOT_ID }}
@@ -239,7 +241,7 @@ jobs:
         cp -avf tools/dep_gpl/${{ env.TARGET_OS }}_amd64/lib/* sdk-*/lib/
         ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
@@ -257,7 +259,7 @@ jobs:
     - uses: actions/checkout@v3
     - name: 'Restore sysroot cache'
       id: sysroot-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: /tmp/sysroot
         key: sysroot-${{ env.TARGET_OS }}-${{ vars.LINUX_SYSROOT_ID }}
@@ -283,7 +285,7 @@ jobs:
         cp -avf tools/dep_gpl/${{ env.TARGET_OS }}_arm64/lib/* sdk-*/lib/
         ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
@@ -293,7 +295,7 @@ jobs:
     needs: [VS2022]
     steps:
     - name: Download vs2022 desktop lite
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2022lite
     - name: Upload to SourceForge
