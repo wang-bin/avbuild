@@ -1,7 +1,7 @@
-From 86a5f84c495d72f6483fd3978342415def866538 Mon Sep 17 00:00:00 2001
+From f826be0b7c5f0396068b714963373962ff8c2a3d Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 23 Jul 2023 23:58:24 +0800
-Subject: [PATCH 33/33] vulkan: reduce insane array size
+Subject: [PATCH 30/32] vulkan: reduce insane array size
 
 if array length is AV_CODEC_ID_FIRST_AUDIO, then size is 16^4*16=1MB, it's a huge stack size.
 better to use a function with switch/case.
@@ -11,7 +11,7 @@ better to use a function with switch/case.
  2 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/libavcodec/vulkan_video.c b/libavcodec/vulkan_video.c
-index 460ccf6ca8..184afd5508 100644
+index fb20315db4..25593432b3 100644
 --- a/libavcodec/vulkan_video.c
 +++ b/libavcodec/vulkan_video.c
 @@ -20,7 +20,7 @@
@@ -24,7 +24,7 @@ index 460ccf6ca8..184afd5508 100644
                             0,
                             0,
 diff --git a/libavcodec/vulkan_video.h b/libavcodec/vulkan_video.h
-index 183ce89bf0..13237a630c 100644
+index b28e3fe0bd..7469639350 100644
 --- a/libavcodec/vulkan_video.h
 +++ b/libavcodec/vulkan_video.h
 @@ -49,7 +49,7 @@ typedef struct FFVkVideoSession {
@@ -37,5 +37,5 @@ index 183ce89bf0..13237a630c 100644
  /**
   * Get pixfmt from a Vulkan format.
 -- 
-2.39.2 (Apple Git-143)
+2.39.3 (Apple Git-145)
 
