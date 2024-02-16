@@ -429,7 +429,7 @@ jobs:
     - name: Archieve SDK
       uses: actions/upload-artifact@v4
       with:
-        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
+        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}-vcrt120
         path: ffmpeg-*.tar.xz
 
 
