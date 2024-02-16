@@ -1,7 +1,7 @@
-From f826be0b7c5f0396068b714963373962ff8c2a3d Mon Sep 17 00:00:00 2001
+From 1f2aa18db38e7c4210a148b0940bd50d7d6736d3 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 23 Jul 2023 23:58:24 +0800
-Subject: [PATCH 30/32] vulkan: reduce insane array size
+Subject: [PATCH 29/31] vulkan: reduce insane array size
 
 if array length is AV_CODEC_ID_FIRST_AUDIO, then size is 16^4*16=1MB, it's a huge stack size.
 better to use a function with switch/case.

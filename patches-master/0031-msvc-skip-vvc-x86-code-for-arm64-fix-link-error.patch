@@ -1,7 +1,7 @@
-From 63a0d730291ddd150d192b04985f05cd8a1ef1ab Mon Sep 17 00:00:00 2001
+From a2c62aa347a1206a8dfb7a08db28802ae9afcbda Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Wed, 7 Feb 2024 00:21:02 +0800
-Subject: [PATCH 32/32] msvc: skip vvc x86 code for arm64, fix link error
+Subject: [PATCH 31/31] msvc: skip vvc x86 code for arm64, fix link error
 
 ---
  libavcodec/Makefile | 2 +-

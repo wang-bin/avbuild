@@ -1,7 +1,7 @@
-From ad471d16adf655e00b32870e959b8c288256c60c Mon Sep 17 00:00:00 2001
+From 32e76f7fe6a871943f6c160aabc951ed2740bd7a Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 15 Oct 2023 13:22:34 +0800
-Subject: [PATCH 31/32] windows: shared + static libs in one build
+Subject: [PATCH 30/31] windows: shared + static libs in one build
 
 av_export_avutil avpriv_vga16_font will result in LINK4217 warning when building ffmpeg.dll, and undefined dllimport avpriv_vga16_font error when linking exe
 ---

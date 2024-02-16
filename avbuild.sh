@@ -78,14 +78,16 @@ VER_SH=version.sh
 [ -f $VER_SH ] || VER_SH=ffbuild/version.sh
 [ -f $VER_SH ] || VER_SH=avbuild/version.sh
 FFVERSION_FULL=`./$VER_SH`
-echo $FFVERSION_FULL |grep '\.' || FFVERSION_FULL=`head -n 1 RELEASE`
+FFMAJOR_GEN=`echo $FFVERSION_FULL |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
+#echo $FFVERSION_FULL |grep '\.' || FFVERSION_FULL=`head -n 1 RELEASE` # stop updating in 6.x
+echo $FFVERSION_FULL |grep '\.' || FFVERSION_FULL=`grep -m 1 'cut here' doc/APIchanges |sed 's,.* \([0-9]*\.[0-9]*\) .*,\1,'`
 FFMAJOR=`echo $FFVERSION_FULL |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
 FFMINOR=`echo $FFVERSION_FULL |sed 's,[a-zA-Z]*[0-9]*\.\([0-9]*\).*,\1,'`
 MAJOR_GUESS=`cat libavutil/version.h |grep LIBAVUTIL_VERSION_MAJOR |head -n 1`
 MAJOR_GUESS=${MAJOR_GUESS##* }
 MAJOR_GUESS=$((MAJOR_GUESS-52))
 FFGIT=false
-echo $FFMAJOR |grep '\-' &>/dev/null && {
+echo $FFMAJOR_GEN |grep '\-' &>/dev/null && {
   FFGIT=true
   FFMAJOR=$MAJOR_GUESS
 }
@@ -94,21 +96,23 @@ echo $FFMAJOR |grep '\-' &>/dev/null && {
   FFMAJOR=$MAJOR_GUESS
   FFMINOR=0
 }
-! $FFGIT && [ ${FFMAJOR} -gt 3 ] && FFGIT=true
 PATCH_BRANCH=master
 [ $FFMAJOR -lt 5 ] && PATCH_BRANCH=4.4
 [ $FFMAJOR -eq 5 ] && PATCH_BRANCH=5.1
+[ $FFMAJOR -eq 6 -a $FFMINOR -lt 1 ] && PATCH_BRANCH=6.0
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR  git: $FFGIT. patch set version: $PATCH_BRANCH"
-USE_VK=false
-if $FFGIT; then
-  USE_VK=true
-  for p in $(find "$THIS_DIR/patches-$PATCH_BRANCH" -name "*.patch"); do
+USE_VK=$FFGIT
+USE_VAAPI_WIN32=$FFGIT
+if $FFGIT || [ ${FFMAJOR} -gt 3 ]; then
+  for p in $(find "$THIS_DIR/patches-$PATCH_BRANCH" -name "*.patch" |sort); do
       echo $p
     patch -p1 -N < $p
   done
 fi
-[ $FFMAJOR -ge 6 -a $FFMAJOR -ge 1 ] && USE_VK=true
-$USE_VK || disable_opt vulkan
+[ $FFMAJOR -gt 6 ] || [ $FFMAJOR -eq 6 -a $FFMINOR -ge 1 ] && {
+  USE_VK=true
+  USE_VAAPI_WIN32=true
+}
 cd -
 
 toupper(){
@@ -218,6 +222,7 @@ enable_libmfx(){
 }
 
 enable_opt hwaccels
+$USE_VK || disable_opt vulkan
 
 add_elf_flags() {
   # -Wl,-z,noexecstack -Wl,--as-needed is added by configure
@@ -311,7 +316,7 @@ use_llvm_binutils() {
   local clang_dir=${USE_TOOLCHAIN%clang*}
   local clang_name=${USE_TOOLCHAIN##*/}
   local clang=$clang_dir${clang_name/-cl/}
-  local CLANG_FALLBACK=clang-${LLVM_VER:-17}
+  local CLANG_FALLBACK=clang-${LLVM_VER:-18}
   $IS_APPLE_CLANG && CLANG_FALLBACK=/usr/local/opt/llvm/bin/clang
   echo "clang: `$clang --version`"
   # -print-prog-name= prints native dir format(on windows) and `which` fails
@@ -420,6 +425,7 @@ setup_win(){
   enable_opt mediafoundation
   disable_opt ptx-compression # libavfilter link error (zlib used in ff_cuda_load_module but no lib dep)
   $USE_VK && EXTRA_CFLAGS+=" -I\$THIS_DIR/tools/Vulkan-Headers/include"
+  $USE_VAAPI_WIN32 || disable_opt vaapi
 
   if $IS_CLANG ; then
     setup_win_clang $@

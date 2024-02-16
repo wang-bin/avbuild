@@ -1,0 +1,26 @@
+From c739efcdf13c11ed725b8e3f49ff3c22a04455d1 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Tue, 11 Sep 2018 23:16:49 +0800
+Subject: [PATCH 14/30] configure: enable icf
+
+---
+ configure | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/configure b/configure
+index f457a82a2e..e863fa6aca 100755
+--- a/configure
++++ b/configure
+@@ -7206,6 +7206,9 @@ test_cc -mno-red-zone <<EOF && noredzone_flags="-mno-red-zone"
+ int x;
+ EOF
+ 
++check_ldflags --icf=safe || check_ldflags -Wl,--icf=safe || { # ld or clang7 + lld
++    check_cflags -faddrsig && (check_ldflags --icf=all || check_ldflags -Wl,--icf=all)
++}
+ 
+ if enabled icc; then
+     # Just warnings, no remarks
+-- 
+2.39.3 (Apple Git-145)
+

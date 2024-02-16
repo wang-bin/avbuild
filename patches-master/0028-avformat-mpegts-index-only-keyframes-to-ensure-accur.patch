@@ -1,7 +1,7 @@
-From 90ad5f5d8caecc08d4d0900034c71da2692d6e20 Mon Sep 17 00:00:00 2001
+From b86bf3faa425b3108d6e84536412ddd6a44f1e1b Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 9 Feb 2023 18:08:11 +0800
-Subject: [PATCH 29/32] avformat/mpegts: index only keyframes to ensure
+Subject: [PATCH 28/31] avformat/mpegts: index only keyframes to ensure
  accurate seeks
 
 https://patchwork.ffmpeg.org/project/ffmpeg/patch/20190507032623.80375-1-ffmpeg@tmm1.net/
@@ -10,10 +10,10 @@ https://patchwork.ffmpeg.org/project/ffmpeg/patch/20190507032623.80375-1-ffmpeg@
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/libavformat/mpegts.c b/libavformat/mpegts.c
-index bef00c88e7..54a68a95b9 100644
+index 1cf390e98e..4aaf2d62a0 100644
 --- a/libavformat/mpegts.c
 +++ b/libavformat/mpegts.c
-@@ -3356,7 +3356,7 @@ static int64_t mpegts_get_dts(AVFormatContext *s, int stream_index,
+@@ -3351,7 +3351,7 @@ static int64_t mpegts_get_dts(AVFormatContext *s, int stream_index,
              av_packet_free(&pkt);
              return AV_NOPTS_VALUE;
          }

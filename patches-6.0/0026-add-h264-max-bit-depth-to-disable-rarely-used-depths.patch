@@ -1,7 +1,7 @@
-From ec1ec3d02fdfc07069dbe434fbf0181f6c82708f Mon Sep 17 00:00:00 2001
+From 81f028f5ec4637932013de92b4d89bfb192a0f65 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 1 Jul 2022 16:03:06 +0800
-Subject: [PATCH 27/29] add h264-max-bit-depth to disable rarely used depths
+Subject: [PATCH 26/30] add h264-max-bit-depth to disable rarely used depths
 
 ---
  configure                            |  6 ++++++
@@ -16,7 +16,7 @@ Subject: [PATCH 27/29] add h264-max-bit-depth to disable rarely used depths
  9 files changed, 77 insertions(+), 1 deletion(-)
 
 diff --git a/configure b/configure
-index bbeddbc403..e6d2f93d67 100755
+index f7d30543db..a8e9e33b0b 100755
 --- a/configure
 +++ b/configure
 @@ -425,6 +425,7 @@ Advanced options (experts only):
@@ -27,7 +27,7 @@ index bbeddbc403..e6d2f93d67 100755
  
  Optimization options (experts only):
    --disable-asm            disable all assembly optimizations
-@@ -2578,6 +2579,7 @@ CMDLINE_SET="
+@@ -2566,6 +2567,7 @@ CMDLINE_SET="
      env
      extra_version
      gas
@@ -35,7 +35,7 @@ index bbeddbc403..e6d2f93d67 100755
      host_cc
      host_cflags
      host_extralibs
-@@ -3922,6 +3924,9 @@ enable valgrind_backtrace
+@@ -3929,6 +3931,9 @@ enable valgrind_backtrace
  sws_max_filter_size_default=256
  set_default sws_max_filter_size
  
@@ -45,7 +45,7 @@ index bbeddbc403..e6d2f93d67 100755
  # internal components are enabled by default
  enable $EXTRALIBS_LIST
  
-@@ -7865,6 +7870,7 @@ cat > $TMPH <<EOF
+@@ -7887,6 +7892,7 @@ cat > $TMPH <<EOF
  #define SLIBSUF "$SLIBSUF"
  #define HAVE_MMX2 HAVE_MMXEXT
  #define SWS_MAX_FILTER_SIZE $sws_max_filter_size
@@ -375,5 +375,5 @@ index dc8fc4f720..39999bd2d2 100644
  #endif
  }
 -- 
-2.32.0 (Apple Git-132)
+2.39.3 (Apple Git-145)
 

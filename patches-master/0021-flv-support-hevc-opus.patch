@@ -1,7 +1,7 @@
-From aebdb1664d3fb98662790b9286dc0a0c3c0834bb Mon Sep 17 00:00:00 2001
+From 6c25f126af2251f7ed24efd5a5c71add76acb8c4 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 27 Sep 2021 17:35:17 +0800
-Subject: [PATCH 22/33] flv: support hevc, opus
+Subject: [PATCH 21/31] flv: support hevc, opus
 
 ---
  libavformat/flv.h    |  2 ++
@@ -88,7 +88,7 @@ index e25b5bd163..4f6f220ae6 100644
              int32_t cts = (avio_rb24(s->pb) + 0xff800000) ^ 0xff800000;
              pts = av_sat_add64(dts, cts);
 diff --git a/libavformat/flvenc.c b/libavformat/flvenc.c
-index f6d10f331c..2a1776ecb4 100644
+index cf510ec33a..538fa87bfa 100644
 --- a/libavformat/flvenc.c
 +++ b/libavformat/flvenc.c
 @@ -66,6 +66,7 @@ static const AVCodecTag flv_audio_codec_ids[] = {
@@ -110,5 +110,5 @@ index f6d10f331c..2a1776ecb4 100644
          if (par->sample_rate != 16000) {
              av_log(s, AV_LOG_ERROR,
 -- 
-2.39.2 (Apple Git-143)
+2.39.3 (Apple Git-145)
 

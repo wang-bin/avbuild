@@ -1,7 +1,7 @@
-From 71ff55dad8fa5a3feb5596f990a0025134928bdf Mon Sep 17 00:00:00 2001
+From 4ce555f82c9636af7443f652cc373cdbcddfbe77 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 3 May 2022 00:03:18 +0800
-Subject: [PATCH 28/32] wolfSSL - new TLS backend patch
+Subject: [PATCH 27/31] wolfSSL - new TLS backend patch
 
 https://lists.ffmpeg.org/pipermail/ffmpeg-devel/2018-August/233802.html
 ---
@@ -105,7 +105,7 @@ index bea2f8a4d7..ec5008980f 100755
  enabled ladspa            && require_headers "ladspa.h dlfcn.h"
  enabled lcms2             && require_pkg_config lcms2 "lcms2 >= 2.13" lcms2.h cmsCreateContext
 diff --git a/libavformat/Makefile b/libavformat/Makefile
-index 05b9b8a115..275fa15ad5 100644
+index 9e8e7c9cb8..ed62a4234b 100644
 --- a/libavformat/Makefile
 +++ b/libavformat/Makefile
 @@ -698,6 +698,7 @@ TLS-OBJS-$(CONFIG_GNUTLS)                += tls_gnutls.o
