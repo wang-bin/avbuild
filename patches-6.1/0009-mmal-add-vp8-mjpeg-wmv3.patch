@@ -1,7 +1,7 @@
-From 99cdf2d1cbf30e09c8e7b5d3b8823156c308a55d Mon Sep 17 00:00:00 2001
+From 6ddc463c44c242dce9abbc8d100e18a480d6fe04 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 13 Nov 2017 15:14:26 +0800
-Subject: [PATCH 09/29] mmal: add vp8, mjpeg, wmv3
+Subject: [PATCH 09/30] mmal: add vp8, mjpeg, wmv3
 
 ---
  configure              |  3 +++
@@ -10,10 +10,10 @@ Subject: [PATCH 09/29] mmal: add vp8, mjpeg, wmv3
  3 files changed, 32 insertions(+)
 
 diff --git a/configure b/configure
-index 4e2418a661..5721360617 100755
+index b999a1cde8..6cb3cf2ac8 100755
 --- a/configure
 +++ b/configure
-@@ -3296,6 +3296,7 @@ hevc_vaapi_encoder_select="atsc_a53 cbs_h265 vaapi_encode"
+@@ -3255,6 +3255,7 @@ hevc_vaapi_encoder_select="atsc_a53 cbs_h265 vaapi_encode"
  hevc_v4l2m2m_decoder_deps="v4l2_m2m hevc_v4l2_m2m"
  hevc_v4l2m2m_decoder_select="hevc_mp4toannexb_bsf"
  hevc_v4l2m2m_encoder_deps="v4l2_m2m hevc_v4l2_m2m"
@@ -21,7 +21,7 @@ index 4e2418a661..5721360617 100755
  mjpeg_cuvid_decoder_deps="cuvid"
  mjpeg_qsv_decoder_select="qsvdec"
  mjpeg_qsv_encoder_deps="libmfx"
-@@ -3323,6 +3324,7 @@ vc1_cuvid_decoder_deps="cuvid"
+@@ -3286,6 +3287,7 @@ vc1_cuvid_decoder_deps="cuvid"
  vc1_mmal_decoder_deps="mmal"
  vc1_qsv_decoder_select="qsvdec"
  vc1_v4l2m2m_decoder_deps="v4l2_m2m vc1_v4l2_m2m"
@@ -29,19 +29,19 @@ index 4e2418a661..5721360617 100755
  vp8_cuvid_decoder_deps="cuvid"
  vp8_mediacodec_decoder_deps="mediacodec"
  vp8_mediacodec_encoder_deps="mediacodec"
-@@ -3342,6 +3344,7 @@ vp9_vaapi_encoder_select="vaapi_encode"
- vp9_qsv_encoder_deps="libmfx MFX_CODEC_VP9"
+@@ -3306,6 +3308,7 @@ vp9_qsv_encoder_deps="libmfx MFX_CODEC_VP9"
  vp9_qsv_encoder_select="qsvenc"
  vp9_v4l2m2m_decoder_deps="v4l2_m2m vp9_v4l2_m2m"
+ wmv3_crystalhd_decoder_select="crystalhd"
 +wmv3_mmal_decoder_deps="mmal"
  av1_qsv_decoder_select="qsvdec"
  av1_qsv_encoder_select="qsvenc"
  av1_qsv_encoder_deps="libvpl"
 diff --git a/libavcodec/allcodecs.c b/libavcodec/allcodecs.c
-index 2386b450a6..722b3d8b02 100644
+index 5136a566f1..6890c36a68 100644
 --- a/libavcodec/allcodecs.c
 +++ b/libavcodec/allcodecs.c
-@@ -865,6 +865,7 @@ extern const FFCodec ff_hevc_vaapi_encoder;
+@@ -869,6 +869,7 @@ extern const FFCodec ff_hevc_vaapi_encoder;
  extern const FFCodec ff_hevc_videotoolbox_encoder;
  extern const FFCodec ff_libkvazaar_encoder;
  extern const FFCodec ff_mjpeg_cuvid_decoder;
@@ -49,7 +49,7 @@ index 2386b450a6..722b3d8b02 100644
  extern const FFCodec ff_mjpeg_qsv_encoder;
  extern const FFCodec ff_mjpeg_qsv_decoder;
  extern const FFCodec ff_mjpeg_vaapi_encoder;
-@@ -883,6 +884,7 @@ extern const FFCodec ff_vc1_cuvid_decoder;
+@@ -887,6 +888,7 @@ extern const FFCodec ff_vc1_cuvid_decoder;
  extern const FFCodec ff_vp8_cuvid_decoder;
  extern const FFCodec ff_vp8_mediacodec_decoder;
  extern const FFCodec ff_vp8_mediacodec_encoder;
@@ -57,7 +57,7 @@ index 2386b450a6..722b3d8b02 100644
  extern const FFCodec ff_vp8_qsv_decoder;
  extern const FFCodec ff_vp8_v4l2m2m_encoder;
  extern const FFCodec ff_vp8_vaapi_encoder;
-@@ -892,6 +894,7 @@ extern const FFCodec ff_vp9_mediacodec_encoder;
+@@ -896,6 +898,7 @@ extern const FFCodec ff_vp9_mediacodec_encoder;
  extern const FFCodec ff_vp9_qsv_decoder;
  extern const FFCodec ff_vp9_vaapi_encoder;
  extern const FFCodec ff_vp9_qsv_encoder;
@@ -66,10 +66,10 @@ index 2386b450a6..722b3d8b02 100644
  // null codecs
  extern const FFCodec ff_vnull_decoder;
 diff --git a/libavcodec/mmaldec.c b/libavcodec/mmaldec.c
-index 21d5b5e159..0bfeec6bd3 100644
+index 5629c7b733..aa9335bd20 100644
 --- a/libavcodec/mmaldec.c
 +++ b/libavcodec/mmaldec.c
-@@ -387,15 +387,24 @@ static av_cold int ffmmal_init_decoder(AVCodecContext *avctx)
+@@ -383,15 +383,24 @@ static av_cold int ffmmal_init_decoder(AVCodecContext *avctx)
      format_in = decoder->input[0]->format;
      format_in->type = MMAL_ES_TYPE_VIDEO;
      switch (avctx->codec_id) {
@@ -94,7 +94,7 @@ index 21d5b5e159..0bfeec6bd3 100644
      case AV_CODEC_ID_H264:
      default:
          format_in->encoding = MMAL_ENCODING_H264;
-@@ -824,6 +833,20 @@ static const AVCodecHWConfigInternal *const mmal_hw_configs[] = {
+@@ -820,6 +829,20 @@ static const AVCodecHWConfigInternal *const mmal_hw_configs[] = {
      NULL
  };
  
@@ -115,7 +115,7 @@ index 21d5b5e159..0bfeec6bd3 100644
  static const AVOption options[]={
      {"extra_buffers", "extra buffers", offsetof(MMALDecodeContext, extra_buffers), AV_OPT_TYPE_INT, {.i64 = 10}, 0, 256, 0},
      {"extra_decoder_buffers", "extra MMAL internal buffered frames", offsetof(MMALDecodeContext, extra_decoder_buffers), AV_OPT_TYPE_INT, {.i64 = 10}, 0, 256, 0},
-@@ -856,6 +879,9 @@ static const AVClass ffmmal_dec_class = {
+@@ -855,6 +878,9 @@ static const AVClass ffmmal_dec_class = {
      };
  
  FFMMAL_DEC(h264, AV_CODEC_ID_H264)

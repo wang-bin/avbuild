@@ -1,7 +1,7 @@
-From 2f94a242eff328556e218c07641f97a0cfdd8f6f Mon Sep 17 00:00:00 2001
+From b98968e9401421cad44e7791b2ad796162194586 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 27 Sep 2021 17:35:17 +0800
-Subject: [PATCH 21/29] flv: support hevc, opus
+Subject: [PATCH 21/30] flv: support hevc, opus
 
 ---
  libavformat/flv.h    |  2 ++
@@ -30,7 +30,7 @@ index f710963b92..8e72d62a5f 100644
  
  enum {
 diff --git a/libavformat/flvdec.c b/libavformat/flvdec.c
-index d7cfa27f76..48f3cf51db 100644
+index e25b5bd163..32a7cdd532 100644
 --- a/libavformat/flvdec.c
 +++ b/libavformat/flvdec.c
 @@ -238,6 +238,10 @@ static int flv_same_audio_codec(AVCodecParameters *apar, int flags)
@@ -86,7 +86,7 @@ index d7cfa27f76..48f3cf51db 100644
              int32_t cts = (avio_rb24(s->pb) + 0xff800000) ^ 0xff800000;
              pts = av_sat_add64(dts, cts);
 diff --git a/libavformat/flvenc.c b/libavformat/flvenc.c
-index cf510ec33a..538fa87bfa 100644
+index f6d10f331c..2a1776ecb4 100644
 --- a/libavformat/flvenc.c
 +++ b/libavformat/flvenc.c
 @@ -66,6 +66,7 @@ static const AVCodecTag flv_audio_codec_ids[] = {

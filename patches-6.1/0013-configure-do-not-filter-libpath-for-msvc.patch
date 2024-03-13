@@ -1,0 +1,24 @@
+From cbccc0f1cf7906772c4a8fb177ac8468cdfba821 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Fri, 30 Mar 2018 10:46:43 +0800
+Subject: [PATCH 13/30] configure: do not filter -libpath for msvc
+
+---
+ configure | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/configure b/configure
+index 6cb3cf2ac8..047b5a9d65 100755
+--- a/configure
++++ b/configure
+@@ -4678,6 +4678,7 @@ msvc_common_flags(){
+             -lz)                  echo zlib.lib ;;
+             -lx264)               echo libx264.lib ;;
+             -lstdc++)             ;;
++            -libpath:*|-LIBPATH:*)echo $flag ;;
+             -l*)                  echo ${flag#-l}.lib ;;
+             -LARGEADDRESSAWARE)   echo $flag ;;
+             -L*)                  echo -libpath:${flag#-L} ;;
+-- 
+2.39.3 (Apple Git-145)
+

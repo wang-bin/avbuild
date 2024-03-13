@@ -99,7 +99,7 @@ echo $FFMAJOR_GEN |grep '\-' &>/dev/null && {
 PATCH_BRANCH=master
 [ $FFMAJOR -lt 5 ] && PATCH_BRANCH=4.4
 [ $FFMAJOR -eq 5 ] && PATCH_BRANCH=5.1
-[ $FFMAJOR -eq 6 -a $FFMINOR -lt 1 ] && PATCH_BRANCH=6.0
+[ $FFMAJOR -eq 6 ] && PATCH_BRANCH=6.$FFMINOR
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR  git: $FFGIT. patch set version: $PATCH_BRANCH"
 USE_VK=$FFGIT
 USE_VAAPI_WIN32=$FFGIT
