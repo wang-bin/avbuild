@@ -860,6 +860,7 @@ EOF
 setup_android_env() {
   DEC_OPT=$DEC_OPT_MOBILE
   DEMUX_OPT=$DEMUX_OPT_MOBILE
+  FILTER_OPT=$FILTER_OPT_MOBILE
   ENC_OPT=$ENC_OPT_MOBILE
   MUX_OPT=$MUX_OPT_MOBILE
   # fbdev & v4l2 build error and not supported on android. camera requores api level 24, ./avbuild.sh android24
@@ -1039,6 +1040,7 @@ EOF
 setup_ios_env() {
   DEC_OPT=$DEC_OPT_MOBILE
   DEMUX_OPT=$DEMUX_OPT_MOBILE
+  FILTER_OPT=$FILTER_OPT_MOBILE
   ENC_OPT=$ENC_OPT_MOBILE
   MUX_OPT=$MUX_OPT_MOBILE
   enable_opt videotoolbox libxml2
@@ -1073,7 +1075,7 @@ setup_ios_env() {
     $enable_bitcode && BITCODE_FLAGS="-fembed-bitcode" # also works for new sdks
     BITCODE_LFLAGS=$BITCODE_FLAGS
     if [ "${IOS_ARCH:3:2}" == "64" ]; then
-      ios_min=7.0
+      ios_min=8.0 # arm64 since 7.0
     else
       TOOLCHAIN_OPT+=" --disable-thumb"
       # armv7 since 3.2, but ios10 sdk does not have crt1.o/crt1.3.1.o, use 6.0 is ok. but we add these files in tools/lib/ios5, so 5.0 and older is fine
@@ -1125,6 +1127,7 @@ EOF
 setup_tvos_env() {
   DEC_OPT=$DEC_OPT_MOBILE
   DEMUX_OPT=$DEMUX_OPT_MOBILE
+  FILTER_OPT=$FILTER_OPT_MOBILE
   ENC_OPT=
   MUX_OPT=
   enable_opt videotoolbox libxml2
@@ -1147,9 +1150,10 @@ setup_tvos_env() {
     SYSROOT_SDK=appletvsimulator
     VER_OS=tvos-simulator
     Simulator=Simulator
+    ASM_OPT="--disable-asm"
   fi
   : ${os_ver:=$os_min}
-  TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$OS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
+  TOOLCHAIN_OPT+=" --enable-cross-compile $ASM_OPT --arch=$OS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
   disable_opt programs
   EXTRA_CFLAGS+=" -arch $OS_ARCH -m${VER_OS}-version-min=$os_ver $BITCODE_FLAGS" # -fvisibility=hidden -fvisibility-inlines-hidden"
   EXTRA_LDFLAGS+=" -arch $OS_ARCH -m${VER_OS}-version-min=$os_ver $BITCODE_LFLAGS -Wl,-dead_strip" # -fvisibility=hidden -fvisibility-inlines-hidden"
@@ -1179,7 +1183,7 @@ setup_macos_env(){
     }
     TOOLCHAIN_OPT+=" --enable-cross-compile --arch=$MACOS_ARCH  --target-os=darwin"
   fi
-
+  #TOOLCHAIN_OPT+=" --strip='strip -u -r'" # no effect because ffmpeg add -x to strip
   [ -z "$MACOS_ARCH" ] && MACOS_ARCH=$(cc -dumpmachine |cut -d '-' -f 1)
   : ${MACOS_VER:=10.7}
   [[ "$MACOS_ARCH" == arm64* ]] && version_compare $MACOS_VER "<" 11.0 && MACOS_VER=11.0
@@ -1207,6 +1211,10 @@ setup_macos_env(){
     EXTRALIBS+=" -lSystem" # from clang to ld. set -sdk_version anyversion to kill warnings
     version_compare $MACOS_VER "<" 10.8 && EXTRALIBS+=" -lcrt1.10.6.o"
   }
+# xcode 15 ld makes all _av_*(libavfilter.v) from libavutil indirect, but old ld only makes used _av_* indirect
+# https://github.com/Homebrew/homebrew-core/commit/20ea2100b285af49daab2d0ce8ae895096e30ac3
+  #EXTRA_LDSOFLAGS+=" -Wl,-ld_classic" # ld: building exports trie: duplicate symbol '_av_add_i'
+# fix: libavfilter.v exports avfilter_*; av_buffers*; av_filter*;
   $IS_APPLE_CLANG || $LD_IS_LLD || {
     TOOLCHAIN_OPT+=" --sysroot=\$(xcrun --sdk macosx --show-sdk-path)"
   }
@@ -1560,7 +1568,7 @@ config1(){
   is_libav || FEATURE_OPT+=" --disable-postproc"
   local CONFIGURE="configure --extra-version=avbuild --disable-doc ${DEBUG_OPT} $LIB_OPT --enable-runtime-cpudetect $FEATURE_OPT $TOOLCHAIN_OPT $USER_OPT"
   : ${NO_ENC=false}
-    CONFIGURE+=" $DEC_OPT $DEMUX_OPT $ENC_OPT $MUX_OPT"
+    CONFIGURE+=" $DEC_OPT $DEMUX_OPT $ENC_OPT $MUX_OPT $FILTER_OPT $PROT_OPT"
   CONFIGURE=`trim2 $CONFIGURE`
   # http://ffmpeg.org/platform.html
   # static: --enable-pic --extra-ldflags="-Wl,-Bsymbolic" --extra-ldexeflags="-pie"
@@ -1686,6 +1694,7 @@ EOF
   if [ -f bin/avutil.lib ]; then
     mv bin/*.lib lib
   fi
+  find lib -name "*.dylib" -type f -exec strip -u -r {} \;
 }
 
 build_all(){
@@ -1709,7 +1718,7 @@ build_all(){
         archs=(x86 x64 arm64)
         [ -d "$VC_LTL_DIR" ] && archs=(x86 x64)
       }
-      [[ "${os:0:5}" == "winrt" || "${os:0:3}" == "uwp" || "$os" == win*store* || "$os" == win*phone* ]] && archs=(x86 x64 arm arm64)
+      [[ "${os:0:5}" == "winrt" || "${os:0:3}" == "uwp" || "$os" == win*store* || "$os" == win*phone* ]] && archs=(x64 arm64)
       [[ "$os" == macos* || "$os" == *catalyst* ]] && {
         archs=
         echo "#include <stdint.h> " |clang -arch arm64 -isysroot $(xcrun --sdk macosx --show-sdk-path) -x c -c - 2>/dev/null && archs=(x86_64 arm64)
@@ -1865,4 +1874,4 @@ make_universal()
 mkdir -p .dir
 
 build_all "$@"
-echo ${SECONDS}s elapsed
+echo "${SECONDS}"s elapsed
