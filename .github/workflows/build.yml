@@ -3,7 +3,7 @@ name: Build
 on:
   push:
   schedule:
-    - cron: '0 12 * * 0'
+    - cron: '0 0 * * 0'
 
 
 env:
@@ -28,24 +28,32 @@ jobs:
       fail-fast: false
       matrix:
         config: [default,lite,lite-lto] # lto reduce about 300KB for lite build
-        target: [macOS,iOS,iOSSimulator,macCatalyst,tvOS,tvOSSimulator]
+        target: [macOS,iOS,iOSSimulator,visionOS,visionOSSimulator,tvOS,tvOSSimulator,macCatalyst]
         exclude:
           - config: default
-            target: iOSSimulator
-          - config: lite
-            target: iOSSimulator
-          - config: default
-            target: macCatalyst
-          - config: lite
-            target: macCatalyst
-          - config: default
             target: iOS
+          - config: default
+            target: iOSSimulator
+          - config: lite
+            target: iOSSimulator
+          - config: default
+            target: macCatalyst
+          - config: lite
+            target: macCatalyst
           - config: default
             target: tvOS
           - config: default
             target: tvOSSimulator
           - config: lite
             target: tvOSSimulator
+          - config: default
+            target: visionOS
+          - config: lite-lto # llvm-ar-17 merged visionOS lto libs has wrong contents (/,//,*.o/)
+            target: visionOS
+          - config: default
+            target: visionOSSimulator
+          - config: lite-lto
+            target: visionOSSimulator
     steps:
     - uses: actions/checkout@v4
     - name: Setup Xcode
@@ -62,7 +70,7 @@ jobs:
       shell: bash
       run: |
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-        [[ "${TARGET_OS}" == "iOS" || "${TARGET_OS}" == "tvOS"* ]] && export USER_OPT="--enable-wolfssl"
+        [[ "${TARGET_OS}" == "iOS" || "${TARGET_OS}" == "tvOS"* || "${TARGET_OS}" == "xr"* || "${TARGET_OS}" == "vision"* ]]  && export USER_OPT="--enable-wolfssl"
         ./avbuild.sh ${TARGET_OS}
     - name: Make SDK
       shell: bash

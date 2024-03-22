@@ -11,7 +11,7 @@ export XZ_OPT="-T0 -9e" # -9e. -8/9 will disable mt?
 TAR=tar
 # brew install gnu-tar. gtar result is 1/3 much smaller, but 1/2 slower, also no hidden files(GNUSparseFile.0). T0 is 2x faster than bsdtar
 which gtar && TAR=gtar
-if [[ "${TARGET_OS}" == "iOS"* || "${TARGET_OS}" == "tvOS"* ]]; then
+if [[ "${TARGET_OS}" == "iOS"* || "${TARGET_OS}" == "tvOS"* || "${TARGET_OS}" == "xr"* || "${TARGET_OS}" == "vision"* || "${TARGET_OS}" == "watch"* ]]; then
   find ffmpeg-${SUFFIX} -name "*.mri" -delete
   $TAR Jcf ffmpeg-${SUFFIX}-shared.tar.xz --exclude="*.a" ffmpeg-${SUFFIX}
   find ffmpeg-${SUFFIX} -name "*.dylib" -delete

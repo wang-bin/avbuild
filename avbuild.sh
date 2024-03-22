@@ -277,7 +277,7 @@ probe_cc() {
   local cc=$1
   local flags=$2
   $cc -v 2>&1 |grep -q clang && IS_CLANG=true
-  $cc -v 2>&1 |grep -q "Apple LLVM" && IS_APPLE_CLANG=true
+  $cc -v 2>&1 |grep -q "Apple " && IS_APPLE_CLANG=true
   $cc -v 2>/dev/null |grep msvc &>/dev/null && IS_CLANG_CL=true # /openmp:llvm ....
   if $IS_CLANG_CL; then
     IS_CLANG=true
@@ -1124,7 +1124,7 @@ EOF
   [ -f "$LIBWOLFSSL" ] && lipo -thin $IOS_ARCH "$LIBWOLFSSL" -output $THIS_DIR/build_$INSTALL_DIR/libwolfssl.a
 }
 
-setup_tvos_env() {
+setup_apple_env() {
   DEC_OPT=$DEC_OPT_MOBILE
   DEMUX_OPT=$DEMUX_OPT_MOBILE
   FILTER_OPT=$FILTER_OPT_MOBILE
@@ -1137,32 +1137,53 @@ setup_tvos_env() {
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
   LIB_OPT=--enable-shared
   local OS_ARCH=$1
-  local OS=$2
-  os_ver=${2##tvos}
-  os_ver=${os_ver/simulator/}
-  local os_min=11.0
-  local SYSROOT_SDK=appletvos
-  local VER_OS=tvos
+# tvos[11.0][simulator], tvos[simulator][11.0]
+  local os=${2/simulator/}
+  local os=${os/vision/xr}
+  local os=${os%%[0-9.]*}
+  local OS=${os/os/OS}
+  os_ver=${os##*[^0-9.]} # can be empty, then default(ios arm64 is 7.0 etc.)
+  local ios=8.0
+  local tvos=11.0
+  local macos=10.7
+  local watchos=2.0
+  local xros=1.0
+  local os_min=${!os}
+  ios=iphoneos
+  tvos=appletvos
+  macos=macosx
+  watchos=watchos
+  xros=xros
+  local SYSROOT_SDK=${!os}
+  echo setup_apple_env $@. os:$os, os_ver:$os_ver, os_min:$os_min, SYSROOT_SDK:$SYSROOT_SDK
+  local env_suffix=
   local enable_bitcode=false
-  if [[ "$OS" != *"simulator"* ]]; then
+  if [[ "$2" != *"simulator"* ]]; then
     $enable_bitcode && BITCODE_FLAGS="-fembed-bitcode" # also works for new sdks
   else
-    SYSROOT_SDK=appletvsimulator
+    ios=iphonesimulator
+    tvos=appletvsimulator
+    watchos=watchsimulator
+    xros=xrsimulator
+    SYSROOT_SDK=${!os}
     VER_OS=tvos-simulator
     Simulator=Simulator
+    env_suffix=-simulator
     ASM_OPT="--disable-asm"
   fi
   : ${os_ver:=$os_min}
   TOOLCHAIN_OPT+=" --enable-cross-compile $ASM_OPT --arch=$OS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
   disable_opt programs
-  EXTRA_CFLAGS+=" -arch $OS_ARCH -m${VER_OS}-version-min=$os_ver $BITCODE_FLAGS" # -fvisibility=hidden -fvisibility-inlines-hidden"
-  EXTRA_LDFLAGS+=" -arch $OS_ARCH -m${VER_OS}-version-min=$os_ver $BITCODE_LFLAGS -Wl,-dead_strip" # -fvisibility=hidden -fvisibility-inlines-hidden"
-  INSTALL_DIR=sdk-tvos$Simulator-$OS_ARCH
+# if target_vendor is not apple(-v same except vendor): d: building for 'tvOS-simulator', but linking in object file built for 'tvOS'
+  EXTRA_CFLAGS+=" -arch $OS_ARCH --target=apple-${os}${os_ver}${env_suffix} $BITCODE_FLAGS" # -fvisibility=hidden -fvisibility-inlines-hidden"
+  EXTRA_LDFLAGS+=" -arch $OS_ARCH --target=apple-${os}${os_ver}${env_suffix} $BITCODE_LFLAGS -Wl,-dead_strip" # -fvisibility=hidden -fvisibility-inlines-hidden"
+  #INSTALL_DIR=sdk-${2/os/OS}-$OS_ARCH
+  INSTALL_DIR=sdk-$OS$os_ver$Simulator-$OS_ARCH
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat>>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
-export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/tvOS$Simulator/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/tvOS$Simulator/lib/pkgconfig:$PKG_CONFIG_PATH
+export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/$OS$Simulator/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/$OS$Simulator/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
-  LIBWOLFSSL="${THIS_DIR}/tools/dep/tvOS$Simulator/lib/libwolfssl.a"
+  LIBWOLFSSL="${THIS_DIR}/tools/dep/$OS$Simulator/lib/libwolfssl.a"
   cp -avf "$LIBWOLFSSL" $THIS_DIR/build_$INSTALL_DIR/libwolfssl.a
   [ -f "$LIBWOLFSSL" ] && lipo -thin $OS_ARCH "$LIBWOLFSSL" -output $THIS_DIR/build_$INSTALL_DIR/libwolfssl.a
 }
@@ -1514,7 +1535,7 @@ config1(){
     ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
     osx*|macos*)     setup_macos_env $TAGET_ARCH_FLAG $1 ;;
     *catalyst*) setup_maccatalyst_env $TAGET_ARCH_FLAG $1 ;;
-    tvos*)      setup_tvos_env $TAGET_ARCH_FLAG $1 ;;
+    tv*|xr*|vision*|watch*)      setup_apple_env $TAGET_ARCH_FLAG $1 ;;
     mingw*)     setup_mingw_env $TAGET_ARCH_FLAG ;;
     vc|win*|uwp*)  setup_win $TAGET_ARCH_FLAG $1 ;; # TODO: check cc
     rpi*|raspberry*) setup_rpi_env $TAGET_ARCH_FLAG $1 ;;
@@ -1677,6 +1698,7 @@ EOF
       LIBAVFORMAT="$THIS_DIR/$INSTALL_DIR/lib/libavformat.a"
       if (nm -u "$LIBAVFORMAT"  2>&1 |grep -q wolfSSL) && [ -f "$THIS_DIR/build_${INSTALL_DIR}/libwolfssl.a" ]; then
         $THIS_DIR/tools/mergea.sh "$THIS_DIR/$INSTALL_DIR/lib/libavformat_full.a" "$LIBAVFORMAT" "$THIS_DIR/build_${INSTALL_DIR}/libwolfssl.a"
+        mv "$LIBAVFORMAT"{,.bak}
         mv "$THIS_DIR/$INSTALL_DIR/lib/libavformat_full.a" "$LIBAVFORMAT"
       fi
   })
@@ -1707,9 +1729,10 @@ build_all(){
     local archs=($2)
     [ -z "$archs" ] && {
       echo ">>>>>no arch is set. setting default archs..."
-      [[ "$os" == ios* || "$os" == tvos* ]] && {
+      [[ "$os" == ios* || "$os" == tvos* || "$os" == watch* ]] && {
         echo $os | grep simulator >/dev/null && archs=(arm64 x86_64) || archs=(arm64)
       }
+      [[ "$os" == xr* || "$os" == vision* ]] && archs=(arm64) # libclang_rt.xros.a': fat file missing arch 'x86_64', file has 'armv7,armv7s,armv7k,arm64,arm64e'. ld: warning: no platform load command found in asm.o
       [ "${os:0:7}" == "android" ] && archs=(armv7 arm64 x86 x86_64)
       [ "${os:0:3}" == "rpi" -o "${os:0:9}" == "raspberry" ] && archs=(armv6zk armv7-a)
       [[ "$os" == "sunxi" ]] && archs=(armv7)
@@ -1790,7 +1813,7 @@ make_universal()
   [ -z "$dirs" ] && return 0
   [ ${#dirs[@]} -le 1 ] && return 0
 # TODO: move to a new script
-  if [[ "$os" == ios* || "$os" == macos* || "$os" == osx* || "$os" == *catalyst* || "$os" == tvos* ]]; then
+  if [[ "$os" == ios* || "$os" == macos* || "$os" == osx* || "$os" == *catalyst* || "$os" == tv* || "$os" == xr* || "$os" == vision* || "$os" == watch* ]]; then
     local OUT_DIR=sdk-$os
     rm -rf $OUT_DIR
     cd $THIS_DIR
