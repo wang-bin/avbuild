@@ -1,7 +1,7 @@
-From ac38710571434750e05b56124cb02c00f19ee5a6 Mon Sep 17 00:00:00 2001
+From bfc18cdd8224616545c4efe817e2cf5a629a451d Mon Sep 17 00:00:00 2001
 From: Sam James <sam@gentoo.org>
 Date: Wed, 20 Dec 2023 12:32:43 +0000
-Subject: [PATCH 30/30] libavcodec: fix -Wint-conversion in vulkan
+Subject: [PATCH 31/31] libavcodec: fix -Wint-conversion in vulkan
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -87,7 +87,7 @@ index 99fdcf3b45..033172cbd6 100644
  
      HEVCHeaderSet *hdr;
 diff --git a/libavcodec/vulkan_video.c b/libavcodec/vulkan_video.c
-index 236aa124bb..c5144bd8bc 100644
+index eb849c02d0..cbcb46eb0d 100644
 --- a/libavcodec/vulkan_video.c
 +++ b/libavcodec/vulkan_video.c
 @@ -287,7 +287,7 @@ av_cold void ff_vk_video_common_uninit(FFVulkanContext *s,
