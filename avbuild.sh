@@ -1139,24 +1139,37 @@ setup_apple_env() {
   local OS_ARCH=$1
 # tvos[11.0][simulator], tvos[simulator][11.0]
   local os=${2/simulator/}
-  local os=${os/vision/xr}
-  local os=${os%%[0-9.]*}
+  os=${os/vision/xr}
+  local os_ver=${os##*[^0-9.]} # can be empty, then default(ios arm64 is 7.0 etc.)
+  os=${os%%[0-9.]*}
+  os=$(tolower $os)
+  local target_os=$os
   local OS=${os/os/OS}
-  os_ver=${os##*[^0-9.]} # can be empty, then default(ios arm64 is 7.0 etc.)
+  OS=${os/ccat/cCat}
   local ios=8.0
-  local tvos=11.0
+  local tvos=10.2 # videotoolbox: 10.2+
   local macos=10.7
+  local maccatalyst=13.1 # xcode14 requires 13.1+
   local watchos=2.0
   local xros=1.0
   local os_min=${!os}
   ios=iphoneos
   tvos=appletvos
   macos=macosx
+  maccatalyst=macosx
   watchos=watchos
   xros=xros
   local SYSROOT_SDK=${!os}
+  SDK_DIR=$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)
   echo setup_apple_env $@. os:$os, os_ver:$os_ver, os_min:$os_min, SYSROOT_SDK:$SYSROOT_SDK
   local env_suffix=
+  [[ "$os" == *catalyst ]] && {
+    disable_opt appkit securetransport xlib libxcb
+    target_os=ios
+    env_suffix=-macabi
+    EXTRA_FLAGS="-iframework ${SDK_DIR}/System/iOSSupport/System/Library/Frameworks"
+    [[ "$OS_ARCH" == *86* ]] && ASM_OPT="--disable-asm"
+  }
   local enable_bitcode=false
   if [[ "$2" != *"simulator"* ]]; then
     $enable_bitcode && BITCODE_FLAGS="-fembed-bitcode" # also works for new sdks
@@ -1166,7 +1179,6 @@ setup_apple_env() {
     watchos=watchsimulator
     xros=xrsimulator
     SYSROOT_SDK=${!os}
-    VER_OS=tvos-simulator
     Simulator=Simulator
     env_suffix=-simulator
     ASM_OPT="--disable-asm"
@@ -1175,8 +1187,8 @@ setup_apple_env() {
   TOOLCHAIN_OPT+=" --enable-cross-compile $ASM_OPT --arch=$OS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
   disable_opt programs
 # if target_vendor is not apple(-v same except vendor): d: building for 'tvOS-simulator', but linking in object file built for 'tvOS'
-  EXTRA_CFLAGS+=" -arch $OS_ARCH --target=apple-${os}${os_ver}${env_suffix} $BITCODE_FLAGS" # -fvisibility=hidden -fvisibility-inlines-hidden"
-  EXTRA_LDFLAGS+=" -arch $OS_ARCH --target=apple-${os}${os_ver}${env_suffix} $BITCODE_LFLAGS -Wl,-dead_strip" # -fvisibility=hidden -fvisibility-inlines-hidden"
+  EXTRA_CFLAGS+=" -arch $OS_ARCH --target=apple-${target_os}${os_ver}${env_suffix} $BITCODE_FLAGS $EXTRA_FLAGS" # -fvisibility=hidden -fvisibility-inlines-hidden"
+  EXTRA_LDFLAGS+=" -arch $OS_ARCH --target=apple-${target_os}${os_ver}${env_suffix} $BITCODE_LFLAGS $EXTRA_FLAGS -Wl,-dead_strip" # -fvisibility=hidden -fvisibility-inlines-hidden"
   #INSTALL_DIR=sdk-${2/os/OS}-$OS_ARCH
   INSTALL_DIR=sdk-$OS$os_ver$Simulator-$OS_ARCH
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
@@ -1254,41 +1266,6 @@ setup_macos_env(){
   cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
 export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/macOS/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/macOS/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
-}
-
-setup_maccatalyst_env(){
-  enable_opt videotoolbox libxml2
-  disable_opt avdevice appkit securetransport
-  disable_opt vulkan
-  EXTRA_CFLAGS+=" -I=/usr/include/libxml2"
-  grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
-  local IOS_ARCH=$1
-  local cc_has_bitcode=false # bitcode since xcode 7. deprecated in xcode14
-  clang -fembed-bitcode -E - </dev/null &>/dev/null && cc_has_bitcode=true
-  : ${BITCODE:=false}
-  ios_ver=${2##*catalyst}
-  local enable_bitcode=false
-  $BITCODE && $cc_has_bitcode && enable_bitcode=true
-  $enable_bitcode && echo "Bitcode is enabled by default. set 'BITCODE=false' to disable"
-# http://iossupportmatrix.com
-  local ios_min=13.1 # xcode14 requires 13.1+
-  local SYSROOT_SDK=macosx
-  local VER_OS=iphoneos
-  local BITCODE_FLAGS=
-  $enable_bitcode && BITCODE_FLAGS="-fembed-bitcode" # also works for new sdks
-  BITCODE_LFLAGS=$BITCODE_FLAGS
-  : ${ios_ver:=$ios_min}
-  # x86 asm: https://stackoverflow.com/questions/58796267/building-for-macos-but-linking-in-object-file-built-for-free-standing/59103419#59103419
-  [[ "$IOS_ARCH" == x*64 || "$IOS_ARCH" == *86* ]] && ASM_OPT="--disable-asm"
-  local rpath_dirs=(@loader_path @executable_path/../Frameworks @loader_path/Libraries @loader_path/../lib)
-  local rpath_flags=${rpath_dirs[@]/#/-Wl,-rpath,}
-
-  SDK_DIR=$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)
-  TOOLCHAIN_OPT+=" --enable-cross-compile $ASM_OPT --arch=$IOS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
-  EXTRA_CFLAGS+=" -target ${IOS_ARCH}-apple-ios-macabi -m${VER_OS}-version-min=$ios_ver $BITCODE_FLAGS -iframework ${SDK_DIR}/System/iOSSupport/System/Library/Frameworks" # -fvisibility=hidden -fvisibility-inlines-hidden"
-  EXTRA_LDFLAGS+=" -target ${IOS_ARCH}-apple-ios-macabi -m${VER_OS}-version-min=$ios_ver $BITCODE_LFLAGS -Wl,-dead_strip $rpath_flags -iframework ${SDK_DIR}/System/iOSSupport/System/Library/Frameworks" # -fvisibility=hidden -fvisibility-inlines-hidden"
-  INSTALL_DIR=sdk-maccatalyst-$IOS_ARCH
-  mkdir -p $THIS_DIR/build_$INSTALL_DIR
 }
 
 # version_compare v1 "op" v2, e.g. version_compare 10.6 "<" 10.7
@@ -1534,8 +1511,7 @@ config1(){
     android*)    setup_android_env $TAGET_ARCH_FLAG $1 ;;
     ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
     osx*|macos*)     setup_macos_env $TAGET_ARCH_FLAG $1 ;;
-    *catalyst*) setup_maccatalyst_env $TAGET_ARCH_FLAG $1 ;;
-    tv*|xr*|vision*|watch*)      setup_apple_env $TAGET_ARCH_FLAG $1 ;;
+    tv*|xr*|vision*|watch*|*catalyst*)      setup_apple_env $TAGET_ARCH_FLAG $1 ;;
     mingw*)     setup_mingw_env $TAGET_ARCH_FLAG ;;
     vc|win*|uwp*)  setup_win $TAGET_ARCH_FLAG $1 ;; # TODO: check cc
     rpi*|raspberry*) setup_rpi_env $TAGET_ARCH_FLAG $1 ;;
