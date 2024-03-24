@@ -1145,7 +1145,7 @@ setup_apple_env() {
   os=$(tolower $os)
   local target_os=$os
   local OS=${os/os/OS}
-  OS=${os/ccat/cCat}
+  OS=${OS/ccat/cCat}
   local ios=8.0
   local tvos=10.2 # videotoolbox: 10.2+
   local macos=10.7
@@ -1161,7 +1161,6 @@ setup_apple_env() {
   xros=xros
   local SYSROOT_SDK=${!os}
   SDK_DIR=$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)
-  echo setup_apple_env $@. os:$os, os_ver:$os_ver, os_min:$os_min, SYSROOT_SDK:$SYSROOT_SDK
   local env_suffix=
   [[ "$os" == *catalyst ]] && {
     disable_opt appkit securetransport xlib libxcb
@@ -1183,6 +1182,7 @@ setup_apple_env() {
     env_suffix=-simulator
     ASM_OPT="--disable-asm"
   fi
+  echo setup_apple_env $@. os:$os, os_ver:$os_ver, os_min:$os_min, SYSROOT_SDK:$SYSROOT_SDK
   : ${os_ver:=$os_min}
   TOOLCHAIN_OPT+=" --enable-cross-compile $ASM_OPT --arch=$OS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
   disable_opt programs
@@ -1705,10 +1705,9 @@ build_all(){
     local archs=($2)
     [ -z "$archs" ] && {
       echo ">>>>>no arch is set. setting default archs..."
-      [[ "$os" == ios* || "$os" == tvos* || "$os" == watch* ]] && {
+      [[ "$os" == ios* || "$os" == tvos* || "$os" == watch* || "$os" == xr* || "$os" == vision* ]] && {
         echo $os | grep simulator >/dev/null && archs=(arm64 x86_64) || archs=(arm64)
       }
-      [[ "$os" == xr* || "$os" == vision* ]] && archs=(arm64) # libclang_rt.xros.a': fat file missing arch 'x86_64', file has 'armv7,armv7s,armv7k,arm64,arm64e'. ld: warning: no platform load command found in asm.o
       [ "${os:0:7}" == "android" ] && archs=(armv7 arm64 x86 x86_64)
       [ "${os:0:3}" == "rpi" -o "${os:0:9}" == "raspberry" ] && archs=(armv6zk armv7-a)
       [[ "$os" == "sunxi" ]] && archs=(armv7)
