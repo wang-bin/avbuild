@@ -1786,6 +1786,10 @@ make_universal()
   shift 1
   local dirs=($@)
   [ -z "$dirs" ] && return 0
+  if [[ "$os" == ios* || "$os" == macos* || "$os" == osx* || "$os" == *catalyst* || "$os" == tv* || "$os" == xr* || "$os" == vision* || "$os" == watch* ]]; then
+    chmod +x $THIS_DIR/tools/dylib2framework.sh
+    cp -avf $THIS_DIR/tools/dylib2framework.sh ${dirs[0]}
+  fi
   [ ${#dirs[@]} -le 1 ] && return 0
 # TODO: move to a new script
   if [[ "$os" == ios* || "$os" == macos* || "$os" == osx* || "$os" == *catalyst* || "$os" == tv* || "$os" == xr* || "$os" == vision* || "$os" == watch* ]]; then
@@ -1793,8 +1797,9 @@ make_universal()
     rm -rf $OUT_DIR
     cd $THIS_DIR
     mkdir -p $OUT_DIR/{bin,lib}
+    cp -avf tools/dylib2framework.sh $OUT_DIR
     cp -af ${dirs[0]}/include $OUT_DIR
-    for a in libavutil libavformat libavcodec libavfilter libavdevice libswscale libswresample; do
+    for a in libavutil libavformat libavcodec libavfilter libavdevice libswscale libswresample libffmpeg; do
       libs=
       for d in ${dirs[@]}; do
         [ -f $d/lib/${a}.a ] && libs+=" $d/lib/${a}.a"

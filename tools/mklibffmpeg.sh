@@ -101,7 +101,7 @@ IFLAGS     := -I. -I$(SRC_LINK)/
 # -r incompatible: -l(shared) -L -Wl,-soname -Wl,-rpath -Wl,--icf -shared -Wl,--gc-sections -dead_strip. other -Wl flags have no effect
 LDRFLAGS       = $(filter-out -l% -L% -Wl%, $(LDFLAGS) $(LDSOFLAGS))
 FFEXTRALIBS_R   = $(filter -L% -lwolfssl, $(FFEXTRALIBS))
-SHFLAGS_R       = $(filter-out -shared -Wl%, $(SHFLAGS))
+SHFLAGS_R       = $(filter-out -shared -Wl% $$%, $(SHFLAGS)) # mingw -Wl,--disable-auto-image-base $$(@:$(SLIBSUF)=.def)'
 vpath %.rc   $(SRC_PATH)
 
 %.o: %.rc
