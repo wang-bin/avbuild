@@ -1,4 +1,4 @@
-# A script to create libffmpeg single shared library. Author: 'wbsecg1 at gmail.com' 2019-2023. MIT license
+# A script to create libffmpeg single shared and partially linked library. Author: 'wbsecg1 at gmail.com' 2019-2024. MIT license
 BUILD_DIR=$1
 INSTALL_DIR=$2
 THIS_DIR="$(cd "$(dirname ${BASH_SOURCE[0]})";pwd -P)"
@@ -98,6 +98,10 @@ M      = @$(call ECHO,$(TAG),$@);
 %.c %.h %.pc %.ver %.version: TAG = GEN
 
 IFLAGS     := -I. -I$(SRC_LINK)/
+# -r incompatible: -l(shared) -L -Wl,-soname -Wl,-rpath -Wl,--icf -shared -Wl,--gc-sections -dead_strip. other -Wl flags have no effect
+LDRFLAGS       = $(filter-out -l% -L% -Wl%, $(LDFLAGS) $(LDSOFLAGS))
+FFEXTRALIBS_R   = $(filter -L% -lwolfssl, $(FFEXTRALIBS))
+SHFLAGS_R       = $(filter-out -shared -Wl%, $(SHFLAGS))
 vpath %.rc   $(SRC_PATH)
 
 %.o: %.rc
@@ -116,10 +120,15 @@ $(SUBDIR)$(SLIBNAME_WITH_MAJOR): $(OBJS) $(SLIBOBJS-yes) lib$(NAME).ver
 	$$(LD) $(SHFLAGS) $(LDFLAGS) $(LDSOFLAGS) $$(LD_O) $$(filter %.o,$$^) $(FFEXTRALIBS)
 	$(SLIB_EXTRA_CMD)
 
+$(SUBDIR)$(LIBNAME): $(OBJS) $(SLIBOBJS-yes)
+ifeq ($$(LIBSUF),.a)
+	$$(LD) -r $(SHFLAGS_R) $(LDRFLAGS) $$(LD_O) $$(filter %.o,$$^) $(FFEXTRALIBS_R)
+endif
+
 lib$(NAME).ver: lib$(NAME).v $(OBJS)
 	$$(M)cat $$< | $(VERSION_SCRIPT_POSTPROCESS_CMD) > $$@
 
-install: $(SLIBNAME)
+install: $(SUBDIR)$(SLIBNAME)
 	$(Q)mkdir -p "$(SHLIBDIR)"
 	$$(INSTALL) -m 755 $$< "$(SHLIBDIR)/$(SLIB_INSTALL_NAME)"
 	$$(STRIP) "$(SHLIBDIR)/$(SLIB_INSTALL_NAME)"
@@ -127,10 +136,18 @@ install: $(SLIBNAME)
 	$(if $(SLIB_INSTALL_EXTRA_SHLIB),$$(INSTALL) -m 644 $(SLIB_INSTALL_EXTRA_SHLIB:%=$(SUBDIR)%) "$(SHLIBDIR)")
 	$(if $(SLIB_INSTALL_EXTRA_LIB),$(Q)mkdir -p "$(LIBDIR)")
 	$(if $(SLIB_INSTALL_EXTRA_LIB),$$(INSTALL) -m 644 $(SLIB_INSTALL_EXTRA_LIB:%=$(SUBDIR)%) "$(LIBDIR)")
+
+
+install_r: $(SUBDIR)$(LIBNAME)
+ifeq ($$(LIBSUF),.a)
+	$(Q)mkdir -p "$(LIBDIR)"
+	$$(INSTALL) -m 755 $$< "$(LIBDIR)"
+	#$(LIB_INSTALL_EXTRA_CMD) #no ranlib
+endif
 endef
 
 $(eval $(call DOBUILD)) # double $$ in SHFLAGS, so need eval to expand twice
 EOF
 
 [ -f .env.sh ] && . .env.sh
-make -f libffmpeg.mk install prefix=$INSTALL_DIR
+make -f libffmpeg.mk install install_r prefix=$INSTALL_DIR
