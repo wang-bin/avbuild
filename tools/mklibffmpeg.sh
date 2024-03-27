@@ -63,6 +63,7 @@ DUP_OBJS=(libswscale/log2_tab.o libswresample/log2_tab.o libavcodec/log2_tab.o l
   libswresample/swresampleres.o
   libpostproc/postprocres.o
   )
+grep -q ffjni.c libavformat/file.d 2>/dev/null && DUP_OBJS+=(libavcodec/ffjni.o)
 OBJS=`find compat lib* -name "*.o" |grep -vE "$(join '|' ${DUP_OBJS[@]})"`
 # appveyor PATH value is very large, xargs gets error "environment is too large for exec", so use echo
 OBJS=$(echo -n $OBJS)
@@ -100,7 +101,7 @@ M      = @$(call ECHO,$(TAG),$@);
 IFLAGS     := -I. -I$(SRC_LINK)/
 # -r incompatible: -l(shared) -L -Wl,-soname -Wl,-rpath -Wl,--icf -shared -Wl,--gc-sections -dead_strip. other -Wl flags have no effect
 LDRFLAGS       = $(filter-out -l% -L% -Wl%, $(LDFLAGS) $(LDSOFLAGS))
-FFEXTRALIBS_R   = $(filter -L% -lwolfssl, $(FFEXTRALIBS))
+FFEXTRALIBS_R   = $(filter -L% -lwolfssl %.a, $(FFEXTRALIBS))
 SHFLAGS_R       = $(filter-out -shared -Wl% $$%, $(SHFLAGS)) # mingw -Wl,--disable-auto-image-base $$(@:$(SLIBSUF)=.def)'
 vpath %.rc   $(SRC_PATH)
 

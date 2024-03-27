@@ -529,7 +529,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: [default,lite,lite-lto]
+        config: [lite,lite-lto]
     steps:
     - uses: actions/checkout@v4
     - name: 'Restore sysroot cache'
