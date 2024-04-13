@@ -41,6 +41,7 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 : ${DEBUG_OPT:="--disable-debug"}
 : ${FORCE_LTO:=false}
 : ${FFSRC:=$PWD/FFmpeg}
+: ${LITE_BUILD:=false}
 [[ "$LIB_OPT" == *"--disable-static"* ]] && FORCE_LTO=true
 # other env vars to control build: NO_ENC, BITCODE, WINPHONE, VC_BUILD, FORCE_LTO (bool)
 
@@ -1551,6 +1552,9 @@ config1(){
     } || {
       echo "lto is disabled when build static libs to get better compatibility"
     }
+  fi
+  if $LITE_BUILD; then
+    disable_opt iamf
   fi
   $enable_pic && TOOLCHAIN_OPT+=" --enable-pic"
   EXTRA_CFLAGS=$(trim2 $EXTRA_CFLAGS)
