@@ -12,7 +12,7 @@ DEC_OPT_MOBILE="--enable-decoder=*sub*,movtext,*web*,aac*,ac3*,eac3*,alac*,ape,a
 DEMUX_OPT_MOBILE="--enable-demuxer=*sub*,*ac3,*ac,*[mj]peg*,*web*,au,ape,ass,avi,concat,dnxhd,dts*,*dash*,*flv,gif,hls,h264,hevc,kux,matroska,mov,mp3,mxf,ogg,pcm*,rawvideo,rt*p,spdif,srt,vc1,v210*,wav,*pipe,image2"
 ENC_OPT_MOBILE="--enable-encoder=aac,gif,h26[3-4]*,av1*,hevc*,mjpeg*,*png,opus,pcm*,prores*,rawvideo,spdif,speedhq,*jpeg,*png,vp[8-9]*,wrapped_avframe"
 MUX_OPT_MOBILE="--enable-muxer=*jpeg,fifo,flv,gif,hls,h264,hevc,image2,mov,mp4,mpegts,matroska,null,pcm*,rawvideo,spdif,*pipe,*segment,webm,wav"
-PROT_OPT_MOBILE="--enable-protocol=cache,concat*,*content,crypto*,data,fd,*file,ftp,h*,i*,pipe,rt*,s*,t*,u*"
+PROT_OPT_MOBILE="--enable-protocol=cache,concat*,crypto*,data,fd,*file,ftp,h*,i*,pipe,rt*,s*,t*,u*"
 FILTER_OPT_MOBILE="--enable-filter=*null*,afade,*fifo,*format,*resample,aeval,atempo,pan,crop,eq*,framerate,hw*,scale,volume"
 PROT_OPT="${PROT_OPT_MOBILE}"
 # av1: only hwaccel no native, only desktop hwaccels support av1
