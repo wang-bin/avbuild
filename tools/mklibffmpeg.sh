@@ -51,6 +51,7 @@ DUP_OBJS=(libswscale/log2_tab.o libswresample/log2_tab.o libavcodec/log2_tab.o l
   libavformat/rangecoder_dec.o
   libavformat/jpegxl_parse.o  # what if jpegxl parser is disabled? remove 1 if both libavcodec and libavformat has jpegxl_parse.o
   libavformat/ffjni.o
+  libavformat/bitstream.o
   libavutil/avutilres.o
   libavcodec/avcodecres.o
   libavcodec/half2float.o   # half2float.c is in libavutil, but not built into libavutil, always built in swscale
@@ -122,6 +123,7 @@ $(SUBDIR)$(SLIBNAME_WITH_MAJOR): $(OBJS) $(SLIBOBJS-yes) lib$(NAME).ver
 	$$(LD) $(SHFLAGS) $(LDFLAGS) $(LDSOFLAGS) $$(LD_O) $$(filter %.o,$$^) $(FFEXTRALIBS)
 	$(SLIB_EXTRA_CMD)
 
+# TODO: libffmpeg.o, and .a symlink
 $(SUBDIR)$(LIBNAME): $(OBJS) $(SLIBOBJS-yes)
 ifeq ($$(LIBSUF),.a)
 	$$(LD) -r $(SHFLAGS_R) $(LDRFLAGS) $$(LD_O) $$(filter %.o,$$^) $(FFEXTRALIBS_R)
