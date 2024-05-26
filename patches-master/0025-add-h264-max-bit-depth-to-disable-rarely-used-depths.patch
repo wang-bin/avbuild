@@ -1,7 +1,7 @@
-From d9407157923fcc8c2a4fcdf518657e775529eff3 Mon Sep 17 00:00:00 2001
+From b290a5642fb9c7f47109f2dad4c0c7df68665a8a Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 1 Jul 2022 16:03:06 +0800
-Subject: [PATCH 26/31] add h264-max-bit-depth to disable rarely used depths
+Subject: [PATCH 25/28] add h264-max-bit-depth to disable rarely used depths
 
 ---
  configure                            |  6 ++++++
@@ -16,10 +16,10 @@ Subject: [PATCH 26/31] add h264-max-bit-depth to disable rarely used depths
  9 files changed, 77 insertions(+), 1 deletion(-)
 
 diff --git a/configure b/configure
-index 73a305ed38..bea2f8a4d7 100755
+index c6ef71b95a..df62ee36fd 100755
 --- a/configure
 +++ b/configure
-@@ -428,6 +428,7 @@ Advanced options (experts only):
+@@ -435,6 +435,7 @@ Advanced options (experts only):
                             disable buffer boundary checking in bitreaders
                             (faster, but may crash)
    --sws-max-filter-size=N  the max filter size swscale uses [$sws_max_filter_size_default]
@@ -27,7 +27,7 @@ index 73a305ed38..bea2f8a4d7 100755
  
  Optimization options (experts only):
    --disable-asm            disable all assembly optimizations
-@@ -2625,6 +2626,7 @@ CMDLINE_SET="
+@@ -2693,6 +2694,7 @@ CMDLINE_SET="
      env
      extra_version
      gas
@@ -35,7 +35,7 @@ index 73a305ed38..bea2f8a4d7 100755
      host_cc
      host_cflags
      host_extralibs
-@@ -4037,6 +4039,9 @@ enable valgrind_backtrace
+@@ -4132,6 +4134,9 @@ enable valgrind_backtrace
  sws_max_filter_size_default=256
  set_default sws_max_filter_size
  
@@ -45,9 +45,9 @@ index 73a305ed38..bea2f8a4d7 100755
  # internal components are enabled by default
  enable $EXTRALIBS_LIST
  
-@@ -8119,6 +8124,7 @@ cat > $TMPH <<EOF
+@@ -8220,6 +8225,7 @@ cat > $TMPH <<EOF
+ #define BUILDSUF "$build_suffix"
  #define SLIBSUF "$SLIBSUF"
- #define HAVE_MMX2 HAVE_MMXEXT
  #define SWS_MAX_FILTER_SIZE $sws_max_filter_size
 +#define H264_MAX_BIT_DEPTH $h264_max_bit_depth
  EOF
@@ -80,7 +80,7 @@ index 1eeab7bc40..ccf679ef25 100644
          SET_CHROMA(8);
      }
 diff --git a/libavcodec/h264dsp.c b/libavcodec/h264dsp.c
-index 4d2ee10bab..86f2ace1ac 100644
+index 1ba936be1c..5c01f14ff8 100644
 --- a/libavcodec/h264dsp.c
 +++ b/libavcodec/h264dsp.c
 @@ -39,29 +39,39 @@
@@ -375,5 +375,5 @@ index dc8fc4f720..39999bd2d2 100644
  #endif
  }
 -- 
-2.39.3 (Apple Git-145)
+2.39.3 (Apple Git-146)
 

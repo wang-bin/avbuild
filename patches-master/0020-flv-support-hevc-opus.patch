@@ -1,7 +1,7 @@
-From 2f94a242eff328556e218c07641f97a0cfdd8f6f Mon Sep 17 00:00:00 2001
+From dcaacf4676b770d74a6d8d4f39378883918202bd Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 27 Sep 2021 17:35:17 +0800
-Subject: [PATCH 21/29] flv: support hevc, opus
+Subject: [PATCH 20/28] flv: support hevc, opus
 
 ---
  libavformat/flv.h    |  2 ++
@@ -30,10 +30,10 @@ index f710963b92..8e72d62a5f 100644
  
  enum {
 diff --git a/libavformat/flvdec.c b/libavformat/flvdec.c
-index d7cfa27f76..48f3cf51db 100644
+index 22a9b9e4a7..3a3c35328b 100644
 --- a/libavformat/flvdec.c
 +++ b/libavformat/flvdec.c
-@@ -238,6 +238,10 @@ static int flv_same_audio_codec(AVCodecParameters *apar, int flags)
+@@ -263,6 +263,10 @@ static int flv_same_audio_codec(AVCodecParameters *apar, int flags)
      case FLV_CODECID_PCM_ALAW:
          return apar->sample_rate == 8000 &&
                 apar->codec_id    == AV_CODEC_ID_PCM_ALAW;
@@ -44,7 +44,7 @@ index d7cfa27f76..48f3cf51db 100644
      default:
          return apar->codec_tag == (flv_codecid >> FLV_AUDIO_CODECID_OFFSET);
      }
-@@ -296,6 +300,11 @@ static void flv_set_audio_codec(AVFormatContext *s, AVStream *astream,
+@@ -321,6 +325,11 @@ static void flv_set_audio_codec(AVFormatContext *s, AVStream *astream,
          apar->sample_rate = 8000;
          apar->codec_id    = AV_CODEC_ID_PCM_ALAW;
          break;
@@ -56,7 +56,7 @@ index d7cfa27f76..48f3cf51db 100644
      default:
          avpriv_request_sample(s, "Audio codec (%x)",
                 flv_codecid >> FLV_AUDIO_CODECID_OFFSET);
-@@ -327,6 +336,8 @@ static int flv_same_video_codec(AVCodecParameters *vpar, uint32_t flv_codecid)
+@@ -352,6 +361,8 @@ static int flv_same_video_codec(AVCodecParameters *vpar, uint32_t flv_codecid)
          return vpar->codec_id == AV_CODEC_ID_VP6A;
      case FLV_CODECID_H264:
          return vpar->codec_id == AV_CODEC_ID_H264;
@@ -65,7 +65,7 @@ index d7cfa27f76..48f3cf51db 100644
      default:
          return vpar->codec_tag == flv_codecid;
      }
-@@ -388,6 +399,10 @@ static int flv_set_video_codec(AVFormatContext *s, AVStream *vstream,
+@@ -413,6 +424,10 @@ static int flv_set_video_codec(AVFormatContext *s, AVStream *vstream,
      case FLV_CODECID_MPEG4:
          par->codec_id = AV_CODEC_ID_MPEG4;
          break;
@@ -76,7 +76,7 @@ index d7cfa27f76..48f3cf51db 100644
      default:
          avpriv_request_sample(s, "Video codec (%x)", flv_codecid);
          par->codec_tag = flv_codecid;
-@@ -1288,7 +1303,7 @@ retry_duration:
+@@ -1463,7 +1478,7 @@ retry_duration:
          }
  
          if (st->codecpar->codec_id == AV_CODEC_ID_H264 || st->codecpar->codec_id == AV_CODEC_ID_MPEG4 ||
@@ -86,10 +86,10 @@ index d7cfa27f76..48f3cf51db 100644
              int32_t cts = (avio_rb24(s->pb) + 0xff800000) ^ 0xff800000;
              pts = av_sat_add64(dts, cts);
 diff --git a/libavformat/flvenc.c b/libavformat/flvenc.c
-index cf510ec33a..538fa87bfa 100644
+index aba1d7d80b..fb7422728f 100644
 --- a/libavformat/flvenc.c
 +++ b/libavformat/flvenc.c
-@@ -66,6 +66,7 @@ static const AVCodecTag flv_audio_codec_ids[] = {
+@@ -68,6 +68,7 @@ static const AVCodecTag flv_audio_codec_ids[] = {
      { AV_CODEC_ID_PCM_MULAW,  FLV_CODECID_PCM_MULAW  >> FLV_AUDIO_CODECID_OFFSET },
      { AV_CODEC_ID_PCM_ALAW,   FLV_CODECID_PCM_ALAW   >> FLV_AUDIO_CODECID_OFFSET },
      { AV_CODEC_ID_SPEEX,      FLV_CODECID_SPEEX      >> FLV_AUDIO_CODECID_OFFSET },
@@ -97,7 +97,7 @@ index cf510ec33a..538fa87bfa 100644
      { AV_CODEC_ID_NONE,       0 }
  };
  
-@@ -134,6 +135,9 @@ static int get_audio_flags(AVFormatContext *s, AVCodecParameters *par)
+@@ -137,6 +138,9 @@ static int get_audio_flags(AVFormatContext *s, AVCodecParameters *par)
      if (par->codec_id == AV_CODEC_ID_AAC) // specs force these parameters
          return FLV_CODECID_AAC | FLV_SAMPLERATE_44100HZ |
                 FLV_SAMPLESSIZE_16BIT | FLV_STEREO;
@@ -108,5 +108,5 @@ index cf510ec33a..538fa87bfa 100644
          if (par->sample_rate != 16000) {
              av_log(s, AV_LOG_ERROR,
 -- 
-2.39.3 (Apple Git-145)
+2.39.3 (Apple Git-146)
 

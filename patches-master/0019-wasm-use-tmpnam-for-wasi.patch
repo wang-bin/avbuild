@@ -1,14 +1,14 @@
-From 2dd01f0a6ba905a7fa5993018dbd4fcf4f656cd5 Mon Sep 17 00:00:00 2001
+From db70ea91f3d4aeb73d9a7dab2944b5dc8ebe4c10 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 20 Sep 2021 21:18:07 +0800
-Subject: [PATCH 20/31] wasm: use tmpnam for wasi
+Subject: [PATCH 19/28] wasm: use tmpnam for wasi
 
 ---
  libavutil/file_open.c | 4 ++++
  1 file changed, 4 insertions(+)
 
 diff --git a/libavutil/file_open.c b/libavutil/file_open.c
-index 9aa4e4ac61..44945ffc8c 100644
+index 24ef33e3da..2c43f6f727 100644
 --- a/libavutil/file_open.c
 +++ b/libavutil/file_open.c
 @@ -113,9 +113,13 @@ int avpriv_tempfile(const char *prefix, char **filename, int log_offset, void *l
@@ -26,5 +26,5 @@ index 9aa4e4ac61..44945ffc8c 100644
  #undef free
      free(ptr);
 -- 
-2.39.3 (Apple Git-145)
+2.39.3 (Apple Git-146)
 

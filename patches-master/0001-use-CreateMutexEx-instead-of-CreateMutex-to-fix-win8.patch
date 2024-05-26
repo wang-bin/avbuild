@@ -1,7 +1,7 @@
-From 7b9a60ca7ce9a98f236e0a5869065a89e027ac7d Mon Sep 17 00:00:00 2001
+From d57bab7e7dd96061e17fecf2ad601418c2a6d31c Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sat, 28 Oct 2017 20:26:50 +0800
-Subject: [PATCH 01/29] use CreateMutexEx instead of CreateMutex to fix win8
+Subject: [PATCH 01/28] use CreateMutexEx instead of CreateMutex to fix win8
  store app link error
 
 ---
@@ -9,10 +9,10 @@ Subject: [PATCH 01/29] use CreateMutexEx instead of CreateMutex to fix win8
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/libavutil/hwcontext_d3d11va.c b/libavutil/hwcontext_d3d11va.c
-index 363ec6a47d..fc7519c783 100644
+index 8963c9fc85..19c0ad06b5 100644
 --- a/libavutil/hwcontext_d3d11va.c
 +++ b/libavutil/hwcontext_d3d11va.c
-@@ -41,6 +41,10 @@
+@@ -42,6 +42,10 @@
  #include "thread.h"
  #include "compat/w32dlfcn.h"
  
@@ -23,7 +23,7 @@ index 363ec6a47d..fc7519c783 100644
  typedef HRESULT(WINAPI *PFN_CREATE_DXGI_FACTORY)(REFIID riid, void **ppFactory);
  
  static AVOnce functions_loaded = AV_ONCE_INIT;
-@@ -482,7 +486,7 @@ static int d3d11va_device_init(AVHWDeviceContext *hwdev)
+@@ -498,7 +502,7 @@ static int d3d11va_device_init(AVHWDeviceContext *hwdev)
      HRESULT hr;
  
      if (!device_hwctx->lock) {
@@ -33,5 +33,5 @@ index 363ec6a47d..fc7519c783 100644
              av_log(NULL, AV_LOG_ERROR, "Failed to create a mutex\n");
              return AVERROR(EINVAL);
 -- 
-2.32.0 (Apple Git-132)
+2.39.3 (Apple Git-146)
 

@@ -1,17 +1,17 @@
-From 2efb9f79d824cf150d6621844a061d0de94c6b11 Mon Sep 17 00:00:00 2001
+From f461ae882b11d84d1cdb75c164dc0b450252a30d Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 13 Mar 2022 11:15:15 +0800
-Subject: [PATCH 24/31] win: enable windres for small and msvc
+Subject: [PATCH 23/28] win: enable windres for small and msvc
 
 ---
  configure | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/configure b/configure
-index 0c070731a3..7bda49fac4 100755
+index 425ce76f1c..5a343a9b1a 100755
 --- a/configure
 +++ b/configure
-@@ -5707,7 +5707,7 @@ case $target_os in
+@@ -5825,7 +5825,7 @@ case $target_os in
              # Cannot build both shared and static libs when using dllimport.
              disable static
          fi
@@ -20,7 +20,7 @@ index 0c070731a3..7bda49fac4 100755
          enabled x86_32 && check_ldflags -Wl,--large-address-aware
          add_cppflags -DWIN32_LEAN_AND_MEAN
          shlibdir_default="$bindir_default"
-@@ -5758,7 +5758,7 @@ case $target_os in
+@@ -5876,7 +5876,7 @@ case $target_os in
              # Cannot build both shared and static libs with MSVC or icl.
              disable static
          fi
@@ -30,5 +30,5 @@ index 0c070731a3..7bda49fac4 100755
          add_cppflags -DWIN32_LEAN_AND_MEAN
          shlibdir_default="$bindir_default"
 -- 
-2.39.3 (Apple Git-145)
+2.39.3 (Apple Git-146)
 

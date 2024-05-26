@@ -1,17 +1,17 @@
-From 70bf53c2f82820da77cf5547b46c73bbcd0bab94 Mon Sep 17 00:00:00 2001
+From 7b14906a2421cedd7d28389687a4fc7d5d9106bb Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 3 Jul 2020 14:09:54 +0800
-Subject: [PATCH 18/31] nvenc: check sdk 10.0 ptrs at runtime
+Subject: [PATCH 17/28] nvenc: check sdk 10.0 ptrs at runtime
 
 ---
  libavcodec/nvenc.c | 5 +++--
  1 file changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/libavcodec/nvenc.c b/libavcodec/nvenc.c
-index 52871a70e7..5e00d4d8de 100644
+index 8d5eee56f9..71059d0ff9 100644
 --- a/libavcodec/nvenc.c
 +++ b/libavcodec/nvenc.c
-@@ -1570,17 +1570,18 @@ static av_cold int nvenc_setup_encoder(AVCodecContext *avctx)
+@@ -1663,17 +1663,18 @@ static av_cold int nvenc_setup_encoder(AVCodecContext *avctx)
      else if (ctx->flags & NVENC_LOWLATENCY)
          ctx->init_encode_params.tuningInfo = NV_ENC_TUNING_INFO_LOW_LATENCY;
  
@@ -33,5 +33,5 @@ index 52871a70e7..5e00d4d8de 100644
          return nvenc_print_error(avctx, nv_status, "Cannot get the preset configuration");
  
 -- 
-2.39.3 (Apple Git-145)
+2.39.3 (Apple Git-146)
 
