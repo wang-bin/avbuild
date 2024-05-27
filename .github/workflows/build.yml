@@ -205,7 +205,8 @@ jobs:
       run: |
         set SDK_NAME=ffmpeg-%FF_VERSION%-%TARGET_OS%-vs2022%CONFIG_SUFFIX%
         move sdk* %SDK_NAME%
-        7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off %SDK_NAME%.7z %SDK_NAME%
+        7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off -xr!*.pdb %SDK_NAME%.7z %SDK_NAME%
+        7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off %SDK_NAME%-pdb.7z -ir!%SDK_NAME%\*.pdb
     - name: Archieve SDK
       uses: actions/upload-artifact@v4
       with:
@@ -278,7 +279,8 @@ jobs:
       run: |
         set SDK_NAME=ffmpeg-%FF_VERSION%-%TARGET_OS%-vs2022ltl%CONFIG_SUFFIX%
         move sdk* %SDK_NAME%
-        7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off %SDK_NAME%.7z %SDK_NAME%
+        7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off -xr!*.pdb %SDK_NAME%.7z %SDK_NAME%
+        7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off %SDK_NAME%-pdb.7z -ir!%SDK_NAME%\*.pdb
     - name: Archieve SDK
       uses: actions/upload-artifact@v4
       with:

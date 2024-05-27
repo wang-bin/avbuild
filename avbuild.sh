@@ -1691,6 +1691,8 @@ EOF
     exit 2
   }
   $THIS_DIR/tools/mklibffmpeg.sh $PWD $THIS_DIR/$INSTALL_DIR || exit 3
+# env -i for github windows ci: find: The environment is too large for exec()
+  env -i PATH=/usr/bin find . -name "*.pdb" -exec cp -avf {} $THIS_DIR/$INSTALL_DIR/bin \;
   cd $THIS_DIR/$INSTALL_DIR
   echo "https://github.com/wang-bin/avbuild" > README.txt
   cp -af "$FFSRC/Changelog" .
