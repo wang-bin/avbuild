@@ -226,9 +226,11 @@ enable_opt hwaccels
 $USE_VK || disable_opt vulkan
 
 add_elf_flags() {
+  HARDENED_CFLAGS="-fstack-protector-strong -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fPIE" # toolchain=hardened is -fstack-protector-all
+  HARDENED_LDFLAGS="-Wl,-z,relro -Wl,-z,now"
   # -Wl,-z,noexecstack -Wl,--as-needed is added by configure
-  EXTRA_CFLAGS+=" -Wa,--noexecstack -fdata-sections -ffunction-sections -fstack-protector-strong" # TODO: check -fstack-protector-strong
-  EXTRA_LDFLAGS+=" -Wl,--gc-sections" # -Wl,-z,relro -Wl,-z,now
+  EXTRA_CFLAGS+=" -Wa,--noexecstack -fdata-sections -ffunction-sections $HARDENED_CFLAGS"
+  EXTRA_LDFLAGS+=" -Wl,--gc-sections $HARDENED_LDFLAGS"
   # rpath
 }
 
@@ -1187,6 +1189,7 @@ setup_apple_env() {
   : ${os_ver:=$os_min}
   TOOLCHAIN_OPT+=" --enable-cross-compile $ASM_OPT --arch=$OS_ARCH --target-os=darwin --cc=clang --sysroot=\$(xcrun --sdk $SYSROOT_SDK --show-sdk-path)"
   disable_opt programs
+# apple clang default -fstack-protector, 90KB larger for arm64 lite build. strong is about 5KB larger than default
 # if target_vendor is not apple(-v same except vendor): d: building for 'tvOS-simulator', but linking in object file built for 'tvOS'
   EXTRA_CFLAGS+=" -arch $OS_ARCH --target=apple-${target_os}${os_ver}${env_suffix} $BITCODE_FLAGS $EXTRA_FLAGS" # -fvisibility=hidden -fvisibility-inlines-hidden"
   EXTRA_LDFLAGS+=" -arch $OS_ARCH --target=apple-${target_os}${os_ver}${env_suffix} $BITCODE_LFLAGS $EXTRA_FLAGS -Wl,-dead_strip" # -fvisibility=hidden -fvisibility-inlines-hidden"
@@ -1343,7 +1346,7 @@ setup_gnu_env(){
   add_elf_flags
   local gnu_cc=gcc
   local ARCH=${1:0:5}
-  TOOLCHAIN_OPT+=" --toolchain=hardened"
+  #TOOLCHAIN_OPT+=" --toolchain=hardened"
   $IS_CROSS_BUILD && {
     IS_CROSS_BUILD=true
     echo "gnu cross build"
@@ -1447,7 +1450,7 @@ EOF
     return 0
   fi
 
-  TOOLCHAIN_OPT+=" --toolchain=hardened"
+  #TOOLCHAIN_OPT+=" --toolchain=hardened"
   [ -n "${ARCH/*64/}" ] && BIT=32
   [ $BIT -ne $CC_BIT ] && {
     EXTRA_CFLAGS="-m$BIT $EXTRA_CFLAGS"
