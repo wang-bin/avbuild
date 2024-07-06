@@ -29,7 +29,7 @@ if [ `which dpkg` ]; then
     fi
     sudo apt install -y $pkgs
 elif [ `which brew` ]; then
-    pkgs+=" gnu-tar pkg-config perl hudochenkov/sshpass/sshpass xz p7zip llvm"
+    pkgs+=" hudochenkov/sshpass/sshpass llvm" # gnu-tar pkg-config perl xz p7zip"
     brew install $pkgs
     NDK_HOST=darwin
 fi

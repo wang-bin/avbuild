@@ -11,7 +11,7 @@ env:
 #  GITHUB_ENV: https://docs.github.com/en/actions/learn-github-actions/environment-variables#about-environment-variables
   FF_VERSION: ${{ vars.FF_VER }} # TODO: latest release if triggered by schedule
   LLVM_VER: ${{ vars.LLVM_VER }}
-  LLVM_VER_DEFAULT: 18
+  LLVM_VER_DEFAULT: 19
   NINJA_STATUS: '[%f/%t %e %r]'
   SF_PW_MAPPED: ${{ secrets.SF_PW }}
   SF_USER_MAPPED: ${{ secrets.SF_USER }}
@@ -20,7 +20,7 @@ env:
 jobs:
   Apple:
     # See: https://docs.github.com/en/actions/configuring-and-managing-workflows/configuring-a-workflow#configuring-a-build-matrix
-    runs-on: macos-14
+    runs-on: macos-latest
     env:
       TARGET_OS: ${{ matrix.target }}
       CONFIG_SUFFIX: -${{ matrix.config }}
@@ -57,7 +57,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Setup Xcode
-      run: sudo xcode-select -s /Applications/Xcode_15.2.app
+      run: sudo xcode-select -s /Applications/Xcode_15.4.app
     - name: Create Build Environment
       shell: bash
       env:
@@ -83,7 +83,7 @@ jobs:
 
   Wasm:
     if: false
-    runs-on: macos-14
+    runs-on: macos-latest
     env:
       TARGET_OS: 'wasm'
     steps:
@@ -524,7 +524,7 @@ jobs:
         path: ffmpeg-*.tar.xz
 
   Android:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     env:
       TARGET_OS: android
       CONFIG_SUFFIX: -${{ matrix.config }}
@@ -548,7 +548,7 @@ jobs:
     - name: Configure and Build 32bit
       shell: bash
       run: |
-        export ANDROID_NDK=$ANDROID_NDK_HOME   # ndk25, api19
+        export ANDROID_NDK=$ANDROID_HOME/ndk/25.2.9519653   # ndk25, api19
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export USER_OPT="--enable-wolfssl"
         ./avbuild.sh ${TARGET_OS} "armv7 x86"

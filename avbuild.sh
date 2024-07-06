@@ -1701,7 +1701,8 @@ EOF
   if [ -f bin/avutil.lib ]; then
     mv bin/*.lib lib
   fi
-  find lib -name "*.dylib" -type f -exec strip -u -r {} \;
+  find lib -name "*.dylib" -type f -exec dsymutil {} \;
+  find lib -name "*.dylib" -type f -exec strip -u -r {} \; # will strip exported symbols, llvm-strip can reduce size more
 }
 
 build_all(){
@@ -1716,6 +1717,7 @@ build_all(){
       echo ">>>>>no arch is set. setting default archs..."
       [[ "$os" == ios* || "$os" == tvos* || "$os" == watch* || "$os" == xr* || "$os" == vision* ]] && {
         echo $os | grep simulator >/dev/null && archs=(arm64 x86_64) || archs=(arm64)
+        [[ "$os" == xr* || "$os" == vision* ]] && archs=(arm64) # no x86 simulator
       }
       [ "${os:0:7}" == "android" ] && archs=(armv7 arm64 x86 x86_64)
       [ "${os:0:3}" == "rpi" -o "${os:0:9}" == "raspberry" ] && archs=(armv6zk armv7-a)
