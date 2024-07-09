@@ -1023,6 +1023,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
       fi
     fi
   fi
+  [ -z "${ANDROID_ARCH/*64/}" ] && EXTRA_LDFLAGS+=" -Wl,-z,max-page-size=16384" # 16KB page size required by android 15
   #test -d $ANDROID_GCC_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-$API_LEVEL --toolchain=$TOOLCHAIN --install-dir=$ANDROID_GCC_DIR #--system=linux-x86_64
   TOOLCHAIN_OPT+=" --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE $EXE_FLAGS\""
   INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}
