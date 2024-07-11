@@ -33,7 +33,7 @@ jobs:
           - config: default
             target: macCatalyst
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup Xcode
       run: sudo xcode-select -s /Applications/Xcode_15.4.app
     - name: Create Build Environment
@@ -85,7 +85,7 @@ jobs:
         config: [lite]
         target: [windows-desktop]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: 'recursive'
     - name: Create Build Environment
@@ -154,7 +154,7 @@ jobs:
         config: [lite]
         target: [windows-desktop]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: 'recursive'
     - name: 'Restore sysroot cache'
@@ -209,7 +209,7 @@ jobs:
       matrix:
         config: [lite]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: 'recursive'
     - name: 'Restore sysroot cache'
@@ -256,7 +256,7 @@ jobs:
       matrix:
         config: [lite]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: 'Restore sysroot cache'
       id: sysroot-cache
       uses: actions/cache@v4
