@@ -591,7 +591,7 @@ export LIB="$VC_LTL_LIB;$VCDIR_LIB;$WindowsSdkDir/Lib/$WindowsSDKVersion/ucrt/${
 export AR=$LLVM_AR
 export NM=$LLVM_NM
 #export V=1 # FFmpeg BUG: AR is overriden in common.mak and becomes an invalid command in makedef(@printf works in makefiles but not sh scripts)
-export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/windows-desktop/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/windows-desktop/lib/pkgconfig:$PKG_CONFIG_PATH
+export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/windows-desktop/${MACHINE/86_/}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/windows-desktop/${MACHINE/86_/}/lib/pkgconfig:${THIS_DIR}/tools/dep/windows-desktop/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/windows-desktop/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
 # [ expr1 ] && ... at end returns error if expr1 is false
 }
@@ -877,7 +877,7 @@ setup_android_env() {
   local CROSS_PREFIX=${ANDROID_TOOLCHAIN_PREFIX}-
   local FFARCH=$ANDROID_ARCH
   local API_LEVEL=${2#android}
-  local NDK_VER=`grep Revision $NDK_ROOT/source.properties |cut -d ' ' -f 3 |cut -d '.' -f 1`
+  local NDK_VER=`grep Pkg.Revision $NDK_ROOT/source.properties |cut -d ' ' -f 3 |cut -d '.' -f 1`
   [ -z "$API_LEVEL" ] && {
     API_LEVEL=14
     [ $NDK_VER -gt 17 ] && API_LEVEL=16
