@@ -6,6 +6,7 @@ USER_OPT="--enable-small \
 --disable-encoders \
 --disable-decoders \
 --disable-demuxers \
+--disable-protocols \
 --disable-parsers --enable-parser=*sub*,*jp*,aac*,ac3,cook,dnxhd,flac,h26[3-4],hevc,m*,opus,rv*,vc1,vorbis,vp[8-9] \
 --pkg-config=pkg-config --pkg-config-flags=--static --enable-gpl --enable-libx265 --enable-libx264 \
 $USER_OPT
