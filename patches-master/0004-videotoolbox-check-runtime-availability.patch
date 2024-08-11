@@ -1,7 +1,7 @@
-From b21f7443ce0bbf73bb8c2ffd3b692b2cfb55d391 Mon Sep 17 00:00:00 2001
+From 4eb952da7f438c974459b70c7b909b971644daea Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:35:28 +0800
-Subject: [PATCH 04/28] videotoolbox: check runtime availability
+Subject: [PATCH 04/29] videotoolbox: check runtime availability
 
 fix warnings/errors for new compiler (since xcode9) if targeting
 macOS<10.8
@@ -10,7 +10,7 @@ macOS<10.8
  1 file changed, 13 insertions(+), 6 deletions(-)
 
 diff --git a/libavcodec/videotoolbox.c b/libavcodec/videotoolbox.c
-index d6990a39c0..34fd89f8dc 100644
+index 3dd804bb0c..b2a14a11b2 100644
 --- a/libavcodec/videotoolbox.c
 +++ b/libavcodec/videotoolbox.c
 @@ -41,6 +41,10 @@

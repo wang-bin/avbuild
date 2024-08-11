@@ -1,7 +1,7 @@
-From ad67c5b6f5e77305ea877c91cb2e672a5c3e2af9 Mon Sep 17 00:00:00 2001
+From acc3810102fde8d57c12219dd0ca67e4495deb35 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sat, 11 Dec 2021 18:08:43 +0800
-Subject: [PATCH 21/28] msvc: fix long argument list error on windows
+Subject: [PATCH 20/29] msvc: fix long argument list error on windows
 
 ---
  compat/windows/makedef |  4 +++-

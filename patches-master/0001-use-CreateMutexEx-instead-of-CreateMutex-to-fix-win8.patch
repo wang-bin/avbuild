@@ -1,7 +1,7 @@
-From d57bab7e7dd96061e17fecf2ad601418c2a6d31c Mon Sep 17 00:00:00 2001
+From 9132ffb16ca0e36ff744772a254a4a3e6cddc34e Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sat, 28 Oct 2017 20:26:50 +0800
-Subject: [PATCH 01/28] use CreateMutexEx instead of CreateMutex to fix win8
+Subject: [PATCH 01/29] use CreateMutexEx instead of CreateMutex to fix win8
  store app link error
 
 ---
@@ -9,7 +9,7 @@ Subject: [PATCH 01/28] use CreateMutexEx instead of CreateMutex to fix win8
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/libavutil/hwcontext_d3d11va.c b/libavutil/hwcontext_d3d11va.c
-index 8963c9fc85..19c0ad06b5 100644
+index 9b3c5f389f..69d5eff49e 100644
 --- a/libavutil/hwcontext_d3d11va.c
 +++ b/libavutil/hwcontext_d3d11va.c
 @@ -42,6 +42,10 @@
@@ -23,7 +23,7 @@ index 8963c9fc85..19c0ad06b5 100644
  typedef HRESULT(WINAPI *PFN_CREATE_DXGI_FACTORY)(REFIID riid, void **ppFactory);
  
  static AVOnce functions_loaded = AV_ONCE_INIT;
-@@ -498,7 +502,7 @@ static int d3d11va_device_init(AVHWDeviceContext *hwdev)
+@@ -499,7 +503,7 @@ static int d3d11va_device_init(AVHWDeviceContext *hwdev)
      HRESULT hr;
  
      if (!device_hwctx->lock) {

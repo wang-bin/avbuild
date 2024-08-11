@@ -1,7 +1,7 @@
-From 83ca42b7a5c23dfc832e282059eb467370abd6ec Mon Sep 17 00:00:00 2001
+From 910cfdc3fc2892ed675a4f73eb0204b8874cf24a Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 22 Dec 2022 10:39:29 +0800
-Subject: [PATCH 29/29] lavc/videotoolboxenc: add hevc main42210 and p210
+Subject: [PATCH 28/29] lavc/videotoolboxenc: add hevc main42210 and p210
 
 supported by apple silicon
 ---
@@ -22,7 +22,7 @@ index 7ddfdcad0b..d7bf5aa00f 100644
  
  #define AV_PROFILE_VVC_MAIN_10                      1
 diff --git a/libavcodec/videotoolboxenc.c b/libavcodec/videotoolboxenc.c
-index bc505abee4..1e855c7b57 100644
+index 78ef474d7a..ee9a9697b0 100644
 --- a/libavcodec/videotoolboxenc.c
 +++ b/libavcodec/videotoolboxenc.c
 @@ -115,6 +115,7 @@ static struct{
@@ -41,7 +41,7 @@ index bc505abee4..1e855c7b57 100644
  
      GET_SYM(kVTCompressionPropertyKey_RealTime, "RealTime");
      GET_SYM(kVTCompressionPropertyKey_TargetQualityForAlpha,
-@@ -966,6 +968,10 @@ static bool get_vt_hevc_profile_level(AVCodecContext *avctx,
+@@ -971,6 +973,10 @@ static bool get_vt_hevc_profile_level(AVCodecContext *avctx,
              *profile_level_val =
                  compat_keys.kVTProfileLevel_HEVC_Main10_AutoLevel;
              break;
@@ -52,7 +52,7 @@ index bc505abee4..1e855c7b57 100644
      }
  
      if (!*profile_level_val) {
-@@ -2816,6 +2822,7 @@ static const enum AVPixelFormat hevc_pix_fmts[] = {
+@@ -2835,6 +2841,7 @@ static const enum AVPixelFormat hevc_pix_fmts[] = {
      AV_PIX_FMT_YUV420P,
      AV_PIX_FMT_BGRA,
      AV_PIX_FMT_P010LE,
@@ -60,7 +60,7 @@ index bc505abee4..1e855c7b57 100644
      AV_PIX_FMT_NONE
  };
  
-@@ -2940,6 +2947,7 @@ static const AVOption hevc_options[] = {
+@@ -2967,6 +2974,7 @@ static const AVOption hevc_options[] = {
      { "profile", "Profile", OFFSET(profile), AV_OPT_TYPE_INT, { .i64 = AV_PROFILE_UNKNOWN }, AV_PROFILE_UNKNOWN, INT_MAX, VE, .unit = "profile" },
      { "main",     "Main Profile",     0, AV_OPT_TYPE_CONST, { .i64 = AV_PROFILE_HEVC_MAIN    }, INT_MIN, INT_MAX, VE, .unit = "profile" },
      { "main10",   "Main10 Profile",   0, AV_OPT_TYPE_CONST, { .i64 = AV_PROFILE_HEVC_MAIN_10 }, INT_MIN, INT_MAX, VE, .unit = "profile" },

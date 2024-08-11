@@ -1,7 +1,7 @@
-From 62c621d924e2eb9127c280a29d4a087c7ba833f6 Mon Sep 17 00:00:00 2001
+From c4148286c619bab77ad035278739c519cedd3823 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 13 Mar 2022 14:38:23 +0800
-Subject: [PATCH 24/28] configure: add --extra-windresflags
+Subject: [PATCH 23/29] configure: add --extra-windresflags
 
 llvm windres requires more preprocess flags and target flags
 ---
@@ -10,10 +10,10 @@ llvm windres requires more preprocess flags and target flags
  2 files changed, 11 insertions(+), 1 deletion(-)
 
 diff --git a/configure b/configure
-index 5a343a9b1a..c6ef71b95a 100755
+index d48f6ce7b4..5e980a1a6a 100755
 --- a/configure
 +++ b/configure
-@@ -415,6 +415,7 @@ Toolchain options:
+@@ -416,6 +416,7 @@ Toolchain options:
    --extra-ldflags=ELDFLAGS add ELDFLAGS to LDFLAGS [$LDFLAGS]
    --extra-ldexeflags=ELDFLAGS add ELDFLAGS to LDEXEFLAGS [$LDEXEFLAGS]
    --extra-ldsoflags=ELDFLAGS add ELDFLAGS to LDSOFLAGS [$LDSOFLAGS]
@@ -21,7 +21,7 @@ index 5a343a9b1a..c6ef71b95a 100755
    --extra-libs=ELIBS       add ELIBS [$ELIBS]
    --extra-version=STRING   version string suffix []
    --optflags=OPTFLAGS      override optimization-related compiler flags
-@@ -997,6 +998,10 @@ add_host_ldflags(){
+@@ -998,6 +999,10 @@ add_host_ldflags(){
      append host_ldflags $($host_ldflags_filter "$@")
  }
  
@@ -32,7 +32,7 @@ index 5a343a9b1a..c6ef71b95a 100755
  add_compat(){
      append compat_objs $1
      shift
-@@ -4348,6 +4353,9 @@ for opt do
+@@ -4354,6 +4359,9 @@ for opt do
          --extra-libs=*)
              add_extralibs $optval
          ;;
@@ -42,7 +42,7 @@ index 5a343a9b1a..c6ef71b95a 100755
          --disable-devices)
              disable $INDEV_LIST $OUTDEV_LIST
          ;;
-@@ -5175,6 +5183,7 @@ add_cflags $extra_cflags
+@@ -5181,6 +5189,7 @@ add_cflags $extra_cflags
  add_cxxflags $extra_cxxflags
  add_objcflags $extra_objcflags
  add_asflags $extra_cflags
@@ -50,7 +50,7 @@ index 5a343a9b1a..c6ef71b95a 100755
  
  if test -n "$sysroot"; then
      case "$cc_type" in
-@@ -8117,6 +8126,7 @@ DOXYGEN=$doxygen
+@@ -8102,6 +8111,7 @@ DOXYGEN=$doxygen
  LDFLAGS=$LDFLAGS
  LDEXEFLAGS=$LDEXEFLAGS
  LDSOFLAGS=$LDSOFLAGS

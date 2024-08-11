@@ -1,7 +1,7 @@
-From e2a945c45deeb12a58900b8714875811e7b62e76 Mon Sep 17 00:00:00 2001
+From 19606633e602d717f3eeec1783598cdba8194201 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 9 Aug 2020 23:35:08 +0800
-Subject: [PATCH 18/28] lavfi/atempo: fix large tempo(>4) crash, lower min
+Subject: [PATCH 18/29] lavfi/atempo: fix large tempo(>4) crash, lower min
 
 ---
  libavfilter/af_atempo.c | 4 ++--

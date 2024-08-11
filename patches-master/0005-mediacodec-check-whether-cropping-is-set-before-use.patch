@@ -1,7 +1,7 @@
-From 15a14e8daba64591d2585f9de12df84ccaaeb5ad Mon Sep 17 00:00:00 2001
+From 005f2fe2790aff2a1d70df8fce1cd3fb9a3ddc20 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:52:35 +0800
-Subject: [PATCH 05/28] mediacodec: check whether cropping is set before use
+Subject: [PATCH 05/29] mediacodec: check whether cropping is set before use
 
 ---
  libavcodec/mediacodecdec_common.c | 13 +++++++++----

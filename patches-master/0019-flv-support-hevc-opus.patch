@@ -1,7 +1,7 @@
-From dcaacf4676b770d74a6d8d4f39378883918202bd Mon Sep 17 00:00:00 2001
+From 7656a981987539bd68b767c96333da3948ccf0fe Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 27 Sep 2021 17:35:17 +0800
-Subject: [PATCH 20/28] flv: support hevc, opus
+Subject: [PATCH 19/29] flv: support hevc, opus
 
 ---
  libavformat/flv.h    |  2 ++
@@ -86,10 +86,10 @@ index 22a9b9e4a7..3a3c35328b 100644
              int32_t cts = (avio_rb24(s->pb) + 0xff800000) ^ 0xff800000;
              pts = av_sat_add64(dts, cts);
 diff --git a/libavformat/flvenc.c b/libavformat/flvenc.c
-index aba1d7d80b..fb7422728f 100644
+index f34df61c0e..3719b61476 100644
 --- a/libavformat/flvenc.c
 +++ b/libavformat/flvenc.c
-@@ -68,6 +68,7 @@ static const AVCodecTag flv_audio_codec_ids[] = {
+@@ -69,6 +69,7 @@ static const AVCodecTag flv_audio_codec_ids[] = {
      { AV_CODEC_ID_PCM_MULAW,  FLV_CODECID_PCM_MULAW  >> FLV_AUDIO_CODECID_OFFSET },
      { AV_CODEC_ID_PCM_ALAW,   FLV_CODECID_PCM_ALAW   >> FLV_AUDIO_CODECID_OFFSET },
      { AV_CODEC_ID_SPEEX,      FLV_CODECID_SPEEX      >> FLV_AUDIO_CODECID_OFFSET },
@@ -97,7 +97,7 @@ index aba1d7d80b..fb7422728f 100644
      { AV_CODEC_ID_NONE,       0 }
  };
  
-@@ -137,6 +138,9 @@ static int get_audio_flags(AVFormatContext *s, AVCodecParameters *par)
+@@ -138,6 +139,9 @@ static int get_audio_flags(AVFormatContext *s, AVCodecParameters *par)
      if (par->codec_id == AV_CODEC_ID_AAC) // specs force these parameters
          return FLV_CODECID_AAC | FLV_SAMPLERATE_44100HZ |
                 FLV_SAMPLESSIZE_16BIT | FLV_STEREO;

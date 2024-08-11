@@ -1,14 +1,14 @@
-From 99323e67871049f5e27892eab47002be6608100f Mon Sep 17 00:00:00 2001
+From 6bce89c7566aed0087aca2f21d9242cd8b5808a5 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 5 Jun 2020 14:05:42 +0800
-Subject: [PATCH 16/28] nvenc: check runtime 9.1 function ptrs before use
+Subject: [PATCH 16/29] nvenc: check runtime 9.1 function ptrs before use
 
 ---
  libavcodec/nvenc.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/libavcodec/nvenc.c b/libavcodec/nvenc.c
-index b6c4425cc5..8d5eee56f9 100644
+index 5f80e4663e..986b2e759b 100644
 --- a/libavcodec/nvenc.c
 +++ b/libavcodec/nvenc.c
 @@ -167,7 +167,7 @@ static int nvenc_print_error(AVCodecContext *avctx, NVENCSTATUS err,
