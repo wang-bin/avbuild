@@ -383,7 +383,7 @@ jobs:
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export WindowsSdkDir=${WINDOWSSDKDIR}
         export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
-        USE_TOOLCHAIN=clang-${LLVM_VER:-$LLVM_VER_DEFAULT} ./avbuild.sh $TARGET_OS "arm64-clang-cl-${LLVM_VER:-$LLVM_VER_DEFAULT} arm x86 x64"
+        USE_TOOLCHAIN=clang-${LLVM_VER:-$LLVM_VER_DEFAULT} ./avbuild.sh $TARGET_OS "arm64 x86 x64"
     - name: Make SDK
       shell: bash
       run: ./tools/ci-after-build.sh

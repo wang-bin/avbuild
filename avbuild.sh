@@ -889,7 +889,6 @@ setup_android_env() {
   add_elf_flags
   EXTRA_CFLAGS+=" -ffast-math -fstrict-aliasing"
 # -no-canonical-prefixes: results in "-mcpu= ", why?
-  EXTRA_LDFLAGS+=" -Wl,-z,relro -Wl,-z,now"
   TRY_FIX_CORTEX_A8=false
   # TODO: clang lto in r14 (gcc?) except aarch64
   if [ -z "${ANDROID_ARCH/*86/}" ]; then
