@@ -19,7 +19,7 @@ Linux, android, macOS, iOS, raspberry pi(legacy OSes), windows build:**[![Build 
 
 ## Features
 
-- [Support single FFmpeg shared library](tools/mklibffmpeg.sh): ffmpeg.dll, libffmpeg.so, libffmpeg.dylib
+- [Support single FFmpeg shared library](tools/mklibffmpeg.sh): ffmpeg.dll, libffmpeg.so, libffmpeg.dylib, [FFmpeg.framework](tools/dylib2framework.sh)
 - modern toolchain support: clang+lld, cross build for almost all platforms on any host OS
 - multiple targets build and configure simultaneously
 - ssl
@@ -44,6 +44,19 @@ Linux, android, macOS, iOS, raspberry pi(legacy OSes), windows build:**[![Build 
 - C: cross build (for example, build win32 from linux/macOS using mingw, build rpi from windows/linux/macOS using gcc and clang)
 - ?: in plan
 - Empty: won't support
+
+## Fork and Custom Build by Github Actions
+You can request to add your configuration. If not accepted, customize yourself and build by github actions
+- Fork the repo
+- Set actions variables used by workflows in github repo settings
+    - FF_VER: `master`, or version, e.g. `7.0`, `6.1`
+    - LINUX_SYSROOT_ID: any characters, used to update sysroot cache
+    - LLVM_VER: llvm version, e.g. `20`, used by linux and windows build. Available versions can be found in https://apt.llvm.org
+    - VCVER: [msvcrt](https://sourceforge.net/projects/avbuild/files/dep/msvcrt-dev.7z/download) version, e.g. `14.28.29333`. used by windows clang build
+    - WINSDKVER: [windows sdk](https://sourceforge.net/projects/avbuild/files/dep/winsdk.7z/download) version, e.g. `10.0.22621.0`. used by windows clang build
+    - VC_LTL_VER: VC-LTL5 version, e.g. `5.1.1`. used by windows build with LTL
+- Edit workflow files(build.yml, build_gpl.yml). Remove unused jobs, e.g. sourceforge upload
+- Download ffmpeg binaries from workflow artifacts
 
 ## TODO
 - Azure pipeline/github action: vs2022+WSL
