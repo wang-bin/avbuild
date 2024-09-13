@@ -105,7 +105,7 @@ echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR  git: $FFGIT. patch set version: $
 USE_VK=$FFGIT
 USE_VAAPI_WIN32=$FFGIT
 if $FFGIT || [ ${FFMAJOR} -gt 3 ]; then
-  for p in $(find "$THIS_DIR/patches-$PATCH_BRANCH" -name "*.patch" |sort); do
+  for p in $(find "$THIS_DIR/patches/$PATCH_BRANCH" -name "*.patch" |sort); do
       echo $p
     patch -p1 -N < $p
   done
