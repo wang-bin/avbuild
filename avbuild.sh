@@ -1799,7 +1799,7 @@ make_universal()
   [ -z "$dirs" ] && return 0
   if [[ "$os" == ios* || "$os" == macos* || "$os" == osx* || "$os" == *catalyst* || "$os" == tv* || "$os" == xr* || "$os" == vision* || "$os" == watch* ]]; then
     chmod +x $THIS_DIR/tools/dylib2framework.sh
-    cp -avf $THIS_DIR/tools/dylib2framework.sh ${dirs[0]}
+    cp -avf $THIS_DIR/tools/{dylib2framework.sh,PrivacyInfo.xcprivacy} ${dirs[0]}
   fi
   [ ${#dirs[@]} -le 1 ] && return 0
 # TODO: move to a new script

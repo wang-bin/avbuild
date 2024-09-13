@@ -55,6 +55,7 @@ gen_info_plist() {
 </dict>
 </plist>
 EOF
+    cp -avf PrivacyInfo.xcprivacy ${PLIST/Info.plist/}
 }
 
 # TODO: dependencies, e.g. avcodec depends on libavutil.?.dylib
