@@ -1808,7 +1808,7 @@ make_universal()
     rm -rf $OUT_DIR
     cd $THIS_DIR
     mkdir -p $OUT_DIR/{bin,lib}
-    cp -avf tools/dylib2framework.sh $OUT_DIR
+    cp -avf tools/{dylib2framework.sh,PrivacyInfo.xcprivacy} $OUT_DIR
     cp -af ${dirs[0]}/include $OUT_DIR
     for a in libavutil libavformat libavcodec libavfilter libavdevice libswscale libswresample libffmpeg; do
       libs=

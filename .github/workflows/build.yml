@@ -571,6 +571,82 @@ jobs:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
 
+  FFmpeg-xcframework:
+    runs-on: macos-latest
+    needs: [Apple]
+    steps:
+    - name: Download iOS
+      uses: actions/download-artifact@v4
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-iOS-lite-lto
+    - name: Download iOSSimulator
+      uses: actions/download-artifact@v4
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-iOSSimulator-lite-lto
+    - name: Download tvOS
+      uses: actions/download-artifact@v4
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-tvOS-lite-lto
+    - name: Download tvOSSimulator
+      uses: actions/download-artifact@v4
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-tvOSSimulator-lite-lto
+    - name: Download visionOS
+      uses: actions/download-artifact@v4
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-visionOS-lite-lto
+    - name: Download visionOSSimulator
+      uses: actions/download-artifact@v4
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-visionOSSimulator-lite-lto
+    - name: Download macOS
+      uses: actions/download-artifact@v4
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-macOS-lite-lto
+    - name: Download macCatalyst
+      uses: actions/download-artifact@v4
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-macCatalyst-lite-lto
+    - name: Gen FFmpeg.framework
+      run: |
+        for OS in iOS iOSSimulator tvOS tvOSSimulator visionOS visionOSSimulator; do
+          tar xvf ffmpeg-${{ env.FF_VERSION }}-${OS}-lite-lto-shared.tar.xz
+          cd ffmpeg-${{ env.FF_VERSION }}-${OS}-lite-lto
+          ./dylib2framework.sh lib/libffmpeg.dylib
+          cd -
+        done
+        for OS in macOS macCatalyst; do
+          tar xvf ffmpeg-${{ env.FF_VERSION }}-${OS}-lite-lto.tar.xz
+          cd ffmpeg-${{ env.FF_VERSION }}-${OS}-lite-lto
+          ./dylib2framework.sh lib/libffmpeg.dylib
+          cd -
+        done
+    - name: Gen FFmpeg.xcframework
+      env:
+        export XZ_OPT: "-T0 -9e" # -9e. -8/9 will disable mt?
+      run: |
+        for OS in macOS macCatalyst iOS iOSSimulator tvOS tvOSSimulator visionOS visionOSSimulator; do
+          ARGS+=" -framework ffmpeg-${{ env.FF_VERSION }}-${OS}-lite-lto/lib/FFmpeg.framework"
+        done
+        xcodebuild -create-xcframework $ARGS -output FFmpeg.xcframework
+        codesign --force  --sign - --deep --timestamp FFmpeg.xcframework
+        mkdir -p out
+        mv -v FFmpeg.xcframework ffmpeg-${{ env.FF_VERSION }}-iOS-lite-lto/{README.txt,COPYING*,Changelog,include} out
+        cd out
+        gtar Jcvf ../FFmpeg.xcframework-${{ env.FF_VERSION }}-lite.tar.xz *
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: FFmpeg.xcframework-${{ env.FF_VERSION }}-lite
+        path: FFmpeg.xcframework-${{ env.FF_VERSION }}-lite.tar.xz
+    - name: Upload to SourceForge
+      if: (github.event_name != 'pull_request')
+      shell: bash
+      run:  |
+        brew install hudochenkov/sshpass/sshpass
+        sshpass -p $SF_PW_MAPPED scp -o StrictHostKeyChecking=no FFmpeg.xcframework-${{ env.FF_VERSION }}-lite.tar.xz $SF_USER_MAPPED,avbuild@frs.sourceforge.net:/home/frs/project/a/av/avbuild/xcframework/
+
+
   Upload:
     runs-on: ubuntu-latest
     needs: [VS2022]
