@@ -1,0 +1,65 @@
+From bbaa08785c93082c71f18cbd4cbd46bab4609e22 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Sun, 29 Sep 2024 15:59:13 +0800
+Subject: [PATCH 32/32] hls: support segments pretend to be gif & png
+
+---
+ libavformat/hls.c | 21 ++++++++++++++++++++-
+ 1 file changed, 20 insertions(+), 1 deletion(-)
+
+diff --git a/libavformat/hls.c b/libavformat/hls.c
+index bf7fdc1553..4b9bfa082b 100644
+--- a/libavformat/hls.c
++++ b/libavformat/hls.c
+@@ -45,6 +45,7 @@
+ #include "id3v2.h"
+ 
+ #include "hls_sample_encryption.h"
++#include "libavcodec/gif.h"
+ 
+ #define INITIAL_BUFFER_SIZE 32768
+ 
+@@ -220,6 +221,7 @@ typedef struct HLSContext {
+     AVIOInterruptCB *interrupt_callback;
+     AVDictionary *avio_opts;
+     AVDictionary *seg_format_opts;
++    int seg_allow_img;
+     char *allowed_extensions;
+     int max_reload;
+     int http_persistent;
+@@ -2101,7 +2103,22 @@ static int hls_read_header(AVFormatContext *s)
+             pls->ctx->max_analyze_duration = s->max_analyze_duration > 0 ? s->max_analyze_duration : 4 * AV_TIME_BASE;
+             pls->ctx->interrupt_callback = s->interrupt_callback;
+             url = av_strdup(pls->segments[0]->url);
+-            ret = av_probe_input_buffer(&pls->pb.pub, &in_fmt, url, NULL, 0, 0);
++            unsigned skip = 0;
++            if (!c->seg_allow_img) {
++                uint8_t b[10] = { 0 };
++                avio_read(&pls->pb.pub, b, sizeof(b));
++                avio_seek(&pls->pb.pub, 0, SEEK_SET);
++                if (AV_RB64(b) == 0x89504e470d0a1a0a) {
++                    skip = 3;
++                    av_log(s, AV_LOG_INFO, "segments pretend to be png\n");
++                } else if ((memcmp(b, gif87a_sig, 6) == 0 || memcmp(b, gif89a_sig, 6) == 0)
++                    && (AV_RL16(&b[6]) && AV_RL16(&b[8]))) {
++                    skip = 10;
++                    av_log(s, AV_LOG_INFO, "segments pretend to be gif\n");
++                }
++            }
++
++            ret = av_probe_input_buffer(&pls->pb.pub, &in_fmt, url, NULL, skip, 0);
+             if (ret < 0) {
+                 /* Free the ctx - it isn't initialized properly at this point,
+                 * so avformat_close_input shouldn't be called. If
+@@ -2549,6 +2566,8 @@ static const AVOption hls_options[] = {
+         OFFSET(http_seekable), AV_OPT_TYPE_BOOL, { .i64 = -1}, -1, 1, FLAGS},
+     {"seg_format_options", "Set options for segment demuxer",
+         OFFSET(seg_format_opts), AV_OPT_TYPE_DICT, {.str = NULL}, 0, 0, FLAGS},
++    {"seg_allow_img", "Allow segments detected as images, 0 = disable, 1 = enable",
++        OFFSET(seg_allow_img), AV_OPT_TYPE_BOOL, { .i64 = 0}, 0, 1, FLAGS},
+     {NULL}
+ };
+ 
+-- 
+2.39.5 (Apple Git-154)
+
