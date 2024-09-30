@@ -1,25 +1,17 @@
-From ecda273842418e9827cab2a193138060a4224629 Mon Sep 17 00:00:00 2001
+From a5c5359023c696e002f9c52721452c3c4d719a1f Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Sep 2024 15:59:13 +0800
 Subject: [PATCH 30/30] hls: support segments pretend to be gif & png
 
 ---
- libavformat/hls.c | 21 ++++++++++++++++++++-
- 1 file changed, 20 insertions(+), 1 deletion(-)
+ libavformat/hls.c | 28 +++++++++++++++++++++++++++-
+ 1 file changed, 27 insertions(+), 1 deletion(-)
 
 diff --git a/libavformat/hls.c b/libavformat/hls.c
-index 62473a15dd..2fd7f8ca2f 100644
+index 62473a15dd..7aa18079d9 100644
 --- a/libavformat/hls.c
 +++ b/libavformat/hls.c
-@@ -47,6 +47,7 @@
- #include "url.h"
- 
- #include "hls_sample_encryption.h"
-+#include "libavcodec/gif.h"
- 
- #define INITIAL_BUFFER_SIZE 32768
- 
-@@ -222,6 +223,7 @@ typedef struct HLSContext {
+@@ -222,6 +222,7 @@ typedef struct HLSContext {
      AVIOInterruptCB *interrupt_callback;
      AVDictionary *avio_opts;
      AVDictionary *seg_format_opts;
@@ -27,23 +19,31 @@ index 62473a15dd..2fd7f8ca2f 100644
      char *allowed_extensions;
      int max_reload;
      int http_persistent;
-@@ -2113,7 +2115,22 @@ static int hls_read_header(AVFormatContext *s)
+@@ -2113,7 +2114,30 @@ static int hls_read_header(AVFormatContext *s)
              pls->ctx->max_analyze_duration = s->max_analyze_duration > 0 ? s->max_analyze_duration : 4 * AV_TIME_BASE;
              pls->ctx->interrupt_callback = s->interrupt_callback;
              url = av_strdup(pls->segments[0]->url);
 -            ret = av_probe_input_buffer(&pls->pb.pub, &in_fmt, url, NULL, 0, 0);
 +            unsigned skip = 0;
 +            if (!c->seg_allow_img) {
-+                uint8_t b[10] = { 0 };
++                uint8_t b[10] = { 0 }; // probe at most 10
 +                avio_read(&pls->pb.pub, b, sizeof(b));
 +                avio_seek(&pls->pb.pub, 0, SEEK_SET);
-+                if (AV_RB64(b) == 0x89504e470d0a1a0a) {
-+                    skip = 3;
-+                    av_log(s, AV_LOG_INFO, "segments pretend to be png\n");
-+                } else if ((memcmp(b, gif87a_sig, 6) == 0 || memcmp(b, gif89a_sig, 6) == 0)
-+                    && (AV_RL16(&b[6]) && AV_RL16(&b[8]))) {
-+                    skip = 10;
-+                    av_log(s, AV_LOG_INFO, "segments pretend to be gif\n");
++                const AVProbeData pd = {
++                    .buf = b,               // png, gif read_probe only use this field
++                    .buf_size = sizeof(b),
++                };
++// optional: ffifmt(av_find_input_format("gif" or "gif_pipe" or "png_pipe"))->read_probe
++                int max_score = AVPROBE_SCORE_MAX - 2; // png_pipe, gif, gif_pipe score >= AVPROBE_SCORE_MAX - 1
++                const AVInputFormat* img_fmt = av_probe_input_format2(&pd, 1, &max_score); //
++                if (img_fmt) {
++                    if (av_strstart(img_fmt->name, "png", NULL)) { // "png_pipe"
++                        skip = 3; // skip until ts sync byte 'G'(0x47)
++                        av_log(s, AV_LOG_INFO, "segments pretend to be png\n");
++                    } else if (av_strstart(img_fmt->name, "gif", NULL)) {    // "gif", "gif_pipe"
++                        skip = 10;
++                        av_log(s, AV_LOG_INFO, "segments pretend to be gif\n");
++                    }
 +                }
 +            }
 +
@@ -51,11 +51,11 @@ index 62473a15dd..2fd7f8ca2f 100644
              if (ret < 0) {
                  /* Free the ctx - it isn't initialized properly at this point,
                  * so avformat_close_input shouldn't be called. If
-@@ -2590,6 +2607,8 @@ static const AVOption hls_options[] = {
+@@ -2590,6 +2614,8 @@ static const AVOption hls_options[] = {
          OFFSET(seg_format_opts), AV_OPT_TYPE_DICT, {.str = NULL}, 0, 0, FLAGS},
      {"seg_max_retry", "Maximum number of times to reload a segment on error.",
       OFFSET(seg_max_retry), AV_OPT_TYPE_INT, {.i64 = 0}, 0, INT_MAX, FLAGS},
-+    {"seg_allow_img", "Allow segments detected as images, 0 = disable, 1 = enable",
++    {"seg_allow_img", "Allow segments detected as gif and png images, 0 = disable, 1 = enable",
 +        OFFSET(seg_allow_img), AV_OPT_TYPE_BOOL, { .i64 = 0}, 0, 1, FLAGS},
      {NULL}
  };
