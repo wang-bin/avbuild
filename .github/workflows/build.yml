@@ -548,7 +548,7 @@ jobs:
     - name: Configure and Build 32bit
       shell: bash
       run: |
-        export ANDROID_NDK=$ANDROID_HOME/ndk/25.2.9519653   # ndk25, api19
+        export ANDROID_NDK=$ANDROID_NDK_LATEST_HOME
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export USER_OPT="--enable-wolfssl"
         ./avbuild.sh ${TARGET_OS} "armv7 x86"
