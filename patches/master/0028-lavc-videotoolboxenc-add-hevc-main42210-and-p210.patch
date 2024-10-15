@@ -1,28 +1,15 @@
-From 01e9bfc1e2f8e2dddd66f4423c2e5e5b0363cdd2 Mon Sep 17 00:00:00 2001
+From 5e6f730da38e65d23bc1e6bfb9369c3d4b4ef796 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 22 Dec 2022 10:39:29 +0800
-Subject: [PATCH 28/29] lavc/videotoolboxenc: add hevc main42210 and p210
+Subject: [PATCH 28/30] lavc/videotoolboxenc: add hevc main42210 and p210
 
 supported by apple silicon
 ---
- libavcodec/defs.h            | 1 +
- libavcodec/videotoolboxenc.c | 8 ++++++++
- 2 files changed, 9 insertions(+)
+ libavcodec/videotoolboxenc.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/libavcodec/defs.h b/libavcodec/defs.h
-index 24250f8af5..15d1e1563a 100644
---- a/libavcodec/defs.h
-+++ b/libavcodec/defs.h
-@@ -160,6 +160,7 @@
- #define AV_PROFILE_HEVC_MAIN_10                     2
- #define AV_PROFILE_HEVC_MAIN_STILL_PICTURE          3
- #define AV_PROFILE_HEVC_REXT                        4
-+#define AV_PROFILE_HEVC_MAIN_10_422                 5
- #define AV_PROFILE_HEVC_MULTIVIEW_MAIN              6
- #define AV_PROFILE_HEVC_SCC                         9
- 
 diff --git a/libavcodec/videotoolboxenc.c b/libavcodec/videotoolboxenc.c
-index da7b291b03..f03b160574 100644
+index da7b291b03..9fce54e155 100644
 --- a/libavcodec/videotoolboxenc.c
 +++ b/libavcodec/videotoolboxenc.c
 @@ -115,6 +115,7 @@ static struct{
@@ -41,18 +28,19 @@ index da7b291b03..f03b160574 100644
  
      GET_SYM(kVTCompressionPropertyKey_RealTime, "RealTime");
      GET_SYM(kVTCompressionPropertyKey_TargetQualityForAlpha,
-@@ -971,6 +973,10 @@ static bool get_vt_hevc_profile_level(AVCodecContext *avctx,
+@@ -971,6 +973,11 @@ static bool get_vt_hevc_profile_level(AVCodecContext *avctx,
              *profile_level_val =
                  compat_keys.kVTProfileLevel_HEVC_Main10_AutoLevel;
              break;
-+        case AV_PROFILE_HEVC_MAIN_10_422:
++        case AV_PROFILE_HEVC_REXT:
++            // only main42210 is supported, omit depth and chroma subsampling
 +            *profile_level_val =
 +                compat_keys.kVTProfileLevel_HEVC_Main42210_AutoLevel;
 +            break;
      }
  
      if (!*profile_level_val) {
-@@ -2839,6 +2845,7 @@ static const enum AVPixelFormat hevc_pix_fmts[] = {
+@@ -2839,6 +2846,7 @@ static const enum AVPixelFormat hevc_pix_fmts[] = {
      AV_PIX_FMT_YUV420P,
      AV_PIX_FMT_BGRA,
      AV_PIX_FMT_P010LE,
@@ -60,14 +48,15 @@ index da7b291b03..f03b160574 100644
      AV_PIX_FMT_NONE
  };
  
-@@ -2971,6 +2978,7 @@ static const AVOption hevc_options[] = {
+@@ -2971,6 +2979,8 @@ static const AVOption hevc_options[] = {
      { "profile", "Profile", OFFSET(profile), AV_OPT_TYPE_INT, { .i64 = AV_PROFILE_UNKNOWN }, AV_PROFILE_UNKNOWN, INT_MAX, VE, .unit = "profile" },
      { "main",     "Main Profile",     0, AV_OPT_TYPE_CONST, { .i64 = AV_PROFILE_HEVC_MAIN    }, INT_MIN, INT_MAX, VE, .unit = "profile" },
      { "main10",   "Main10 Profile",   0, AV_OPT_TYPE_CONST, { .i64 = AV_PROFILE_HEVC_MAIN_10 }, INT_MIN, INT_MAX, VE, .unit = "profile" },
-+    { "main42210","Main42210 Profile",0, AV_OPT_TYPE_CONST, { .i64 = AV_PROFILE_HEVC_MAIN_10_422 }, INT_MIN, INT_MAX, VE, .unit = "profile" },
++    { "main42210","Main 4:2:2 10 Profile",0, AV_OPT_TYPE_CONST, { .i64 = AV_PROFILE_HEVC_REXT }, INT_MIN, INT_MAX, VE, .unit = "profile" },
++    { "rext",     "Main 4:2:2 10 Profile",0, AV_OPT_TYPE_CONST, { .i64 = AV_PROFILE_HEVC_REXT }, INT_MIN, INT_MAX, VE, .unit = "profile" },
  
      { "alpha_quality", "Compression quality for the alpha channel", OFFSET(alpha_quality), AV_OPT_TYPE_DOUBLE, { .dbl = 0.0 }, 0.0, 1.0, VE },
  
 -- 
-2.39.3 (Apple Git-146)
+2.39.5 (Apple Git-154)
 
