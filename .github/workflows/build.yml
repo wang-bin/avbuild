@@ -483,7 +483,7 @@ jobs:
     env:
       TARGET_OS: linux
       COMPILER: clang
-      PKG_CONFIG_PATH_MFX: "/tmp/dep/linux64-gcc/lib/pkgconfig"  # TODO:
+      PKG_CONFIG_PATH_MFX: "/tmp/dep/linux/amd64/lib/pkgconfig"
       AMF_DIR: "/tmp/dep/include"
       CONFIG_SUFFIX: -${{ matrix.config }}
     strategy:
