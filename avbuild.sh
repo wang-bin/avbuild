@@ -1669,7 +1669,7 @@ build1(){
 # patch config.sh used by pkgconfig_generate.sh. you can use this ffmpeg sdk like this: PKG_CONFIG_PATH=$ffmpeg_sdk_dir/lib/pkgconfig pkg-config --libs libavutil
   cat >>$FFBUILD/config.sh <<'EOF'
 prefix=\${pcfiledir}/../..
-libdir=\${prefix}/lib
+libdir=\${pcfiledir}/..
 incdir=\${prefix}/include
 EOF
   [ -f .env.sh ] && . .env.sh
@@ -1849,6 +1849,7 @@ make_universal()
         lipo -info $OUT_DIR/bin/$b
       }
     done
+    cp -avf ${dirs[0]}/lib/pkgconfig $OUT_DIR/lib/
     for d in ${dirs[@]}; do
       cat $d/config.txt >>$OUT_DIR/config.txt
     done
@@ -1875,6 +1876,7 @@ make_universal()
       cp -af $d/include $OUT_DIR
       cp -af $d/bin/* $OUT_DIR/bin/$arch
       cp -af $d/lib/* $OUT_DIR/lib/$arch
+      sed -i $sed_bak 's,^prefix=.*,prefix=\${pcfiledir}\/..\/..\/..,' $OUT_DIR/lib/$arch/pkgconfig/*.pc
       cat $d/config.txt >$OUT_DIR/config-$arch.txt
       cat $d/config.log >$OUT_DIR/config-$arch.log
       cp -af "$FFSRC/Changelog" $OUT_DIR
