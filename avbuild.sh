@@ -591,7 +591,7 @@ export LIB="$VC_LTL_LIB;$VCDIR_LIB;$WindowsSdkDir/Lib/$WindowsSDKVersion/ucrt/${
 export AR=$LLVM_AR
 export NM=$LLVM_NM
 #export V=1 # FFmpeg BUG: AR is overriden in common.mak and becomes an invalid command in makedef(@printf works in makefiles but not sh scripts)
-export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/windows-desktop/${MACHINE/86_/}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/windows-desktop/${MACHINE/86_/}/lib/pkgconfig:${THIS_DIR}/tools/dep/windows-desktop/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/windows-desktop/lib/pkgconfig:$PKG_CONFIG_PATH
+export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/windows/${MACHINE/86_/}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/windows-desktop/${MACHINE/86_/}/lib/pkgconfig:${THIS_DIR}/tools/dep/windows/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/windows-desktop/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
 # [ expr1 ] && ... at end returns error if expr1 is false
 }
@@ -692,7 +692,7 @@ setup_vc_env() {
   [ -n "$LIBPATH_arch" ] && echo "export LIBPATH=$LIBPATH_arch" >>"$BDIR/.env.sh"
   [ -n "$INCLUDE_arch" ] && echo "export INCLUDE=$INCLUDE_arch" >>"$BDIR/.env.sh"
   cat >> "$BDIR/.env.sh" <<EOF
-export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/windows-desktop/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/windows-desktop/lib/pkgconfig:$PKG_CONFIG_PATH
+export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/windows/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/windows-desktop/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
 }
 
@@ -1022,7 +1022,10 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
       fi
     fi
   fi
-  [ -z "${ANDROID_ARCH/*64/}" ] && EXTRA_LDFLAGS+=" -Wl,-z,max-page-size=16384" # 16KB page size required by android 15
+  [ -z "${ANDROID_ARCH/*64/}" ] && {
+    EXTRA_CFLAGS+=" -D__BIONIC_NO_PAGE_SIZE_MACRO=1"
+    EXTRA_LDFLAGS+=" -Wl,-z,max-page-size=16384" # 16KB page size required by android 15
+  }
   #test -d $ANDROID_GCC_DIR || $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-$API_LEVEL --toolchain=$TOOLCHAIN --install-dir=$ANDROID_GCC_DIR #--system=linux-x86_64
   TOOLCHAIN_OPT+=" --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE $EXE_FLAGS\""
   INSTALL_DIR=sdk-android-${1:-${ANDROID_ARCH}}
@@ -1363,7 +1366,11 @@ setup_gnu_env(){
     exit 1
   }
   PKG_CONFIG_PATH+=":$SYSROOT/usr/lib/${CROSS_PREFIX%%-}/pkgconfig"
-  $IS_CROSS_BUILD && TOOLCHAIN_OPT+=" --sysroot=\\\$SYSROOT" # clang searchs host by default, so sysroot is required
+  $IS_CROSS_BUILD && {
+    TOOLCHAIN_OPT+=" --sysroot=\\\$SYSROOT" # clang searchs host by default, so sysroot is required
+    # use pkgconfig in sysroot and user dir(vpl.pc) with aboslute paths, so can not set PKG_CONFIG_SYSROOT_DIR
+    #export PKG_CONFIG_SYSROOT_DIR==   # -I/usr/include => -I=/usr/include
+  }
   # probe compiler first
   setup_cc ${USE_TOOLCHAIN:=gcc} "--target=${CROSS_PREFIX%%-}" # clang on mac(apple or opensource) will use apple flags w/o --target=
 # t.S: x .dn 0
@@ -1425,9 +1432,16 @@ setup_linux_env() {
   add_elf_flags
   enable_opt v4l2-request libudev
   enable_opt vaapi vdpau libdrm
+  include_with_sysroot_compat /usr/include/libdrm
+  #FILTER_OPT+=" --enable-filter=drawtext"
+  #enable_opt libfreetype libfribidi libfontconfig libharfbuzz
+  echo $USER_OPT grep -q libfreetype && {
+    #enable_opt libfribidi libfontconfig
+# pkg-config use aboslute paths, can not set PKG_CONFIG_SYSROOT_DIR because we have .pc outside sysroot, so manually add include dirs
+    include_with_sysroot_compat /usr/include/freetype2 /usr/include/fribidi /usr/include/harfbuzz
+  }
   $USE_VK && EXTRA_CFLAGS+=" -I\$THIS_DIR/tools/Vulkan-Headers/include"
   $IS_CLANG && enable_cuda_llvm
-  $IS_CLANG && EXTRA_CFLAGS+=" -I=/usr/include/libdrm"
 
   local CC_ARCH=`$USE_TOOLCHAIN -dumpmachine`
   CC_ARCH=${CC_ARCH%%-*}
@@ -1495,6 +1509,7 @@ config1(){
   local patch_clock_gettime=0
   local enable_pic=true
   local enable_lto=true
+  #TOOLCHAIN_OPT+=" --pkg-config-flags=--define-prefix" # FIXME: wrong result for linux sysroot
   : ${VC_BUILD:=false} #global is fine because no parallel configure now
   add_librt(){
   # clock_gettime in librt instead of glibc>=2.17
