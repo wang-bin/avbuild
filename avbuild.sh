@@ -579,6 +579,7 @@ echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG
 	[ "$MACHINE" == arm ] || EXTRA_CFLAGS+=" -Zi" # codeview is not implemented for arm(clang-10)
 	$cfguard && EXTRA_CFLAGS+=" /guard:cf"
   }	|| {
+    EXTRA_CFLAGS+=" -D_DLL" # defined by cl /MD. fix _HUGE not defined using vcrt120
 	[ "$MACHINE" == arm ] || EXTRA_CFLAGS+=" -g -gcodeview"
 	$cfguard && EXTRA_CFLAGS+=" -Xclang -cfguard"
 	#EXTRA_LDFLAGS+=" -NODEFAULTLIB:libcmt" #?
