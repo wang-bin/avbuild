@@ -1,0 +1,29 @@
+From 7b23952c005afd5de90bb56bec0d4c67ac4d244c Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Tue, 11 Jan 2022 16:17:56 +0800
+Subject: [PATCH 20/32] configure: rewrite flags from pkg-config for msvc in
+ msys
+
+cflags and libs from pkg-config is unix path, e.g. /c/msys64, but msvc
+requires mixed form, e.g. c:/msys64
+---
+ configure | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/configure b/configure
+index 4a2c2398ed..c7cc12b33d 100755
+--- a/configure
++++ b/configure
+@@ -4789,7 +4789,8 @@ msvc_common_flags(){
+             -libpath:*|-LIBPATH:*)echo $flag ;;
+             -l*)                  echo ${flag#-l}.lib ;;
+             -LARGEADDRESSAWARE)   echo $flag ;;
+-            -L*)                  echo -libpath:${flag#-L} ;;
++            -L*)                  [ -n "$MSYSTEM" ] && (echo $flag |sed 's,-L\/\([a-zA-Z]\)\(\/.*\),-libpath:\1:\2,' -) || echo -libpath:${flag#-L} ;;
++            -I*)                  [ -n "$MSYSTEM" ] && (echo $flag |sed 's,-L\/\([a-zA-Z]\)\(\/.*\),-I\1:\2,' -) || echo $flag ;;
+             -Wl,*)                ;;
+             *)                    echo $flag ;;
+         esac
+-- 
+2.39.5 (Apple Git-154)
+

@@ -1,0 +1,30 @@
+From 33fc7724f126cfe1757451bee573c7c9b03dd245 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Sun, 29 Oct 2017 23:22:25 +0800
+Subject: [PATCH 02/32] configure: fix mmal probing in cross build
+
+---
+ configure | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/configure b/configure
+index 20d4e4b615..91e3af3b8f 100755
+--- a/configure
++++ b/configure
+@@ -7019,11 +7019,11 @@ enabled mbedtls           && { check_pkg_config mbedtls mbedtls mbedtls/x509_crt
+                                check_lib mbedtls mbedtls/ssl.h mbedtls_ssl_init -lmbedtls -lmbedx509 -lmbedcrypto ||
+                                die "ERROR: mbedTLS not found"; }
+ enabled mediacodec        && { enabled jni || die "ERROR: mediacodec requires --enable-jni"; }
+-enabled mmal              && { check_lib mmal interface/mmal/mmal.h mmal_port_connect -lmmal_core -lmmal_util -lmmal_vc_client -lbcm_host ||
++enabled mmal              && { check_lib mmal interface/mmal/mmal.h mmal_port_connect -lmmal_core -lmmal_util -lmmal_vc_client -lbcm_host -lvcos -lpthread ||
+                                { ! enabled cross_compile &&
+                                  add_cflags -isystem/opt/vc/include/ -isystem/opt/vc/include/interface/vmcs_host/linux -isystem/opt/vc/include/interface/vcos/pthreads -fgnu89-inline &&
+                                  add_ldflags -L/opt/vc/lib/ &&
+-                                 check_lib mmal interface/mmal/mmal.h mmal_port_connect -lmmal_core -lmmal_util -lmmal_vc_client -lbcm_host; } ||
++                                 check_lib mmal interface/mmal/mmal.h mmal_port_connect -lmmal_core -lmmal_util -lmmal_vc_client -lbcm_host -lvcos -lpthread; } ||
+                                die "ERROR: mmal not found" &&
+                                check_func_headers interface/mmal/mmal.h "MMAL_PARAMETER_VIDEO_MAX_NUM_CALLBACKS"; }
+ enabled openal            && { check_pkg_config openal "openal >= 1.1" "AL/al.h" alGetError ||
+-- 
+2.39.5 (Apple Git-154)
+

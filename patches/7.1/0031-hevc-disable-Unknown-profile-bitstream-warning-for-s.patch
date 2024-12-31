@@ -1,0 +1,28 @@
+From 375afbcba709a856174ab2f200bd7b15ed85c432 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Tue, 15 Oct 2024 17:07:02 +0800
+Subject: [PATCH 31/34] hevc: disable Unknown profile bitstream warning for
+ small configuration
+
+---
+ libavcodec/hevc/ps.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libavcodec/hevc/ps.c b/libavcodec/hevc/ps.c
+index f18b88489b..0f3f330671 100644
+--- a/libavcodec/hevc/ps.c
++++ b/libavcodec/hevc/ps.c
+@@ -254,9 +254,9 @@ static int decode_profile_tier_level(GetBitContext *gb, AVCodecContext *avctx,
+             profile_name = ff_hevc_profiles[i].name;
+             break;
+         }
+-#endif
+     av_log(avctx, profile_name ? AV_LOG_DEBUG : AV_LOG_WARNING,
+            "%s profile bitstream\n", profile_name ? profile_name : "Unknown");
++#endif
+ 
+     for (i = 0; i < 32; i++) {
+         ptl->profile_compatibility_flag[i] = get_bits1(gb);
+-- 
+2.39.5 (Apple Git-154)
+

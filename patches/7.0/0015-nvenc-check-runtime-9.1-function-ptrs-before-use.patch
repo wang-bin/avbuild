@@ -1,0 +1,34 @@
+From 5727a4e09044baa93da1c80266666609495ab568 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Fri, 5 Jun 2020 14:05:42 +0800
+Subject: [PATCH 15/32] nvenc: check runtime 9.1 function ptrs before use
+
+---
+ libavcodec/nvenc.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/libavcodec/nvenc.c b/libavcodec/nvenc.c
+index c4d41a9131..161649612f 100644
+--- a/libavcodec/nvenc.c
++++ b/libavcodec/nvenc.c
+@@ -167,7 +167,7 @@ static int nvenc_print_error(AVCodecContext *avctx, NVENCSTATUS err,
+     NvencContext *ctx = avctx->priv_data;
+     NV_ENCODE_API_FUNCTION_LIST *p_nvenc = &ctx->nvenc_dload_funcs.nvenc_funcs;
+ 
+-    if (p_nvenc && ctx->nvencoder)
++    if (p_nvenc && ctx->nvencoder && p_nvenc->nvEncGetLastErrorString)
+         details = p_nvenc->nvEncGetLastErrorString(ctx->nvencoder);
+ #endif
+ 
+@@ -1692,7 +1692,7 @@ FF_ENABLE_DEPRECATION_WARNINGS
+     }
+ 
+ #ifdef NVENC_HAVE_CUSTREAM_PTR
+-    if (ctx->cu_context) {
++    if (ctx->cu_context && p_nvenc->nvEncSetIOCudaStreams) {
+         nv_status = p_nvenc->nvEncSetIOCudaStreams(ctx->nvencoder, &ctx->cu_stream, &ctx->cu_stream);
+         if (nv_status != NV_ENC_SUCCESS) {
+             nvenc_pop_context(avctx);
+-- 
+2.39.5 (Apple Git-154)
+

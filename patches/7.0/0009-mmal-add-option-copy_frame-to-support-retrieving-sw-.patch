@@ -1,0 +1,83 @@
+From 0a20f47e3621edb219dfaabc616f2fd6bea64771 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Fri, 17 Nov 2017 14:54:23 +0800
+Subject: [PATCH 09/32] mmal: add option copy_frame to support retrieving sw
+ frames w/o copy
+
+mmal buffer->data is already in host memory. AFAIK decoders implemented in omx must
+be configured to output frames to either memory or something directly used by renderer,
+for example mediacodec surface, mmal buffer and omxil eglimage.
+test result: big buck bunny 1080p fps increases from about 100 to 110 if copy_frame is
+turned off
+---
+ libavcodec/mmaldec.c | 21 ++++++++++++++++++---
+ 1 file changed, 18 insertions(+), 3 deletions(-)
+
+diff --git a/libavcodec/mmaldec.c b/libavcodec/mmaldec.c
+index 0bfeec6bd3..119c16db26 100644
+--- a/libavcodec/mmaldec.c
++++ b/libavcodec/mmaldec.c
+@@ -71,6 +71,7 @@ typedef struct MMALDecodeContext {
+     AVClass *av_class;
+     int extra_buffers;
+     int extra_decoder_buffers;
++    int copy_frame;
+ 
+     MMAL_COMPONENT_T *decoder;
+     MMAL_QUEUE_T *queue_decoded_frames;
+@@ -147,7 +148,6 @@ static int ffmmal_set_ref(AVFrame *frame, FFPoolRef *pool,
+     atomic_fetch_add_explicit(&ref->pool->refcount, 1, memory_order_relaxed);
+     mmal_buffer_header_acquire(buffer);
+ 
+-    frame->format = AV_PIX_FMT_MMAL;
+     frame->data[3] = (uint8_t *)ref->buffer;
+     return 0;
+ }
+@@ -652,20 +652,34 @@ static int ffmal_copy_frame(AVCodecContext *avctx,  AVFrame *frame,
+ 
+         if ((ret = ffmmal_set_ref(frame, ctx->pool_out, buffer)) < 0)
+             goto done;
++        frame->format = AV_PIX_FMT_MMAL;
+     } else {
+         int w = FFALIGN(avctx->width, 32);
+         int h = FFALIGN(avctx->height, 16);
+         uint8_t *src[4];
+         int linesize[4];
+ 
+-        if ((ret = ff_get_buffer(avctx, frame, 0)) < 0)
+-            goto done;
++        if (ctx->copy_frame) {
++            if ((ret = ff_get_buffer(avctx, frame, 0)) < 0)
++                goto done;
+ 
+         av_image_fill_arrays(src, linesize,
+                              buffer->data + buffer->type->video.offset[0],
+                              avctx->pix_fmt, w, h, 1);
+         av_image_copy2(frame->data, frame->linesize, src, linesize,
+                        avctx->pix_fmt, avctx->width, avctx->height);
++        } else {
++            if ((ret = ff_decode_frame_props(avctx, frame)) < 0)
++                goto done;
++            /* buffer->type->video.offset/pitch[i]; is always 0 */
++            av_image_fill_arrays(src, linesize,
++                                buffer->data + buffer->type->video.offset[0],
++                                avctx->pix_fmt, w, h, 1);
++            if ((ret = ffmmal_set_ref(frame, ctx->pool_out, buffer)) < 0)
++                goto done;
++            memcpy(frame->data, src, sizeof(src));
++            memcpy(frame->linesize, linesize, sizeof(linesize));
++        }
+     }
+ 
+     frame->sample_aspect_ratio = avctx->sample_aspect_ratio;
+@@ -850,6 +864,7 @@ AVHWAccel ff_wmv3_mmal_hwaccel = {
+ static const AVOption options[]={
+     {"extra_buffers", "extra buffers", offsetof(MMALDecodeContext, extra_buffers), AV_OPT_TYPE_INT, {.i64 = 10}, 0, 256, 0},
+     {"extra_decoder_buffers", "extra MMAL internal buffered frames", offsetof(MMALDecodeContext, extra_decoder_buffers), AV_OPT_TYPE_INT, {.i64 = 10}, 0, 256, 0},
++    {"copy_frame", "copy deocded data to avframe", offsetof(MMALDecodeContext, copy_frame), AV_OPT_TYPE_BOOL, {.i64 = 1}, 0, 256, 0},
+     {NULL}
+ };
+ 
+-- 
+2.39.5 (Apple Git-154)
+

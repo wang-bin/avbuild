@@ -1,7 +1,7 @@
-From acc3810102fde8d57c12219dd0ca67e4495deb35 Mon Sep 17 00:00:00 2001
+From 9243ff3c58a8b1ba26556c9bf22abacb4d1ba257 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sat, 11 Dec 2021 18:08:43 +0800
-Subject: [PATCH 20/29] msvc: fix long argument list error on windows
+Subject: [PATCH 20/33] msvc: fix long argument list error on windows
 
 ---
  compat/windows/makedef |  4 +++-
@@ -46,5 +46,5 @@ index 6cab090071..d3202520cf 100755
 +rm -f $cmdlist
 +exit $ret
 -- 
-2.39.3 (Apple Git-146)
+2.39.5 (Apple Git-154)
 

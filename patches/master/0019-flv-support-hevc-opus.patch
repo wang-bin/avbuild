@@ -1,27 +1,27 @@
-From 7656a981987539bd68b767c96333da3948ccf0fe Mon Sep 17 00:00:00 2001
+From f2b4eb78f4f0d0f62e64ddb7c8bab4578e33b478 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 27 Sep 2021 17:35:17 +0800
-Subject: [PATCH 19/29] flv: support hevc, opus
+Subject: [PATCH 19/33] flv: support hevc, opus
 
 ---
  libavformat/flv.h    |  2 ++
  libavformat/flvdec.c | 17 ++++++++++++++++-
- libavformat/flvenc.c |  4 ++++
- 3 files changed, 22 insertions(+), 1 deletion(-)
+ libavformat/flvenc.c |  1 +
+ 3 files changed, 19 insertions(+), 1 deletion(-)
 
 diff --git a/libavformat/flv.h b/libavformat/flv.h
-index f710963b92..8e72d62a5f 100644
+index 1ea88ff851..a65e23f42b 100644
 --- a/libavformat/flv.h
 +++ b/libavformat/flv.h
-@@ -105,6 +105,7 @@ enum {
-     FLV_CODECID_PCM_MULAW            = 8 << FLV_AUDIO_CODECID_OFFSET,
+@@ -106,6 +106,7 @@ enum {
+     FLV_CODECID_EX_HEADER            = 9 << FLV_AUDIO_CODECID_OFFSET,
      FLV_CODECID_AAC                  = 10<< FLV_AUDIO_CODECID_OFFSET,
      FLV_CODECID_SPEEX                = 11<< FLV_AUDIO_CODECID_OFFSET,
 +    FLV_CODECID_OPUS                 = 13<< FLV_AUDIO_CODECID_OFFSET,
  };
  
  enum {
-@@ -116,6 +117,7 @@ enum {
+@@ -117,6 +118,7 @@ enum {
      FLV_CODECID_H264    = 7,
      FLV_CODECID_REALH263= 8,
      FLV_CODECID_MPEG4   = 9,
@@ -30,10 +30,10 @@ index f710963b92..8e72d62a5f 100644
  
  enum {
 diff --git a/libavformat/flvdec.c b/libavformat/flvdec.c
-index 22a9b9e4a7..3a3c35328b 100644
+index 018249d1fe..8a6ea12e12 100644
 --- a/libavformat/flvdec.c
 +++ b/libavformat/flvdec.c
-@@ -263,6 +263,10 @@ static int flv_same_audio_codec(AVCodecParameters *apar, int flags)
+@@ -291,6 +291,10 @@ static int flv_same_audio_codec(AVCodecParameters *apar, int flags, uint32_t cod
      case FLV_CODECID_PCM_ALAW:
          return apar->sample_rate == 8000 &&
                 apar->codec_id    == AV_CODEC_ID_PCM_ALAW;
@@ -44,7 +44,7 @@ index 22a9b9e4a7..3a3c35328b 100644
      default:
          return apar->codec_tag == (flv_codecid >> FLV_AUDIO_CODECID_OFFSET);
      }
-@@ -321,6 +325,11 @@ static void flv_set_audio_codec(AVFormatContext *s, AVStream *astream,
+@@ -349,6 +353,11 @@ static void flv_set_audio_codec(AVFormatContext *s, AVStream *astream,
          apar->sample_rate = 8000;
          apar->codec_id    = AV_CODEC_ID_PCM_ALAW;
          break;
@@ -53,19 +53,19 @@ index 22a9b9e4a7..3a3c35328b 100644
 +        apar->bits_per_coded_sample = 16;
 +        apar->codec_id    = AV_CODEC_ID_OPUS;
 +        break;
-     default:
-         avpriv_request_sample(s, "Audio codec (%x)",
-                flv_codecid >> FLV_AUDIO_CODECID_OFFSET);
-@@ -352,6 +361,8 @@ static int flv_same_video_codec(AVCodecParameters *vpar, uint32_t flv_codecid)
-         return vpar->codec_id == AV_CODEC_ID_VP6A;
+     case MKBETAG('m', 'p', '4', 'a'):
+         apar->codec_id = AV_CODEC_ID_AAC;
+         return;
+@@ -399,6 +408,8 @@ static int flv_same_video_codec(AVCodecParameters *vpar, uint32_t flv_codecid)
      case FLV_CODECID_H264:
+     case MKBETAG('a', 'v', 'c', '1'):
          return vpar->codec_id == AV_CODEC_ID_H264;
 +    case FLV_CODECID_HEVC:
 +        return vpar->codec_id == AV_CODEC_ID_HEVC;
      default:
          return vpar->codec_tag == flv_codecid;
      }
-@@ -413,6 +424,10 @@ static int flv_set_video_codec(AVFormatContext *s, AVStream *vstream,
+@@ -461,6 +472,10 @@ static int flv_set_video_codec(AVFormatContext *s, AVStream *vstream,
      case FLV_CODECID_MPEG4:
          par->codec_id = AV_CODEC_ID_MPEG4;
          break;
@@ -76,17 +76,17 @@ index 22a9b9e4a7..3a3c35328b 100644
      default:
          avpriv_request_sample(s, "Video codec (%x)", flv_codecid);
          par->codec_tag = flv_codecid;
-@@ -1463,7 +1478,7 @@ retry_duration:
-         }
+@@ -1654,7 +1669,7 @@ retry_duration:
  
-         if (st->codecpar->codec_id == AV_CODEC_ID_H264 || st->codecpar->codec_id == AV_CODEC_ID_MPEG4 ||
--            (st->codecpar->codec_id == AV_CODEC_ID_HEVC && type == PacketTypeCodedFrames)) {
-+            (st->codecpar->codec_id == AV_CODEC_ID_HEVC && (!enhanced_flv || type == PacketTypeCodedFrames))) {
-             // sign extension
-             int32_t cts = (avio_rb24(s->pb) + 0xff800000) ^ 0xff800000;
-             pts = av_sat_add64(dts, cts);
+             if (st->codecpar->codec_id == AV_CODEC_ID_MPEG4 ||
+                 (st->codecpar->codec_id == AV_CODEC_ID_H264 && (!enhanced_flv || type == PacketTypeCodedFrames)) ||
+-                (st->codecpar->codec_id == AV_CODEC_ID_HEVC && type == PacketTypeCodedFrames)) {
++                (st->codecpar->codec_id == AV_CODEC_ID_HEVC && (!enhanced_flv || type == PacketTypeCodedFrames))) {
+                 // sign extension
+                 int32_t cts = (avio_rb24(s->pb) + 0xff800000) ^ 0xff800000;
+                 pts = av_sat_add64(dts, cts);
 diff --git a/libavformat/flvenc.c b/libavformat/flvenc.c
-index f34df61c0e..3719b61476 100644
+index f3f32dc433..f9464dcef3 100644
 --- a/libavformat/flvenc.c
 +++ b/libavformat/flvenc.c
 @@ -69,6 +69,7 @@ static const AVCodecTag flv_audio_codec_ids[] = {
@@ -94,19 +94,9 @@ index f34df61c0e..3719b61476 100644
      { AV_CODEC_ID_PCM_ALAW,   FLV_CODECID_PCM_ALAW   >> FLV_AUDIO_CODECID_OFFSET },
      { AV_CODEC_ID_SPEEX,      FLV_CODECID_SPEEX      >> FLV_AUDIO_CODECID_OFFSET },
 +    { AV_CODEC_ID_OPUS,       FLV_CODECID_OPUS       >> FLV_AUDIO_CODECID_OFFSET },
-     { AV_CODEC_ID_NONE,       0 }
- };
- 
-@@ -138,6 +139,9 @@ static int get_audio_flags(AVFormatContext *s, AVCodecParameters *par)
-     if (par->codec_id == AV_CODEC_ID_AAC) // specs force these parameters
-         return FLV_CODECID_AAC | FLV_SAMPLERATE_44100HZ |
-                FLV_SAMPLESSIZE_16BIT | FLV_STEREO;
-+    else if (par->codec_id == AV_CODEC_ID_OPUS) // specs force these parameters
-+        return FLV_CODECID_OPUS | FLV_SAMPLERATE_44100HZ |
-+               FLV_SAMPLESSIZE_16BIT | FLV_STEREO;
-     else if (par->codec_id == AV_CODEC_ID_SPEEX) {
-         if (par->sample_rate != 16000) {
-             av_log(s, AV_LOG_ERROR,
+     { AV_CODEC_ID_OPUS,       MKBETAG('O', 'p', 'u', 's') },
+     { AV_CODEC_ID_FLAC,       MKBETAG('f', 'L', 'a', 'C') },
+     { AV_CODEC_ID_AC3,        MKBETAG('a', 'c', '-', '3') },
 -- 
-2.39.3 (Apple Git-146)
+2.39.5 (Apple Git-154)
 

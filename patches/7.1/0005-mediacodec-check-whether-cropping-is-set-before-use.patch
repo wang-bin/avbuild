@@ -1,0 +1,36 @@
+From fdd13be58af8ebca14a08833e71bac75988e0284 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Sun, 29 Oct 2017 23:52:35 +0800
+Subject: [PATCH 05/34] mediacodec: check whether cropping is set before use
+
+---
+ libavcodec/mediacodecdec_common.c | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/libavcodec/mediacodecdec_common.c b/libavcodec/mediacodecdec_common.c
+index 3770b4f3ae..fbede7b377 100644
+--- a/libavcodec/mediacodecdec_common.c
++++ b/libavcodec/mediacodecdec_common.c
+@@ -588,10 +588,15 @@ static int mediacodec_dec_parse_video_format(AVCodecContext *avctx, MediaCodecDe
+     }
+ 
+     /* Optional fields */
+-    AMEDIAFORMAT_GET_INT32(s->crop_top,    "crop-top",    0);
+-    AMEDIAFORMAT_GET_INT32(s->crop_bottom, "crop-bottom", 0);
+-    AMEDIAFORMAT_GET_INT32(s->crop_left,   "crop-left",   0);
+-    AMEDIAFORMAT_GET_INT32(s->crop_right,  "crop-right",  0);
++    if (ff_AMediaFormat_getInt32(s->format, "crop-top", &s->crop_top) && ff_AMediaFormat_getInt32(s->format, "crop-bottom", &s->crop_bottom))
++        height = s->crop_bottom + 1 - s->crop_top;
++    else
++        height = s->height;
++
++    if (ff_AMediaFormat_getInt32(s->format, "crop-left", &s->crop_left) && ff_AMediaFormat_getInt32(s->format, "crop-right", &s->crop_right))
++        width = s->crop_right + 1 - s->crop_left;
++    else
++        width = s->width;
+ 
+     // Try "crop" for NDK
+     if (!(s->crop_right && s->crop_bottom) && s->use_ndk_codec)
+-- 
+2.39.5 (Apple Git-154)
+

@@ -1,0 +1,34 @@
+From 1c3887f547122c8faa1e4434dc3fb918d90592b4 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Thu, 9 Nov 2017 15:05:26 +0800
+Subject: [PATCH 07/34] videotoolbox: allow software implementation
+
+hevc is supported on macOS 10.12+ and iOS11+. sw implementaion is
+provided for old devices. vt sw decoder is more energy effecient than
+ffmpeg sw decoder. the sum of program and vt service cpu usage is about
+50% lower than ffmpeg. decoding speed is faster sometimes(if opengl
+compatiblility attribute is disabled)
+---
+ libavcodec/videotoolbox.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/libavcodec/videotoolbox.c b/libavcodec/videotoolbox.c
+index 220daa9c1c..c7e867e7f8 100644
+--- a/libavcodec/videotoolbox.c
++++ b/libavcodec/videotoolbox.c
+@@ -819,9 +819,9 @@ static CFDictionaryRef videotoolbox_decoder_config_create(CMVideoCodecType codec
+                                                                    &kCFTypeDictionaryValueCallBacks);
+ 
+     CFDictionarySetValue(config_info,
+-                         codec_type == kCMVideoCodecType_HEVC ?
+-                            kVTVideoDecoderSpecification_EnableHardwareAcceleratedVideoDecoder :
+-                            kVTVideoDecoderSpecification_RequireHardwareAcceleratedVideoDecoder,
++                         (avctx->hwaccel_flags & AV_HWACCEL_FLAG_ALLOW_SOFTWARE)
++                         ? kVTVideoDecoderSpecification_EnableHardwareAcceleratedVideoDecoder
++                         : kVTVideoDecoderSpecification_RequireHardwareAcceleratedVideoDecoder,
+                          kCFBooleanTrue);
+ 
+     avc_info = CFDictionaryCreateMutable(kCFAllocatorDefault,
+-- 
+2.39.5 (Apple Git-154)
+

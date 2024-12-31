@@ -1,7 +1,7 @@
-From 2da938f65f91243fdcc79374f4ea12102f4fb7df Mon Sep 17 00:00:00 2001
+From 500d943d374859e5f6c526c6bbb3f8122e396e2b Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 9 Nov 2017 15:05:26 +0800
-Subject: [PATCH 07/29] videotoolbox: allow software implementation
+Subject: [PATCH 07/33] videotoolbox: allow software implementation
 
 hevc is supported on macOS 10.12+ and iOS11+. sw implementaion is
 provided for old devices. vt sw decoder is more energy effecient than
@@ -13,10 +13,10 @@ compatiblility attribute is disabled)
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/libavcodec/videotoolbox.c b/libavcodec/videotoolbox.c
-index b2a14a11b2..69de24436d 100644
+index 35f31aa05a..5f4fa4ab6c 100644
 --- a/libavcodec/videotoolbox.c
 +++ b/libavcodec/videotoolbox.c
-@@ -819,9 +819,9 @@ static CFDictionaryRef videotoolbox_decoder_config_create(CMVideoCodecType codec
+@@ -843,9 +843,9 @@ static CFDictionaryRef videotoolbox_decoder_config_create(CMVideoCodecType codec
                                                                     &kCFTypeDictionaryValueCallBacks);
  
      CFDictionarySetValue(config_info,
@@ -30,5 +30,5 @@ index b2a14a11b2..69de24436d 100644
  
      avc_info = CFDictionaryCreateMutable(kCFAllocatorDefault,
 -- 
-2.39.3 (Apple Git-146)
+2.39.5 (Apple Git-154)
 

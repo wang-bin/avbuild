@@ -1,0 +1,76 @@
+From 31c6cf636f88af099dfe9dd2fe3807c5fc45bc0c Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Sun, 13 Mar 2022 14:38:23 +0800
+Subject: [PATCH 23/34] configure: add --extra-windresflags
+
+llvm windres requires more preprocess flags and target flags
+---
+ configure          | 10 ++++++++++
+ ffbuild/common.mak |  2 +-
+ 2 files changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/configure b/configure
+index 417e0130a6..378922c768 100755
+--- a/configure
++++ b/configure
+@@ -417,6 +417,7 @@ Toolchain options:
+   --extra-ldflags=ELDFLAGS add ELDFLAGS to LDFLAGS [$LDFLAGS]
+   --extra-ldexeflags=ELDFLAGS add ELDFLAGS to LDEXEFLAGS [$LDEXEFLAGS]
+   --extra-ldsoflags=ELDFLAGS add ELDFLAGS to LDSOFLAGS [$LDSOFLAGS]
++  --extra-windresflags=EWFLAGS add EWFLAGS to WINDRESFLAGS [$WINDRESFLAGS]
+   --extra-libs=ELIBS       add ELIBS [$ELIBS]
+   --extra-version=STRING   version string suffix []
+   --optflags=OPTFLAGS      override optimization-related compiler flags
+@@ -999,6 +1000,10 @@ add_host_ldflags(){
+     append host_ldflags $($host_ldflags_filter "$@")
+ }
+ 
++add_windresflags(){
++    append WINDRESFLAGS "$@"
++}
++
+ add_compat(){
+     append compat_objs $1
+     shift
+@@ -4365,6 +4370,9 @@ for opt do
+         --extra-libs=*)
+             add_extralibs $optval
+         ;;
++        --extra-windresflags=*)
++            add_windresflags $optval
++        ;;
+         --disable-devices)
+             disable $INDEV_LIST $OUTDEV_LIST
+         ;;
+@@ -5204,6 +5212,7 @@ add_cflags $extra_cflags
+ add_cxxflags $extra_cxxflags
+ add_objcflags $extra_objcflags
+ add_asflags $extra_cflags
++add_windresflags $extra_windresflags
+ 
+ if test -n "$sysroot"; then
+     case "$cc_type" in
+@@ -8124,6 +8133,7 @@ DOXYGEN=$doxygen
+ LDFLAGS=$LDFLAGS
+ LDEXEFLAGS=$LDEXEFLAGS
+ LDSOFLAGS=$LDSOFLAGS
++WINDRESFLAGS=$WINDRESFLAGS
+ SHFLAGS=$(echo $($ldflags_filter $SHFLAGS))
+ ASMSTRIPFLAGS=$ASMSTRIPFLAGS
+ X86ASMFLAGS=$X86ASMFLAGS
+diff --git a/ffbuild/common.mak b/ffbuild/common.mak
+index 87a3ffd2b0..a93961d217 100644
+--- a/ffbuild/common.mak
++++ b/ffbuild/common.mak
+@@ -104,7 +104,7 @@ COMPILE_LASX = $(call COMPILE,CC,LASXFLAGS)
+ 	-$(if $(ASMSTRIPFLAGS), $(STRIP) $(ASMSTRIPFLAGS) $@)
+ 
+ %.o: %.rc
+-	$(WINDRES) $(IFLAGS) $(foreach ARG,$(CC_DEPFLAGS),--preprocessor-arg "$(ARG)") -o $@ $<
++	$(WINDRES) $(WINDRESFLAGS) $(IFLAGS) $(foreach ARG,$(CC_DEPFLAGS),--preprocessor-arg "$(ARG)") -o $@ $<
+ 
+ %.i: %.c
+ 	$(CC) $(CCFLAGS) $(CC_E) $<
+-- 
+2.39.5 (Apple Git-154)
+

@@ -1,0 +1,410 @@
+From edb8270ee1c6cfdd2b189f08b17be27bebb5ba47 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Tue, 3 May 2022 00:03:18 +0800
+Subject: [PATCH 24/32] wolfSSL - new TLS backend patch
+
+https://lists.ffmpeg.org/pipermail/ffmpeg-devel/2018-August/233802.html
+---
+ configure                 |  20 ++--
+ libavformat/Makefile      |   1 +
+ libavformat/network.c     |   6 +
+ libavformat/tls.h         |   3 +
+ libavformat/tls_wolfssl.c | 245 ++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 267 insertions(+), 8 deletions(-)
+ create mode 100644 libavformat/tls_wolfssl.c
+
+diff --git a/configure b/configure
+index 7e5e54d457..23b60a2892 100755
+--- a/configure
++++ b/configure
+@@ -207,7 +207,7 @@ External library support:
+   --enable-gmp             enable gmp, needed for rtmp(t)e support
+                            if openssl or librtmp is not used [no]
+   --enable-gnutls          enable gnutls, needed for https support
+-                           if openssl, libtls or mbedtls is not used [no]
++                           if wolfssl, openssl, libtls or mbedtls is not used [no]
+   --disable-iconv          disable iconv [autodetect]
+   --enable-jni             enable JNI support [no]
+   --enable-ladspa          enable LADSPA audio filtering [no]
+@@ -280,7 +280,7 @@ External library support:
+   --enable-libtesseract    enable Tesseract, needed for ocr filter [no]
+   --enable-libtheora       enable Theora encoding via libtheora [no]
+   --enable-libtls          enable LibreSSL (via libtls), needed for https support
+-                           if openssl, gnutls or mbedtls is not used [no]
++                           if wolfssl, openssl, gnutls or mbedtls is not used [no]
+   --enable-libtorch        enable Torch as one DNN backend [no]
+   --enable-libtwolame      enable MP2 encoding via libtwolame [no]
+   --enable-libuavs3d       enable AVS3 decoding via libuavs3d [no]
+@@ -292,6 +292,8 @@ External library support:
+                            native implementation exists [no]
+   --enable-libvpx          enable VP8 and VP9 de/encoding via libvpx [no]
+   --enable-libwebp         enable WebP encoding via libwebp [no]
++  --enable-wolfssl         enable WolfSSL), needed for https support
++                           if openssl, gnutls, libtls or mbedtls is not used [no]
+   --enable-libx264         enable H.264 encoding via x264 [no]
+   --enable-libx265         enable HEVC encoding via x265 [no]
+   --enable-libxeve         enable EVC encoding via libxeve [no]
+@@ -313,7 +315,7 @@ External library support:
+   --disable-lzma           disable lzma [autodetect]
+   --enable-decklink        enable Blackmagic DeckLink I/O support [no]
+   --enable-mbedtls         enable mbedTLS, needed for https support
+-                           if openssl, gnutls or libtls is not used [no]
++                           if wolfssl, openssl, gnutls or libtls is not used [no]
+   --enable-mediacodec      enable Android MediaCodec support [no]
+   --enable-mediafoundation enable encoding via MediaFoundation [auto]
+   --disable-metal          disable Apple Metal framework [autodetect]
+@@ -322,7 +324,7 @@ External library support:
+   --enable-opencl          enable OpenCL processing [no]
+   --enable-opengl          enable OpenGL rendering [no]
+   --enable-openssl         enable openssl, needed for https support
+-                           if gnutls, libtls or mbedtls is not used [no]
++                           if wolfssl, gnutls, libtls or mbedtls is not used [no]
+   --enable-pocketsphinx    enable PocketSphinx, needed for asr filter [no]
+   --disable-sndio          disable sndio support [autodetect]
+   --disable-schannel       disable SChannel SSP, needed for TLS support on
+@@ -1983,6 +1985,7 @@ EXTERNAL_LIBRARY_LIST="
+     openssl
+     pocketsphinx
+     vapoursynth
++    wolfssl
+ "
+ 
+ HWACCEL_AUTODETECT_LIBRARY_LIST="
+@@ -3757,13 +3760,13 @@ rtmpte_protocol_suggest="zlib"
+ rtmpts_protocol_select="ffrtmphttp_protocol https_protocol"
+ rtmpts_protocol_suggest="zlib"
+ rtp_protocol_select="udp_protocol"
+-schannel_conflict="openssl gnutls libtls mbedtls"
++schannel_conflict="openssl gnutls libtls mbedtls wolfssl"
+ sctp_protocol_deps="struct_sctp_event_subscribe struct_msghdr_msg_flags"
+ sctp_protocol_select="network"
+-securetransport_conflict="openssl gnutls libtls mbedtls"
++securetransport_conflict="openssl gnutls libtls mbedtls wolfssl"
+ srtp_protocol_select="rtp_protocol srtp"
+ tcp_protocol_select="network"
+-tls_protocol_deps_any="gnutls openssl schannel securetransport libtls mbedtls"
++tls_protocol_deps_any="gnutls openssl schannel securetransport libtls mbedtls wolfssl"
+ tls_protocol_select="tcp_protocol"
+ udp_protocol_select="network"
+ udplite_protocol_select="network"
+@@ -3786,7 +3789,7 @@ libsmbclient_protocol_deps="libsmbclient gplv3"
+ libsrt_protocol_deps="libsrt"
+ libsrt_protocol_select="network"
+ libssh_protocol_deps="libssh"
+-libtls_conflict="openssl gnutls mbedtls"
++libtls_conflict="openssl gnutls mbedtls wolfssl"
+ libzmq_protocol_deps="libzmq"
+ libzmq_protocol_select="network"
+ 
+@@ -6848,6 +6851,7 @@ enabled decklink          && { require_headers DeckLinkAPI.h &&
+ enabled frei0r            && require_headers "frei0r.h"
+ enabled gmp               && require gmp gmp.h mpz_export -lgmp
+ enabled gnutls            && require_pkg_config gnutls gnutls gnutls/gnutls.h gnutls_global_init
++enabled wolfssl           && require_pkg_config wolfssl wolfssl wolfssl/ssl.h wolfSSL_library_init
+ enabled jni               && { [ $target_os = "android" ] && check_headers jni.h && enabled pthreads || die "ERROR: jni not found"; }
+ enabled ladspa            && require_headers "ladspa.h dlfcn.h"
+ enabled lcms2             && require_pkg_config lcms2 "lcms2 >= 2.13" lcms2.h cmsCreateContext
+diff --git a/libavformat/Makefile b/libavformat/Makefile
+index ae86954e7c..2aece478bd 100644
+--- a/libavformat/Makefile
++++ b/libavformat/Makefile
+@@ -702,6 +702,7 @@ TLS-OBJS-$(CONFIG_GNUTLS)                += tls_gnutls.o
+ TLS-OBJS-$(CONFIG_LIBTLS)                += tls_libtls.o
+ TLS-OBJS-$(CONFIG_MBEDTLS)               += tls_mbedtls.o
+ TLS-OBJS-$(CONFIG_OPENSSL)               += tls_openssl.o
++TLS-OBJS-$(CONFIG_WOLFSSL)               += tls_wolfssl.o
+ TLS-OBJS-$(CONFIG_SECURETRANSPORT)       += tls_securetransport.o
+ TLS-OBJS-$(CONFIG_SCHANNEL)              += tls_schannel.o
+ OBJS-$(CONFIG_TLS_PROTOCOL)              += tls.o $(TLS-OBJS-yes)
+diff --git a/libavformat/network.c b/libavformat/network.c
+index f752efc411..cc1de280aa 100644
+--- a/libavformat/network.c
++++ b/libavformat/network.c
+@@ -39,6 +39,9 @@ int ff_tls_init(void)
+ #if CONFIG_GNUTLS
+     ff_gnutls_init();
+ #endif
++#if CONFIG_WOLFSSL
++    ff_wolfssl_init();
++#endif
+ #endif
+     return 0;
+ }
+@@ -52,6 +55,9 @@ void ff_tls_deinit(void)
+ #if CONFIG_GNUTLS
+     ff_gnutls_deinit();
+ #endif
++#if CONFIG_WOLFSSL
++    ff_wolfssl_deinit();
++#endif
+ #endif
+ }
+ 
+diff --git a/libavformat/tls.h b/libavformat/tls.h
+index 6c6aa01a9a..0cfad1c82b 100644
+--- a/libavformat/tls.h
++++ b/libavformat/tls.h
+@@ -55,6 +55,9 @@ typedef struct TLSShared {
+ 
+ int ff_tls_open_underlying(TLSShared *c, URLContext *parent, const char *uri, AVDictionary **options);
+ 
++void ff_wolfssl_init(void);
++void ff_wolfssl_deinit(void);
++
+ void ff_gnutls_init(void);
+ void ff_gnutls_deinit(void);
+ 
+diff --git a/libavformat/tls_wolfssl.c b/libavformat/tls_wolfssl.c
+new file mode 100644
+index 0000000000..23255c0f1b
+--- /dev/null
++++ b/libavformat/tls_wolfssl.c
+@@ -0,0 +1,245 @@
++/*
++ * TLS/SSL Protocol
++ * Copyright (c) 2011 Martin Storsjo
++ * Copyright (c) 2018 samsamsam@o2.pl
++ *
++ * This file is part of FFmpeg.
++ *
++ * FFmpeg is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * FFmpeg is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with FFmpeg; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++ */
++
++#include <errno.h>
++
++#include "avformat.h"
++#include "network.h"
++#include "os_support.h"
++#include "url.h"
++#include "tls.h"
++#include "libavutil/thread.h"
++
++
++#include <wolfssl/options.h>
++#include <wolfssl/ssl.h>
++
++typedef struct TLSContext {
++    const AVClass *class;
++    TLSShared tls_shared;
++    WOLFSSL_CTX *ctx;
++    WOLFSSL *ssl;
++} TLSContext;
++
++static AVMutex wolfssl_mutex = AV_MUTEX_INITIALIZER;
++static int wolfssl_init;
++
++void ff_wolfssl_init(void)
++{
++
++    ff_mutex_lock(&wolfssl_mutex);
++    if (!wolfssl_init) {
++        wolfSSL_Init();
++    }
++    wolfssl_init++;
++    ff_mutex_unlock(&wolfssl_mutex);
++}
++
++void ff_wolfssl_deinit(void)
++{
++    ff_mutex_lock(&wolfssl_mutex);
++    wolfssl_init--;
++    if (!wolfssl_init) {
++        wolfSSL_Cleanup();
++    }
++    ff_mutex_unlock(&wolfssl_mutex);
++}
++
++static int print_tls_error(URLContext *h, int ret, WOLFSSL *ssl)
++{
++    char error_buffer[WOLFSSL_MAX_ERROR_SZ];
++    av_log(h, AV_LOG_ERROR, "%i -> %s\n", wolfSSL_get_error(ssl,0), wolfSSL_ERR_error_string(wolfSSL_get_error(ssl,0), error_buffer));
++    return AVERROR(EIO);
++}
++
++static int tls_close(URLContext *h)
++{
++    TLSContext *c = h->priv_data;
++    if (c->ssl) {
++        wolfSSL_shutdown(c->ssl);
++        wolfSSL_free(c->ssl);
++    }
++    if (c->ctx)
++        wolfSSL_CTX_free(c->ctx);
++    if (c->tls_shared.tcp)
++        ffurl_close(c->tls_shared.tcp);
++    //ff_wolfssl_deinit();
++    return 0;
++}
++
++static int wolfssl_recv_callback(WOLFSSL* ssl, char* buf, int sz, void* ctx)
++{
++    URLContext *h = (URLContext*) ctx;
++    int ret = ffurl_read(h, buf, sz);
++    if (ret >= 0)
++        return ret;
++    if (ret == AVERROR_EXIT)
++        return WOLFSSL_CBIO_ERR_GENERAL;
++    errno = EIO;
++    return WOLFSSL_CBIO_ERR_GENERAL;
++}
++
++static int wolfssl_send_callback(WOLFSSL* ssl, char* buf, int sz, void* ctx)
++{
++    URLContext *h = (URLContext*) ctx;
++    int ret = ffurl_write(h, buf, sz);
++    if (ret >= 0)
++        return ret;
++    if (ret == AVERROR_EXIT)
++        return WOLFSSL_CBIO_ERR_GENERAL;
++    errno = EIO;
++    return WOLFSSL_CBIO_ERR_GENERAL;
++}
++
++static int tls_open(URLContext *h, const char *uri, int flags, AVDictionary **options)
++{
++    char error_buffer[WOLFSSL_MAX_ERROR_SZ];
++    TLSContext *p = h->priv_data;
++    TLSShared *c = &p->tls_shared;
++    int ret;
++
++    //ff_wolfssl_init();
++
++    if ((ret = ff_tls_open_underlying(c, h, uri, options)) < 0)
++        goto fail;
++     // Modified to compile with minimal wolfSSL library which only has client methods
++     //p->ctx = wolfSSL_CTX_new(c->listen ? wolfSSLv23_server_method() : wolfSSLv23_client_method()); // wolfTLSv1_1_client_method
++     p->ctx = wolfSSL_CTX_new(wolfSSLv23_client_method());
++#ifndef NO_FILESYSTEM
++    if (!p->ctx) {
++      av_log(h, AV_LOG_ERROR, "%s\n", wolfSSL_ERR_error_string(wolfSSL_get_error(p->ssl,0), error_buffer));
++        ret = AVERROR(EIO);
++        goto fail;
++    }
++    if (c->ca_file) {
++        if (!wolfSSL_CTX_load_verify_locations(p->ctx, c->ca_file, NULL))
++	  av_log(h, AV_LOG_ERROR, "wolfSSL_CTX_load_verify_locations %s\n", wolfSSL_ERR_error_string(wolfSSL_get_error(p->ssl,0), error_buffer));
++    }
++    if (c->cert_file && !wolfSSL_CTX_use_certificate_chain_file(p->ctx, c->cert_file)) {
++        av_log(h, AV_LOG_ERROR, "Unable to load cert file %s: %s\n",
++               c->cert_file, wolfSSL_ERR_error_string(wolfSSL_get_error(p->ssl,0), error_buffer));
++        ret = AVERROR(EIO);
++        goto fail;
++    }
++    if (c->key_file && !wolfSSL_CTX_use_PrivateKey_file(p->ctx, c->key_file, WOLFSSL_FILETYPE_PEM)) {
++        av_log(h, AV_LOG_ERROR, "Unable to load key file %s: %s\n",
++               c->key_file, wolfSSL_ERR_error_string(wolfSSL_get_error(p->ssl,0), error_buffer));
++        ret = AVERROR(EIO);
++        goto fail;
++    }
++#endif
++
++    wolfSSL_CTX_set_verify(p->ctx,
++                           c->verify ? WOLFSSL_VERIFY_PEER | WOLFSSL_VERIFY_FAIL_IF_NO_PEER_CERT :
++                                       WOLFSSL_VERIFY_NONE,
++                           NULL);
++
++#ifdef HAVE_SNI
++    if (!c->listen && !c->numerichost && !wolfSSL_CTX_UseSNI(p->ctx, WOLFSSL_SNI_HOST_NAME, c->host,
++                          (unsigned short)strlen(c->host))) {
++        av_log(h, AV_LOG_ERROR, "failed to configure server name indication (SNI) %s: %d -> %s\n",
++	       c->host, wolfSSL_get_error(p->ssl,0), wolfSSL_ERR_error_string(wolfSSL_get_error(p->ssl,0), error_buffer));
++    }
++#endif
++
++    wolfSSL_CTX_SetIORecv(p->ctx, wolfssl_recv_callback);
++    wolfSSL_CTX_SetIOSend(p->ctx, wolfssl_send_callback);
++
++    p->ssl = wolfSSL_new(p->ctx);
++    if (!p->ssl) {
++      av_log(h, AV_LOG_ERROR, "%s\n", wolfSSL_ERR_error_string(wolfSSL_get_error(p->ssl,0), error_buffer));
++        ret = AVERROR(EIO);
++        goto fail;
++    }
++
++    wolfSSL_SetIOReadCtx(p->ssl, c->tcp);
++    wolfSSL_SetIOWriteCtx(p->ssl, c->tcp);
++
++    // Modified to compile with minimal wolfSSL library which only has client methods
++    //ret = c->listen ? wolfSSL_accept(p->ssl) : wolfSSL_connect(p->ssl);
++    ret = wolfSSL_connect(p->ssl);
++    if (ret == 0) {
++        av_log(h, AV_LOG_ERROR, "Unable to negotiate TLS/SSL session\n");
++        ret = AVERROR(EIO);
++        goto fail;
++    } else if (ret < 0) {
++        ret = print_tls_error(h, ret, p->ssl);
++        goto fail;
++    }
++
++    return 0;
++fail:
++    tls_close(h);
++    return ret;
++}
++
++static int tls_read(URLContext *h, uint8_t *buf, int size)
++{
++    TLSContext *c = h->priv_data;
++    int ret = wolfSSL_read(c->ssl, buf, size);
++    if (ret > 0)
++        return ret;
++    if (ret == 0)
++        return AVERROR_EOF;
++    return print_tls_error(h, ret, c->ssl);
++}
++
++static int tls_write(URLContext *h, const uint8_t *buf, int size)
++{
++    TLSContext *c = h->priv_data;
++    int ret = wolfSSL_write(c->ssl, buf, size);
++    if (ret > 0)
++        return ret;
++    if (ret == 0)
++        return AVERROR_EOF;
++    return print_tls_error(h, ret, c->ssl);
++}
++
++static int tls_get_file_handle(URLContext *h)
++{
++    TLSContext *c = h->priv_data;
++    return ffurl_get_file_handle(c->tls_shared.tcp);
++}
++
++static const AVOption options[] = {
++    TLS_COMMON_OPTIONS(TLSContext, tls_shared),
++    { NULL }
++};
++
++static const AVClass tls_class = {
++    .class_name = "tls",
++    .item_name  = av_default_item_name,
++    .option     = options,
++    .version    = LIBAVUTIL_VERSION_INT,
++};
++
++const URLProtocol ff_tls_protocol = {
++    .name           = "tls",
++    .url_open2      = tls_open,
++    .url_read       = tls_read,
++    .url_write      = tls_write,
++    .url_close      = tls_close,
++    .url_get_file_handle = tls_get_file_handle,
++    .priv_data_size = sizeof(TLSContext),
++    .flags          = URL_PROTOCOL_FLAG_NETWORK,
++    .priv_data_class = &tls_class,
++};
+-- 
+2.39.5 (Apple Git-154)
+

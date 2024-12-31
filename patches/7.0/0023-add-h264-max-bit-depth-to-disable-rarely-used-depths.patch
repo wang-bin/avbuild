@@ -1,0 +1,379 @@
+From a22de2bf696cf020099d0b3cccec38484f52b538 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Fri, 1 Jul 2022 16:03:06 +0800
+Subject: [PATCH 23/32] add h264-max-bit-depth to disable rarely used depths
+
+---
+ configure                            |  6 ++++++
+ libavcodec/h264chroma.c              |  4 ++++
+ libavcodec/h264dsp.c                 | 20 ++++++++++++++++++++
+ libavcodec/h264idct.c                |  8 ++++++++
+ libavcodec/h264pred.c                | 16 ++++++++++++++++
+ libavcodec/h264qpel.c                | 17 +++++++++++++++++
+ libavcodec/x86/h264_intrapred_init.c |  2 ++
+ libavcodec/x86/h264chroma_init.c     |  3 ++-
+ libavcodec/x86/h264dsp_init.c        |  2 ++
+ 9 files changed, 77 insertions(+), 1 deletion(-)
+
+diff --git a/configure b/configure
+index 87a2d61206..7e5e54d457 100755
+--- a/configure
++++ b/configure
+@@ -433,6 +433,7 @@ Advanced options (experts only):
+                            disable buffer boundary checking in bitreaders
+                            (faster, but may crash)
+   --sws-max-filter-size=N  the max filter size swscale uses [$sws_max_filter_size_default]
++  --h264-max-bit-depth=N   the max h264 decoding bit depth [$h264_max_bit_depth_default]
+ 
+ Optimization options (experts only):
+   --disable-asm            disable all assembly optimizations
+@@ -2684,6 +2685,7 @@ CMDLINE_SET="
+     env
+     extra_version
+     gas
++    h264_max_bit_depth
+     host_cc
+     host_cflags
+     host_extralibs
+@@ -4101,6 +4103,9 @@ enable valgrind_backtrace
+ sws_max_filter_size_default=256
+ set_default sws_max_filter_size
+ 
++h264_max_bit_depth_default=10
++set_default h264_max_bit_depth
++
+ # internal components are enabled by default
+ enable $EXTRALIBS_LIST
+ 
+@@ -8184,6 +8189,7 @@ cat > $TMPH <<EOF
+ #define BUILDSUF "$build_suffix"
+ #define SLIBSUF "$SLIBSUF"
+ #define SWS_MAX_FILTER_SIZE $sws_max_filter_size
++#define H264_MAX_BIT_DEPTH $h264_max_bit_depth
+ EOF
+ 
+ test -n "$assert_level" &&
+diff --git a/libavcodec/h264chroma.c b/libavcodec/h264chroma.c
+index 1eeab7bc40..ccf679ef25 100644
+--- a/libavcodec/h264chroma.c
++++ b/libavcodec/h264chroma.c
+@@ -24,9 +24,11 @@
+ #include "h264chroma_template.c"
+ #undef BIT_DEPTH
+ 
++#if H264_MAX_BIT_DEPTH > 8
+ #define BIT_DEPTH 16
+ #include "h264chroma_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
+ #define SET_CHROMA(depth)                                                   \
+     c->put_h264_chroma_pixels_tab[0] = put_h264_chroma_mc8_ ## depth ## _c; \
+@@ -41,7 +43,9 @@
+ av_cold void ff_h264chroma_init(H264ChromaContext *c, int bit_depth)
+ {
+     if (bit_depth > 8 && bit_depth <= 16) {
++#if H264_MAX_BIT_DEPTH > 8
+         SET_CHROMA(16);
++#endif
+     } else {
+         SET_CHROMA(8);
+     }
+diff --git a/libavcodec/h264dsp.c b/libavcodec/h264dsp.c
+index 4d2ee10bab..86f2ace1ac 100644
+--- a/libavcodec/h264dsp.c
++++ b/libavcodec/h264dsp.c
+@@ -39,29 +39,39 @@
+ #include "h264dsp_template.c"
+ #undef BIT_DEPTH
+ 
++#if H264_MAX_BIT_DEPTH >= 9
+ #define BIT_DEPTH 9
+ #include "h264dsp_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
++#if H264_MAX_BIT_DEPTH >= 10
+ #define BIT_DEPTH 10
+ #include "h264dsp_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
++#if H264_MAX_BIT_DEPTH >= 12
+ #define BIT_DEPTH 12
+ #include "h264dsp_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
++#if H264_MAX_BIT_DEPTH >= 14
+ #define BIT_DEPTH 14
+ #include "h264dsp_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
+ #define BIT_DEPTH 8
+ #include "h264addpx_template.c"
+ #undef BIT_DEPTH
+ 
++#if H264_MAX_BIT_DEPTH > 8
+ #define BIT_DEPTH 16
+ #include "h264addpx_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
+ av_cold void ff_h264dsp_init(H264DSPContext *c, const int bit_depth,
+                              const int chroma_format_idc)
+@@ -74,7 +84,9 @@ av_cold void ff_h264dsp_init(H264DSPContext *c, const int bit_depth,
+     c->h264_add_pixels8_clear = FUNC(ff_h264_add_pixels8, depth)
+ 
+     if (bit_depth > 8 && bit_depth <= 16) {
++#if (H264_MAX_BIT_DEPTH > 8)
+         ADDPX_DSP(16);
++#endif
+     } else {
+         ADDPX_DSP(8);
+     }
+@@ -133,18 +145,26 @@ av_cold void ff_h264dsp_init(H264DSPContext *c, const int bit_depth,
+     c->h264_loop_filter_strength= NULL;
+ 
+     switch (bit_depth) {
++#if H264_MAX_BIT_DEPTH >= 9
+     case 9:
+         H264_DSP(9);
+         break;
++#endif
++#if H264_MAX_BIT_DEPTH >= 10
+     case 10:
+         H264_DSP(10);
+         break;
++#endif
++#if H264_MAX_BIT_DEPTH >= 12
+     case 12:
+         H264_DSP(12);
+         break;
++#endif
++#if H264_MAX_BIT_DEPTH >= 14
+     case 14:
+         H264_DSP(14);
+         break;
++#endif
+     default:
+         av_assert0(bit_depth<=8);
+         H264_DSP(8);
+diff --git a/libavcodec/h264idct.c b/libavcodec/h264idct.c
+index 6a771affe1..e871496ea4 100644
+--- a/libavcodec/h264idct.c
++++ b/libavcodec/h264idct.c
+@@ -31,18 +31,26 @@
+ #include "h264idct_template.c"
+ #undef BIT_DEPTH
+ 
++#if H264_MAX_BIT_DEPTH >= 9
+ #define BIT_DEPTH 9
+ #include "h264idct_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
++#if H264_MAX_BIT_DEPTH >= 10
+ #define BIT_DEPTH 10
+ #include "h264idct_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
++#if H264_MAX_BIT_DEPTH >= 12
+ #define BIT_DEPTH 12
+ #include "h264idct_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
++#if H264_MAX_BIT_DEPTH >= 14
+ #define BIT_DEPTH 14
+ #include "h264idct_template.c"
+ #undef BIT_DEPTH
++#endif
+diff --git a/libavcodec/h264pred.c b/libavcodec/h264pred.c
+index 25f9995a0b..33c5cf8a88 100644
+--- a/libavcodec/h264pred.c
++++ b/libavcodec/h264pred.c
+@@ -37,21 +37,29 @@
+ #include "h264pred_template.c"
+ #undef BIT_DEPTH
+ 
++#if H264_MAX_BIT_DEPTH >= 9
+ #define BIT_DEPTH 9
+ #include "h264pred_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
++#if H264_MAX_BIT_DEPTH >= 10
+ #define BIT_DEPTH 10
+ #include "h264pred_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
++#if H264_MAX_BIT_DEPTH >= 12
+ #define BIT_DEPTH 12
+ #include "h264pred_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
++#if H264_MAX_BIT_DEPTH >= 14
+ #define BIT_DEPTH 14
+ #include "h264pred_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
+ static void pred4x4_127_dc_c(uint8_t *src, const uint8_t *topright,
+                              ptrdiff_t _stride)
+@@ -538,18 +546,26 @@ av_cold void ff_h264_pred_init(H264PredContext *h, int codec_id,
+     h->pred16x16_add[ HOR_PRED8x8]= FUNCC(pred16x16_horizontal_add        , depth);\
+ 
+     switch (bit_depth) {
++#if H264_MAX_BIT_DEPTH >= 9
+         case 9:
+             H264_PRED(9)
+             break;
++#endif
++#if H264_MAX_BIT_DEPTH >= 10
+         case 10:
+             H264_PRED(10)
+             break;
++#endif
++#if H264_MAX_BIT_DEPTH >= 12
+         case 12:
+             H264_PRED(12)
+             break;
++#endif
++#if H264_MAX_BIT_DEPTH >= 14
+         case 14:
+             H264_PRED(14)
+             break;
++#endif
+         default:
+             av_assert0(bit_depth<=8);
+             H264_PRED(8)
+diff --git a/libavcodec/h264qpel.c b/libavcodec/h264qpel.c
+index 65fef03304..5a91b695b1 100644
+--- a/libavcodec/h264qpel.c
++++ b/libavcodec/h264qpel.c
+@@ -27,23 +27,32 @@
+ #include "h264qpel_template.c"
+ #undef BIT_DEPTH
+ 
++#if H264_MAX_BIT_DEPTH >= 9
+ #define BIT_DEPTH 9
+ #include "h264qpel_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
++#if H264_MAX_BIT_DEPTH >= 10
+ #define BIT_DEPTH 10
+ #include "h264qpel_template.c"
+ #undef BIT_DEPTH
++#endif
++
+ #undef pixeltmp
+ 
+ #define pixeltmp int32_t
++#if H264_MAX_BIT_DEPTH >= 12
+ #define BIT_DEPTH 12
+ #include "h264qpel_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
++#if H264_MAX_BIT_DEPTH >= 14
+ #define BIT_DEPTH 14
+ #include "h264qpel_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
+ 
+ av_cold void ff_h264qpel_init(H264QpelContext *c, int bit_depth)
+@@ -82,18 +91,26 @@ av_cold void ff_h264qpel_init(H264QpelContext *c, int bit_depth)
+     default:
+         SET_QPEL(8);
+         break;
++#if H264_MAX_BIT_DEPTH >= 9
+     case 9:
+         SET_QPEL(9);
+         break;
++#endif
++#if H264_MAX_BIT_DEPTH >= 10
+     case 10:
+         SET_QPEL(10);
+         break;
++#endif
++#if H264_MAX_BIT_DEPTH >= 12
+     case 12:
+         SET_QPEL(12);
+         break;
++#endif
++#if H264_MAX_BIT_DEPTH >= 14
+     case 14:
+         SET_QPEL(14);
+         break;
++#endif
+     }
+ 
+ #if ARCH_AARCH64
+diff --git a/libavcodec/x86/h264_intrapred_init.c b/libavcodec/x86/h264_intrapred_init.c
+index aa9bc721f0..0de899ca4b 100644
+--- a/libavcodec/x86/h264_intrapred_init.c
++++ b/libavcodec/x86/h264_intrapred_init.c
+@@ -265,6 +265,7 @@ av_cold void ff_h264_pred_init_x86(H264PredContext *h, int codec_id,
+             }
+         }
+     } else if (bit_depth == 10) {
++#if H264_MAX_BIT_DEPTH >= 10
+         if (EXTERNAL_MMXEXT(cpu_flags)) {
+             h->pred4x4[DC_PRED             ] = ff_pred4x4_dc_10_mmxext;
+             h->pred4x4[HOR_UP_PRED         ] = ff_pred4x4_horizontal_up_10_mmxext;
+@@ -328,5 +329,6 @@ av_cold void ff_h264_pred_init_x86(H264PredContext *h, int codec_id,
+             h->pred8x8l[VERT_RIGHT_PRED     ] = ff_pred8x8l_vertical_right_10_avx;
+             h->pred8x8l[HOR_UP_PRED         ] = ff_pred8x8l_horizontal_up_10_avx;
+         }
++#endif /* H264_MAX_BIT_DEPTH >= 10 */
+     }
+ }
+diff --git a/libavcodec/x86/h264chroma_init.c b/libavcodec/x86/h264chroma_init.c
+index 34934b6ad0..c0d6e13886 100644
+--- a/libavcodec/x86/h264chroma_init.c
++++ b/libavcodec/x86/h264chroma_init.c
+@@ -79,7 +79,7 @@ av_cold void ff_h264chroma_init_x86(H264ChromaContext *c, int bit_depth)
+         c->avg_h264_chroma_pixels_tab[2] = ff_avg_h264_chroma_mc2_mmxext;
+         c->put_h264_chroma_pixels_tab[2] = ff_put_h264_chroma_mc2_mmxext;
+     }
+-
++#if H264_MAX_BIT_DEPTH > 8
+     if (EXTERNAL_MMXEXT(cpu_flags) && bit_depth > 8 && bit_depth <= 10) {
+         c->put_h264_chroma_pixels_tab[2] = ff_put_h264_chroma_mc2_10_mmxext;
+         c->avg_h264_chroma_pixels_tab[2] = ff_avg_h264_chroma_mc2_10_mmxext;
+@@ -105,4 +105,5 @@ av_cold void ff_h264chroma_init_x86(H264ChromaContext *c, int bit_depth)
+         c->put_h264_chroma_pixels_tab[0] = ff_put_h264_chroma_mc8_10_avx;
+         c->avg_h264_chroma_pixels_tab[0] = ff_avg_h264_chroma_mc8_10_avx;
+     }
++#endif /* H264_MAX_BIT_DEPTH > 8 */
+ }
+diff --git a/libavcodec/x86/h264dsp_init.c b/libavcodec/x86/h264dsp_init.c
+index dc8fc4f720..39999bd2d2 100644
+--- a/libavcodec/x86/h264dsp_init.c
++++ b/libavcodec/x86/h264dsp_init.c
+@@ -275,6 +275,7 @@ av_cold void ff_h264dsp_init_x86(H264DSPContext *c, const int bit_depth,
+             c->h264_idct_dc_add     = ff_h264_idct_dc_add_8_avx;
+         }
+     } else if (bit_depth == 10) {
++#if H264_MAX_BIT_DEPTH >= 10
+         if (EXTERNAL_MMXEXT(cpu_flags)) {
+ #if ARCH_X86_32 && !HAVE_ALIGNED_STACK
+             c->h264_v_loop_filter_luma         = ff_deblock_v_luma_10_mmxext;
+@@ -362,6 +363,7 @@ av_cold void ff_h264dsp_init_x86(H264DSPContext *c, const int bit_depth,
+             c->h264_h_loop_filter_luma_intra   = ff_deblock_h_luma_intra_10_avx;
+ #endif /* HAVE_ALIGNED_STACK */
+         }
++#endif /* H264_MAX_BIT_DEPTH >= 10 */
+     }
+ #endif
+ }
+-- 
+2.39.5 (Apple Git-154)
+

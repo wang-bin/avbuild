@@ -1,7 +1,7 @@
-From 476fb02d88e8d86c1883f81b40d5d9ba57f95487 Mon Sep 17 00:00:00 2001
+From 4505760e37550c826d8790252e231737e6cbfa9b Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 15 Oct 2024 17:07:02 +0800
-Subject: [PATCH 31/31] hevc: disable Unknown profile bitstream warning for
+Subject: [PATCH 31/33] hevc: disable Unknown profile bitstream warning for
  small configuration
 
 ---
@@ -9,7 +9,7 @@ Subject: [PATCH 31/31] hevc: disable Unknown profile bitstream warning for
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/libavcodec/hevc/ps.c b/libavcodec/hevc/ps.c
-index a1d352eec5..0efb4bc393 100644
+index 285084685b..e1f54f3c74 100644
 --- a/libavcodec/hevc/ps.c
 +++ b/libavcodec/hevc/ps.c
 @@ -254,9 +254,9 @@ static int decode_profile_tier_level(GetBitContext *gb, AVCodecContext *avctx,

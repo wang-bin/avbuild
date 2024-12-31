@@ -1,0 +1,112 @@
+From a8c70b6f2e066b8dbed99bf42fb21b2e3e8de9d0 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Mon, 27 Sep 2021 17:35:17 +0800
+Subject: [PATCH 18/32] flv: support hevc, opus
+
+---
+ libavformat/flv.h    |  2 ++
+ libavformat/flvdec.c | 17 ++++++++++++++++-
+ libavformat/flvenc.c |  4 ++++
+ 3 files changed, 22 insertions(+), 1 deletion(-)
+
+diff --git a/libavformat/flv.h b/libavformat/flv.h
+index f710963b92..8e72d62a5f 100644
+--- a/libavformat/flv.h
++++ b/libavformat/flv.h
+@@ -105,6 +105,7 @@ enum {
+     FLV_CODECID_PCM_MULAW            = 8 << FLV_AUDIO_CODECID_OFFSET,
+     FLV_CODECID_AAC                  = 10<< FLV_AUDIO_CODECID_OFFSET,
+     FLV_CODECID_SPEEX                = 11<< FLV_AUDIO_CODECID_OFFSET,
++    FLV_CODECID_OPUS                 = 13<< FLV_AUDIO_CODECID_OFFSET,
+ };
+ 
+ enum {
+@@ -116,6 +117,7 @@ enum {
+     FLV_CODECID_H264    = 7,
+     FLV_CODECID_REALH263= 8,
+     FLV_CODECID_MPEG4   = 9,
++    FLV_CODECID_HEVC    = 12,
+ };
+ 
+ enum {
+diff --git a/libavformat/flvdec.c b/libavformat/flvdec.c
+index 892371fcd0..df969ea3f4 100644
+--- a/libavformat/flvdec.c
++++ b/libavformat/flvdec.c
+@@ -263,6 +263,10 @@ static int flv_same_audio_codec(AVCodecParameters *apar, int flags)
+     case FLV_CODECID_PCM_ALAW:
+         return apar->sample_rate == 8000 &&
+                apar->codec_id    == AV_CODEC_ID_PCM_ALAW;
++    case FLV_CODECID_OPUS:
++        return apar->sample_rate == 48000 &&
++               apar->bits_per_coded_sample == 16 &&
++               apar->codec_id    == AV_CODEC_ID_OPUS;
+     default:
+         return apar->codec_tag == (flv_codecid >> FLV_AUDIO_CODECID_OFFSET);
+     }
+@@ -321,6 +325,11 @@ static void flv_set_audio_codec(AVFormatContext *s, AVStream *astream,
+         apar->sample_rate = 8000;
+         apar->codec_id    = AV_CODEC_ID_PCM_ALAW;
+         break;
++    case FLV_CODECID_OPUS:
++        apar->sample_rate = 48000;
++        apar->bits_per_coded_sample = 16;
++        apar->codec_id    = AV_CODEC_ID_OPUS;
++        break;
+     default:
+         avpriv_request_sample(s, "Audio codec (%x)",
+                flv_codecid >> FLV_AUDIO_CODECID_OFFSET);
+@@ -352,6 +361,8 @@ static int flv_same_video_codec(AVCodecParameters *vpar, uint32_t flv_codecid)
+         return vpar->codec_id == AV_CODEC_ID_VP6A;
+     case FLV_CODECID_H264:
+         return vpar->codec_id == AV_CODEC_ID_H264;
++    case FLV_CODECID_HEVC:
++        return vpar->codec_id == AV_CODEC_ID_HEVC;
+     default:
+         return vpar->codec_tag == flv_codecid;
+     }
+@@ -413,6 +424,10 @@ static int flv_set_video_codec(AVFormatContext *s, AVStream *vstream,
+     case FLV_CODECID_MPEG4:
+         par->codec_id = AV_CODEC_ID_MPEG4;
+         break;
++    case FLV_CODECID_HEVC:
++        par->codec_id = AV_CODEC_ID_HEVC;
++        vstreami->need_parsing = AVSTREAM_PARSE_NONE;
++        break;
+     default:
+         avpriv_request_sample(s, "Video codec (%x)", flv_codecid);
+         par->codec_tag = flv_codecid;
+@@ -1463,7 +1478,7 @@ retry_duration:
+         }
+ 
+         if (st->codecpar->codec_id == AV_CODEC_ID_H264 || st->codecpar->codec_id == AV_CODEC_ID_MPEG4 ||
+-            (st->codecpar->codec_id == AV_CODEC_ID_HEVC && type == PacketTypeCodedFrames)) {
++            (st->codecpar->codec_id == AV_CODEC_ID_HEVC && (!enhanced_flv || type == PacketTypeCodedFrames))) {
+             // sign extension
+             int32_t cts = (avio_rb24(s->pb) + 0xff800000) ^ 0xff800000;
+             pts = av_sat_add64(dts, cts);
+diff --git a/libavformat/flvenc.c b/libavformat/flvenc.c
+index a7d4fa46a2..c0087457f4 100644
+--- a/libavformat/flvenc.c
++++ b/libavformat/flvenc.c
+@@ -67,6 +67,7 @@ static const AVCodecTag flv_audio_codec_ids[] = {
+     { AV_CODEC_ID_PCM_MULAW,  FLV_CODECID_PCM_MULAW  >> FLV_AUDIO_CODECID_OFFSET },
+     { AV_CODEC_ID_PCM_ALAW,   FLV_CODECID_PCM_ALAW   >> FLV_AUDIO_CODECID_OFFSET },
+     { AV_CODEC_ID_SPEEX,      FLV_CODECID_SPEEX      >> FLV_AUDIO_CODECID_OFFSET },
++    { AV_CODEC_ID_OPUS,       FLV_CODECID_OPUS       >> FLV_AUDIO_CODECID_OFFSET },
+     { AV_CODEC_ID_NONE,       0 }
+ };
+ 
+@@ -136,6 +137,9 @@ static int get_audio_flags(AVFormatContext *s, AVCodecParameters *par)
+     if (par->codec_id == AV_CODEC_ID_AAC) // specs force these parameters
+         return FLV_CODECID_AAC | FLV_SAMPLERATE_44100HZ |
+                FLV_SAMPLESSIZE_16BIT | FLV_STEREO;
++    else if (par->codec_id == AV_CODEC_ID_OPUS) // specs force these parameters
++        return FLV_CODECID_OPUS | FLV_SAMPLERATE_44100HZ |
++               FLV_SAMPLESSIZE_16BIT | FLV_STEREO;
+     else if (par->codec_id == AV_CODEC_ID_SPEEX) {
+         if (par->sample_rate != 16000) {
+             av_log(s, AV_LOG_ERROR,
+-- 
+2.39.5 (Apple Git-154)
+

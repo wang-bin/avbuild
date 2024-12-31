@@ -1,7 +1,7 @@
-From 90ec04079e71ad2a8bc3358c6ecf566c5f54b6fa Mon Sep 17 00:00:00 2001
+From 07124043d934c31e1f67097a2aa86aa8bd9d32ba Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 15 Dec 2017 11:34:06 +0800
-Subject: [PATCH 11/29] videotoolbox: remove opengl compatibility attribute
+Subject: [PATCH 11/33] videotoolbox: remove opengl compatibility attribute
 
 1. a cvpixelbuffer backed by iosurface can always be converted to an opengl texture, using CGLTexImageIOSurface2D for macOS, and undocumented api texImageIOSurface(which is internally used by public api CVOpenGLESTextureCacheCreateTextureFromImage) for iOS4.0+.
 2. enabling the attribute can slow down decoding speed a lot. I tested many video clips on my macbook air. for example: ffmpeg -ss 00:00:00 -t 00:03:00 -hwaccel videotoolbox -an -i big_buck_bunny_1080p_h264.mov -f null ->/dev/null, result with the attribute
@@ -12,10 +12,10 @@ disabled: frame= 2031 fps=104 q=-0.0 Lsize=N/A time=00:03:00.00 bitrate=N/A spee
  1 file changed, 5 deletions(-)
 
 diff --git a/libavcodec/videotoolbox.c b/libavcodec/videotoolbox.c
-index 69de24436d..059ed66554 100644
+index 5f4fa4ab6c..5fb796fc19 100644
 --- a/libavcodec/videotoolbox.c
 +++ b/libavcodec/videotoolbox.c
-@@ -793,11 +793,6 @@ static CFDictionaryRef videotoolbox_buffer_attributes_create(int width,
+@@ -817,11 +817,6 @@ static CFDictionaryRef videotoolbox_buffer_attributes_create(int width,
      CFDictionarySetValue(buffer_attributes, kCVPixelBufferIOSurfacePropertiesKey, io_surface_properties);
      CFDictionarySetValue(buffer_attributes, kCVPixelBufferWidthKey, w);
      CFDictionarySetValue(buffer_attributes, kCVPixelBufferHeightKey, h);
@@ -28,5 +28,5 @@ index 69de24436d..059ed66554 100644
      CFRelease(io_surface_properties);
      CFRelease(cv_pix_fmt);
 -- 
-2.39.3 (Apple Git-146)
+2.39.5 (Apple Git-154)
 

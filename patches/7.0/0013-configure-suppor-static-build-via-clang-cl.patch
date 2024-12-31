@@ -1,0 +1,33 @@
+From ee984939c87530be374a8fa34e3cebc0de8e7925 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Sun, 14 Apr 2019 11:42:42 +0800
+Subject: [PATCH 13/32] configure: suppor static build via clang-cl
+
+---
+ configure | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/configure b/configure
+index babad3c6dd..4a2c2398ed 100755
+--- a/configure
++++ b/configure
+@@ -5851,7 +5851,15 @@ case $target_os in
+         SLIB_INSTALL_EXTRA_LIB='$(SLIBNAME_WITH_MAJOR:$(SLIBSUF)=.def)'
+         SHFLAGS='-dll -def:$$(@:$(SLIBSUF)=.def) -implib:$(SUBDIR)$(SLIBNAME:$(SLIBSUF)=.lib)'
+         enabled x86_64 && objformat="win64" || objformat="win32"
+-        ranlib=:
++        # ranlib is required by llvm toolchain, clang-cl is detected as msvc
++        [ "$toolchain" = msvc ] && {
++          ranlib=:
++        } || {
++          LIBPREF= # patch win clang static lib
++          LIBSUF=.lib
++          LD_LIB='%.lib'
++          SLIB_CREATE_DEF_CMD='EXTERN_PREFIX="$(EXTERN_PREFIX)" AR="$(AR_CMD)" NM="$(NM_CMD)" $(SRC_PATH)/compat/windows/makedef $(SUBDIR)lib$(NAME).ver $(OBJS) > $$(@:$(SLIBSUF)=.def)'
++        }
+         enable dos_paths
+         ;;
+     cygwin*)
+-- 
+2.39.5 (Apple Git-154)
+

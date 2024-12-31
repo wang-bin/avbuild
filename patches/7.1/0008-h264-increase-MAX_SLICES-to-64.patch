@@ -1,0 +1,27 @@
+From b98d8688225b36301085559693d9281e587e9b1b Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Mon, 13 Nov 2017 12:23:10 +0800
+Subject: [PATCH 08/34] h264: increase MAX_SLICES to 64
+
+lavfilters is 256. 64 can fix corrupt decoded frames
+https://github.com/wang-bin/QtAV/issues/923
+---
+ libavcodec/h264dec.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libavcodec/h264dec.h b/libavcodec/h264dec.h
+index ccd7583bf4..a68f3fe151 100644
+--- a/libavcodec/h264dec.h
++++ b/libavcodec/h264dec.h
+@@ -58,7 +58,7 @@
+  * The maximum number of slices supported by the decoder.
+  * must be a power of 2
+  */
+-#define MAX_SLICES 32
++#define MAX_SLICES 64
+ 
+ #ifdef ALLOW_INTERLACE
+ #define MB_MBAFF(h)    (h)->mb_mbaff
+-- 
+2.39.5 (Apple Git-154)
+

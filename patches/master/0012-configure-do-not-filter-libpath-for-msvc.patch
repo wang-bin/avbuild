@@ -1,17 +1,17 @@
-From 843961015a7996eb1595a82f3e6be8f774dff37b Mon Sep 17 00:00:00 2001
+From 73626a49e702baee25ef2c2c8af37c1a2cea89ec Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 30 Mar 2018 10:46:43 +0800
-Subject: [PATCH 12/29] configure: do not filter -libpath for msvc
+Subject: [PATCH 12/33] configure: do not filter -libpath for msvc
 
 ---
  configure | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/configure b/configure
-index 197bc46971..c33d93a7d1 100755
+index 89573b1146..c21be8837b 100755
 --- a/configure
 +++ b/configure
-@@ -4823,6 +4823,7 @@ msvc_common_flags(){
+@@ -4867,6 +4867,7 @@ msvc_common_flags(){
              -lz)                  echo zlib.lib ;;
              -lx264)               echo libx264.lib ;;
              -lstdc++)             ;;
@@ -20,5 +20,5 @@ index 197bc46971..c33d93a7d1 100755
              -LARGEADDRESSAWARE)   echo $flag ;;
              -L*)                  echo -libpath:${flag#-L} ;;
 -- 
-2.39.3 (Apple Git-146)
+2.39.5 (Apple Git-154)
 

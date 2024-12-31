@@ -1,0 +1,42 @@
+From 6fb854ed3f24d0688304839c1ab60adf38103ed5 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Thu, 9 Nov 2017 14:56:53 +0800
+Subject: [PATCH 06/34] avcodec: add AV_HWACCEL_FLAG_ALLOW_SOFTWARE
+
+a hw decoder may have software or hybrid implementation, for example videotoolbox hevc.
+the performance may be better than ffmpeg sw decoder.
+---
+ libavcodec/avcodec.h       | 4 ++++
+ libavcodec/options_table.h | 1 +
+ 2 files changed, 5 insertions(+)
+
+diff --git a/libavcodec/avcodec.h b/libavcodec/avcodec.h
+index 77ca8dee1f..30faaddbc1 100644
+--- a/libavcodec/avcodec.h
++++ b/libavcodec/avcodec.h
+@@ -2184,6 +2184,10 @@ typedef struct AVHWAccel {
+  */
+ #define AV_HWACCEL_FLAG_UNSAFE_OUTPUT (1 << 3)
+ 
++/**
++ * Hardware acceleration can use it's software implementation.
++ */
++#define AV_HWACCEL_FLAG_ALLOW_SOFTWARE (1 << 8)
+ /**
+  * @}
+  */
+diff --git a/libavcodec/options_table.h b/libavcodec/options_table.h
+index 47da41b0ad..652b3ab21d 100644
+--- a/libavcodec/options_table.h
++++ b/libavcodec/options_table.h
+@@ -400,6 +400,7 @@ static const AVOption avcodec_options[] = {
+ {"allow_high_depth", "allow to output YUV pixel formats with a different chroma sampling than 4:2:0 and/or other than 8 bits per component", 0, AV_OPT_TYPE_CONST, {.i64 = AV_HWACCEL_FLAG_ALLOW_HIGH_DEPTH }, INT_MIN, INT_MAX, V | D, .unit = "hwaccel_flags"},
+ {"allow_profile_mismatch", "attempt to decode anyway if HW accelerated decoder's supported profiles do not exactly match the stream", 0, AV_OPT_TYPE_CONST, {.i64 = AV_HWACCEL_FLAG_ALLOW_PROFILE_MISMATCH }, INT_MIN, INT_MAX, V | D, .unit = "hwaccel_flags"},
+ {"unsafe_output", "allow potentially unsafe hwaccel frame output that might require special care to process successfully", 0, AV_OPT_TYPE_CONST, {.i64 = AV_HWACCEL_FLAG_UNSAFE_OUTPUT }, INT_MIN, INT_MAX, V | D, .unit = "hwaccel_flags"},
++{"allow_software", "allow to use software implementation in HW accelerated decoder", 0, AV_OPT_TYPE_CONST, {.i64 = AV_HWACCEL_FLAG_ALLOW_SOFTWARE}, INT_MIN, INT_MAX, V | D, .unit = "hwaccel_flags"},
+ {"extra_hw_frames", "Number of extra hardware frames to allocate for the user", OFFSET(extra_hw_frames), AV_OPT_TYPE_INT, { .i64 = -1 }, -1, INT_MAX, V|D },
+ {"discard_damaged_percentage", "Percentage of damaged samples to discard a frame", OFFSET(discard_damaged_percentage), AV_OPT_TYPE_INT, {.i64 = 95 }, 0, 100, V|D },
+ {"side_data_prefer_packet", "Comma-separated list of side data types for which user-supplied (container) data is preferred over coded bytestream",
+-- 
+2.39.5 (Apple Git-154)
+

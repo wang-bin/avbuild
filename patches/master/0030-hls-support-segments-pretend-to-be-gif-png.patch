@@ -1,14 +1,14 @@
-From a5c5359023c696e002f9c52721452c3c4d719a1f Mon Sep 17 00:00:00 2001
+From 1c17bc32d734bdae57320a59420a2a7f56c1ead8 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Sep 2024 15:59:13 +0800
-Subject: [PATCH 30/30] hls: support segments pretend to be gif & png
+Subject: [PATCH 30/33] hls: support segments pretend to be gif & png
 
 ---
  libavformat/hls.c | 28 +++++++++++++++++++++++++++-
  1 file changed, 27 insertions(+), 1 deletion(-)
 
 diff --git a/libavformat/hls.c b/libavformat/hls.c
-index 62473a15dd..7aa18079d9 100644
+index 045741c3b4..525ca999dc 100644
 --- a/libavformat/hls.c
 +++ b/libavformat/hls.c
 @@ -222,6 +222,7 @@ typedef struct HLSContext {

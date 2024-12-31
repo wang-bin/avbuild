@@ -1,0 +1,34 @@
+From fa3c7cfd594f7258b7d5a76ef4f773c6712a805a Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Sun, 9 Aug 2020 23:35:08 +0800
+Subject: [PATCH 17/32] lavfi/atempo: fix large tempo(>4) crash, lower min
+
+---
+ libavfilter/af_atempo.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/libavfilter/af_atempo.c b/libavfilter/af_atempo.c
+index 654b080e89..18f689a0c4 100644
+--- a/libavfilter/af_atempo.c
++++ b/libavfilter/af_atempo.c
+@@ -155,7 +155,7 @@ typedef struct ATempoContext {
+     uint64_t nsamples_out;
+ } ATempoContext;
+ 
+-#define YAE_ATEMPO_MIN 0.5
++#define YAE_ATEMPO_MIN 0
+ #define YAE_ATEMPO_MAX 100.0
+ 
+ #define OFFSET(x) offsetof(ATempoContext, x)
+@@ -439,7 +439,7 @@ static int yae_load_data(ATempoContext *atempo,
+     }
+ 
+     // samples are not expected to be skipped, unless tempo is greater than 2:
+-    av_assert0(read_size <= atempo->ring || atempo->tempo > 2.0);
++    //av_assert0(read_size <= atempo->ring || atempo->tempo > 2.0);
+ 
+     while (atempo->position[0] < stop_here && src < src_end) {
+         int src_samples = (src_end - src) / atempo->stride;
+-- 
+2.39.5 (Apple Git-154)
+

@@ -1,0 +1,37 @@
+From 762d9c402c9c2fea673ed8e6c3b443dbeade516b Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Fri, 3 Jul 2020 14:09:54 +0800
+Subject: [PATCH 16/32] nvenc: check sdk 10.0 ptrs at runtime
+
+---
+ libavcodec/nvenc.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/libavcodec/nvenc.c b/libavcodec/nvenc.c
+index 161649612f..790c87a7b1 100644
+--- a/libavcodec/nvenc.c
++++ b/libavcodec/nvenc.c
+@@ -1585,17 +1585,18 @@ static av_cold int nvenc_setup_encoder(AVCodecContext *avctx)
+     else if (ctx->flags & NVENC_LOWLATENCY)
+         ctx->init_encode_params.tuningInfo = NV_ENC_TUNING_INFO_LOW_LATENCY;
+ 
++    if (p_nvenc->nvEncGetEncodePresetConfigEx)
+     nv_status = p_nvenc->nvEncGetEncodePresetConfigEx(ctx->nvencoder,
+         ctx->init_encode_params.encodeGUID,
+         ctx->init_encode_params.presetGUID,
+         ctx->init_encode_params.tuningInfo,
+         &preset_config);
+-#else
++    else
++#endif
+     nv_status = p_nvenc->nvEncGetEncodePresetConfig(ctx->nvencoder,
+         ctx->init_encode_params.encodeGUID,
+         ctx->init_encode_params.presetGUID,
+         &preset_config);
+-#endif
+     if (nv_status != NV_ENC_SUCCESS)
+         return nvenc_print_error(avctx, nv_status, "Cannot get the preset configuration");
+ 
+-- 
+2.39.5 (Apple Git-154)
+

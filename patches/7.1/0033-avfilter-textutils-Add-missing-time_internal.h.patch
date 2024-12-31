@@ -1,15 +1,18 @@
-From 3e8678a486b50da2c1c7dae32eeb93d32327feb4 Mon Sep 17 00:00:00 2001
-From: wang-bin <wbsecg1@gmail.com>
-Date: Tue, 19 Nov 2024 19:27:09 +0800
-Subject: [PATCH 32/32] textutils: include time_internal.h
+From 478036b92d4f633189dbbfa24ceee536c5df92da Mon Sep 17 00:00:00 2001
+From: Zhao Zhili <zhilizhao@tencent.com>
+Date: Mon, 18 Nov 2024 16:43:28 +0800
+Subject: [PATCH 33/34] avfilter/textutils: Add missing time_internal.h
 
-fix undefined localtime_r in msvc
+This fix build error on Windows with MSVC. We need time_internal.h
+for gmtime_r and localtime_r.
+
+Signed-off-by: Zhao Zhili <zhilizhao@tencent.com>
 ---
- libavfilter/textutils.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ libavfilter/textutils.c | 1 +
+ 1 file changed, 1 insertion(+)
 
 diff --git a/libavfilter/textutils.c b/libavfilter/textutils.c
-index e6b5239b20..471346cc51 100644
+index e6b5239b20..eabf842ab5 100644
 --- a/libavfilter/textutils.c
 +++ b/libavfilter/textutils.c
 @@ -31,6 +31,7 @@
@@ -20,11 +23,6 @@ index e6b5239b20..471346cc51 100644
  
  static int ff_expand_text_function_internal(FFExpandTextContext *expand_text, AVBPrint *bp,
                                              char *name, unsigned argc, char **argv)
-@@ -380,4 +381,3 @@ int ff_load_textfile(void *log_ctx, const char *textfile,
- 
-     return 0;
- }
--
 -- 
 2.39.5 (Apple Git-154)
 

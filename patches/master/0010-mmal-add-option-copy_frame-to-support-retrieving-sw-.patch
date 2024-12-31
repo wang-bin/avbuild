@@ -1,7 +1,7 @@
-From 2804d21a8ac09f4f2b1967c6a38e6c5fed29a21f Mon Sep 17 00:00:00 2001
+From c70c531c2ed26b5c294dba4d5b09ff8ac36d6a0d Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 17 Nov 2017 14:54:23 +0800
-Subject: [PATCH 10/29] mmal: add option copy_frame to support retrieving sw
+Subject: [PATCH 10/33] mmal: add option copy_frame to support retrieving sw
  frames w/o copy
 
 mmal buffer->data is already in host memory. AFAIK decoders implemented in omx must
@@ -79,5 +79,5 @@ index 338fd33c9f..8d81d3ada7 100644
  };
  
 -- 
-2.39.3 (Apple Git-146)
+2.39.5 (Apple Git-154)
 

@@ -1,0 +1,34 @@
+From 9f363fb42830e279a64dbd71f0635669d361de2c Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Sun, 13 Mar 2022 11:15:15 +0800
+Subject: [PATCH 22/34] win: enable windres for small and msvc
+
+---
+ configure | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/configure b/configure
+index b913877828..417e0130a6 100755
+--- a/configure
++++ b/configure
+@@ -5828,7 +5828,7 @@ case $target_os in
+             # Cannot build both shared and static libs when using dllimport.
+             disable static
+         fi
+-        ! enabled small && test_cmd $windres --version && enable gnu_windres
++        test_cmd $windres --version && enable gnu_windres
+         enabled x86_32 && check_ldflags -Wl,--large-address-aware
+         add_cppflags -DWIN32_LEAN_AND_MEAN
+         shlibdir_default="$bindir_default"
+@@ -5879,7 +5879,7 @@ case $target_os in
+             # Cannot build both shared and static libs with MSVC or icl.
+             disable static
+         fi
+-        ! enabled small && test_cmd $windres --version && enable gnu_windres
++        test_cmd $windres --version && enable gnu_windres
+         enabled x86_32 && check_ldflags -LARGEADDRESSAWARE
+         add_cppflags -DWIN32_LEAN_AND_MEAN
+         shlibdir_default="$bindir_default"
+-- 
+2.39.5 (Apple Git-154)
+

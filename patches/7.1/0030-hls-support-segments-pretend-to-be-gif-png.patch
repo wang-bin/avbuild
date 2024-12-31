@@ -1,0 +1,65 @@
+From 2aee05ff2865a0067884cbf29fe70731a74dcdfc Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Sun, 29 Sep 2024 15:59:13 +0800
+Subject: [PATCH 30/34] hls: support segments pretend to be gif & png
+
+---
+ libavformat/hls.c | 28 +++++++++++++++++++++++++++-
+ 1 file changed, 27 insertions(+), 1 deletion(-)
+
+diff --git a/libavformat/hls.c b/libavformat/hls.c
+index 62473a15dd..7aa18079d9 100644
+--- a/libavformat/hls.c
++++ b/libavformat/hls.c
+@@ -222,6 +222,7 @@ typedef struct HLSContext {
+     AVIOInterruptCB *interrupt_callback;
+     AVDictionary *avio_opts;
+     AVDictionary *seg_format_opts;
++    int seg_allow_img;
+     char *allowed_extensions;
+     int max_reload;
+     int http_persistent;
+@@ -2113,7 +2114,30 @@ static int hls_read_header(AVFormatContext *s)
+             pls->ctx->max_analyze_duration = s->max_analyze_duration > 0 ? s->max_analyze_duration : 4 * AV_TIME_BASE;
+             pls->ctx->interrupt_callback = s->interrupt_callback;
+             url = av_strdup(pls->segments[0]->url);
+-            ret = av_probe_input_buffer(&pls->pb.pub, &in_fmt, url, NULL, 0, 0);
++            unsigned skip = 0;
++            if (!c->seg_allow_img) {
++                uint8_t b[10] = { 0 }; // probe at most 10
++                avio_read(&pls->pb.pub, b, sizeof(b));
++                avio_seek(&pls->pb.pub, 0, SEEK_SET);
++                const AVProbeData pd = {
++                    .buf = b,               // png, gif read_probe only use this field
++                    .buf_size = sizeof(b),
++                };
++// optional: ffifmt(av_find_input_format("gif" or "gif_pipe" or "png_pipe"))->read_probe
++                int max_score = AVPROBE_SCORE_MAX - 2; // png_pipe, gif, gif_pipe score >= AVPROBE_SCORE_MAX - 1
++                const AVInputFormat* img_fmt = av_probe_input_format2(&pd, 1, &max_score); //
++                if (img_fmt) {
++                    if (av_strstart(img_fmt->name, "png", NULL)) { // "png_pipe"
++                        skip = 3; // skip until ts sync byte 'G'(0x47)
++                        av_log(s, AV_LOG_INFO, "segments pretend to be png\n");
++                    } else if (av_strstart(img_fmt->name, "gif", NULL)) {    // "gif", "gif_pipe"
++                        skip = 10;
++                        av_log(s, AV_LOG_INFO, "segments pretend to be gif\n");
++                    }
++                }
++            }
++
++            ret = av_probe_input_buffer(&pls->pb.pub, &in_fmt, url, NULL, skip, 0);
+             if (ret < 0) {
+                 /* Free the ctx - it isn't initialized properly at this point,
+                 * so avformat_close_input shouldn't be called. If
+@@ -2590,6 +2614,8 @@ static const AVOption hls_options[] = {
+         OFFSET(seg_format_opts), AV_OPT_TYPE_DICT, {.str = NULL}, 0, 0, FLAGS},
+     {"seg_max_retry", "Maximum number of times to reload a segment on error.",
+      OFFSET(seg_max_retry), AV_OPT_TYPE_INT, {.i64 = 0}, 0, INT_MAX, FLAGS},
++    {"seg_allow_img", "Allow segments detected as gif and png images, 0 = disable, 1 = enable",
++        OFFSET(seg_allow_img), AV_OPT_TYPE_BOOL, { .i64 = 0}, 0, 1, FLAGS},
+     {NULL}
+ };
+ 
+-- 
+2.39.5 (Apple Git-154)
+

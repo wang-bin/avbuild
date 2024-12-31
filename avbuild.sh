@@ -101,6 +101,9 @@ PATCH_BRANCH=master
 [ $FFMAJOR -lt 5 ] && PATCH_BRANCH=4.4
 [ $FFMAJOR -eq 5 ] && PATCH_BRANCH=5.1
 [ $FFMAJOR -eq 6 ] && PATCH_BRANCH=6.$FFMINOR
+[ $FFMAJOR -eq 7 ] && {
+    $FFGIT || PATCH_BRANCH=7.$FFMINOR
+}
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR  git: $FFGIT. patch set version: $PATCH_BRANCH"
 USE_VK=$FFGIT
 USE_VAAPI_WIN32=$FFGIT

@@ -1,7 +1,7 @@
-From 5e6f730da38e65d23bc1e6bfb9369c3d4b4ef796 Mon Sep 17 00:00:00 2001
+From 4712ee8fb4561cb9c073165c15eada8bad6477ef Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 22 Dec 2022 10:39:29 +0800
-Subject: [PATCH 28/30] lavc/videotoolboxenc: add hevc main42210 and p210
+Subject: [PATCH 28/33] lavc/videotoolboxenc: add hevc main42210 and p210
 
 supported by apple silicon
 ---

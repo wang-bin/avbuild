@@ -1,0 +1,65 @@
+From 196f561ad4bb2a6676fb8d2b612391ea59c4e827 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Sun, 11 Aug 2024 10:27:43 +0800
+Subject: [PATCH 28/32] Revert "avutil/timestamp: change precision of
+ av_ts_make_time_string()"
+
+This reverts commit 8c936e9b437aaed0ca10f3ec2edebf06cad6a5b5.
+av_ts_make_time_string2 on android arm64 takes about 1s
+---
+ libavutil/timestamp.h                        |  4 +++-
+ tests/ref/fate/filter-metadata-scdet         | 12 ++++++------
+ tests/ref/fate/filter-metadata-silencedetect |  2 +-
+ 3 files changed, 10 insertions(+), 8 deletions(-)
+
+diff --git a/libavutil/timestamp.h b/libavutil/timestamp.h
+index fa53a46b98..7e6da894df 100644
+--- a/libavutil/timestamp.h
++++ b/libavutil/timestamp.h
+@@ -73,7 +73,9 @@ char *av_ts_make_time_string2(char *buf, int64_t ts, AVRational tb);
+ static inline char *av_ts_make_time_string(char *buf, int64_t ts,
+                                            const AVRational *tb)
+ {
+-    return av_ts_make_time_string2(buf, ts, *tb);
++    if (ts == AV_NOPTS_VALUE) snprintf(buf, AV_TS_MAX_STRING_SIZE, "NOPTS");
++    else                      snprintf(buf, AV_TS_MAX_STRING_SIZE, "%.6g", av_q2d(*tb) * ts);
++    return buf;
+ }
+ 
+ /**
+diff --git a/tests/ref/fate/filter-metadata-scdet b/tests/ref/fate/filter-metadata-scdet
+index d385920fcd..ca5dbaaefc 100644
+--- a/tests/ref/fate/filter-metadata-scdet
++++ b/tests/ref/fate/filter-metadata-scdet
+@@ -1,11 +1,11 @@
+ pts=1620|tag:lavfi.scd.score=59.252|tag:lavfi.scd.mafd=60.175|tag:lavfi.scd.time=2.7
+ pts=4140|tag:lavfi.scd.score=36.070|tag:lavfi.scd.mafd=44.209|tag:lavfi.scd.time=6.9
+-pts=5800|tag:lavfi.scd.score=55.819|tag:lavfi.scd.mafd=55.819|tag:lavfi.scd.time=9.666667
++pts=5800|tag:lavfi.scd.score=55.819|tag:lavfi.scd.mafd=55.819|tag:lavfi.scd.time=9.66667
+ pts=6720|tag:lavfi.scd.score=18.580|tag:lavfi.scd.mafd=22.505|tag:lavfi.scd.time=11.2
+ pts=8160|tag:lavfi.scd.score=49.240|tag:lavfi.scd.mafd=49.444|tag:lavfi.scd.time=13.6
+-pts=9760|tag:lavfi.scd.score=51.497|tag:lavfi.scd.mafd=51.801|tag:lavfi.scd.time=16.266667
+-pts=14080|tag:lavfi.scd.score=34.165|tag:lavfi.scd.mafd=34.337|tag:lavfi.scd.time=23.466667
+-pts=15700|tag:lavfi.scd.score=58.310|tag:lavfi.scd.mafd=58.315|tag:lavfi.scd.time=26.166667
+-pts=18500|tag:lavfi.scd.score=16.504|tag:lavfi.scd.mafd=19.603|tag:lavfi.scd.time=30.833333
++pts=9760|tag:lavfi.scd.score=51.497|tag:lavfi.scd.mafd=51.801|tag:lavfi.scd.time=16.2667
++pts=14080|tag:lavfi.scd.score=34.165|tag:lavfi.scd.mafd=34.337|tag:lavfi.scd.time=23.4667
++pts=15700|tag:lavfi.scd.score=58.310|tag:lavfi.scd.mafd=58.315|tag:lavfi.scd.time=26.1667
++pts=18500|tag:lavfi.scd.score=16.504|tag:lavfi.scd.mafd=19.603|tag:lavfi.scd.time=30.8333
+ pts=20040|tag:lavfi.scd.score=13.764|tag:lavfi.scd.mafd=19.060|tag:lavfi.scd.time=33.4
+-pts=21760|tag:lavfi.scd.score=64.451|tag:lavfi.scd.mafd=64.551|tag:lavfi.scd.time=36.266667
++pts=21760|tag:lavfi.scd.score=64.451|tag:lavfi.scd.mafd=64.551|tag:lavfi.scd.time=36.2667
+diff --git a/tests/ref/fate/filter-metadata-silencedetect b/tests/ref/fate/filter-metadata-silencedetect
+index e66ffe5fdd..bc53fea047 100644
+--- a/tests/ref/fate/filter-metadata-silencedetect
++++ b/tests/ref/fate/filter-metadata-silencedetect
+@@ -1,5 +1,5 @@
+ pts=0|tag:lavfi.silence_duration=0.523107|tag:lavfi.silence_end=0.690023|tag:lavfi.silence_start=0.736417
+-pts=46080|tag:lavfi.silence_start=1.276259|tag:lavfi.silence_end=1.807506|tag:lavfi.silence_duration=0.531247
++pts=46080|tag:lavfi.silence_start=1.27626|tag:lavfi.silence_end=1.80751|tag:lavfi.silence_duration=0.531247
+ pts=92160
+ pts=138240
+ pts=184320
+-- 
+2.39.5 (Apple Git-154)
+
