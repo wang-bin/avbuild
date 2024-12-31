@@ -1,0 +1,52 @@
+From 66768a21e9cceeeb54b0d0f623ad41fd13e110a5 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Tue, 31 Dec 2024 18:49:16 +0800
+Subject: [PATCH 34/34] avutil/mem_internal: fix clang + vcrt build
+
+fix many sws link error if build with clang --target=x86_64-pc-windows-msvc + vcrt + winsdk, for example
+lld-link: error: undefined symbol: bFC
+>>> referenced by /home/runner/work/avbuild/avbuild/build_sdk-windows-desktop-x64-clang/src/libswscale/x86/swscale_template.c:383
+>>>               libswscale/x86/swscale.o:(yuv2rgb565_X_ar_mmxext)
+>>> referenced by /home/runner/work/avbuild/avbuild/build_sdk-windows-desktop-x64-clang/src/libswscale/x86/swscale_template.c:405
+>>>               libswscale/x86/swscale.o:(yuv2rgb565_X_mmxext)
+>>> referenced by /home/runner/work/avbuild/avbuild/build_sdk-windows-desktop-x64-clang/src/libswscale/x86/swscale_template.c:1273
+>>>               libswscale/x86/swscale.o:(yuv2rgb565_1_mmxext)
+>>> referenced 2 more times
+
+c11 only defines _Alignas, alignas requires c23, or include stdalign.h which defines alignas for c11. but stdalign.h does not always exist.
+for msvc, __STDC_VERSION__ macro is defined since vs16.7(2019) vc19.25. assume it's always defined by other compilers.
+---
+ libavutil/mem_internal.h | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/libavutil/mem_internal.h b/libavutil/mem_internal.h
+index c027fa51c3..67c073ec69 100644
+--- a/libavutil/mem_internal.h
++++ b/libavutil/mem_internal.h
+@@ -24,10 +24,6 @@
+ #include "config.h"
+ 
+ #include <stdint.h>
+-#ifndef _MSC_VER
+-#include <stdalign.h>
+-#endif
+-
+ #include "attributes.h"
+ #include "macros.h"
+ 
+@@ -80,7 +76,11 @@
+     #define DECLARE_ALIGNED_T(n,t,v)    alignas(FFMIN(n, 16)) t v
+     #define DECLARE_ASM_ALIGNED(n,t,v)  alignas(FFMIN(n, 16)) t av_used v
+     #define DECLARE_ASM_CONST(n,t,v)    alignas(FFMIN(n, 16)) static const t av_used v
+-#elif defined(_MSC_VER)
++#elif defined(__STDC_VERSION__) && __STDC_VERSION__ < 202311L
++    #define DECLARE_ALIGNED_T(n,t,v)    _Alignas(n) t v
++    #define DECLARE_ASM_ALIGNED(n,t,v)  _Alignas(n) t av_used v
++    #define DECLARE_ASM_CONST(n,t,v)    _Alignas(n) static const t av_used v
++#elif defined(_MSC_VER) && !defined(__STDC_VERSION__)
+     #define DECLARE_ALIGNED_T(n,t,v)    __declspec(align(n)) t v
+     #define DECLARE_ASM_ALIGNED(n,t,v)  __declspec(align(n)) t v
+     #define DECLARE_ASM_CONST(n,t,v)    __declspec(align(n)) static const t v
+-- 
+2.39.5 (Apple Git-154)
+
