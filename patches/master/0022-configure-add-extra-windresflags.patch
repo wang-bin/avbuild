@@ -1,7 +1,7 @@
-From 1ae990f653f1b2ef4b70b387ff0f6e212dfb4b9a Mon Sep 17 00:00:00 2001
+From 021a1b8f9105781a300b2ce326f8facf579af5ae Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 13 Mar 2022 14:38:23 +0800
-Subject: [PATCH 23/33] configure: add --extra-windresflags
+Subject: [PATCH 22/33] configure: add --extra-windresflags
 
 llvm windres requires more preprocess flags and target flags
 ---
@@ -10,7 +10,7 @@ llvm windres requires more preprocess flags and target flags
  2 files changed, 11 insertions(+), 1 deletion(-)
 
 diff --git a/configure b/configure
-index 904ad1f40b..26c5c38032 100755
+index 372fc40d2d..78e0258f8f 100755
 --- a/configure
 +++ b/configure
 @@ -418,6 +418,7 @@ Toolchain options:
@@ -32,7 +32,7 @@ index 904ad1f40b..26c5c38032 100755
  add_compat(){
      append compat_objs $1
      shift
-@@ -4396,6 +4401,9 @@ for opt do
+@@ -4398,6 +4403,9 @@ for opt do
          --extra-libs=*)
              add_extralibs $optval
          ;;
@@ -42,7 +42,7 @@ index 904ad1f40b..26c5c38032 100755
          --disable-devices)
              disable $INDEV_LIST $OUTDEV_LIST
          ;;
-@@ -5225,6 +5233,7 @@ add_cflags $extra_cflags
+@@ -5227,6 +5235,7 @@ add_cflags $extra_cflags
  add_cxxflags $extra_cxxflags
  add_objcflags $extra_objcflags
  add_asflags $extra_cflags
@@ -50,7 +50,7 @@ index 904ad1f40b..26c5c38032 100755
  
  if test -n "$sysroot"; then
      case "$cc_type" in
-@@ -8163,6 +8172,7 @@ DOXYGEN=$doxygen
+@@ -8165,6 +8174,7 @@ DOXYGEN=$doxygen
  LDFLAGS=$LDFLAGS
  LDEXEFLAGS=$LDEXEFLAGS
  LDSOFLAGS=$LDSOFLAGS

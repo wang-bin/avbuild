@@ -1,7 +1,7 @@
-From 66768a21e9cceeeb54b0d0f623ad41fd13e110a5 Mon Sep 17 00:00:00 2001
+From 5566e5af19b0f7e8082513752ac0da68c46624bb Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 31 Dec 2024 18:49:16 +0800
-Subject: [PATCH 34/34] avutil/mem_internal: fix clang + vcrt build
+Subject: [PATCH 33/33] avutil/mem_internal: fix clang + vcrt build
 
 fix many sws link error if build with clang --target=x86_64-pc-windows-msvc + vcrt + winsdk, for example
 lld-link: error: undefined symbol: bFC
@@ -14,7 +14,7 @@ lld-link: error: undefined symbol: bFC
 >>> referenced 2 more times
 
 c11 only defines _Alignas, alignas requires c23, or include stdalign.h which defines alignas for c11. but stdalign.h does not always exist.
-for msvc, __STDC_VERSION__ macro is defined since vs16.7(2019) vc19.25. assume it's always defined by other compilers.
+for msvc, __STDC_VERSION__ macro is defined since vs16.7(2019) vc19.27. assume it's always defined by other compilers.
 ---
  libavutil/mem_internal.h | 10 +++++-----
  1 file changed, 5 insertions(+), 5 deletions(-)

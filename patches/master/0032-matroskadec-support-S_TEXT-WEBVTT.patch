@@ -1,7 +1,7 @@
-From 991822db7a7b064685d0d11bb05e4c0c37a4e9d2 Mon Sep 17 00:00:00 2001
+From 8ad37b18af15c161800d29535665b6dd2ad591ee Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 17 Dec 2024 23:21:57 +0800
-Subject: [PATCH 33/33] matroskadec: support S_TEXT/WEBVTT
+Subject: [PATCH 32/33] matroskadec: support S_TEXT/WEBVTT
 
 fix ticket #5641
 ---
@@ -10,7 +10,7 @@ fix ticket #5641
  2 files changed, 27 insertions(+)
 
 diff --git a/libavformat/matroska.c b/libavformat/matroska.c
-index d0ecfbeb6a..23c4ad6949 100644
+index bbad9a7f54..4f1efd7690 100644
 --- a/libavformat/matroska.c
 +++ b/libavformat/matroska.c
 @@ -63,6 +63,7 @@ const CodecTags ff_mkv_codec_tags[]={

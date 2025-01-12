@@ -1,7 +1,7 @@
-From 8a5fd36569ff455bed089e00c97c754ce1b62c97 Mon Sep 17 00:00:00 2001
+From 61f622b949efb65bb4f1d37b8cbee6a7a7e71008 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 1 Jul 2022 16:03:06 +0800
-Subject: [PATCH 24/33] add h264-max-bit-depth to disable rarely used depths
+Subject: [PATCH 23/33] add h264-max-bit-depth to disable rarely used depths
 
 ---
  configure                            |  6 ++++++
@@ -16,7 +16,7 @@ Subject: [PATCH 24/33] add h264-max-bit-depth to disable rarely used depths
  9 files changed, 77 insertions(+), 1 deletion(-)
 
 diff --git a/configure b/configure
-index 26c5c38032..e30c78d71b 100755
+index 78e0258f8f..f411b9f00a 100755
 --- a/configure
 +++ b/configure
 @@ -438,6 +438,7 @@ Advanced options (experts only):
@@ -35,7 +35,7 @@ index 26c5c38032..e30c78d71b 100755
      host_cc
      host_cflags
      host_extralibs
-@@ -4177,6 +4179,9 @@ enable valgrind_backtrace
+@@ -4179,6 +4181,9 @@ enable valgrind_backtrace
  sws_max_filter_size_default=256
  set_default sws_max_filter_size
  
@@ -45,7 +45,7 @@ index 26c5c38032..e30c78d71b 100755
  # internal components are enabled by default
  enable $EXTRALIBS_LIST
  
-@@ -8266,6 +8271,7 @@ cat > $TMPH <<EOF
+@@ -8268,6 +8273,7 @@ cat > $TMPH <<EOF
  #define BUILDSUF "$build_suffix"
  #define SLIBSUF "$SLIBSUF"
  #define SWS_MAX_FILTER_SIZE $sws_max_filter_size

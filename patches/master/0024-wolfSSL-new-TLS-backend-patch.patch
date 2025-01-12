@@ -1,7 +1,7 @@
-From 04bb1a960a0c1887227abd16e6d85110646512c0 Mon Sep 17 00:00:00 2001
+From 88f1be4d542f0241d50376d108c7f7b4f9aabbf9 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 3 May 2022 00:03:18 +0800
-Subject: [PATCH 25/33] wolfSSL - new TLS backend patch
+Subject: [PATCH 24/33] wolfSSL - new TLS backend patch
 
 https://lists.ffmpeg.org/pipermail/ffmpeg-devel/2018-August/233802.html
 ---
@@ -14,7 +14,7 @@ https://lists.ffmpeg.org/pipermail/ffmpeg-devel/2018-August/233802.html
  create mode 100644 libavformat/tls_wolfssl.c
 
 diff --git a/configure b/configure
-index e30c78d71b..7e2cf1b605 100755
+index f411b9f00a..de52e615a5 100755
 --- a/configure
 +++ b/configure
 @@ -208,7 +208,7 @@ External library support:
@@ -70,7 +70,7 @@ index e30c78d71b..7e2cf1b605 100755
  "
  
  HWACCEL_AUTODETECT_LIBRARY_LIST="
-@@ -3827,13 +3830,13 @@ rtmpte_protocol_suggest="zlib"
+@@ -3829,13 +3832,13 @@ rtmpte_protocol_suggest="zlib"
  rtmpts_protocol_select="ffrtmphttp_protocol https_protocol"
  rtmpts_protocol_suggest="zlib"
  rtp_protocol_select="udp_protocol"
@@ -87,7 +87,7 @@ index e30c78d71b..7e2cf1b605 100755
  tls_protocol_select="tcp_protocol"
  udp_protocol_select="network"
  udplite_protocol_select="network"
-@@ -3856,7 +3859,7 @@ libsmbclient_protocol_deps="libsmbclient gplv3"
+@@ -3858,7 +3861,7 @@ libsmbclient_protocol_deps="libsmbclient gplv3"
  libsrt_protocol_deps="libsrt"
  libsrt_protocol_select="network"
  libssh_protocol_deps="libssh"
@@ -96,7 +96,7 @@ index e30c78d71b..7e2cf1b605 100755
  libzmq_protocol_deps="libzmq"
  libzmq_protocol_select="network"
  
-@@ -6919,6 +6922,7 @@ enabled decklink          && { require_headers DeckLinkAPI.h &&
+@@ -6921,6 +6924,7 @@ enabled decklink          && { require_headers DeckLinkAPI.h &&
  enabled frei0r            && require_headers "frei0r.h"
  enabled gmp               && require gmp gmp.h mpz_export -lgmp
  enabled gnutls            && require_pkg_config gnutls gnutls gnutls/gnutls.h gnutls_global_init

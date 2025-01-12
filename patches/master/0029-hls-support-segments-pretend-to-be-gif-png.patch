@@ -1,7 +1,7 @@
-From 1c17bc32d734bdae57320a59420a2a7f56c1ead8 Mon Sep 17 00:00:00 2001
+From 08e17b69f354c31976e344ed92f5c1ebe68759b8 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Sep 2024 15:59:13 +0800
-Subject: [PATCH 30/33] hls: support segments pretend to be gif & png
+Subject: [PATCH 29/33] hls: support segments pretend to be gif & png
 
 ---
  libavformat/hls.c | 28 +++++++++++++++++++++++++++-

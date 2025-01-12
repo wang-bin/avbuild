@@ -1,7 +1,7 @@
-From 4505760e37550c826d8790252e231737e6cbfa9b Mon Sep 17 00:00:00 2001
+From 16e5f29aa969c04ae1b79bf7b19f2a1f96c9cc55 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 15 Oct 2024 17:07:02 +0800
-Subject: [PATCH 31/33] hevc: disable Unknown profile bitstream warning for
+Subject: [PATCH 30/33] hevc: disable Unknown profile bitstream warning for
  small configuration
 
 ---
