@@ -1,0 +1,28 @@
+From 17babeab7ee4cf290e7c9f9276500414fbedcb29 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Thu, 16 Jan 2025 14:22:47 +0800
+Subject: [PATCH] lavfi: fix undefined ff_vk_shader_print if vulkan filters are
+ disabled
+
+---
+ libavfilter/Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/libavfilter/Makefile b/libavfilter/Makefile
+index 4d9681768b..0695039d05 100644
+--- a/libavfilter/Makefile
++++ b/libavfilter/Makefile
+@@ -649,8 +649,8 @@ OBJS-$(CONFIG_AMOVIE_FILTER)                 += src_movie.o
+ OBJS-$(CONFIG_MOVIE_FILTER)                  += src_movie.o
+ 
+ # vulkan libs
+-OBJS-$(CONFIG_LIBGLSLANG)                    += vulkan_glslang.o
+-OBJS-$(CONFIG_LIBSHADERC)                    += vulkan_shaderc.o
++OBJS-$(CONFIG_LIBGLSLANG)                    += vulkan_glslang.o vulkan.o
++OBJS-$(CONFIG_LIBSHADERC)                    += vulkan_shaderc.o vulkan.o
+ 
+ # Objects duplicated from other libraries for shared builds
+ SHLIBOBJS                                    += log2_tab.o
+-- 
+2.39.5 (Apple Git-154)
+

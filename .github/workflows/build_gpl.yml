@@ -123,6 +123,7 @@ jobs:
         set HOME=%CD%
         set FFSRC=%CD%\ffmpeg-%FF_VERSION%
         set BUILD_NOW=true
+        set USER_OPT=--enable-libshaderc
         tools\vcbuild.bat VS2022 %TARGET_OS%10 x64
     - name: Make SDK
       shell: cmd
@@ -183,6 +184,7 @@ jobs:
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export WindowsSdkDir=${WINDOWSSDKDIR}
         export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
+        export USER_OPT="--enable-libshaderc"
         USE_TOOLCHAIN=clang-${LLVM_VER:-$LLVM_VER_DEFAULT} ./avbuild.sh $TARGET_OS "x64 arm64"
     - name: Make SDK
       shell: bash
@@ -235,6 +237,7 @@ jobs:
       run: |
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export SYSROOT=/tmp/sysroot
+        export USER_OPT="--enable-libshaderc"
         USE_TOOLCHAIN=clang-${LLVM_VER:-$LLVM_VER_DEFAULT} ./avbuild.sh linux "amd64 arm64"
     - name: Make SDK
       shell: bash

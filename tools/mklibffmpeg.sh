@@ -56,10 +56,15 @@ DUP_OBJS=(libswscale/log2_tab.o libswresample/log2_tab.o libavcodec/log2_tab.o l
   libavcodec/avcodecres.o
   libavcodec/half2float.o   # half2float.c is in libavutil, but not built into libavutil, always built in swscale
   libavcodec/vulkan.o
+  # vulkan_shaderc.o and vulkan_glslang.o are not included in avutil, so keep avcodec ones
+  #libavcodec/vulkan_shaderc.o
+  #libavcodec/vulkan_glslang.o
   libavdevice/avdeviceres.o
   libavformat/avformatres.o
   libavfilter/avfilterres.o
   libavfilter/vulkan.o
+  libavfilter/vulkan_shaderc.o
+  libavfilter/vulkan_glslang.o
   libavresample/avresample.o
   libswscale/swscaleres.o
   libswresample/swresampleres.o

@@ -71,6 +71,7 @@ jobs:
       run: |
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         [[ "${TARGET_OS}" == "iOS" || "${TARGET_OS}" == "tvOS"* || "${TARGET_OS}" == "xr"* || "${TARGET_OS}" == "vision"* ]]  && export USER_OPT="--enable-wolfssl"
+        [[ "${TARGET_OS}" == "macOS" ]] && export USER_OPT="--enable-libshaderc"
         ./avbuild.sh ${TARGET_OS}
     - name: Make SDK
       shell: bash
@@ -192,6 +193,9 @@ jobs:
         wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7z
     - name: Configure and Build
       shell: cmd
+      env:
+        USER_OPT: --enable-libshaderc
+        if: ${{ matrix.target != 'uwp' }}
       run: |
         7z x -y dep.7z -otools
         set PKG_CONFIG_PATH_MFX=%CD%\tools\dep\VS2022\lib\pkgconfig
@@ -273,6 +277,7 @@ jobs:
         set HOME=%CD%
         set FFSRC=%CD%\ffmpeg-%FF_VERSION%
         set BUILD_NOW=true
+        set USER_OPT=--enable-libshaderc
         tools\vcbuild.bat VS2022 %TARGET_OS%10 all
     - name: Make SDK
       shell: cmd
@@ -383,6 +388,7 @@ jobs:
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export WindowsSdkDir=${WINDOWSSDKDIR}
         export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
+        export USER_OPT="--enable-libshaderc"
         USE_TOOLCHAIN=clang-${LLVM_VER:-$LLVM_VER_DEFAULT} ./avbuild.sh $TARGET_OS "arm64 x86 x64"
     - name: Make SDK
       shell: bash
@@ -512,7 +518,7 @@ jobs:
       run: |
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export SYSROOT=/tmp/sysroot
-        export USER_OPT="--enable-wolfssl"
+        export USER_OPT="--enable-wolfssl --enable-libshaderc"
         USE_TOOLCHAIN=clang-${LLVM_VER:-$LLVM_VER_DEFAULT} ./avbuild.sh linux "amd64 arm64 armhf"
     - name: Make SDK
       shell: bash

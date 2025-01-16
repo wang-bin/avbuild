@@ -114,6 +114,10 @@ if $FFGIT || [ ${FFMAJOR} -gt 3 ]; then
     patch -p1 -N < $p
   done
 fi
+for p in $(find "$THIS_DIR/patches/common" -name "*.patch" |sort); do
+    echo $p
+  patch -p1 -N < $p
+done
 [ $FFMAJOR -gt 6 ] || [ $FFMAJOR -eq 6 -a $FFMINOR -ge 1 ] && {
   USE_VK=true
   USE_VAAPI_WIN32=true
