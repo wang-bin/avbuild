@@ -1,4 +1,4 @@
-From 5566e5af19b0f7e8082513752ac0da68c46624bb Mon Sep 17 00:00:00 2001
+From ae038c93e5c0239913b39c952e8943da745a8958 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 31 Dec 2024 18:49:16 +0800
 Subject: [PATCH 33/33] avutil/mem_internal: fix clang + vcrt build
@@ -15,35 +15,30 @@ lld-link: error: undefined symbol: bFC
 
 c11 only defines _Alignas, alignas requires c23, or include stdalign.h which defines alignas for c11. but stdalign.h does not always exist.
 for msvc, __STDC_VERSION__ macro is defined since vs16.7(2019) vc19.27. assume it's always defined by other compilers.
+_Alignas crashes for msvc build.
 ---
- libavutil/mem_internal.h | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ libavutil/mem_internal.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/libavutil/mem_internal.h b/libavutil/mem_internal.h
-index c027fa51c3..67c073ec69 100644
+index c027fa51c3..d9825707c0 100644
 --- a/libavutil/mem_internal.h
 +++ b/libavutil/mem_internal.h
-@@ -24,10 +24,6 @@
+@@ -24,7 +24,7 @@
  #include "config.h"
  
  #include <stdint.h>
 -#ifndef _MSC_VER
--#include <stdalign.h>
--#endif
--
- #include "attributes.h"
- #include "macros.h"
++#if !defined(_MSC_VER) || defined(__clang__)
+ #include <stdalign.h>
+ #endif
  
-@@ -80,7 +76,11 @@
+@@ -80,7 +80,7 @@
      #define DECLARE_ALIGNED_T(n,t,v)    alignas(FFMIN(n, 16)) t v
      #define DECLARE_ASM_ALIGNED(n,t,v)  alignas(FFMIN(n, 16)) t av_used v
      #define DECLARE_ASM_CONST(n,t,v)    alignas(FFMIN(n, 16)) static const t av_used v
 -#elif defined(_MSC_VER)
-+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ < 202311L
-+    #define DECLARE_ALIGNED_T(n,t,v)    _Alignas(n) t v
-+    #define DECLARE_ASM_ALIGNED(n,t,v)  _Alignas(n) t av_used v
-+    #define DECLARE_ASM_CONST(n,t,v)    _Alignas(n) static const t av_used v
-+#elif defined(_MSC_VER) && !defined(__STDC_VERSION__)
++#elif defined(_MSC_VER) && !defined(__clang__)
      #define DECLARE_ALIGNED_T(n,t,v)    __declspec(align(n)) t v
      #define DECLARE_ASM_ALIGNED(n,t,v)  __declspec(align(n)) t v
      #define DECLARE_ASM_CONST(n,t,v)    __declspec(align(n)) static const t v

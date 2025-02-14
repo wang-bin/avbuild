@@ -1,5 +1,5 @@
 :: this file only contains vc environemnt settings
-:: Copyright (c) 2017-2018 wang bin <wbsecg1 at gmail.com>
+:: Copyright (c) 2017-2025 wang bin <wbsecg1 at gmail.com>
 
 :: vcbuild <msvc_ver|vs_ver|cl_ver> <desktop|phone|store> <version(5.1,6.1,6.2,10)/sdk_version(8.1,10.0.15063.0)> <arch>
 :: vcbuild <msvc_ver|vs_ver|cl_ver> <xp|vista|win7|win8,win8.1|win10|winphone8.1|winstore10> <arch>
@@ -12,6 +12,8 @@ set MSYS2_PATH_TYPE=inherit
 set PATH_CLEAN=%PATH%
 SET WSLENV=WindowsSdkDir:Platform:VC_BUILD:VisualStudioVersion:INCLUDE:LIB:LIBPATH:PATH_arm:LIB_arm:LIBPATH_arm:PATH_arm64:LIB_arm64:LIBPATH_arm64:PATH_x86:LIB_x86:LIBPATH_x86:PATH_x64:LIB_x64:LIBPATH_x64
 set VC_LTL_LIB=%VC_LTL_DIR%\TargetPlatform\6.0.6000.0\lib
+:: set cl.exe language to English, used by dep-cc (awk)
+set VSLANG=1033
 
 set VC_BUILD=true
 set VS_CL=%1
