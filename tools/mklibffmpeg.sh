@@ -56,20 +56,23 @@ DUP_OBJS=(libswscale/log2_tab.o libswresample/log2_tab.o libavcodec/log2_tab.o l
   libavcodec/avcodecres.o
   libavcodec/half2float.o   # half2float.c is in libavutil, but not built into libavutil, always built in swscale
   libavcodec/vulkan.o
-  # vulkan_shaderc.o and vulkan_glslang.o are not included in avutil, so keep avcodec ones
-  #libavcodec/vulkan_shaderc.o
-  #libavcodec/vulkan_glslang.o
   libavdevice/avdeviceres.o
   libavformat/avformatres.o
   libavfilter/avfilterres.o
   libavfilter/vulkan.o
-  libavfilter/vulkan_shaderc.o
-  libavfilter/vulkan_glslang.o
   libavresample/avresample.o
   libswscale/swscaleres.o
   libswresample/swresampleres.o
   libpostproc/postprocres.o
   )
+if [ -f "$BUILD_DIR/libavcodec/vulkan_shaderc.o" -a -f "$BUILD_DIR/libavfilter/vulkan_shaderc.o" ]; then
+# ffmpeg > 7.1
+    DUP_OBJS+=(libavfilter/vulkan_shaderc.o libavfilter/vulkan_glslang.o
+  # vulkan_shaderc.o and vulkan_glslang.o are not included in avutil, so keep avcodec ones
+  #libavcodec/vulkan_shaderc.o
+  #libavcodec/vulkan_glslang.o
+    )
+fi
 grep -q ffjni.c libavformat/file.d 2>/dev/null && DUP_OBJS+=(libavcodec/ffjni.o)
 OBJS=`find compat lib* -name "*.o" |grep -vE "$(join '|' ${DUP_OBJS[@]})"`
 # appveyor PATH value is very large, xargs gets error "environment is too large for exec", so use echo
