@@ -74,6 +74,11 @@ if [ -f "$BUILD_DIR/libavcodec/vulkan_shaderc.o" -a -f "$BUILD_DIR/libavfilter/v
   #libavcodec/vulkan_glslang.o
     )
 fi
+
+if [ -f "$BUILD_DIR/libavutil/half2float.o" -a -f "$BUILD_DIR/libswscale/half2float.o" ]; then
+# ffmpeg > 7.1
+    DUP_OBJS+=(libswscale/half2float.o libavcodec/float2half.o)
+fi
 grep -q ffjni.c libavformat/file.d 2>/dev/null && DUP_OBJS+=(libavcodec/ffjni.o)
 OBJS=`find compat lib* -name "*.o" |grep -vE "$(join '|' ${DUP_OBJS[@]})"`
 # appveyor PATH value is very large, xargs gets error "environment is too large for exec", so use echo
