@@ -58,5 +58,8 @@ You can request to add your configuration. If not accepted, customize yourself a
 - Edit workflow files(build.yml, build_gpl.yml). Remove unused jobs, e.g. sourceforge upload
 - Download ffmpeg binaries from workflow artifacts
 
+## Link Static FFmpeg Libraries
+When linking static libs to your program, all dependencies must be specified in your linker flags. The dependencies can be found in https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download
+
 ## TODO
 - Azure pipeline/github action: vs2022+WSL
