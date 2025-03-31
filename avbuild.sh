@@ -230,6 +230,7 @@ enable_libmfx(){
   }
 }
 
+disable_opt response-files # LINK : fatal error LNK1181: cannot open input file '@libavutil\avutil-60.dll.objs'
 enable_opt hwaccels
 $USE_VK || disable_opt vulkan
 
