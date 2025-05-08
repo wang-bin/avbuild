@@ -16,7 +16,8 @@ if [[ "${TARGET_OS}" == "iOS"* || "${TARGET_OS}" == "tvOS"* || "${TARGET_OS}" ==
   $TAR Jcf ffmpeg-${SUFFIX}-shared.tar.xz --exclude="*.a" ffmpeg-${SUFFIX}
   find ffmpeg-${SUFFIX} -name "*.dylib" -delete
 fi
-$TAR Jcf ffmpeg-${SUFFIX}{.tar.xz,}
+# compressed dSYM files are small
+$TAR Jcfv ffmpeg-${SUFFIX}{.tar.xz,}
 ls -lh *.xz
 [ "$GITHUB_EVENT_NAME" == "pull_request" ] && exit 0
 

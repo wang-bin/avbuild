@@ -38,7 +38,7 @@ test -f $USER_CONFIG &&  . $USER_CONFIG
 : ${NDK_ROOT:="$ANDROID_NDK"}
 : ${LIB_OPT:="--enable-shared"}
 #: ${FEATURE_OPT:="--enable-hwaccels"}
-: ${DEBUG_OPT:="--disable-debug"}
+#: ${DEBUG_OPT:="--disable-debug"}
 : ${FORCE_LTO:=false}
 : ${FFSRC:=$PWD/FFmpeg}
 : ${LITE_BUILD:=false}
@@ -264,6 +264,8 @@ LLVM_AR=llvm-ar
 LLVM_NM=llvm-nm
 LLVM_RANLIB=llvm-ranlib
 LLVM_STRIP=llvm-strip
+LLVM_OBJCOPY=llvm-objcopy
+TOOLCHAIN_OPT="--disable-stripping"
 
 if [ -f "$PWD/tools/nv-codec-headers/ffnvcodec.pc.in" ]; then
   sed 's/\(prefix=\).*/\1\${pcfiledir\}/' tools/nv-codec-headers/ffnvcodec.pc.in >tools/nv-codec-headers/ffnvcodec.pc
@@ -370,7 +372,7 @@ use_lld() {
   $LD_IS_LLD || {
     FUSE_LD="${USE_LD:=lld}"
     [[ "${USE_LD##*/}" == *lld* ]] || FUSE_LD=lld # not lld or lld-link
-    EXTRA_LDFLAGS="-s -fuse-ld=$FUSE_LD $EXTRA_LDFLAGS" # -s: strip flag passing to lld. TODO: llvm-strip
+    EXTRA_LDFLAGS+=" -fuse-ld=$FUSE_LD" # -s: strip flag passing to lld. TODO: llvm-strip
     USER_OPT="--disable-stripping $USER_OPT"; # disable strip command because cross gcc may be not installed
   }
 }
@@ -1506,6 +1508,17 @@ setup_wasm_env(){
   EXTRA_CFLAGS+=" -ffast-math -fstrict-aliasing"
   INSTALL_DIR=sdk-$1
 }
+
+gen_elf_dsym() {
+    for i in $@; do
+        [ -f $i ] && {
+            echo "gen dsym for $i"
+            $LLVM_OBJCOPY --only-keep-debug $i $i.dSYM
+            $LLVM_OBJCOPY --strip-debug --strip-unneeded --discard-all --add-gnu-debuglink=$i.dSYM $i
+        }
+    done
+}
+
 # 1 target os & 1 target arch
 config1(){
   local TAGET_FLAG=$1
@@ -1726,8 +1739,6 @@ EOF
   if [ -f bin/avutil.lib ]; then
     mv bin/*.lib lib
   fi
-  find lib -name "*.dylib" -type f -exec dsymutil {} \;
-  find lib -name "*.dylib" -type f -exec strip -u -r {} \; # will strip exported symbols, llvm-strip can reduce size more
 }
 
 build_all(){
@@ -1826,7 +1837,13 @@ make_universal()
     chmod +x $THIS_DIR/tools/dylib2framework.sh
     cp -avf $THIS_DIR/tools/{dylib2framework.sh,PrivacyInfo.xcprivacy} ${dirs[0]}
   fi
-  [ ${#dirs[@]} -le 1 ] && return 0
+  [ ${#dirs[@]} -le 1 ] && {
+    cd ${dirs[0]}
+    find lib -name "*.dylib" -type f -exec dsymutil {} \;
+    find lib -name "*.dylib" -type f -exec strip -u -r {} \; # will strip exported symbols, llvm-strip can reduce size more
+    gen_elf_dsym $(find lib -name "lib*.so.*.*.*" -type f)
+    return 0
+  }
 # TODO: move to a new script
   if [[ "$os" == ios* || "$os" == macos* || "$os" == osx* || "$os" == *catalyst* || "$os" == tv* || "$os" == xr* || "$os" == vision* || "$os" == watch* ]]; then
     local OUT_DIR=sdk-$os
@@ -1884,6 +1901,9 @@ make_universal()
     [ -f "$FFSRC/$LICENSE_FILE" ] && cp -af "$FFSRC/$LICENSE_FILE" $OUT_DIR || touch $OUT_DIR/$LICENSE_FILE
     echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
     rm -rf ${dirs[@]}
+    cd $OUT_DIR
+    find lib -name "*.dylib" -type f -exec dsymutil {} \;
+    find lib -name "*.dylib" -type f -exec strip -u -r {} \; # will strip exported symbols, llvm-strip can reduce size more
   else
     local get_arch=echo
     [ "$os" == "android" ] && get_arch=android_arch
@@ -1910,6 +1930,8 @@ make_universal()
       echo "https://github.com/wang-bin/avbuild" >$OUT_DIR/README.txt
       rm -rf $d
     done
+    cd $OUT_DIR
+    gen_elf_dsym $(find lib -name "lib*.so.*.*.*" -type f)
   fi
 }
 mkdir -p .dir
