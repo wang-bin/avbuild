@@ -1594,7 +1594,7 @@ config1(){
   test -n "$EXTRA_LDSOFLAGS" && TOOLCHAIN_OPT+=" --extra-ldsoflags=\"$EXTRA_LDSOFLAGS\""
   test -n "$EXTRALIBS" && TOOLCHAIN_OPT+=" --extra-libs=\"$EXTRALIBS\""
   echo INSTALL_DIR: $INSTALL_DIR
-  is_libav || FEATURE_OPT+=" --disable-postproc"
+  is_libav || disable_opt postproc
   local CONFIGURE="configure --extra-version=avbuild --disable-doc ${DEBUG_OPT} $LIB_OPT --enable-runtime-cpudetect $FEATURE_OPT $TOOLCHAIN_OPT $USER_OPT"
   : ${NO_ENC=false}
     CONFIGURE+=" $DEC_OPT $DEMUX_OPT $ENC_OPT $MUX_OPT $FILTER_OPT $PROT_OPT"
