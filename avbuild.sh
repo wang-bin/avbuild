@@ -1062,6 +1062,7 @@ setup_ios_env() {
   FILTER_OPT=$FILTER_OPT_MOBILE
   ENC_OPT=$ENC_OPT_MOBILE
   MUX_OPT=$MUX_OPT_MOBILE
+  FEATURE_OPT+=" --disable-parser=apv"
   enable_opt videotoolbox libxml2
   disable_opt avdevice
   disable_opt vulkan
@@ -1149,6 +1150,7 @@ setup_apple_env() {
   FILTER_OPT=$FILTER_OPT_MOBILE
   ENC_OPT=
   MUX_OPT=
+  FEATURE_OPT+=" --disable-parser=apv"
   enable_opt videotoolbox libxml2
   disable_opt avdevice
   disable_opt vulkan
@@ -1221,6 +1223,7 @@ EOF
 }
 
 setup_macos_env(){
+  FEATURE_OPT+=" --disable-parser=apv"
   local MACOS_VER=10.7
   local MACOS_ARCH=
   if [ "${1:0:5}" == "macos" ]; then
