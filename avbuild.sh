@@ -234,7 +234,10 @@ disable_opt response-files # LINK : fatal error LNK1181: cannot open input file 
 enable_opt hwaccels
 $USE_VK || disable_opt vulkan
 
+ELF_FLAGS_ADDED=false
 add_elf_flags() {
+  $ELF_FLAGS_ADDED && return 0
+  ELF_FLAGS_ADDED=true
   HARDENED_CFLAGS="-fstack-protector-strong -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fPIE" # toolchain=hardened is -fstack-protector-all
   HARDENED_LDFLAGS="-Wl,-z,relro -Wl,-z,now"
   # -Wl,-z,noexecstack -Wl,--as-needed is added by configure
