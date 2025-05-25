@@ -1,4 +1,4 @@
-From 779efdb1bc39e5ce7c1d6839c25632636fc03901 Mon Sep 17 00:00:00 2001
+From 00e14cdd691ed886d88ad1db7dc987741c834dad Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 14 Apr 2019 11:42:42 +0800
 Subject: [PATCH 14/33] configure: suppor static build via clang-cl
@@ -8,10 +8,10 @@ Subject: [PATCH 14/33] configure: suppor static build via clang-cl
  1 file changed, 9 insertions(+), 1 deletion(-)
 
 diff --git a/configure b/configure
-index d92b74b0c9..870ba4c866 100755
+index 42e05bf975..751d60d90f 100755
 --- a/configure
 +++ b/configure
-@@ -5915,7 +5915,15 @@ case $target_os in
+@@ -5944,7 +5944,15 @@ case $target_os in
          SLIB_INSTALL_EXTRA_LIB='$(SLIBNAME_WITH_MAJOR:$(SLIBSUF)=.def)'
          SHFLAGS='-dll -def:$$(@:$(SLIBSUF)=.def) -implib:$(SUBDIR)$(SLIBNAME:$(SLIBSUF)=.lib)'
          enabled x86_64 && objformat="win64" || objformat="win32"

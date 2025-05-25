@@ -1,4 +1,4 @@
-From 4fc279873c32a975f60611819202c8fa7fa2c064 Mon Sep 17 00:00:00 2001
+From 7eafd1da4c92228c36dc371b8b19a1e013030d14 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 13 Nov 2017 12:23:10 +0800
 Subject: [PATCH 08/33] h264: increase MAX_SLICES to 64
@@ -10,7 +10,7 @@ https://github.com/wang-bin/QtAV/issues/923
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/libavcodec/h264dec.h b/libavcodec/h264dec.h
-index 5abc60c09d..bdfe2c2beb 100644
+index c28d278240..6bf4f1cf1a 100644
 --- a/libavcodec/h264dec.h
 +++ b/libavcodec/h264dec.h
 @@ -58,7 +58,7 @@

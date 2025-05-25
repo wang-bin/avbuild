@@ -1,7 +1,7 @@
-From ae038c93e5c0239913b39c952e8943da745a8958 Mon Sep 17 00:00:00 2001
+From 6ecfb383f67c910a2781cfde9e50a9ee26d679e9 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 31 Dec 2024 18:49:16 +0800
-Subject: [PATCH 33/33] avutil/mem_internal: fix clang + vcrt build
+Subject: [PATCH 32/33] avutil/mem_internal: fix clang + vcrt build
 
 fix many sws link error if build with clang --target=x86_64-pc-windows-msvc + vcrt + winsdk, for example
 lld-link: error: undefined symbol: bFC
@@ -21,7 +21,7 @@ _Alignas crashes for msvc build.
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/libavutil/mem_internal.h b/libavutil/mem_internal.h
-index c027fa51c3..d9825707c0 100644
+index d58881d09c..16b1680df6 100644
 --- a/libavutil/mem_internal.h
 +++ b/libavutil/mem_internal.h
 @@ -24,7 +24,7 @@

@@ -1,4 +1,4 @@
-From c70c531c2ed26b5c294dba4d5b09ff8ac36d6a0d Mon Sep 17 00:00:00 2001
+From dc1c5ac9099ab397b84623d9bf3017571fec0f9f Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 17 Nov 2017 14:54:23 +0800
 Subject: [PATCH 10/33] mmal: add option copy_frame to support retrieving sw

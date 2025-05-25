@@ -1,7 +1,7 @@
-From 78bccbe5cc59446b4e279175d8cdba5a8ae3f34c Mon Sep 17 00:00:00 2001
+From 4f39fa7991f0ff68d3510fdd154dd8b191c5ceb5 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 11 Aug 2024 10:27:43 +0800
-Subject: [PATCH 28/33] Revert "avutil/timestamp: change precision of
+Subject: [PATCH 27/33] Revert "avutil/timestamp: change precision of
  av_ts_make_time_string()"
 
 This reverts commit 8c936e9b437aaed0ca10f3ec2edebf06cad6a5b5.

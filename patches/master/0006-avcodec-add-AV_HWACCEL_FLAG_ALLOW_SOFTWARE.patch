@@ -1,4 +1,4 @@
-From ac6d70c5e43b3e25a56ff2acdcabae079304fc54 Mon Sep 17 00:00:00 2001
+From 7b7a5a34421aa7b8cae96a2840e410bc8868b800 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 9 Nov 2017 14:56:53 +0800
 Subject: [PATCH 06/33] avcodec: add AV_HWACCEL_FLAG_ALLOW_SOFTWARE
@@ -11,10 +11,10 @@ the performance may be better than ffmpeg sw decoder.
  2 files changed, 5 insertions(+)
 
 diff --git a/libavcodec/avcodec.h b/libavcodec/avcodec.h
-index 12e6e8749f..8091d3231a 100644
+index a004cccd2d..b2f8747851 100644
 --- a/libavcodec/avcodec.h
 +++ b/libavcodec/avcodec.h
-@@ -2200,6 +2200,10 @@ typedef struct AVHWAccel {
+@@ -2021,6 +2021,10 @@ typedef struct AVHWAccel {
   */
  #define AV_HWACCEL_FLAG_UNSAFE_OUTPUT (1 << 3)
  
@@ -26,10 +26,10 @@ index 12e6e8749f..8091d3231a 100644
   * @}
   */
 diff --git a/libavcodec/options_table.h b/libavcodec/options_table.h
-index 47da41b0ad..652b3ab21d 100644
+index c525cde80a..5d99154a2e 100644
 --- a/libavcodec/options_table.h
 +++ b/libavcodec/options_table.h
-@@ -400,6 +400,7 @@ static const AVOption avcodec_options[] = {
+@@ -394,6 +394,7 @@ static const AVOption avcodec_options[] = {
  {"allow_high_depth", "allow to output YUV pixel formats with a different chroma sampling than 4:2:0 and/or other than 8 bits per component", 0, AV_OPT_TYPE_CONST, {.i64 = AV_HWACCEL_FLAG_ALLOW_HIGH_DEPTH }, INT_MIN, INT_MAX, V | D, .unit = "hwaccel_flags"},
  {"allow_profile_mismatch", "attempt to decode anyway if HW accelerated decoder's supported profiles do not exactly match the stream", 0, AV_OPT_TYPE_CONST, {.i64 = AV_HWACCEL_FLAG_ALLOW_PROFILE_MISMATCH }, INT_MIN, INT_MAX, V | D, .unit = "hwaccel_flags"},
  {"unsafe_output", "allow potentially unsafe hwaccel frame output that might require special care to process successfully", 0, AV_OPT_TYPE_CONST, {.i64 = AV_HWACCEL_FLAG_UNSAFE_OUTPUT }, INT_MIN, INT_MAX, V | D, .unit = "hwaccel_flags"},

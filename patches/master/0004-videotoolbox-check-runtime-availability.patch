@@ -1,4 +1,4 @@
-From cc01670a46f9f5469d5ae59dbf4bb00000c418c0 Mon Sep 17 00:00:00 2001
+From 22c1b1ba1c025c045217f50849e424fb0fd6ab21 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:35:28 +0800
 Subject: [PATCH 04/33] videotoolbox: check runtime availability
@@ -10,7 +10,7 @@ macOS<10.8
  1 file changed, 13 insertions(+), 6 deletions(-)
 
 diff --git a/libavcodec/videotoolbox.c b/libavcodec/videotoolbox.c
-index a606c29ded..35f31aa05a 100644
+index ccba249140..746fc41249 100644
 --- a/libavcodec/videotoolbox.c
 +++ b/libavcodec/videotoolbox.c
 @@ -41,6 +41,10 @@
@@ -24,7 +24,7 @@ index a606c29ded..35f31aa05a 100644
  #ifndef kVTVideoDecoderSpecification_RequireHardwareAcceleratedVideoDecoder
  #  define kVTVideoDecoderSpecification_RequireHardwareAcceleratedVideoDecoder CFSTR("RequireHardwareAcceleratedVideoDecoder")
  #endif
-@@ -737,7 +741,7 @@ static void videotoolbox_decoder_callback(void *opaque,
+@@ -743,7 +747,7 @@ static void videotoolbox_decoder_callback(void *opaque,
  
  static OSStatus videotoolbox_session_decode_frame(AVCodecContext *avctx)
  {
@@ -33,7 +33,7 @@ index a606c29ded..35f31aa05a 100644
      CMSampleBufferRef sample_buf;
      AVVideotoolboxContext *videotoolbox = videotoolbox_get_context(avctx);
      VTContext *vtctx = avctx->internal->hwaccel_priv_data;
-@@ -749,13 +753,15 @@ static OSStatus videotoolbox_session_decode_frame(AVCodecContext *avctx)
+@@ -755,13 +759,15 @@ static OSStatus videotoolbox_session_decode_frame(AVCodecContext *avctx)
      if (!sample_buf)
          return -1;
  
@@ -52,7 +52,7 @@ index a606c29ded..35f31aa05a 100644
  
      CFRelease(sample_buf);
  
-@@ -896,7 +902,7 @@ static CFDictionaryRef videotoolbox_decoder_config_create(CMVideoCodecType codec
+@@ -902,7 +908,7 @@ static CFDictionaryRef videotoolbox_decoder_config_create(CMVideoCodecType codec
  static int videotoolbox_start(AVCodecContext *avctx)
  {
      AVVideotoolboxContext *videotoolbox = videotoolbox_get_context(avctx);
@@ -61,7 +61,7 @@ index a606c29ded..35f31aa05a 100644
      VTDecompressionOutputCallbackRecord decoder_cb;
      CFDictionaryRef decoder_spec;
      CFDictionaryRef buf_attr;
-@@ -990,7 +996,8 @@ static int videotoolbox_start(AVCodecContext *avctx)
+@@ -996,7 +1002,8 @@ static int videotoolbox_start(AVCodecContext *avctx)
      decoder_cb.decompressionOutputCallback = videotoolbox_decoder_callback;
      decoder_cb.decompressionOutputRefCon   = avctx->internal->hwaccel_priv_data;
  

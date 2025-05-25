@@ -1,4 +1,4 @@
-From d75fbe5aa29b2cbb4be289976351a9f331f5d66d Mon Sep 17 00:00:00 2001
+From 1d13e9254fd880847b1c3b1e0f5d409179b9d99d Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 15 Oct 2023 13:22:34 +0800
 Subject: [PATCH 26/33] windows: shared + static libs in one build
@@ -10,10 +10,10 @@ av_export_avutil avpriv_vga16_font will result in LINK4217 warning when building
  2 files changed, 7 insertions(+), 5 deletions(-)
 
 diff --git a/configure b/configure
-index de52e615a5..fddb24d426 100755
+index 4564512e23..80cd130d07 100755
 --- a/configure
 +++ b/configure
-@@ -5918,8 +5918,12 @@ case $target_os in
+@@ -5945,8 +5945,12 @@ case $target_os in
              # for shared libs.
              LD_LIB='%.lib'
              # Cannot build both shared and static libs with MSVC or icl.
@@ -27,7 +27,7 @@ index de52e615a5..fddb24d426 100755
          test_cmd $windres --version && enable gnu_windres
          enabled x86_32 && check_ldflags -LARGEADDRESSAWARE
          add_cppflags -DWIN32_LEAN_AND_MEAN
-@@ -5939,8 +5943,6 @@ case $target_os in
+@@ -5966,8 +5970,6 @@ case $target_os in
          [ "$toolchain" = msvc ] && {
            ranlib=:
          } || {

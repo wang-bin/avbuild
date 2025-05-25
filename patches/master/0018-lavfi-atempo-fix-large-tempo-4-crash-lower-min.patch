@@ -1,4 +1,4 @@
-From a10de2561f2c21fc7b1d842b032787c3c68edc52 Mon Sep 17 00:00:00 2001
+From 899c0196ad45a525894ba1bba90bc285b46acdaf Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 9 Aug 2020 23:35:08 +0800
 Subject: [PATCH 18/33] lavfi/atempo: fix large tempo(>4) crash, lower min
@@ -8,7 +8,7 @@ Subject: [PATCH 18/33] lavfi/atempo: fix large tempo(>4) crash, lower min
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/libavfilter/af_atempo.c b/libavfilter/af_atempo.c
-index 3b03caa4d0..a6a021b000 100644
+index 62a8e11b78..7d4e7abf1b 100644
 --- a/libavfilter/af_atempo.c
 +++ b/libavfilter/af_atempo.c
 @@ -154,7 +154,7 @@ typedef struct ATempoContext {

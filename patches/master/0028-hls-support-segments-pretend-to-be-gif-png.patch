@@ -1,25 +1,25 @@
-From 13602d643bd910ff987c51f0a594d81c4354324f Mon Sep 17 00:00:00 2001
+From 08fb235bcc4d3ae3f47d390fe166efcf111bda42 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Sep 2024 15:59:13 +0800
-Subject: [PATCH 29/33] hls: support segments pretend to be gif & png
+Subject: [PATCH 28/33] hls: support segments pretend to be gif & png
 
 ---
  libavformat/hls.c | 29 ++++++++++++++++++++++++++++-
  1 file changed, 28 insertions(+), 1 deletion(-)
 
 diff --git a/libavformat/hls.c b/libavformat/hls.c
-index 3bdc1bc848..4ab3f2027a 100644
+index c7b655c83c..ed784222b0 100644
 --- a/libavformat/hls.c
 +++ b/libavformat/hls.c
-@@ -222,6 +222,7 @@ typedef struct HLSContext {
+@@ -223,6 +223,7 @@ typedef struct HLSContext {
      AVIOInterruptCB *interrupt_callback;
      AVDictionary *avio_opts;
      AVDictionary *seg_format_opts;
 +    int seg_allow_img;
      char *allowed_extensions;
+     char *allowed_segment_extensions;
      int extension_picky;
-     int max_reload;
-@@ -2162,7 +2163,31 @@ static int hls_read_header(AVFormatContext *s)
+@@ -2312,7 +2313,31 @@ static int hls_read_header(AVFormatContext *s)
              pls->ctx->max_analyze_duration = s->max_analyze_duration > 0 ? s->max_analyze_duration : 4 * AV_TIME_BASE;
              pls->ctx->interrupt_callback = s->interrupt_callback;
              url = av_strdup(pls->segments[0]->url);
@@ -52,7 +52,7 @@ index 3bdc1bc848..4ab3f2027a 100644
  
              for (int n = 0; n < pls->n_segments; n++)
                  if (ret >= 0)
-@@ -2646,6 +2671,8 @@ static const AVOption hls_options[] = {
+@@ -2824,6 +2849,8 @@ static const AVOption hls_options[] = {
          OFFSET(seg_format_opts), AV_OPT_TYPE_DICT, {.str = NULL}, 0, 0, FLAGS},
      {"seg_max_retry", "Maximum number of times to reload a segment on error.",
       OFFSET(seg_max_retry), AV_OPT_TYPE_INT, {.i64 = 0}, 0, INT_MAX, FLAGS},

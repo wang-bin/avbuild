@@ -1,4 +1,4 @@
-From 4668e147fdf0c14cf1bdd435a268c9aadc18908b Mon Sep 17 00:00:00 2001
+From ee71c9268122cac6dd2a811c4d2f4716e6cda3cb Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 11 Jan 2022 16:17:56 +0800
 Subject: [PATCH 20/33] configure: rewrite flags from pkg-config for msvc in
@@ -11,10 +11,10 @@ requires mixed form, e.g. c:/msys64
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/configure b/configure
-index cff55f8e10..1c1ab46aa3 100755
+index 751d60d90f..7e1f947deb 100755
 --- a/configure
 +++ b/configure
-@@ -4872,7 +4872,8 @@ msvc_common_flags(){
+@@ -4892,7 +4892,8 @@ msvc_common_flags(){
              -libpath:*|-LIBPATH:*)echo $flag ;;
              -l*)                  echo ${flag#-l}.lib ;;
              -LARGEADDRESSAWARE)   echo $flag ;;

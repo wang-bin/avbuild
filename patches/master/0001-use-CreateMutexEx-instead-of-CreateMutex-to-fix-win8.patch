@@ -1,4 +1,4 @@
-From d6b3c9a190328940368849df9a924ab4e44f63b1 Mon Sep 17 00:00:00 2001
+From f82b3c8e803599bd67cfd981b4d7d36a7e04ab7e Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sat, 28 Oct 2017 20:26:50 +0800
 Subject: [PATCH 01/33] use CreateMutexEx instead of CreateMutex to fix win8

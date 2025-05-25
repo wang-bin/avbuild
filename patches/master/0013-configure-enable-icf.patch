@@ -1,4 +1,4 @@
-From 4ba1d4c98fd1d472bd3f4e04b5647742372c2ca9 Mon Sep 17 00:00:00 2001
+From 94430b90d0510f9e96cb040885f886b2b4ef105f Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 11 Sep 2018 23:16:49 +0800
 Subject: [PATCH 13/33] configure: enable icf
@@ -8,10 +8,10 @@ Subject: [PATCH 13/33] configure: enable icf
  1 file changed, 3 insertions(+)
 
 diff --git a/configure b/configure
-index c21be8837b..d92b74b0c9 100755
+index 5c20e8a1aa..42e05bf975 100755
 --- a/configure
 +++ b/configure
-@@ -7593,6 +7593,9 @@ test_cc -mno-red-zone <<EOF && noredzone_flags="-mno-red-zone"
+@@ -7631,6 +7631,9 @@ test_cc -mno-red-zone <<EOF && noredzone_flags="-mno-red-zone"
  int x;
  EOF
  

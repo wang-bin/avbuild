@@ -1,4 +1,4 @@
-From 500d943d374859e5f6c526c6bbb3f8122e396e2b Mon Sep 17 00:00:00 2001
+From cfbec8abb17c923ecef4ceac0a2ae41dc47c2523 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 9 Nov 2017 15:05:26 +0800
 Subject: [PATCH 07/33] videotoolbox: allow software implementation
@@ -13,10 +13,10 @@ compatiblility attribute is disabled)
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/libavcodec/videotoolbox.c b/libavcodec/videotoolbox.c
-index 35f31aa05a..5f4fa4ab6c 100644
+index 746fc41249..e925efe2fc 100644
 --- a/libavcodec/videotoolbox.c
 +++ b/libavcodec/videotoolbox.c
-@@ -843,9 +843,9 @@ static CFDictionaryRef videotoolbox_decoder_config_create(CMVideoCodecType codec
+@@ -849,9 +849,9 @@ static CFDictionaryRef videotoolbox_decoder_config_create(CMVideoCodecType codec
                                                                     &kCFTypeDictionaryValueCallBacks);
  
      CFDictionarySetValue(config_info,
