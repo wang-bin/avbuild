@@ -283,7 +283,7 @@ jobs:
       run: |
         export ANDROID_NDK=$ANDROID_NDK_LATEST_HOME
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-        ./avbuild.sh ${TARGET_OS} arm64
+        ./avbuild.sh ${TARGET_OS}24 arm64
     - name: Make SDK
       shell: bash
       run: |
