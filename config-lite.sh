@@ -13,7 +13,7 @@ DEMUX_OPT_MOBILE="--enable-demuxer=*sub*,*ac3,*ac,*avs*,*[mj]peg*,*vc*,*web*,au,
 ENC_OPT_MOBILE="--enable-encoder=*_at,aac,gif,h26[3-4]*,flv,av1*,hevc*,mjpeg*,*png,opus,pcm*,prores*,rawvideo,spdif,speedhq,*jpeg,*png,vp[8-9]*,wrapped_avframe"
 MUX_OPT_MOBILE="--enable-muxer=*jpeg,fifo,flv,gif,hls,h264,hevc,image2,mov,mp4,mpegts,matroska,null,pcm*,rawvideo,rt*,spdif,*pipe,*segment,webm,wav"
 PROT_OPT_MOBILE="--enable-protocol=cache,concat*,crypto*,data,fd,*file,ftp,h*,i*,pipe,rt*,s*,t*,u*"
-FILTER_OPT_MOBILE="--enable-filter=*null*,afade,*fifo,*format,*resample,aeval,atempo,pan,crop,eq*,framerate,hw*,loudnorm,scale,volume,yadif*"
+FILTER_OPT_MOBILE="--enable-filter=*null*,afade,*fifo,*format,*resample,aeval,atempo,pan,crop,eq*,framerate,hw*,loudnorm,scale,volume,yadif*,*movie,overlay"
 PROT_OPT="${PROT_OPT_MOBILE}"
 DEC_OPT="${DEC_OPT_MOBILE},ffv*"                # vvc*
 DEMUX_OPT="${DEMUX_OPT_MOBILE},mlv,nsv,nut"     # vvc
