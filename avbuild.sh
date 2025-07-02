@@ -15,7 +15,7 @@ echo "https://github.com/wang-bin/avbuild"
 
 THIS_NAME=${0##*/}
 THIS_DIR=$PWD
-PLATFORMS="ios|iossimulator|tvos|tvossimulator|android|rpi|sunxi|vc|win|winrt|uwp|winphone|mingw"
+PLATFORMS="ios|iossimulator|tvos|tvossimulator|android|ohos|rpi|sunxi|vc|win|winrt|uwp|winphone|mingw"
 echo "Usage:"
 test -d $PWD/FFmpeg || echo "  export FFSRC=/path/to/ffmpeg"
 cat<<HELP
@@ -24,7 +24,7 @@ target_platform can be: ${PLATFORMS}
 target_architecture can be: x86, x86_64, armv5, armv6, armv7, armv8, arm64
 Build for host if no parameter is set.
 Use a shortcut in tools dir if build for windows using MSVC.
-Environment vars: USE_TOOLCHAIN(clang, gcc etc.), USE_LD(clang, lld etc.), USER_OPT, ANDROID_NDK, SYSROOT, ONECORE(="onecore", "onecore-$arch")
+Environment vars: USE_TOOLCHAIN(clang, gcc etc.), USE_LD(clang, lld etc.), USER_OPT, OHOS_NDK, SYSROOT, ONECORE(="onecore", "onecore-$arch")
 Add options via USER_OPT, \${platform}_OPT
 config.sh and config-${target_platform}.sh is automatically included. config-lite.sh is for building smaller libraries.
 HELP
@@ -873,6 +873,71 @@ EOF
 
 # TOOLCHAIN_OPT+=" --enable-cross-compile --cross-prefix=arm-mingw32ce- --target-os=mingw32ce --arch=arm --cpu=arm"
 
+setup_ohos_env() {
+  DEC_OPT=$DEC_OPT_MOBILE
+  DEMUX_OPT=$DEMUX_OPT_MOBILE
+  FILTER_OPT=$FILTER_OPT_MOBILE
+  ENC_OPT=$ENC_OPT_MOBILE
+  MUX_OPT=$MUX_OPT_MOBILE
+  FEATURE_OPT+=" --disable-indevs --disable-outdevs"
+  disable_opt v4l2_m2m v4l2-m2m
+  disable_opt vulkan
+  sed -i $sed_bak 's/^check_cc v4l2_m2m/enabled v4l2_m2m \&\& check_cc v4l2_m2m/' "$FFSRC/configure"
+  local OHOS_ARCH=${1:=arm}
+  TRIPLE_ARCH=$OHOS_ARCH
+  local FFARCH=$OHOS_ARCH
+  add_elf_flags
+  EXTRA_CFLAGS+=" -ffast-math -fstrict-aliasing"
+  if [ -z "${OHOS_ARCH/x*64/}" ]; then
+    OHOS_ARCH=x86_64
+    TRIPLE_ARCH=$OHOS_ARCH
+    enable_lto=false
+  elif [ -z "${OHOS_ARCH/a*r*64/}" ]; then
+    OHOS_ARCH=arm64
+    TRIPLE_ARCH=aarch64
+  elif [ -z "${OHOS_ARCH/*arm*/}" ]; then
+#https://wiki.debian.org/ArmHardFloatPort/VfpComparison
+    TRIPLE_ARCH=arm
+    FFARCH=arm
+    TOOLCHAIN_OPT+=" --enable-thumb"
+    EXTRA_CFLAGS+=" -march=armv7-a -mtune=generic-armv7-a -mfloat-abi=softfp $EXTRA_CFLAGS_FPU"
+        enable_lto=false
+    OHOS_ARCH=armv7
+  fi
+  OHOS_HEADER_TRIPLE=${TRIPLE_ARCH}-linux-ohos
+  local CROSS_PREFIX=${TRIPLE_ARCH}-unknown-linux-ohos-
+  CLANG_FLAGS+=" --target=${OHOS_HEADER_TRIPLE} -D__MUSL__ --sysroot=$OHOS_NDK/sysroot"
+  #[ -z "$API_SUFFIX" ] && include_with_sysroot_compat /usr/include/$OHOS_HEADER_TRIPLE # TODO: not required if api level is set in --target=
+  clangxxs=(`find $OHOS_NDK/llvm/bin -name "clang++*"`) # can not be "clang*": clang-tidy
+  clangxx=${clangxxs[0]}
+  IS_CLANG=true
+  $IS_CLANG && probe_cc $clangxx
+  TOOLCHAIN_OPT+=" --ar=llvm-ar --ranlib=llvm-ranlib --nm=llvm-nm"
+  TOOLCHAIN_OPT+=" --strip=$LLVM_STRIP"
+  LFLAGS_CLANG+=" -fuse-ld=lld -rtlib=compiler-rt" # use compiler-rt instead of default libgcc.a so -gcc-toolchain is not required
+
+  #  [ -z "$API_SUFFIX" ] && include_with_sysroot_compat /usr/include/$ANDROID_HEADER_TRIPLE # TODO: not required if api level is set in --target=
+
+  # pkg-config w/o cross_prefix
+  # --target-os=android: symver, soname etc.
+  TOOLCHAIN_OPT+=" --target-os=android --arch=${FFARCH} --enable-cross-compile --cross-prefix=$CROSS_PREFIX --pkg-config=pkg-config"
+  TOOLCHAIN_OPT+=" --cc=clang"
+    EXTRA_CFLAGS+=" $CFLAGS_CLANG $CLANG_FLAGS"
+    $LD_IS_LLD || EXTRA_LDFLAGS+=" $LFLAGS_CLANG $CLANG_FLAGS" # -Qunused-arguments is added by ffmpeg configure
+
+  TOOLCHAIN_OPT+=" --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE $EXE_FLAGS\""
+  INSTALL_DIR=sdk-ohos-${1:-${OHOS_ARCH}}
+  $IS_CLANG && INSTALL_DIR="${INSTALL_DIR}-clang" || INSTALL_DIR="${INSTALL_DIR}-gcc"
+  mkdir -p $THIS_DIR/build_$INSTALL_DIR
+  PATHS=$OHOS_NDK/llvm/bin
+  cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
+export PATH="$PATHS:$PATH"
+export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/ohos/${OHOS_ARCH}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/ohos_${OHOS_ARCH}/lib/pkgconfig:$PKG_CONFIG_PATH
+EOF
+  LIBWOLFSSL="${THIS_DIR}/tools/dep/ohos/${OHOS_ARCH}/lib/libwolfssl.a"
+  [ -f "$LIBWOLFSSL" ] && cp -avf "$LIBWOLFSSL" $THIS_DIR/build_$INSTALL_DIR/libwolfssl.a
+}
+
 setup_android_env() {
   DEC_OPT=$DEC_OPT_MOBILE
   DEMUX_OPT=$DEMUX_OPT_MOBILE
@@ -1544,6 +1609,7 @@ config1(){
   fi
   case $1 in
     android*)    setup_android_env $TAGET_ARCH_FLAG $1 ;;
+    ohos*)    setup_ohos_env $TAGET_ARCH_FLAG $1 ;;
     ios*)       setup_ios_env $TAGET_ARCH_FLAG $1 ;;
     osx*|macos*)     setup_macos_env $TAGET_ARCH_FLAG $1 ;;
     tv*|xr*|vision*|watch*|*catalyst*)      setup_apple_env $TAGET_ARCH_FLAG $1 ;;
@@ -1751,6 +1817,7 @@ build_all(){
         [[ "$os" == xr* || "$os" == vision* ]] && archs=(arm64) # no x86 simulator
       }
       [ "${os:0:7}" == "android" ] && archs=(armv7 arm64 x86 x86_64)
+      [ "${os:0:4}" == "android" ] && archs=(armv7 arm64 x86_64)
       [ "${os:0:3}" == "rpi" -o "${os:0:9}" == "raspberry" ] && archs=(armv6zk armv7-a)
       [[ "$os" == "sunxi" ]] && archs=(armv7)
       [ "${os:0:5}" == "mingw" ] && archs=(x86 x86_64)
