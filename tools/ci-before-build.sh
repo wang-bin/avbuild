@@ -11,9 +11,11 @@ fi
 if [ `which dpkg` ]; then
     #sudo apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main" # for rpi1
     #bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
-    wget https://apt.llvm.org/llvm.sh
-    chmod +x llvm.sh
-    sudo ./llvm.sh ${LLVM_VER} all
+    wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+    source /etc/os-release
+    sudo add-apt-repository -y "deb http://apt.llvm.org/${VERSION_CODENAME}/ llvm-toolchain-${VERSION_CODENAME} main"
+    sudo apt update
+    pkgs+=" llvm-${LLVM_VER}-tools clang-${LLVM_VER} clang-tools-${LLVM_VER} clang-tidy-${LLVM_VER} lld-${LLVM_VER} libc++-${LLVM_VER}-dev libclang-rt-${LLVM_VER}-dev"
     pkgs+=" sshpass p7zip-full" # clang-tools: clang-cl
     if [ "$TARGET_OS" == "linux" ]; then
         pkgs+=" libstdc++-11-dev libxv-dev libva-dev libvdpau-dev libbz2-dev zlib1g-dev"
