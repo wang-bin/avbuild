@@ -529,6 +529,53 @@ jobs:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
 
+  Rockchip:
+    if: ${{ vars.FF_VER == 'master' }}
+    runs-on: ubuntu-latest
+    env:
+      FFREPO: 'https://github.com/nyanmisaka/ffmpeg-rockchip'
+      TARGET_OS: rockchip
+      COMPILER: clang
+      PKG_CONFIG_PATH_MFX: "/tmp/dep/linux/amd64/lib/pkgconfig"
+      AMF_DIR: "/tmp/dep/include"
+      CONFIG_SUFFIX: -${{ matrix.config }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [lite]
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+    - name: 'Restore sysroot cache'
+      id: sysroot-cache
+      uses: actions/cache@v4
+      with:
+        path: /tmp/sysroot
+        key: sysroot-linux-${{ vars.LINUX_SYSROOT_ID }}
+    - name: Create Build Environment
+      shell: bash
+      env:
+        SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
+      run: |
+        sudo apt remove -y libc++1-14 libc++abi1-14 libunwind-14 python3-lldb-14 # conflict with latest llvm
+        ./tools/ci-before-build.sh
+    - name: Configure and Build
+      shell: bash
+      run: |
+        export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+        export SYSROOT=/tmp/sysroot
+        export USER_OPT="--enable-wolfssl --enable-libshaderc"
+        USE_TOOLCHAIN=clang-${LLVM_VER:-$LLVM_VER_DEFAULT} ./avbuild.sh rockchip "arm64"
+    - name: Make SDK
+      shell: bash
+      run: ./tools/ci-after-build.sh
+    - name: Archieve SDK
+      uses: actions/upload-artifact@v4
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
+        path: ffmpeg-*.tar.xz
+
   Android:
     runs-on: macos-15
     env:

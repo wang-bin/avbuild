@@ -1,5 +1,7 @@
 #!/bin/bash
 NDK_HOST=linux
+TARGET_OS=${TARGET_OS/rockchip/linux}
+
 export XZ_OPT="--threads=`getconf _NPROCESSORS_ONLN` -9e" # -9e. -8/9 will disable mt?
   ln -sf config{${CONFIG_SUFFIX},}.sh;
 

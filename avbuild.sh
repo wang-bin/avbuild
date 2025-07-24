@@ -111,12 +111,13 @@ USE_VAAPI_WIN32=$FFGIT
 if $FFGIT || [ ${FFMAJOR} -gt 3 ]; then
   for p in $(find "$THIS_DIR/patches/$PATCH_BRANCH" -name "*.patch" |sort); do
       echo $p
+# h265 bit depth patch requires ffmpeg7.0+
     patch -p1 -N < $p
   done
 fi
 for p in $(find "$THIS_DIR/patches/common" -name "*.patch" |sort); do
     echo $p
-  patch -p1 -N < $p
+  patch -p1 -t -N < $p
 done
 [ $FFMAJOR -gt 6 ] || [ $FFMAJOR -eq 6 -a $FFMINOR -ge 1 ] && {
   USE_VK=true
@@ -1426,6 +1427,16 @@ setup_sunxi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result 
   setup_gnu_env $@
 }
 
+setup_rockchip_env() {
+  local IS_CROSS_BUILD=true
+  local LINUX_NAME=rockchip
+  disable_opt vulkan
+  [ -d /rockchip-test ] && IS_CROSS_BUILD=false
+  echo "setup_rockchip_env $@, IS_CROSS_BUILD=$IS_CROSS_BUILD"
+  : ${CROSS_PREFIX:=aarch64-linux-gnu-}
+  setup_linux_env $@
+}
+
 setup_gnu_env(){
   add_elf_flags
   local gnu_cc=gcc
@@ -1509,6 +1520,7 @@ EOF
 # TODO: generic linux for all archs
 setup_linux_env() {
   : ${USE_TOOLCHAIN:=gcc}
+  : ${LINUX_NAME:=linux}
   probe_cc $USE_TOOLCHAIN
   add_elf_flags
   enable_opt v4l2-request libudev
@@ -1538,7 +1550,7 @@ setup_linux_env() {
   }
   if [ -n "$SYSROOT" ]; then
     CROSS_PREFIX=$(linux_gnu_triple $ARCH)-
-    setup_gnu_env $ARCH linux
+    setup_gnu_env $ARCH ${LINUX_NAME}
   cat>>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
 export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/linux/${ARCH}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/linux_${ARCH}/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
@@ -1562,7 +1574,7 @@ EOF
   [ "$USE_TOOLCHAIN" == "gcc" ] || TOOLCHAIN_OPT="--cc=$USE_TOOLCHAIN $TOOLCHAIN_OPT"
   INSTALL_DIR=${USE_TOOLCHAIN##*/}
   INSTALL_DIR=${INSTALL_DIR%%-*}
-  INSTALL_DIR=sdk-linux-${ARCH}-${INSTALL_DIR}
+  INSTALL_DIR=sdk-${LINUX_NAME}-${ARCH}-${INSTALL_DIR}
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
 export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/linux/${ARCH}/lib/pkgconfig:${THIS_DIR}/tools/dep/linux_${ARCH}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/linux_${ARCH}/lib/pkgconfig:$PKG_CONFIG_PATH
@@ -1617,6 +1629,7 @@ config1(){
     vc|win*|uwp*)  setup_win $TAGET_ARCH_FLAG $1 ;; # TODO: check cc
     rpi*|raspberry*) setup_rpi_env $TAGET_ARCH_FLAG $1 ;;
     sunxi*) setup_sunxi_env $TAGET_ARCH_FLAG $1 ;;
+    rockchip*) setup_rockchip_env $TAGET_ARCH_FLAG $1 ;;
     linux*)
       setup_linux_env $TAGET_ARCH_FLAG $1
       add_librt
