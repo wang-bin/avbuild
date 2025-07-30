@@ -234,6 +234,7 @@ enable_libmfx(){
 disable_opt response-files # LINK : fatal error LNK1181: cannot open input file '@libavutil\avutil-60.dll.objs'
 enable_opt hwaccels
 $USE_VK || disable_opt vulkan
+echo $USER_OPT |grep -q enable-libfreetype && enable_opt libharfbuzz # no huarfbuzz in ffmpeg < 6.1
 
 ELF_FLAGS_ADDED=false
 add_elf_flags() {
@@ -1529,7 +1530,7 @@ setup_linux_env() {
   include_with_sysroot_compat /usr/include/libdrm
   #FILTER_OPT+=" --enable-filter=drawtext"
   #enable_opt libfreetype libfribidi libfontconfig libharfbuzz
-  echo $USER_OPT grep -q libfreetype && {
+  echo $USER_OPT |grep -q enable-libfreetype && {
     #enable_opt libfribidi libfontconfig
 # pkg-config use aboslute paths, can not set PKG_CONFIG_SYSROOT_DIR because we have .pc outside sysroot, so manually add include dirs
     include_with_sysroot_compat /usr/include/freetype2 /usr/include/fribidi /usr/include/harfbuzz

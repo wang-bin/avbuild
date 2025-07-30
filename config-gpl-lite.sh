@@ -8,7 +8,7 @@ USER_OPT="--enable-small \
 --disable-protocols \
 --disable-parsers --enable-parser=*sub*,*jp*,aac*,ac3,cook,dnxhd,flac,h26[3-4],hevc,m*,opus,rv*,vc1,vorbis,vp[8-9] \
 --pkg-config=pkg-config --pkg-config-flags=--static --enable-gpl --enable-libx265 --enable-libx264 \
---enable-libfreetype --enable-libharfbuzz \
+--enable-libfreetype \
 $USER_OPT
 "
 DEC_OPT_MOBILE="--enable-decoder=*sub*,movtext,*web*,aac*,ac3*,eac3*,alac*,ape,ass,av1*,ccaption,cfhd,cook,dca,dnxhd,exr,truehd,*yuv*,flv,flac,gif,h26[3-4]*,hevc*,hap,mp[1-3]*,prores,*[mj]peg*,mlp,mpl2,nellymoser,opus,pcm*,qtrle,*png*,tiff,rawvideo,sami,srt,ssa,v210*,vc1*,vorbis,vp[6-9]*,wm*,wrapped_avframe"
