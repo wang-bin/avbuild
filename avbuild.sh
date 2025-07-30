@@ -1431,6 +1431,7 @@ setup_rockchip_env() {
   local IS_CROSS_BUILD=true
   local LINUX_NAME=rockchip
   disable_opt vulkan
+  enable_opt rkrga # exists in ffmpeg-rockchip but not upstream
   [ -d /rockchip-test ] && IS_CROSS_BUILD=false
   echo "setup_rockchip_env $@, IS_CROSS_BUILD=$IS_CROSS_BUILD"
   : ${CROSS_PREFIX:=aarch64-linux-gnu-}

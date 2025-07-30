@@ -28,6 +28,6 @@ ios_OPT="--disable-avdevice"
 rpi_OPT="--disable-avdevice"
 raspberry_pi_OPT="--disable-avdevice"
 sunxi_OPT="--disable-avdevice"
-rockchip_OPT="--enable-libfribidi --enable-fontconfig --enable-version3 --enable-rkmpp --enable-rkrga"
+rockchip_OPT="--enable-libfribidi --enable-fontconfig --enable-version3 --enable-rkmpp"
 linux_OPT="--enable-libfribidi --enable-fontconfig"
 LITE_BUILD=true
