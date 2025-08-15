@@ -1,4 +1,4 @@
-From 1d13e9254fd880847b1c3b1e0f5d409179b9d99d Mon Sep 17 00:00:00 2001
+From 28c3d729913745803885ddc5eec9ea3cf8e7922e Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 15 Oct 2023 13:22:34 +0800
 Subject: [PATCH 26/33] windows: shared + static libs in one build
@@ -10,12 +10,12 @@ av_export_avutil avpriv_vga16_font will result in LINK4217 warning when building
  2 files changed, 7 insertions(+), 5 deletions(-)
 
 diff --git a/configure b/configure
-index 4564512e23..80cd130d07 100755
+index 9089cbb024..4928f9a1d8 100755
 --- a/configure
 +++ b/configure
-@@ -5945,8 +5945,12 @@ case $target_os in
-             # for shared libs.
-             LD_LIB='%.lib'
+@@ -6015,8 +6015,12 @@ case $target_os in
+         disable symver
+         if enabled shared; then
              # Cannot build both shared and static libs with MSVC or icl.
 -            disable static
 +            #disable static  # we can build shared and static libs. let user disable it explicitly
@@ -27,7 +27,7 @@ index 4564512e23..80cd130d07 100755
          test_cmd $windres --version && enable gnu_windres
          enabled x86_32 && check_ldflags -LARGEADDRESSAWARE
          add_cppflags -DWIN32_LEAN_AND_MEAN
-@@ -5966,8 +5970,6 @@ case $target_os in
+@@ -6042,8 +6046,6 @@ case $target_os in
          [ "$toolchain" = msvc ] && {
            ranlib=:
          } || {
@@ -37,19 +37,20 @@ index 4564512e23..80cd130d07 100755
            SLIB_CREATE_DEF_CMD='EXTERN_PREFIX="$(EXTERN_PREFIX)" AR="$(AR_CMD)" NM="$(NM_CMD)" $(SRC_PATH)/compat/windows/makedef $(SUBDIR)lib$(NAME).ver $(OBJS) > $$(@:$(SLIBSUF)=.def)'
          }
 diff --git a/libavutil/xga_font_data.h b/libavutil/xga_font_data.h
-index 69dc337120..decbf6e0c2 100644
+index 90d3cec4ce..d57d28e590 100644
 --- a/libavutil/xga_font_data.h
 +++ b/libavutil/xga_font_data.h
-@@ -29,7 +29,7 @@
- #include <stdint.h>
- #include "internal.h"
+@@ -31,8 +31,8 @@
+ #include "version.h"
  
+ #if LIBAVUTIL_VERSION_MAJOR < 61
 -extern av_export_avutil const uint8_t avpriv_cga_font[2048];
 -extern av_export_avutil const uint8_t avpriv_vga16_font[4096];
 +extern const uint8_t avpriv_cga_font[2048];
 +extern const uint8_t avpriv_vga16_font[4096];
+ #endif
  
- #endif /* AVUTIL_XGA_FONT_DATA_H */
+ const uint8_t *avpriv_cga_font_get(void);
 -- 
 2.39.5 (Apple Git-154)
 

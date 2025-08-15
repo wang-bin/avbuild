@@ -1,4 +1,4 @@
-From 5d4da65b3498c0be837f22796e50c4b7cea4f10d Mon Sep 17 00:00:00 2001
+From 2c52c126bf3a4aa95e53b98dee00f52653ae16b5 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 3 May 2022 00:03:18 +0800
 Subject: [PATCH 24/33] wolfSSL - new TLS backend patch
@@ -14,7 +14,7 @@ https://lists.ffmpeg.org/pipermail/ffmpeg-devel/2018-August/233802.html
  create mode 100644 libavformat/tls_wolfssl.c
 
 diff --git a/configure b/configure
-index 749aa8b6f7..4564512e23 100755
+index 71dfdf9974..9089cbb024 100755
 --- a/configure
 +++ b/configure
 @@ -207,7 +207,7 @@ External library support:
@@ -53,7 +53,7 @@ index 749aa8b6f7..4564512e23 100755
    --enable-mediacodec      enable Android MediaCodec support [no]
    --enable-mediafoundation enable encoding via MediaFoundation [auto]
    --disable-metal          disable Apple Metal framework [autodetect]
-@@ -326,7 +328,7 @@ External library support:
+@@ -327,7 +329,7 @@ External library support:
    --enable-opencl          enable OpenCL processing [no]
    --enable-opengl          enable OpenGL rendering [no]
    --enable-openssl         enable openssl, needed for https support
@@ -62,15 +62,15 @@ index 749aa8b6f7..4564512e23 100755
    --enable-pocketsphinx    enable PocketSphinx, needed for asr filter [no]
    --disable-sndio          disable sndio support [autodetect]
    --disable-schannel       disable SChannel SSP, needed for TLS support on
-@@ -2009,6 +2011,7 @@ EXTERNAL_LIBRARY_LIST="
-     pocketsphinx
+@@ -2013,6 +2015,7 @@ EXTERNAL_LIBRARY_LIST="
      vapoursynth
      vulkan_static
+     whisper
 +    wolfssl
  "
  
  HWACCEL_AUTODETECT_LIBRARY_LIST="
-@@ -3847,13 +3850,13 @@ rtmpte_protocol_suggest="zlib"
+@@ -3885,13 +3888,13 @@ rtmpte_protocol_suggest="zlib"
  rtmpts_protocol_select="ffrtmphttp_protocol https_protocol"
  rtmpts_protocol_suggest="zlib"
  rtp_protocol_select="udp_protocol"
@@ -85,9 +85,9 @@ index 749aa8b6f7..4564512e23 100755
 -tls_protocol_deps_any="gnutls openssl schannel securetransport libtls mbedtls"
 +tls_protocol_deps_any="gnutls openssl schannel securetransport libtls mbedtls wolfssl"
  tls_protocol_select="tcp_protocol"
- udp_protocol_select="network"
- udplite_protocol_select="network"
-@@ -3876,7 +3879,7 @@ libsmbclient_protocol_deps="libsmbclient gplv3"
+ # TODO: Support libtls, mbedtls, and gnutls.
+ dtls_protocol_deps_any="openssl schannel"
+@@ -3917,7 +3920,7 @@ libsmbclient_protocol_deps="libsmbclient gplv3"
  libsrt_protocol_deps="libsrt"
  libsrt_protocol_select="network"
  libssh_protocol_deps="libssh"
@@ -96,7 +96,7 @@ index 749aa8b6f7..4564512e23 100755
  libzmq_protocol_deps="libzmq"
  libzmq_protocol_select="network"
  
-@@ -6963,6 +6966,7 @@ enabled decklink          && { require_headers DeckLinkAPI.h &&
+@@ -7040,6 +7043,7 @@ enabled decklink          && { require_headers DeckLinkAPI.h &&
  enabled frei0r            && require_headers "frei0r.h"
  enabled gmp               && require gmp gmp.h mpz_export -lgmp
  enabled gnutls            && require_pkg_config gnutls gnutls gnutls/gnutls.h gnutls_global_init
@@ -105,10 +105,10 @@ index 749aa8b6f7..4564512e23 100755
  enabled ladspa            && require_headers "ladspa.h dlfcn.h"
  enabled lcms2             && require_pkg_config lcms2 "lcms2 >= 2.13" lcms2.h cmsCreateContext
 diff --git a/libavformat/Makefile b/libavformat/Makefile
-index ee68345858..452dbc69b1 100644
+index ab5551a735..e83ce4a37b 100644
 --- a/libavformat/Makefile
 +++ b/libavformat/Makefile
-@@ -712,6 +712,7 @@ TLS-OBJS-$(CONFIG_GNUTLS)                += tls_gnutls.o
+@@ -715,6 +715,7 @@ TLS-OBJS-$(CONFIG_GNUTLS)                += tls_gnutls.o
  TLS-OBJS-$(CONFIG_LIBTLS)                += tls_libtls.o
  TLS-OBJS-$(CONFIG_MBEDTLS)               += tls_mbedtls.o
  TLS-OBJS-$(CONFIG_OPENSSL)               += tls_openssl.o
@@ -117,10 +117,10 @@ index ee68345858..452dbc69b1 100644
  TLS-OBJS-$(CONFIG_SCHANNEL)              += tls_schannel.o
  OBJS-$(CONFIG_TLS_PROTOCOL)              += tls.o $(TLS-OBJS-yes)
 diff --git a/libavformat/network.c b/libavformat/network.c
-index 2eabd0c167..d794953358 100644
+index a7026ac09b..0357585465 100644
 --- a/libavformat/network.c
 +++ b/libavformat/network.c
-@@ -44,6 +44,9 @@ int ff_tls_init(void)
+@@ -39,6 +39,9 @@ int ff_tls_init(void)
  #if CONFIG_GNUTLS
      ff_gnutls_init();
  #endif
@@ -130,7 +130,7 @@ index 2eabd0c167..d794953358 100644
  #endif
      return 0;
  }
-@@ -57,6 +60,9 @@ void ff_tls_deinit(void)
+@@ -49,6 +52,9 @@ void ff_tls_deinit(void)
  #if CONFIG_GNUTLS
      ff_gnutls_deinit();
  #endif
@@ -141,19 +141,17 @@ index 2eabd0c167..d794953358 100644
  }
  
 diff --git a/libavformat/tls.h b/libavformat/tls.h
-index 6c6aa01a9a..0cfad1c82b 100644
+index 4d4999aa7c..584abbcc3f 100644
 --- a/libavformat/tls.h
 +++ b/libavformat/tls.h
-@@ -55,6 +55,9 @@ typedef struct TLSShared {
- 
- int ff_tls_open_underlying(TLSShared *c, URLContext *parent, const char *uri, AVDictionary **options);
+@@ -124,4 +124,7 @@ void ff_gnutls_deinit(void);
+ int ff_openssl_init(void);
+ void ff_openssl_deinit(void);
  
 +void ff_wolfssl_init(void);
 +void ff_wolfssl_deinit(void);
 +
- void ff_gnutls_init(void);
- void ff_gnutls_deinit(void);
- 
+ #endif /* AVFORMAT_TLS_H */
 diff --git a/libavformat/tls_wolfssl.c b/libavformat/tls_wolfssl.c
 new file mode 100644
 index 0000000000..23255c0f1b

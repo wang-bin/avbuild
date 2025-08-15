@@ -1,4 +1,4 @@
-From ee71c9268122cac6dd2a811c4d2f4716e6cda3cb Mon Sep 17 00:00:00 2001
+From bc5e47cdb043a4c6775acb850f4d6e1e79932343 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 11 Jan 2022 16:17:56 +0800
 Subject: [PATCH 20/33] configure: rewrite flags from pkg-config for msvc in
@@ -11,15 +11,15 @@ requires mixed form, e.g. c:/msys64
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/configure b/configure
-index 751d60d90f..7e1f947deb 100755
+index ab15293510..a4e42abb30 100755
 --- a/configure
 +++ b/configure
-@@ -4892,7 +4892,8 @@ msvc_common_flags(){
+@@ -4948,7 +4948,8 @@ msvc_common_flags(){
              -libpath:*|-LIBPATH:*)echo $flag ;;
              -l*)                  echo ${flag#-l}.lib ;;
              -LARGEADDRESSAWARE)   echo $flag ;;
--            -L*)                  echo -libpath:${flag#-L} ;;
-+            -L*)                  [ -n "$MSYSTEM" ] && (echo $flag |sed 's,-L\/\([a-zA-Z]\)\(\/.*\),-libpath:\1:\2,' -) || echo -libpath:${flag#-L} ;;
+-            -L*) [ "$_flags_type" = "link" ] && echo -libpath:${flag#-L} ;;
++            -L*) [ "$_flags_type" = "link" ] && ([ -n "$MSYSTEM" ] && (echo $flag |sed 's,-L\/\([a-zA-Z]\)\(\/.*\),-libpath:\1:\2,' -) || echo -libpath:${flag#-L}) ;;
 +            -I*)                  [ -n "$MSYSTEM" ] && (echo $flag |sed 's,-L\/\([a-zA-Z]\)\(\/.*\),-I\1:\2,' -) || echo $flag ;;
              -Wl,*)                ;;
              *)                    echo $flag ;;

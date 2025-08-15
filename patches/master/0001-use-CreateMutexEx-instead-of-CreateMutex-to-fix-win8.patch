@@ -1,29 +1,28 @@
-From f82b3c8e803599bd67cfd981b4d7d36a7e04ab7e Mon Sep 17 00:00:00 2001
+From ca7a6b099fd39a48f06864312f46ef9dff18f89f Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sat, 28 Oct 2017 20:26:50 +0800
 Subject: [PATCH 01/33] use CreateMutexEx instead of CreateMutex to fix win8
  store app link error
 
 ---
- libavutil/hwcontext_d3d11va.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+ libavutil/hwcontext_d3d11va.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/libavutil/hwcontext_d3d11va.c b/libavutil/hwcontext_d3d11va.c
-index 1a047ce57b..415f0f2fc3 100644
+index 9831f530c1..5078a37502 100644
 --- a/libavutil/hwcontext_d3d11va.c
 +++ b/libavutil/hwcontext_d3d11va.c
-@@ -42,6 +42,10 @@
- #include "thread.h"
+@@ -43,6 +43,9 @@
  #include "compat/w32dlfcn.h"
  
+ #define MAX_ARRAY_SIZE 64 // Driver specification limits ArraySize to 64 for decoder-bound resources
 +#ifndef CreateMutexEx
 +#define CreateMutexEx(lpMutexAttributes, lpName, dwFlags, dwDesiredAccess) CreateMutex(lpMutexAttributes, lpName, dwFlags)
 +#endif
-+
+ 
  typedef HRESULT(WINAPI *PFN_CREATE_DXGI_FACTORY)(REFIID riid, void **ppFactory);
  
- static AVOnce functions_loaded = AV_ONCE_INIT;
-@@ -503,7 +507,7 @@ static int d3d11va_device_init(AVHWDeviceContext *hwdev)
+@@ -507,7 +510,7 @@ static int d3d11va_device_init(AVHWDeviceContext *hwdev)
      HRESULT hr;
  
      if (!device_hwctx->lock) {
