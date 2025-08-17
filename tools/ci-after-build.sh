@@ -4,6 +4,9 @@ SUFFIX=${FF_VERSION}-${TARGET_OS}
 if [ -n "$COMPILER" ]; then
     SUFFIX+="-${COMPILER}"
 fi
+if [ "$NVENC" == "master" ]; then
+    SUFFIX+="-nvenc12abi"
+fi
 
 SUFFIX+=${LIB_OPT//*-/-}${CONFIG_SUFFIX}${LTO_SUFFIX}
 mv sdk-* ffmpeg-${SUFFIX}
@@ -16,7 +19,8 @@ if [[ "${TARGET_OS}" == "iOS"* || "${TARGET_OS}" == "tvOS"* || "${TARGET_OS}" ==
   $TAR Jcf ffmpeg-${SUFFIX}-shared.tar.xz --exclude="*.a" ffmpeg-${SUFFIX}
   find ffmpeg-${SUFFIX} -name "*.dylib" -delete
 fi
-$TAR Jcf ffmpeg-${SUFFIX}{.tar.xz,}
+# compressed dSYM files are small
+$TAR Jcfv ffmpeg-${SUFFIX}{.tar.xz,}
 ls -lh *.xz
 [ "$GITHUB_EVENT_NAME" == "pull_request" ] && exit 0
 
