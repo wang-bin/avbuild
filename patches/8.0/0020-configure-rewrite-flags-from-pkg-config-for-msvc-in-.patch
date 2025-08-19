@@ -1,0 +1,29 @@
+From 109f4399a2e70d0eafd3d59d584c72b0ae6a1023 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Tue, 11 Jan 2022 16:17:56 +0800
+Subject: [PATCH 20/33] configure: rewrite flags from pkg-config for msvc in
+ msys
+
+cflags and libs from pkg-config is unix path, e.g. /c/msys64, but msvc
+requires mixed form, e.g. c:/msys64
+---
+ configure | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/configure b/configure
+index 0070718846..36516d2a3d 100755
+--- a/configure
++++ b/configure
+@@ -4948,7 +4948,8 @@ msvc_common_flags(){
+             -libpath:*|-LIBPATH:*)echo $flag ;;
+             -l*)                  echo ${flag#-l}.lib ;;
+             -LARGEADDRESSAWARE)   echo $flag ;;
+-            -L*) [ "$_flags_type" = "link" ] && echo -libpath:${flag#-L} ;;
++            -L*) [ "$_flags_type" = "link" ] && ([ -n "$MSYSTEM" ] && (echo $flag |sed 's,-L\/\([a-zA-Z]\)\(\/.*\),-libpath:\1:\2,' -) || echo -libpath:${flag#-L}) ;;
++            -I*)                  [ -n "$MSYSTEM" ] && (echo $flag |sed 's,-L\/\([a-zA-Z]\)\(\/.*\),-I\1:\2,' -) || echo $flag ;;
+             -Wl,*)                ;;
+             *)                    echo $flag ;;
+         esac
+-- 
+2.49.0
+

@@ -1,0 +1,36 @@
+From 33b27b4c3427e38fe4a1f2419d6bc46f96325c3f Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Sat, 28 Oct 2017 20:26:50 +0800
+Subject: [PATCH 01/33] use CreateMutexEx instead of CreateMutex to fix win8
+ store app link error
+
+---
+ libavutil/hwcontext_d3d11va.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/libavutil/hwcontext_d3d11va.c b/libavutil/hwcontext_d3d11va.c
+index 9831f530c1..5078a37502 100644
+--- a/libavutil/hwcontext_d3d11va.c
++++ b/libavutil/hwcontext_d3d11va.c
+@@ -43,6 +43,9 @@
+ #include "compat/w32dlfcn.h"
+ 
+ #define MAX_ARRAY_SIZE 64 // Driver specification limits ArraySize to 64 for decoder-bound resources
++#ifndef CreateMutexEx
++#define CreateMutexEx(lpMutexAttributes, lpName, dwFlags, dwDesiredAccess) CreateMutex(lpMutexAttributes, lpName, dwFlags)
++#endif
+ 
+ typedef HRESULT(WINAPI *PFN_CREATE_DXGI_FACTORY)(REFIID riid, void **ppFactory);
+ 
+@@ -507,7 +510,7 @@ static int d3d11va_device_init(AVHWDeviceContext *hwdev)
+     HRESULT hr;
+ 
+     if (!device_hwctx->lock) {
+-        device_hwctx->lock_ctx = CreateMutex(NULL, 0, NULL);
++        device_hwctx->lock_ctx = CreateMutexEx(NULL, NULL, 0, 0);
+         if (device_hwctx->lock_ctx == INVALID_HANDLE_VALUE) {
+             av_log(NULL, AV_LOG_ERROR, "Failed to create a mutex\n");
+             return AVERROR(EINVAL);
+-- 
+2.49.0
+

@@ -1,0 +1,56 @@
+From d85b5aa1d225005080883b2af6874455ca324d9c Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Sun, 15 Oct 2023 13:22:34 +0800
+Subject: [PATCH 26/33] windows: shared + static libs in one build
+
+av_export_avutil avpriv_vga16_font will result in LINK4217 warning when building ffmpeg.dll, and undefined dllimport avpriv_vga16_font error when linking exe
+---
+ configure                 | 8 +++++---
+ libavutil/xga_font_data.h | 4 ++--
+ 2 files changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/configure b/configure
+index 39258d75fb..fa0ca7246d 100755
+--- a/configure
++++ b/configure
+@@ -6018,8 +6018,12 @@ case $target_os in
+             # for shared libs.
+             LD_LIB='%.lib'
+             # Cannot build both shared and static libs with MSVC or icl.
+-            disable static
++            #disable static  # we can build shared and static libs. let user disable it explicitly
++            LIBPREF=lib #already defined. use lib as prefix to match windows system static lib name pattern(libcmt.lib, libucrt.lib etc.)
++        else
++            LIBPREF=    # if only build static libs, fftools exes always link to .lib without lib prefix
+         fi
++        LIBSUF=.lib
+         test_cmd $windres --version && enable gnu_windres
+         enabled x86_32 && check_ldflags -LARGEADDRESSAWARE
+         add_cppflags -DWIN32_LEAN_AND_MEAN
+@@ -6043,8 +6047,6 @@ case $target_os in
+         [ "$toolchain" = msvc ] && {
+           ranlib=:
+         } || {
+-          LIBPREF= # patch win clang static lib
+-          LIBSUF=.lib
+           LD_LIB='%.lib'
+           SLIB_CREATE_DEF_CMD='EXTERN_PREFIX="$(EXTERN_PREFIX)" AR="$(AR_CMD)" NM="$(NM_CMD)" $(SRC_PATH)/compat/windows/makedef $(SUBDIR)lib$(NAME).ver $(OBJS) > $$(@:$(SLIBSUF)=.def)'
+         }
+diff --git a/libavutil/xga_font_data.h b/libavutil/xga_font_data.h
+index 90d3cec4ce..d57d28e590 100644
+--- a/libavutil/xga_font_data.h
++++ b/libavutil/xga_font_data.h
+@@ -31,8 +31,8 @@
+ #include "version.h"
+ 
+ #if LIBAVUTIL_VERSION_MAJOR < 61
+-extern av_export_avutil const uint8_t avpriv_cga_font[2048];
+-extern av_export_avutil const uint8_t avpriv_vga16_font[4096];
++extern const uint8_t avpriv_cga_font[2048];
++extern const uint8_t avpriv_vga16_font[4096];
+ #endif
+ 
+ const uint8_t *avpriv_cga_font_get(void);
+-- 
+2.49.0
+
