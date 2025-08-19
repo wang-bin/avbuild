@@ -96,6 +96,7 @@ jobs:
           cd tools/nv-codec-headers
           git fetch
           git checkout ${{ matrix.nvenc }}
+          git --no-pager log -1
     - name: Create Build Environment
       shell: cmd
       run: |
@@ -183,6 +184,7 @@ jobs:
           cd tools/nv-codec-headers
           git fetch
           git checkout ${{ matrix.nvenc }}
+          git --no-pager log -1
     - name: 'Restore sysroot cache'
       id: sysroot-cache
       uses: actions/cache@v4
@@ -248,6 +250,7 @@ jobs:
           cd tools/nv-codec-headers
           git fetch
           git checkout ${{ matrix.nvenc }}
+          git --no-pager log -1
     - name: 'Restore sysroot cache'
       id: sysroot-cache
       uses: actions/cache@v4
