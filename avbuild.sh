@@ -275,6 +275,8 @@ if [ -f "$PWD/tools/nv-codec-headers/ffnvcodec.pc.in" ]; then
   export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PWD/tools/nv-codec-headers
   # cuGLGetDevices is a cuda8 api, never used
   sed -i $sed_bak 's/LOAD_SYMBOL(cuGLGetDevices\(.*\)/LOAD_SYMBOL_OPT(cuGLGetDevices\1/;s/LOAD_SYMBOL(cuDeviceGetAttribute\(.*\)/LOAD_SYMBOL_OPT(cuDeviceGetAttribute\1/;s/LOAD_SYMBOL(cuCtxSetLimit\(.*\)/LOAD_SYMBOL_OPT(cuCtxSetLimit\1/' tools/nv-codec-headers/include/ffnvcodec/dynlink_loader.h
+  pkg-config --modversion ffnvcodec
+  grep -m1 NVENCAPI_MAJOR_VERSION $PWD/tools/nv-codec-headers/include/ffnvcodec/nvEncodeAPI.h
 fi
 ls "$PWD/tools/nv-codec-headers"
 sed -i $sed_bak 's/-lmfplat/-lMfplat/g' "$FFSRC/configure"
@@ -1312,7 +1314,7 @@ setup_macos_env(){
   [[ "$MACOS_ARCH" == arm64* ]] && version_compare $MACOS_VER "<" 11.0 && MACOS_VER=11.0
   disable_opt xlib libxcb # installed by github action macos-11
   enable_opt videotoolbox vda libxml2
-  disable_opt vulkan
+  disable_opt vulkan # Unable to init compute pipeline: VK_ERROR_INITIALIZATION_FAILED
   EXTRA_CFLAGS+=" -I=/usr/include/libxml2"
   version_compare $MACOS_VER "<" 10.7 && disable_opt lzma avdevice #avfoundation is not supported on 10.6
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
