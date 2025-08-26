@@ -115,6 +115,13 @@ jobs:
         wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7z
         wget https://sourceforge.net/projects/avbuild/files/dep/dep_gpl.7z/download -O dep_gpl.7z
         sed -i '/X264_API_IMPORTS/d' "ffmpeg-${FF_VERSION}/libavcodec/libx264.c" # we link against static libx264
+    - name: 'Checkout nvenc'
+      if: ${{ matrix.nvenc != '' }}
+      run: |
+          cd tools/nv-codec-headers
+          git fetch
+          git checkout ${{ matrix.nvenc }}
+          git --no-pager log -1
     - name: Configure and Build
       shell: cmd
       run: |
@@ -171,13 +178,6 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: 'recursive'
-    - name: 'Checkout nvenc'
-      if: ${{ matrix.nvenc != '' }}
-      run: |
-          cd tools/nv-codec-headers
-          git fetch
-          git checkout ${{ matrix.nvenc }}
-          git --no-pager log -1
     - name: 'Restore sysroot cache'
       id: sysroot-cache
       uses: actions/cache@v4
