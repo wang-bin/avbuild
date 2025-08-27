@@ -16,3 +16,6 @@
 [submodule "tools/nv-codec-headers-12.1"]
 	path = tools/nv-codec-headers-12.1
 	url = https://github.com/FFmpeg/nv-codec-headers
+[submodule "tools/nv-codec-headers-9.1"]
+	path = tools/nv-codec-headers-9.1
+	url = https://github.com/FFmpeg/nv-codec-headers

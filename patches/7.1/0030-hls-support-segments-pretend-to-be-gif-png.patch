@@ -1,14 +1,14 @@
-From 2aee05ff2865a0067884cbf29fe70731a74dcdfc Mon Sep 17 00:00:00 2001
+From 448e0a094f13cf162172310f37d517dc05b218e6 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Sep 2024 15:59:13 +0800
-Subject: [PATCH 30/34] hls: support segments pretend to be gif & png
+Subject: [PATCH 30/38] hls: support segments pretend to be gif & png
 
 ---
- libavformat/hls.c | 28 +++++++++++++++++++++++++++-
- 1 file changed, 27 insertions(+), 1 deletion(-)
+ libavformat/hls.c | 29 +++++++++++++++++++++++++++--
+ 1 file changed, 27 insertions(+), 2 deletions(-)
 
 diff --git a/libavformat/hls.c b/libavformat/hls.c
-index 62473a15dd..7aa18079d9 100644
+index 0b01f406f6..73eddf7c12 100644
 --- a/libavformat/hls.c
 +++ b/libavformat/hls.c
 @@ -222,6 +222,7 @@ typedef struct HLSContext {
@@ -17,9 +17,9 @@ index 62473a15dd..7aa18079d9 100644
      AVDictionary *seg_format_opts;
 +    int seg_allow_img;
      char *allowed_extensions;
-     int max_reload;
-     int http_persistent;
-@@ -2113,7 +2114,30 @@ static int hls_read_header(AVFormatContext *s)
+     char *allowed_segment_extensions;
+     int extension_picky;
+@@ -2167,12 +2168,34 @@ static int hls_read_header(AVFormatContext *s)
              pls->ctx->max_analyze_duration = s->max_analyze_duration > 0 ? s->max_analyze_duration : 4 * AV_TIME_BASE;
              pls->ctx->interrupt_callback = s->interrupt_callback;
              url = av_strdup(pls->segments[0]->url);
@@ -48,10 +48,15 @@ index 62473a15dd..7aa18079d9 100644
 +            }
 +
 +            ret = av_probe_input_buffer(&pls->pb.pub, &in_fmt, url, NULL, skip, 0);
+ 
+             for (int n = 0; n < pls->n_segments; n++)
+                 if (ret >= 0)
+                     ret = test_segment(s, in_fmt, pls, pls->segments[n]);
+-
              if (ret < 0) {
                  /* Free the ctx - it isn't initialized properly at this point,
                  * so avformat_close_input shouldn't be called. If
-@@ -2590,6 +2614,8 @@ static const AVOption hls_options[] = {
+@@ -2664,6 +2687,8 @@ static const AVOption hls_options[] = {
          OFFSET(seg_format_opts), AV_OPT_TYPE_DICT, {.str = NULL}, 0, 0, FLAGS},
      {"seg_max_retry", "Maximum number of times to reload a segment on error.",
       OFFSET(seg_max_retry), AV_OPT_TYPE_INT, {.i64 = 0}, 0, INT_MAX, FLAGS},
@@ -61,5 +66,5 @@ index 62473a15dd..7aa18079d9 100644
  };
  
 -- 
-2.39.5 (Apple Git-154)
+2.51.0
 

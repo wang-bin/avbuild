@@ -1,7 +1,7 @@
-From 612cd7d210e7ca08d6126422ebedf5cb375f29ee Mon Sep 17 00:00:00 2001
+From 00efac318f730ec74502071d9c8b9603de58cfd7 Mon Sep 17 00:00:00 2001
 From: wangbin <wbsecg1@gmail.com>
 Date: Mon, 25 Aug 2025 11:03:56 +0800
-Subject: [PATCH 34/34] nvenc: support api version 12.0+ & api option
+Subject: [PATCH 34/35] nvenc: support api version 12.0+ & api option
 
 ---
  libavcodec/nvenc.c      | 85 +++++++++++++++++++++++++++++++++++------
@@ -220,5 +220,5 @@ index 54e2fe323e..15c93c12e8 100644
      { "preset",       "Set the encoding preset",            OFFSET(preset),       AV_OPT_TYPE_INT,   { .i64 = PRESET_P4 },     PRESET_DEFAULT, PRESET_P7,          VE, .unit = "preset" },
  #else
 -- 
-2.49.0
+2.51.0
 

@@ -1,7 +1,7 @@
-From 4d18313f99afd549715d0a5bef2d1cbc9de49e4f Mon Sep 17 00:00:00 2001
+From 1319aa8fd1285b2e3d68ae1fc52955c5845f730b Mon Sep 17 00:00:00 2001
 From: wangbin <wbsecg1@gmail.com>
 Date: Mon, 25 Aug 2025 11:03:56 +0800
-Subject: [PATCH 34/35] nvenc: support api version 12.0+ & api option
+Subject: [PATCH 37/38] nvenc: support api version 12.0+ & api option
 
 ---
  libavcodec/nvenc.c      | 85 +++++++++++++++++++++++++++++++++++------
@@ -12,10 +12,10 @@ Subject: [PATCH 34/35] nvenc: support api version 12.0+ & api option
  5 files changed, 78 insertions(+), 11 deletions(-)
 
 diff --git a/libavcodec/nvenc.c b/libavcodec/nvenc.c
-index 5507446e58..e5593908ec 100644
+index 41784274ed..25dcf17e47 100644
 --- a/libavcodec/nvenc.c
 +++ b/libavcodec/nvenc.c
-@@ -348,6 +348,16 @@ static inline uint32_t api_ver(uint32_t major_ver, uint32_t minor_ver)
+@@ -324,6 +324,16 @@ static inline uint32_t api_ver(uint32_t major_ver, uint32_t minor_ver)
      return major_ver | (minor_ver << 24);
  }
  
@@ -32,7 +32,7 @@ index 5507446e58..e5593908ec 100644
  static av_cold int nvenc_load_libraries(AVCodecContext *avctx)
  {
      NvencContext *ctx            = avctx->priv_data;
-@@ -377,12 +387,38 @@ static av_cold int nvenc_load_libraries(AVCodecContext *avctx)
+@@ -353,12 +363,38 @@ static av_cold int nvenc_load_libraries(AVCodecContext *avctx)
      nvenc_max_major = nvenc_max_ver >> 4;
      nvenc_max_minor = nvenc_max_ver & 0xf;
      //ctx->apiver_rt = NVENCAPI_VERSION;
@@ -76,7 +76,7 @@ index 5507446e58..e5593908ec 100644
  
      if ((NVENCAPI_MAJOR_VERSION << 4 | NVENCAPI_MINOR_VERSION) > nvenc_max_ver) {
          av_log(avctx, AV_LOG_WARNING, "Driver does not support the required nvenc API version. "
-@@ -1842,14 +1878,20 @@ static av_cold int nvenc_setup_encoder(AVCodecContext *avctx)
+@@ -1645,14 +1681,20 @@ static av_cold int nvenc_setup_encoder(AVCodecContext *avctx)
      int dw, dh;
  
      ctx->encode_config.version = ctx->config_ver_rt;//NV_ENC_CONFIG_VER;
@@ -99,7 +99,7 @@ index 5507446e58..e5593908ec 100644
      preset_config.presetCfg.version = ctx->config_ver_rt;//NV_ENC_CONFIG_VER;
  
  #ifdef NVENC_HAVE_NEW_PRESETS
-@@ -2072,6 +2114,8 @@ static av_cold int nvenc_alloc_surface(AVCodecContext *avctx, int idx)
+@@ -1872,6 +1914,8 @@ static av_cold int nvenc_alloc_surface(AVCodecContext *avctx, int idx)
          }
  
          allocSurf.version = struct_ver_rt(ctx, 1);//NV_ENC_CREATE_INPUT_BUFFER_VER;
@@ -108,7 +108,7 @@ index 5507446e58..e5593908ec 100644
          allocSurf.width = avctx->width;
          allocSurf.height = avctx->height;
          allocSurf.bufferFmt = ctx->surfaces[idx].format;
-@@ -2191,9 +2235,12 @@ av_cold int ff_nvenc_encode_close(AVCodecContext *avctx)
+@@ -1991,9 +2035,12 @@ av_cold int ff_nvenc_encode_close(AVCodecContext *avctx)
  
      /* the encoder has to be flushed before it can be closed */
      if (ctx->nvencoder) {
@@ -123,7 +123,7 @@ index 5507446e58..e5593908ec 100644
          res = nvenc_push_context(avctx);
          if (res < 0)
              return res;
-@@ -2416,6 +2463,10 @@ static int nvenc_register_frame(AVCodecContext *avctx, const AVFrame *frame)
+@@ -2216,6 +2263,10 @@ static int nvenc_register_frame(AVCodecContext *avctx, const AVFrame *frame)
          return idx;
  
      reg.version            = struct_ver_rt(ctx, 3);// NV_ENC_REGISTER_RESOURCE_VER;
@@ -134,7 +134,7 @@ index 5507446e58..e5593908ec 100644
      reg.width              = frames_ctx->width;
      reg.height             = frames_ctx->height;
      reg.pitch              = frame->linesize[0];
-@@ -2745,6 +2796,12 @@ static int process_output_surface(AVCodecContext *avctx, AVPacket *pkt, NvencSur
+@@ -2492,6 +2543,12 @@ static int process_output_surface(AVCodecContext *avctx, AVPacket *pkt, NvencSur
      enum AVPictureType pict_type;
  
      lock_params.version = struct_ver_rt(ctx, 1);//NV_ENC_LOCK_BITSTREAM_VER;
@@ -147,7 +147,7 @@ index 5507446e58..e5593908ec 100644
  
      lock_params.doNotWait = 0;
      lock_params.outputBitstream = tmpoutsurf->output_surface;
-@@ -2967,7 +3024,9 @@ static void reconfig_encoder(AVCodecContext *avctx, const AVFrame *frame)
+@@ -2714,7 +2771,9 @@ static void reconfig_encoder(AVCodecContext *avctx, const AVFrame *frame)
      int reconfig_bitrate = 0, reconfig_dar = 0;
      int dw, dh;
  
@@ -158,7 +158,7 @@ index 5507446e58..e5593908ec 100644
      params.reInitEncodeParams = ctx->init_encode_params;
  
      compute_dar(avctx, &dw, &dh);
-@@ -3139,7 +3198,11 @@ static int nvenc_send_frame(AVCodecContext *avctx, const AVFrame *frame)
+@@ -2807,7 +2866,11 @@ static int nvenc_send_frame(AVCodecContext *avctx, const AVFrame *frame)
      NV_ENCODE_API_FUNCTION_LIST *p_nvenc = &dl_fn->nvenc_funcs;
  
      NV_ENC_PIC_PARAMS pic_params = { 0 };
@@ -172,19 +172,19 @@ index 5507446e58..e5593908ec 100644
      if ((!ctx->cu_context && !ctx->d3d11_device) || !ctx->nvencoder)
          return AVERROR(EINVAL);
 diff --git a/libavcodec/nvenc.h b/libavcodec/nvenc.h
-index 8303f20a2d..886fcb95c6 100644
+index 5696f712ff..95d64768ae 100644
 --- a/libavcodec/nvenc.h
 +++ b/libavcodec/nvenc.h
-@@ -264,6 +264,7 @@ typedef struct NvencContext
+@@ -235,6 +235,7 @@ typedef struct NvencContext
+ 
      uint32_t frame_idx_counter;
-     uint32_t next_view_id;
  
 +    float apiver_req; // for testing
      int preset;
      int profile;
      int level;
 diff --git a/libavcodec/nvenc_av1.c b/libavcodec/nvenc_av1.c
-index df6a93edcb..ee0308ad8a 100644
+index 79253cff66..2932a21aa8 100644
 --- a/libavcodec/nvenc_av1.c
 +++ b/libavcodec/nvenc_av1.c
 @@ -26,6 +26,7 @@
@@ -196,7 +196,7 @@ index df6a93edcb..ee0308ad8a 100644
      { "default",      "",                                   0,                    AV_OPT_TYPE_CONST, { .i64 = PRESET_DEFAULT }, 0, 0, VE, .unit = "preset" },
      { "slow",         "hq 2 passes",                        0,                    AV_OPT_TYPE_CONST, { .i64 = PRESET_SLOW },    0, 0, VE, .unit = "preset" },
 diff --git a/libavcodec/nvenc_h264.c b/libavcodec/nvenc_h264.c
-index 842e4eef60..c2eae054c4 100644
+index 8cbe4dca39..2f8678f7dd 100644
 --- a/libavcodec/nvenc_h264.c
 +++ b/libavcodec/nvenc_h264.c
 @@ -26,6 +26,7 @@
@@ -208,7 +208,7 @@ index 842e4eef60..c2eae054c4 100644
      { "preset",       "Set the encoding preset",            OFFSET(preset),       AV_OPT_TYPE_INT,   { .i64 = PRESET_P4 },     PRESET_DEFAULT, PRESET_P7,          VE, .unit = "preset" },
  #else
 diff --git a/libavcodec/nvenc_hevc.c b/libavcodec/nvenc_hevc.c
-index 54e2fe323e..15c93c12e8 100644
+index 5696e14dd4..6632ad302a 100644
 --- a/libavcodec/nvenc_hevc.c
 +++ b/libavcodec/nvenc_hevc.c
 @@ -26,6 +26,7 @@

@@ -52,6 +52,15 @@ export PATH=$PWD/tools/gas-preprocessor:$PATH
 : ${AMF_DIR:="$PWD/tools/dep/include"}
 test -f $AMF_DIR/AMF/core/Version.h || unset AMF_DIR
 
+# version_compare v1 "op" v2, e.g. version_compare 10.6 "<" 10.7
+version_compare(){
+  local v1_major=`echo $1 |cut -d '.' -f 1`
+  local v1_minor=`echo $1 |cut -d '.' -f 2`
+  local v2_major=`echo $3 |cut -d '.' -f 1`
+  local v2_minor=`echo $3 |cut -d '.' -f 2`
+  eval return $((1-$(($(($((v1_major*100))+$v1_minor))${2}$(($((v2_major*100))+$v2_minor))))))
+}
+
 echo FFSRC=$FFSRC
 [[ "$FFSRC" == "$PWD" ]] && BUILD_DIR=$PWD
 [ -f $FFSRC/configure ] && {
@@ -270,19 +279,21 @@ LLVM_NM=llvm-nm
 LLVM_RANLIB=llvm-ranlib
 LLVM_STRIP=llvm-strip
 
-if [ -f "$PWD/tools/nv-codec-headers/ffnvcodec.pc.in" ]; then
-  sed 's/\(prefix=\).*/\1\${pcfiledir\}/' tools/nv-codec-headers/ffnvcodec.pc.in >tools/nv-codec-headers/ffnvcodec.pc
-  export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PWD/tools/nv-codec-headers
+ffnvsfx=
+version_compare "$FFMAJOR.$FFMINOR" "<" 7.1 && ffnvsfx=-11.1
+if [ -f "$PWD/tools/nv-codec-headers$ffnvsfx/ffnvcodec.pc.in" ]; then
+  sed 's/\(prefix=\).*/\1\${pcfiledir\}/' tools/nv-codec-headers$ffnvsfx/ffnvcodec.pc.in >tools/nv-codec-headers$ffnvsfx/ffnvcodec.pc
+  export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PWD/tools/nv-codec-headers$ffnvsfx
   pkg-config --modversion ffnvcodec
 fi
-for ffnv in "" 12.1 12.0 11.1; do
+for ffnv in "" 12.1 12.0 11.1 9.1; do
   ffnvsfx=-$ffnv
   [ -z "$ffnv" ] && ffnvsfx=
   if [ -f "$PWD/tools/nv-codec-headers$ffnvsfx/ffnvcodec.pc.in" ]; then
     sed 's/\(prefix=\).*/\1\${pcfiledir\}/' tools/nv-codec-headers$ffnvsfx/ffnvcodec.pc.in >tools/nv-codec-headers$ffnvsfx/ffnvcodec.pc
   # cuGLGetDevices is a cuda8 api, never used
     sed -i $sed_bak 's/LOAD_SYMBOL(cuGLGetDevices\(.*\)/LOAD_SYMBOL_OPT(cuGLGetDevices\1/;s/LOAD_SYMBOL(cuDeviceGetAttribute\(.*\)/LOAD_SYMBOL_OPT(cuDeviceGetAttribute\1/;s/LOAD_SYMBOL(cuCtxSetLimit\(.*\)/LOAD_SYMBOL_OPT(cuCtxSetLimit\1/' tools/nv-codec-headers/include/ffnvcodec/dynlink_loader.h
-    grep -m1 NVENCAPI_MAJOR_VERSION $PWD/tools/nv-codec-headers$ffnvsfx/include/ffnvcodec/nvEncodeAPI.h
+    grep -m2 -E "NVENCAPI_MAJOR_VERSION|NVENCAPI_MINOR_VERSION" $PWD/tools/nv-codec-headers$ffnvsfx/include/ffnvcodec/nvEncodeAPI.h
   fi
 done
 ls "$PWD/tools/nv-codec-headers"
@@ -1367,15 +1378,6 @@ setup_macos_env(){
   cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
 export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/macOS/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/macOS/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
-}
-
-# version_compare v1 "op" v2, e.g. version_compare 10.6 "<" 10.7
-version_compare(){
-  local v1_major=`echo $1 |cut -d '.' -f 1`
-  local v1_minor=`echo $1 |cut -d '.' -f 2`
-  local v2_major=`echo $3 |cut -d '.' -f 1`
-  local v2_minor=`echo $3 |cut -d '.' -f 2`
-  eval return $((1-$(($(($((v1_major*100))+$v1_minor))${2}$(($((v2_major*100))+$v2_minor))))))
 }
 
 apple_sdk_version(){

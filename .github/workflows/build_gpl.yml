@@ -85,7 +85,7 @@ jobs:
       matrix:
         config: [lite]
         target: [windows-desktop]
-        nvenc: ["n11.1.5.3", "master"]
+        nvenc: ["master"]
     steps:
     - uses: actions/checkout@v5
       with:
@@ -135,25 +135,16 @@ jobs:
         set USER_OPT=--enable-libshaderc
         tools\vcbuild.bat VS2022 %TARGET_OS%10 x64
     - name: Make SDK
-      if: ${{ matrix.nvenc != 'master' }}
       shell: cmd
       run: |
         set SDK_NAME=ffmpeg-%FF_VERSION%-%TARGET_OS%-vs2022%CONFIG_SUFFIX%
         move sdk* %SDK_NAME%
         xcopy /s /f /y tools\dep_gpl\${{ env.TARGET_OS }}\lib\* %SDK_NAME%\lib\
         7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off %SDK_NAME%.7z %SDK_NAME%
-    - name: Make SDK nvenc12 abi
-      if: ${{ matrix.nvenc == 'master' }}
-      shell: cmd
-      run: |
-        set SDK_NAME=ffmpeg-%FF_VERSION%-%TARGET_OS%-vs2022-nvenc12abi%CONFIG_SUFFIX%
-        move sdk* %SDK_NAME%
-        xcopy /s /f /y tools\dep_gpl\${{ env.TARGET_OS }}\lib\* %SDK_NAME%\lib\
-        7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off %SDK_NAME%.7z %SDK_NAME%
     - name: Archieve SDK
       uses: actions/upload-artifact@v4
       with:
-        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-VS2022${{ matrix.config }}-nvenc${{ matrix.nvenc }}
+        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-VS2022${{ matrix.config }}
         path: ffmpeg-*.7z
 
 
@@ -173,7 +164,7 @@ jobs:
       matrix:
         config: [lite]
         target: [windows-desktop]
-        nvenc: ["n11.1.5.3", "master"]
+        nvenc: ["master"]
     steps:
     - uses: actions/checkout@v5
       with:
@@ -222,7 +213,7 @@ jobs:
     - name: Archieve SDK
       uses: actions/upload-artifact@v4
       with:
-        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}-nvenc${{ matrix.nvenc }}
+        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
 
 
@@ -239,7 +230,7 @@ jobs:
       fail-fast: false
       matrix:
         config: [lite]
-        nvenc: ["n11.1.5.3", "master"]
+        nvenc: ["master"]
     steps:
     - uses: actions/checkout@v5
       with:
@@ -284,7 +275,7 @@ jobs:
     - name: Archieve SDK
       uses: actions/upload-artifact@v4
       with:
-        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}-nvenc${{ matrix.nvenc }}
+        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
 
 
@@ -392,11 +383,7 @@ jobs:
     - name: Download vs2022 desktop lite
       uses: actions/download-artifact@v4
       with:
-        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2022lite-nvencn11.1.5.3
-    - name: Download vs2022 desktop lite nvenc12 abi
-      uses: actions/download-artifact@v4
-      with:
-        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2022lite-nvencmaster
+        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2022lite
     - name: Upload to SourceForge
       if: (github.event_name != 'pull_request')
       shell: bash

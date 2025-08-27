@@ -4,9 +4,6 @@ SUFFIX=${FF_VERSION}-${TARGET_OS}
 if [ -n "$COMPILER" ]; then
     SUFFIX+="-${COMPILER}"
 fi
-if [ "$NVENC" == "master" ]; then
-    SUFFIX+="-nvenc12abi"
-fi
 
 SUFFIX+=${LIB_OPT//*-/-}${CONFIG_SUFFIX}${LTO_SUFFIX}
 mv sdk-* ffmpeg-${SUFFIX}
