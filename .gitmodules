@@ -7,3 +7,12 @@
 [submodule "tools/Vulkan-Headers"]
 	path = tools/Vulkan-Headers
 	url = https://github.com/KhronosGroup/Vulkan-Headers.git
+[submodule "tools/nv-codec-headers-11.1"]
+	path = tools/nv-codec-headers-11.1
+	url = https://github.com/FFmpeg/nv-codec-headers
+[submodule "tools/nv-codec-headers-12.0"]
+	path = tools/nv-codec-headers-12.0
+	url = https://github.com/FFmpeg/nv-codec-headers
+[submodule "tools/nv-codec-headers-12.1"]
+	path = tools/nv-codec-headers-12.1
+	url = https://github.com/FFmpeg/nv-codec-headers

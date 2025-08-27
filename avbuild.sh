@@ -273,11 +273,18 @@ LLVM_STRIP=llvm-strip
 if [ -f "$PWD/tools/nv-codec-headers/ffnvcodec.pc.in" ]; then
   sed 's/\(prefix=\).*/\1\${pcfiledir\}/' tools/nv-codec-headers/ffnvcodec.pc.in >tools/nv-codec-headers/ffnvcodec.pc
   export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PWD/tools/nv-codec-headers
-  # cuGLGetDevices is a cuda8 api, never used
-  sed -i $sed_bak 's/LOAD_SYMBOL(cuGLGetDevices\(.*\)/LOAD_SYMBOL_OPT(cuGLGetDevices\1/;s/LOAD_SYMBOL(cuDeviceGetAttribute\(.*\)/LOAD_SYMBOL_OPT(cuDeviceGetAttribute\1/;s/LOAD_SYMBOL(cuCtxSetLimit\(.*\)/LOAD_SYMBOL_OPT(cuCtxSetLimit\1/' tools/nv-codec-headers/include/ffnvcodec/dynlink_loader.h
   pkg-config --modversion ffnvcodec
-  grep -m1 NVENCAPI_MAJOR_VERSION $PWD/tools/nv-codec-headers/include/ffnvcodec/nvEncodeAPI.h
 fi
+for ffnv in "" 12.1 12.0 11.1; do
+  ffnvsfx=-$ffnv
+  [ -z "$ffnv" ] && ffnvsfx=
+  if [ -f "$PWD/tools/nv-codec-headers$ffnvsfx/ffnvcodec.pc.in" ]; then
+    sed 's/\(prefix=\).*/\1\${pcfiledir\}/' tools/nv-codec-headers$ffnvsfx/ffnvcodec.pc.in >tools/nv-codec-headers$ffnvsfx/ffnvcodec.pc
+  # cuGLGetDevices is a cuda8 api, never used
+    sed -i $sed_bak 's/LOAD_SYMBOL(cuGLGetDevices\(.*\)/LOAD_SYMBOL_OPT(cuGLGetDevices\1/;s/LOAD_SYMBOL(cuDeviceGetAttribute\(.*\)/LOAD_SYMBOL_OPT(cuDeviceGetAttribute\1/;s/LOAD_SYMBOL(cuCtxSetLimit\(.*\)/LOAD_SYMBOL_OPT(cuCtxSetLimit\1/' tools/nv-codec-headers/include/ffnvcodec/dynlink_loader.h
+    grep -m1 NVENCAPI_MAJOR_VERSION $PWD/tools/nv-codec-headers$ffnvsfx/include/ffnvcodec/nvEncodeAPI.h
+  fi
+done
 ls "$PWD/tools/nv-codec-headers"
 sed -i $sed_bak 's/-lmfplat/-lMfplat/g' "$FFSRC/configure"
 sed -i $sed_bak '/check_cflags -Werror=partial-availability/d' "$FFSRC/configure" # for SSL, VT
@@ -444,6 +451,8 @@ setup_win(){
   enable_opt mediafoundation
   disable_opt ptx-compression # libavfilter link error (zlib used in ff_cuda_load_module but no lib dep)
   $USE_VK && EXTRA_CFLAGS+=" -I\$THIS_DIR/tools/Vulkan-Headers/include"
+  EXTRA_CFLAGS+=" -I\$THIS_DIR/tools" # for nv-codec-headers-*
+
   $USE_VAAPI_WIN32 || disable_opt vaapi
 
   if $IS_CLANG ; then
@@ -1433,6 +1442,7 @@ setup_sunxi_env() { # cross build using ubuntu arm-linux-gnueabihf-gcc-7 result 
 setup_rockchip_env() {
   local IS_CROSS_BUILD=true
   local LINUX_NAME=rockchip
+  disable_opt ffnvcodec
   disable_opt vulkan
   enable_opt rkrga # exists in ffmpeg-rockchip but not upstream
   [ -d /rockchip-test ] && IS_CROSS_BUILD=false
