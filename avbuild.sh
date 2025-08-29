@@ -293,6 +293,8 @@ for ffnv in "" 12.1 12.0 11.1 9.1; do
     sed 's/\(prefix=\).*/\1\${pcfiledir\}/' tools/nv-codec-headers$ffnvsfx/ffnvcodec.pc.in >tools/nv-codec-headers$ffnvsfx/ffnvcodec.pc
   # cuGLGetDevices is a cuda8 api, never used
     sed -i $sed_bak 's/LOAD_SYMBOL(cuGLGetDevices\(.*\)/LOAD_SYMBOL_OPT(cuGLGetDevices\1/;s/LOAD_SYMBOL(cuDeviceGetAttribute\(.*\)/LOAD_SYMBOL_OPT(cuDeviceGetAttribute\1/;s/LOAD_SYMBOL(cuCtxSetLimit\(.*\)/LOAD_SYMBOL_OPT(cuCtxSetLimit\1/' tools/nv-codec-headers/include/ffnvcodec/dynlink_loader.h
+# cuda8.2
+    sed -i $sed_bak 's/LOAD_SYMBOL(cuvidGetDecodeStatus\(.*\)/LOAD_SYMBOL_OPT(cuvidGetDecodeStatus\1/;s/LOAD_SYMBOL(cuvidReconfigureDecoder\(.*\)/LOAD_SYMBOL_OPT(cuvidReconfigureDecoder\1/' tools/nv-codec-headers/include/ffnvcodec/dynlink_loader.h
     grep -m2 -E "NVENCAPI_MAJOR_VERSION|NVENCAPI_MINOR_VERSION" $PWD/tools/nv-codec-headers$ffnvsfx/include/ffnvcodec/nvEncodeAPI.h
   fi
 done
