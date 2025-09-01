@@ -20,7 +20,7 @@ if [ `which dpkg` ]; then
     pkgs+=" llvm-${LLVM_VER}-tools clang-${LLVM_VER} clang-tools-${LLVM_VER} clang-tidy-${LLVM_VER} lld-${LLVM_VER} libc++-${LLVM_VER}-dev libclang-rt-${LLVM_VER}-dev"
     pkgs+=" sshpass p7zip-full" # clang-tools: clang-cl
     if [ "$TARGET_OS" == "linux" ]; then
-        pkgs+=" libstdc++-11-dev libxv-dev libva-dev libvdpau-dev libbz2-dev zlib1g-dev"
+        pkgs+=" libstdc++-11-dev libxv-dev libva-dev libvdpau-dev zlib1g-dev" # link libbz2.so.1.0 on debian, but libbz2.so.1 on fedora
         if [ "$COMPILER" == "gcc" ]; then
             pkgs+=" gcc"
         fi

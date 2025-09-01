@@ -243,7 +243,6 @@ enable_libmfx(){
 disable_opt response-files # LINK : fatal error LNK1181: cannot open input file '@libavutil\avutil-60.dll.objs'
 enable_opt hwaccels
 $USE_VK || disable_opt vulkan
-echo $USER_OPT |grep -q enable-libfreetype && enable_opt libharfbuzz # no huarfbuzz in ffmpeg < 6.1
 
 ELF_FLAGS_ADDED=false
 add_elf_flags() {
@@ -1637,6 +1636,8 @@ config1(){
     eval os_opt='${'${os}'_OPT}'
     USER_OPT+=" $os_opt"
   fi
+  echo $USER_OPT |grep -q enable-libfreetype && enable_opt libharfbuzz # no huarfbuzz in ffmpeg < 6.1
+
   case $1 in
     android*)    setup_android_env $TAGET_ARCH_FLAG $1 ;;
     ohos*)    setup_ohos_env $TAGET_ARCH_FLAG $1 ;;
