@@ -24,7 +24,7 @@ Linux, android, macOS, iOS, raspberry pi(legacy OSes), windows build:**[![Build 
 - multiple targets build and configure simultaneously
 - ssl
 - enable all gpu decoders and encoders if possible
-- nvidia driver version is not limited(nvcuvid, nvdec, nvenc)
+- nvidia driver version is not limited(nvcuvid, nvdec, nvenc), supports 8.0~13.0 in 1 binary
 - ffmpeg patches
 - Universal binaries for apple platforms, including apple sillicon support
 
@@ -49,9 +49,9 @@ Linux, android, macOS, iOS, raspberry pi(legacy OSes), windows build:**[![Build 
 You can request to add your configuration. If not accepted, customize yourself and build by github actions
 - Fork the repo
 - Set actions variables used by workflows in github repo settings
-    - FF_VER: `master`, or version, e.g. `7.0`, `6.1`
+    - FF_VER: `master`, or version, e.g. `8.0`, `6.1`
     - LINUX_SYSROOT_ID: any characters, used to update sysroot cache
-    - LLVM_VER: llvm version, e.g. `20`, used by linux and windows build. Available versions can be found in https://apt.llvm.org
+    - LLVM_VER: llvm version, e.g. `22`, used by linux and windows build. Available versions can be found in https://apt.llvm.org
     - VCVER: [msvcrt](https://sourceforge.net/projects/avbuild/files/dep/msvcrt-dev.7z/download) version, e.g. `14.28.29333`. used by windows clang build
     - WINSDKVER: [windows sdk](https://sourceforge.net/projects/avbuild/files/dep/winsdk.7z/download) version, e.g. `10.0.22621.0`. used by windows clang build
     - VC_LTL_VER: VC-LTL5 version, e.g. `5.1.1`. used by windows build with LTL

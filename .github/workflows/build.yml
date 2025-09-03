@@ -55,7 +55,7 @@ jobs:
           - config: lite
             target: visionOSSimulator
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Setup Xcode
       run: sudo xcode-select -s /Applications/Xcode_${{ vars.XCODE }}.app
     - name: Create Build Environment
@@ -88,7 +88,7 @@ jobs:
     env:
       TARGET_OS: 'wasm'
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Create Build Environment
       shell: bash
       env:
@@ -121,7 +121,7 @@ jobs:
       matrix:
         config: [lite]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: 'Restore sysroot cache'
       id: sysroot-cache
       uses: actions/cache@v4
@@ -165,7 +165,7 @@ jobs:
           - config: default
             target: uwp
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: 'recursive'
     - name: Create Build Environment
@@ -229,7 +229,7 @@ jobs:
         config: [lite,default]
         target: [windows-desktop]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: 'recursive'
     - name: 'Restore dep cache'
@@ -306,7 +306,7 @@ jobs:
       AMF_DIR: "/tmp/dep/include"
       CONFIG_SUFFIX: '-lavfilters'
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       if: ${{ env.FF_VERSION == 'master' }}
       with:
         submodules: 'recursive'
@@ -364,7 +364,7 @@ jobs:
         config: [lite]
         target: [windows-desktop]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: 'recursive'
     - name: 'Restore sysroot cache'
@@ -414,7 +414,7 @@ jobs:
       matrix:
         config: [lite]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: 'recursive'
     - name: 'Restore sysroot cache'
@@ -462,7 +462,7 @@ jobs:
       matrix:
         config: [lite]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: 'recursive'
     - name: Create Build Environment
@@ -497,7 +497,7 @@ jobs:
       matrix:
         config: [default,lite,lite-lto]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: 'recursive'
     - name: 'Restore sysroot cache'
@@ -544,7 +544,7 @@ jobs:
       matrix:
         config: [lite]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: 'recursive'
     - name: 'Restore sysroot cache'
@@ -586,7 +586,7 @@ jobs:
       matrix:
         config: [lite,lite-lto]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: 'Restore sysroot cache'
       id: sysroot-cache
       uses: actions/cache@v4
