@@ -662,6 +662,7 @@ jobs:
         name: ffmpeg-${{ env.FF_VERSION }}-macCatalyst-lite-lto
     - name: Gen FFmpeg.framework
       run: |
+        ls -lh *.tar.xz
         for OS in iOS iOSSimulator tvOS tvOSSimulator visionOS visionOSSimulator; do
           tar xvf ffmpeg-${{ env.FF_VERSION }}-${OS}-lite-lto-shared.tar.xz
           cd ffmpeg-${{ env.FF_VERSION }}-${OS}-lite-lto

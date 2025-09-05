@@ -1,0 +1,27 @@
+From 87f63b5184096dc9983277135685c9e4597ba195 Mon Sep 17 00:00:00 2001
+From: wangbin <wbsecg1@gmail.com>
+Date: Fri, 5 Sep 2025 23:11:42 +0800
+Subject: [PATCH 39/39] hls: allow playlist w/o extension
+
+there's no option for `read_probe()`, so let's return a lower score.
+fix https://github.com/wang-bin/fvp/issues/218
+---
+ libavformat/hls.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libavformat/hls.c b/libavformat/hls.c
+index 73eddf7c12..bad3a9e574 100644
+--- a/libavformat/hls.c
++++ b/libavformat/hls.c
+@@ -2637,7 +2637,7 @@ static int hls_probe(const AVProbeData *p)
+             !av_match_ext    (p->filename, "m3u8,m3u") &&
+              ff_match_url_ext(p->filename, "m3u8,m3u") <= 0) {
+             av_log(NULL, AV_LOG_ERROR, "Not detecting m3u8/hls with non standard extension and non standard mime type\n");
+-            return 0;
++            return AVPROBE_SCORE_MAX / 2;
+         }
+         if (mime_x)
+             av_log(NULL, AV_LOG_WARNING, "mime type is not rfc8216 compliant\n");
+-- 
+2.39.5 (Apple Git-154)
+
