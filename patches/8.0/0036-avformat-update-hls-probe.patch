@@ -1,0 +1,36 @@
+Subject: [PATCH] libavformat/hls.c: update allowed_segment_extensions
+libavformat/hls.c: update hls_probe
+---
+Index: libavformat/hls.c
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/libavformat/hls.c b/libavformat/hls.c
+--- a/libavformat/hls.c	(revision 140fd653aed8cad774f991ba083e2d01e86420c7)
++++ b/libavformat/hls.c	(revision c13c4046860b95e8c73f9cf7d2e19abe12866377)
+@@ -2752,8 +2752,8 @@
+ {
+     /* Require #EXTM3U at the start, and either one of the ones below
+      * somewhere for a proper match. */
+-    if (strncmp(p->buf, "#EXTM3U", 7))
+-        return 0;
++    if (!strncmp(p->buf, "#EXTM3U", 7))
++        return AVPROBE_SCORE_MAX;
+ 
+     if (strstr(p->buf, "#EXT-X-STREAM-INF:")     ||
+         strstr(p->buf, "#EXT-X-TARGETDURATION:") ||
+@@ -2801,12 +2801,7 @@
+         INT_MIN, INT_MAX, FLAGS},
+     {"allowed_segment_extensions", "List of file extensions that hls is allowed to access",
+         OFFSET(allowed_segment_extensions), AV_OPT_TYPE_STRING,
+-        {.str = "3gp,aac,avi,ac3,eac3,flac,mkv,m3u8,m4a,m4s,m4v,mpg,mov,mp2,mp3,mp4,mpeg,mpegts,ogg,ogv,oga,ts,vob,vtt,wav,webvtt"
+-            ",cmfv,cmfa" // Ticket11526 www.nicovideo.jp
+-            ",ec3"       // part of Ticket11435 (Elisa Viihde (Finnish online recording service))
+-            ",fmp4"      // https://github.com/yt-dlp/yt-dlp/issues/12700
+-            ",html"      // https://flash1.bogulus.cfd/
+-        },
++        {.str = "ALL"},
+         INT_MIN, INT_MAX, FLAGS},
+     {"extension_picky", "Be picky with all extensions matching",
+         OFFSET(extension_picky), AV_OPT_TYPE_BOOL, {.i64 = 1}, 0, 1, FLAGS},
