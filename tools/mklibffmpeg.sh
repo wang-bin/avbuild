@@ -6,6 +6,7 @@ THIS_DIR="$(cd "$(dirname ${BASH_SOURCE[0]})";pwd -P)"
 cd "$BUILD_DIR"
 
 # msvc shared+static in one build requires https://github.com/wang-bin/avbuild/commit/65cb54ec6c2c19852cad78d9863aff3c17934c73
+# FFmpeg@953a3dc add av_export for var breaks windows share+static build
 
 if ! `ls libavutil/*.def &>/dev/null`; then
   if [ -f libavutil/avutil.lib ]; then
