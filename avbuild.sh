@@ -1693,7 +1693,10 @@ config1(){
   EXTRA_LDFLAGS=$(trim2 $EXTRA_LDFLAGS)
   EXTRA_LDSOFLAGS=$(trim2 $EXTRA_LDSOFLAGS)
   EXTRALIBS=$(trim2 $EXTRALIBS)
-  test -n "$EXTRA_CFLAGS" && TOOLCHAIN_OPT+=" --extra-cflags=\"$EXTRA_CFLAGS\""
+  test -n "$EXTRA_CFLAGS" && {
+    TOOLCHAIN_OPT+=" --extra-cflags=\"$EXTRA_CFLAGS\""
+    grep -q add_allcflags $FFSRC/configure && TOOLCHAIN_OPT+=" --extra-cxxflags=\"$EXTRA_CFLAGS\""
+  }
   test -n "$EXTRA_LDFLAGS" && TOOLCHAIN_OPT+=" --extra-ldflags=\"$EXTRA_LDFLAGS\""
   test -n "$EXTRA_LDSOFLAGS" && TOOLCHAIN_OPT+=" --extra-ldsoflags=\"$EXTRA_LDSOFLAGS\""
   test -n "$EXTRALIBS" && TOOLCHAIN_OPT+=" --extra-libs=\"$EXTRALIBS\""
