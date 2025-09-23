@@ -1259,7 +1259,7 @@ setup_apple_env() {
   OS=${OS/ccat/cCat}
   local ios=8.0
   local tvos=10.2 # videotoolbox: 10.2+
-  local macos=10.7
+  local macos=10.8 # SSLCreateContext error in configure on 10.7
   local maccatalyst=13.1 # xcode14 requires 13.1+
   local watchos=2.0
   local xros=1.0
@@ -1314,7 +1314,7 @@ EOF
 
 setup_macos_env(){
   FEATURE_OPT+=" --disable-parser=apv"
-  local MACOS_VER=10.7
+  local MACOS_VER=10.8
   local MACOS_ARCH=
   if [ "${1:0:5}" == "macos" ]; then
     MACOS_VER=${1##macos}
@@ -1331,7 +1331,7 @@ setup_macos_env(){
   fi
   #TOOLCHAIN_OPT+=" --strip='strip -u -r'" # no effect because ffmpeg add -x to strip
   [ -z "$MACOS_ARCH" ] && MACOS_ARCH=$(cc -dumpmachine |cut -d '-' -f 1)
-  : ${MACOS_VER:=10.7}
+  : ${MACOS_VER:=10.8}
   [[ "$MACOS_ARCH" == arm64* ]] && version_compare $MACOS_VER "<" 11.0 && MACOS_VER=11.0
   disable_opt xlib libxcb # installed by github action macos-11
   enable_opt videotoolbox vda libxml2
