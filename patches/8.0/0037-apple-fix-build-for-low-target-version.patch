@@ -1,0 +1,82 @@
+From f1bed329a0bffa13fbc0237230e63efbbc6dad65 Mon Sep 17 00:00:00 2001
+From: wangbin <wbsecg1@gmail.com>
+Date: Tue, 23 Sep 2025 19:06:23 +0800
+Subject: [PATCH 37/37] apple: fix build for low target version
+
+---
+ libavdevice/avfoundation.m          |  2 +-
+ libavfilter/vf_yadif_videotoolbox.m |  7 ++++++-
+ libavformat/tls_securetransport.c   | 24 +++++++++++++++++++-----
+ 3 files changed, 26 insertions(+), 7 deletions(-)
+
+diff --git a/libavdevice/avfoundation.m b/libavdevice/avfoundation.m
+index ebec1ac4f2..abf37e0403 100644
+--- a/libavdevice/avfoundation.m
++++ b/libavdevice/avfoundation.m
+@@ -206,7 +206,7 @@ static void unlock_frames(AVFContext* ctx)
+     if (context == _context) {
+ #if !TARGET_OS_IPHONE && __MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
+         AVCaptureDeviceTransportControlsPlaybackMode mode =
+-            [change[NSKeyValueChangeNewKey] integerValue];
++            [[change valueForKey:NSKeyValueChangeNewKey] integerValue];
+ 
+         if (mode != _context->observed_mode) {
+             if (mode == AVCaptureDeviceTransportControlsNotPlayingMode) {
+diff --git a/libavfilter/vf_yadif_videotoolbox.m b/libavfilter/vf_yadif_videotoolbox.m
+index f8eb0c6bfa..0678633100 100644
+--- a/libavfilter/vf_yadif_videotoolbox.m
++++ b/libavfilter/vf_yadif_videotoolbox.m
+@@ -248,9 +248,14 @@ static av_cold int do_init(AVFilterContext *ctx) API_AVAILABLE(macos(10.11), ios
+         goto fail;
+     }
+ 
++
++    MTLResourceOptions options = 0;
++    if (@available(macOS 10.11, iOS 9.0, tvOS 9.0, macCatalyst 13.1, visionOS 1.0, *)) {
++        options |= MTLResourceStorageModeShared;
++    }
+     s->mtlParamsBuffer = [s->mtlDevice
+         newBufferWithLength:sizeof(struct mtlYadifParams)
+-        options:MTLResourceStorageModeShared];
++        options:options];
+     if (!s->mtlParamsBuffer) {
+         av_log(ctx, AV_LOG_ERROR, "Failed to create Metal buffer for parameters\n");
+         goto fail;
+diff --git a/libavformat/tls_securetransport.c b/libavformat/tls_securetransport.c
+index a5a3bd87a1..ecaccd6ac9 100644
+--- a/libavformat/tls_securetransport.c
++++ b/libavformat/tls_securetransport.c
+@@ -166,11 +166,25 @@ static int load_cert(URLContext *h)
+     if ((ret = import_pem(h, c->tls_shared.key_file, &keyArray)) < 0)
+         goto end;
+ 
+-    if (!(id = SecIdentityCreate(kCFAllocatorDefault,
+-                                 (SecCertificateRef)CFArrayGetValueAtIndex(certArray, 0),
+-                                 (SecKeyRef)CFArrayGetValueAtIndex(keyArray, 0)))) {
+-        ret = AVERROR_UNKNOWN;
+-        goto end;
++    if (__builtin_available(macOS 10.12, iOS 11.2, tvOS 11.2, macCatalyst 13.1, visionOS 1.0, *)) {
++        if (!(id = SecIdentityCreate(kCFAllocatorDefault,
++                                     (SecCertificateRef)CFArrayGetValueAtIndex(certArray, 0),
++                                     (SecKeyRef)CFArrayGetValueAtIndex(keyArray, 0)))) {
++            ret = AVERROR_UNKNOWN;
++            goto end;
++        }
++    } else {
++#if defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__)
++#pragma clang diagnostic push
++#pragma clang diagnostic ignored "-Wunguarded-availability"
++        if (!(id = SecIdentityCreate(kCFAllocatorDefault,
++                                    (SecCertificateRef)CFArrayGetValueAtIndex(certArray, 0),
++                                    (SecKeyRef)CFArrayGetValueAtIndex(keyArray, 0)))) {
++            ret = AVERROR_UNKNOWN;
++            goto end;
++        }
++#pragma clang diagnostic pop
++#endif
+     }
+ 
+     if (!(outArray = CFArrayCreateMutableCopy(kCFAllocatorDefault, 0, certArray))) {
+-- 
+2.51.0
+

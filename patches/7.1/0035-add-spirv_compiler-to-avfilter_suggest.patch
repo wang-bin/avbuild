@@ -1,0 +1,26 @@
+From 791df021d6970397751746321e843af8b374b14a Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Mon, 24 Feb 2025 09:27:04 +0800
+Subject: [PATCH 35/40] add spirv_compiler to avfilter_suggest
+
+if spirv_compiler is enabled without any vulkan filter
+---
+ configure | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configure b/configure
+index fc091334b1..06f57d3ab5 100755
+--- a/configure
++++ b/configure
+@@ -4048,7 +4048,7 @@ avcodec_suggest="libm stdatomic liblcevc_dec"
+ avdevice_deps="avformat avcodec avutil"
+ avdevice_suggest="libm stdatomic"
+ avfilter_deps="avutil"
+-avfilter_suggest="libm stdatomic"
++avfilter_suggest="libm stdatomic spirv_compiler"
+ avformat_deps="avcodec avutil"
+ avformat_suggest="libm network zlib stdatomic"
+ avutil_suggest="clock_gettime ffnvcodec gcrypt libm libdrm libmfx opencl openssl user32 vaapi vulkan videotoolbox corefoundation corevideo coremedia bcrypt stdatomic"
+-- 
+2.51.0
+

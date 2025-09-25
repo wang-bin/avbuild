@@ -70,7 +70,6 @@ jobs:
       shell: bash
       run: |
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
-        [[ "${TARGET_OS}" == "iOS" || "${TARGET_OS}" == "tvOS"* || "${TARGET_OS}" == "xr"* || "${TARGET_OS}" == "vision"* ]]  && export USER_OPT="--enable-wolfssl"
         [[ "${TARGET_OS}" == "macOS" ]] && export USER_OPT="--enable-libshaderc"
         ./avbuild.sh ${TARGET_OS}
     - name: Make SDK

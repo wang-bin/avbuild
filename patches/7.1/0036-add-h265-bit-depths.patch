@@ -1,0 +1,168 @@
+From 102653279a297428df79cc7b52450e784beae0f7 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Sun, 30 Mar 2025 12:33:12 +0800
+Subject: [PATCH 36/40] add h265-bit-depths
+
+9bit is rarely used, even not supported by x265
+---
+ configure              |  9 +++++++++
+ libavcodec/hevc/dsp.c  | 14 ++++++++++++++
+ libavcodec/hevc/pred.c | 14 ++++++++++++++
+ 3 files changed, 37 insertions(+)
+
+diff --git a/configure b/configure
+index 06f57d3ab5..5279988b81 100755
+--- a/configure
++++ b/configure
+@@ -442,6 +442,7 @@ Advanced options (experts only):
+                             should only be used with trusted input)
+   --sws-max-filter-size=N  the max filter size swscale uses [$sws_max_filter_size_default]
+   --h264-max-bit-depth=N   the max h264 decoding bit depth [$h264_max_bit_depth_default]
++  --h265-bit-depths=N1,N2  the h265 decoding bit depths [$h265_bit_depths_default]
+ 
+ Optimization options (experts only):
+   --disable-asm            disable all assembly optimizations
+@@ -2701,6 +2702,7 @@ CMDLINE_SET="
+     extra_version
+     gas
+     h264_max_bit_depth
++    h265_bit_depths
+     host_cc
+     host_cflags
+     host_extralibs
+@@ -4163,6 +4165,9 @@ set_default sws_max_filter_size
+ h264_max_bit_depth_default=10
+ set_default h264_max_bit_depth
+ 
++h265_bit_depths_default=8,10,12
++set_default h265_bit_depths
++
+ # internal components are enabled by default
+ enable $EXTRALIBS_LIST
+ 
+@@ -8263,6 +8268,10 @@ cat > $TMPH <<EOF
+ #define H264_MAX_BIT_DEPTH $h264_max_bit_depth
+ EOF
+ 
++for i in $(echo $h265_bit_depths |sed 's/\,/ /g'); do
++    echo "#define H265_BIT_DEPTH_${i} 1" >> $TMPH
++done
++
+ test -n "$assert_level" &&
+     echo "#define ASSERT_LEVEL $assert_level" >>$TMPH
+ 
+diff --git a/libavcodec/hevc/dsp.c b/libavcodec/hevc/dsp.c
+index 60f059292c..cea7d9556f 100644
+--- a/libavcodec/hevc/dsp.c
++++ b/libavcodec/hevc/dsp.c
+@@ -109,21 +109,29 @@ DECLARE_ALIGNED(16, const int8_t, ff_hevc_qpel_filters)[4][16] = {
+     {  0,  1, -5, 17, 58,-10,  4, -1,  0,  1, -5, 17, 58,-10,  4, -1}
+ };
+ 
++#if (H265_BIT_DEPTH_8 + 0)
+ #define BIT_DEPTH 8
+ #include "dsp_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
++#if (H265_BIT_DEPTH_9 + 0)
+ #define BIT_DEPTH 9
+ #include "dsp_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
++#if (H265_BIT_DEPTH_10 + 0)
+ #define BIT_DEPTH 10
+ #include "dsp_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
++#if (H265_BIT_DEPTH_12 + 0)
+ #define BIT_DEPTH 12
+ #include "dsp_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
+ void ff_hevc_dsp_init(HEVCDSPContext *hevcdsp, int bit_depth)
+ {
+@@ -245,15 +253,21 @@ void ff_hevc_dsp_init(HEVCDSPContext *hevcdsp, int bit_depth)
+ int i = 0;
+ 
+     switch (bit_depth) {
++#if (H265_BIT_DEPTH_9 + 0)
+     case 9:
+         HEVC_DSP(9);
+         break;
++#endif
++#if (H265_BIT_DEPTH_10 + 0)
+     case 10:
+         HEVC_DSP(10);
+         break;
++#endif
++#if (H265_BIT_DEPTH_12 + 0)
+     case 12:
+         HEVC_DSP(12);
+         break;
++#endif
+     default:
+         HEVC_DSP(8);
+         break;
+diff --git a/libavcodec/hevc/pred.c b/libavcodec/hevc/pred.c
+index 8d588382fa..78d3e12155 100644
+--- a/libavcodec/hevc/pred.c
++++ b/libavcodec/hevc/pred.c
+@@ -24,21 +24,29 @@
+ 
+ #include "pred.h"
+ 
++#if (H265_BIT_DEPTH_8 + 0)
+ #define BIT_DEPTH 8
+ #include "pred_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
++#if (H265_BIT_DEPTH_9 + 0)
+ #define BIT_DEPTH 9
+ #include "pred_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
++#if (H265_BIT_DEPTH_10 + 0)
+ #define BIT_DEPTH 10
+ #include "pred_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
++#if (H265_BIT_DEPTH_12 + 0)
+ #define BIT_DEPTH 12
+ #include "pred_template.c"
+ #undef BIT_DEPTH
++#endif
+ 
+ void ff_hevc_pred_init(HEVCPredContext *hpc, int bit_depth)
+ {
+@@ -61,15 +69,21 @@ void ff_hevc_pred_init(HEVCPredContext *hpc, int bit_depth)
+     hpc->pred_angular[3] = FUNC(pred_angular_3, depth);
+ 
+     switch (bit_depth) {
++#if (H265_BIT_DEPTH_9 + 0)
+     case 9:
+         HEVC_PRED(9);
+         break;
++#endif
++#if (H265_BIT_DEPTH_10 + 0)
+     case 10:
+         HEVC_PRED(10);
+         break;
++#endif
++#if (H265_BIT_DEPTH_12 + 0)
+     case 12:
+         HEVC_PRED(12);
+         break;
++#endif
+     default:
+         HEVC_PRED(8);
+         break;
+-- 
+2.51.0
+

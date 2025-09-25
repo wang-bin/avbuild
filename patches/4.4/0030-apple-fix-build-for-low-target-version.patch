@@ -1,0 +1,61 @@
+From 256bcededd2437f648c055471e1cb9acc90ff1f6 Mon Sep 17 00:00:00 2001
+From: wangbin <wbsecg1@gmail.com>
+Date: Tue, 23 Sep 2025 19:06:23 +0800
+Subject: [PATCH 30/30] apple: fix build for low target version
+
+---
+ libavdevice/avfoundation.m        |  2 +-
+ libavformat/tls_securetransport.c | 24 +++++++++++++++++++-----
+ 2 files changed, 20 insertions(+), 6 deletions(-)
+
+diff --git a/libavdevice/avfoundation.m b/libavdevice/avfoundation.m
+index 59d5b0af4f..dd7af7024c 100644
+--- a/libavdevice/avfoundation.m
++++ b/libavdevice/avfoundation.m
+@@ -204,7 +204,7 @@ static void unlock_frames(AVFContext* ctx)
+     if (context == _context) {
+ #if !TARGET_OS_IPHONE && __MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
+         AVCaptureDeviceTransportControlsPlaybackMode mode =
+-            [change[NSKeyValueChangeNewKey] integerValue];
++            [[change valueForKey:NSKeyValueChangeNewKey] integerValue];
+ 
+         if (mode != _context->observed_mode) {
+             if (mode == AVCaptureDeviceTransportControlsNotPlayingMode) {
+diff --git a/libavformat/tls_securetransport.c b/libavformat/tls_securetransport.c
+index f6a1a5e7b6..4101f8c2b6 100644
+--- a/libavformat/tls_securetransport.c
++++ b/libavformat/tls_securetransport.c
+@@ -165,11 +165,25 @@ static int load_cert(URLContext *h)
+     if ((ret = import_pem(h, c->tls_shared.key_file, &keyArray)) < 0)
+         goto end;
+ 
+-    if (!(id = SecIdentityCreate(kCFAllocatorDefault,
+-                                 (SecCertificateRef)CFArrayGetValueAtIndex(certArray, 0),
+-                                 (SecKeyRef)CFArrayGetValueAtIndex(keyArray, 0)))) {
+-        ret = AVERROR_UNKNOWN;
+-        goto end;
++    if (__builtin_available(macOS 10.12, iOS 11.2, tvOS 11.2, macCatalyst 13.1, visionOS 1.0, *)) {
++        if (!(id = SecIdentityCreate(kCFAllocatorDefault,
++                                     (SecCertificateRef)CFArrayGetValueAtIndex(certArray, 0),
++                                     (SecKeyRef)CFArrayGetValueAtIndex(keyArray, 0)))) {
++            ret = AVERROR_UNKNOWN;
++            goto end;
++        }
++    } else {
++#if defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__)
++#pragma clang diagnostic push
++#pragma clang diagnostic ignored "-Wunguarded-availability"
++        if (!(id = SecIdentityCreate(kCFAllocatorDefault,
++                                    (SecCertificateRef)CFArrayGetValueAtIndex(certArray, 0),
++                                    (SecKeyRef)CFArrayGetValueAtIndex(keyArray, 0)))) {
++            ret = AVERROR_UNKNOWN;
++            goto end;
++        }
++#pragma clang diagnostic pop
++#endif
+     }
+ 
+     if (!(outArray = CFArrayCreateMutableCopy(kCFAllocatorDefault, 0, certArray))) {
+-- 
+2.51.0
+
