@@ -20,7 +20,7 @@ env:
 jobs:
   Apple:
     # See: https://docs.github.com/en/actions/configuring-and-managing-workflows/configuring-a-workflow#configuring-a-build-matrix
-    runs-on: macos-15
+    runs-on: macos-latest
     env:
       TARGET_OS: ${{ matrix.target }}
       CONFIG_SUFFIX: -${{ matrix.config }}
@@ -576,7 +576,7 @@ jobs:
         path: ffmpeg-*.tar.xz
 
   Android:
-    runs-on: macos-15
+    runs-on: macos-latest
     env:
       TARGET_OS: android
       CONFIG_SUFFIX: -${{ matrix.config }}
@@ -624,7 +624,7 @@ jobs:
         path: ffmpeg-*.tar.xz
 
   FFmpeg-xcframework:
-    runs-on: macos-15
+    runs-on: macos-latest
     needs: [Apple]
     steps:
     - name: Download iOS
