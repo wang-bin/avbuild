@@ -44,6 +44,12 @@ wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7
 find /tmp/dep
 ln -sf /tmp/dep tools/
 
+curl -kL -o libmdk-dep.zip https://nightly.link/wang-bin/devpkgs/workflows/build/main/libmdk-dep.zip
+7z x -y libmdk-dep.zip -o/tmp
+7z x -y /tmp/dep-av.7z -o/tmp
+cp -avf /tmp/dep-av/* /tmp/dep/
+ln -sf arm64-v8a /tmp/dep/ohos/arm64
+
 if [[ "$SYSROOT_CACHE_HIT" != "true" ]]; then
   if [[ "$TARGET_OS" == "win"* || "$TARGET_OS" == "uwp"* ]]; then
     wget https://sourceforge.net/projects/avbuild/files/dep/msvcrt-dev.7z/download -O msvcrt-dev.7z

@@ -907,6 +907,7 @@ setup_ohos_env() {
   FEATURE_OPT+=" --disable-indevs --disable-outdevs"
   disable_opt v4l2_m2m v4l2-m2m
   disable_opt vulkan
+  enable_opt ohcodec
   sed -i $sed_bak 's/^check_cc v4l2_m2m/enabled v4l2_m2m \&\& check_cc v4l2_m2m/' "$FFSRC/configure"
   local OHOS_ARCH=${1:=arm}
   TRIPLE_ARCH=$OHOS_ARCH

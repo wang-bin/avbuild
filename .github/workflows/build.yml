@@ -623,6 +623,43 @@ jobs:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
 
+  ohos:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_OS: ohos
+      CONFIG_SUFFIX: -${{ matrix.config }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [lite,lite-lto]
+    steps:
+    - uses: actions/checkout@v5
+    - name: Setup HarmonyOS CLI tools
+      uses: ErBWs/setup-ohos@v1
+      with:
+        version: latest
+        cache: true
+    - run: hvigorw -v
+    - name: Create Build Environment
+      shell: bash
+      run: ./tools/ci-before-build.sh
+    - name: Configure and Build
+      shell: bash
+      run: |
+        export OHOS_NDK=$OHOS_NDK_HOME/native
+        export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+        export USER_OPT="--enable-wolfssl"
+        ./avbuild.sh ${TARGET_OS} "arm64 x86_64"
+    - name: Make SDK
+      shell: bash
+      run: ./tools/ci-after-build.sh
+    - name: Archieve SDK
+      uses: actions/upload-artifact@v4
+      with:
+        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
+        path: ffmpeg-*.tar.xz
+
+
   FFmpeg-xcframework:
     runs-on: macos-latest
     needs: [Apple]
