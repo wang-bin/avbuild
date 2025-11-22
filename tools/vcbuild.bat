@@ -17,7 +17,7 @@ set VSLANG=1033
 
 set VC_BUILD=true
 set VS_CL=%1
-if [%VS_CL%] == [] set /P VS_CL="VS CL name, e.g. vs2022 vs2019 vs2017 vs2015, vs140, cl1900: "
+if [%VS_CL%] == [] set /P VS_CL="VS CL name, e.g. vs2026 vs2022 vs2019 vs2017 vs2015, vs140, cl1900: "
 
 set VSVER=150
 set CL_VER=191
@@ -38,6 +38,10 @@ if /i [%VS_CL:~0,2%] == [vs] (
 	if [%VS_CL:~2%] == [2022] (
         set VSVER=170
         set VCRT_VER=143
+    )
+	if [%VS_CL:~2%] == [2026] (
+        set VSVER=180
+        set VCRT_VER=145
     )
 )
 :: vs2017 cl1910
@@ -114,6 +118,7 @@ if "%ARCH%" == "x64" (
 if [%VSVER%] == [150] goto SetupVC150Env
 if [%VSVER%] == [160] goto SetupVC160Env
 if [%VSVER%] == [170] goto SetupVC160Env
+if [%VSVER%] == [180] goto SetupVC160Env
 
 goto SetupVCEnvLegacy
 
