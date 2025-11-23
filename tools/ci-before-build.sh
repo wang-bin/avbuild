@@ -48,7 +48,8 @@ curl -kL -o libmdk-dep.zip https://nightly.link/wang-bin/devpkgs/workflows/build
 7z x -y libmdk-dep.zip -o/tmp
 7z x -y /tmp/dep-av.7z -o/tmp
 cp -avf /tmp/dep-av/* /tmp/dep/
-ln -sf arm64-v8a /tmp/dep/ohos/arm64
+ln -sfv arm64-v8a /tmp/dep/ohos/arm64
+ls -l tools/dep/ohos/arm64/
 
 if [[ "$SYSROOT_CACHE_HIT" != "true" ]]; then
   if [[ "$TARGET_OS" == "win"* || "$TARGET_OS" == "uwp"* ]]; then

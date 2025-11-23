@@ -241,7 +241,7 @@ jobs:
       name: Get VC-LTL
       shell: bash
       run: |
-        curl -kL -o ltl.7z https://github.com/Chuyu-Team/VC-LTL5/releases/download/v${{ vars.VC_LTL_VER }}/VC-LTL-${{ vars.VC_LTL_VER }}-Binary.7z
+        curl -kL -o ltl.7z https://github.com/Chuyu-Team/VC-LTL5/releases/download/v${{ vars.VC_LTL_VER }}/VC-LTL-Binary.7z
         7z x ltl.7z -oVC-LTL
     - name: Create Build Environment
       shell: cmd
@@ -649,7 +649,7 @@ jobs:
         export OHOS_NDK=$OHOS_NDK_HOME/native
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export USER_OPT="--enable-wolfssl"
-        ./avbuild.sh ${TARGET_OS} "arm64 x86_64"
+        ./avbuild.sh ${TARGET_OS} "arm64"
     - name: Make SDK
       shell: bash
       run: ./tools/ci-after-build.sh
