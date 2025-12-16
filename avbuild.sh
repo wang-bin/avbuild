@@ -87,8 +87,9 @@ cd $FFSRC
 VER_SH=version.sh
 [ -f $VER_SH ] || VER_SH=ffbuild/version.sh
 [ -f $VER_SH ] || VER_SH=avbuild/version.sh
-FFVERSION_FULL=`./$VER_SH`
+FFVERSION_FULL=`./$VER_SH $FFSRC`
 FFMAJOR_GEN=`echo $FFVERSION_FULL |sed 's,[a-zA-Z]*\([0-9]*\)\..*,\1,'`
+echo "FFVERSION_FULL=$FFVERSION_FULL"
 #echo $FFVERSION_FULL |grep '\.' || FFVERSION_FULL=`head -n 1 RELEASE` # stop updating in 6.x, update again in 7.0
 #echo $FFVERSION_FULL |grep '\.' || FFVERSION_FULL=`grep -m 1 'cut here' doc/APIchanges |sed 's,.* \([0-9]*\.[0-9]*\) .*,\1,'`
 echo $FFVERSION_FULL |grep '\.' || FFVERSION_FULL=`grep -m 1 'version ' Changelog |sed 's,version \([0-9]*\.[0-9]*\).*,\1,'`
