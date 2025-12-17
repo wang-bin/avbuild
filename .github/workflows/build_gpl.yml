@@ -159,6 +159,7 @@ jobs:
       AMF_DIR: "/tmp/dep/include"
       CONFIG_SUFFIX: -gpl-${{ matrix.config }}
       NVENC: ${{ matrix.nvenc }}
+      DEVPKGS_WORKFLOW: no-lto
     strategy:
       fail-fast: false
       matrix:

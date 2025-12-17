@@ -44,7 +44,7 @@ wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7
 find /tmp/dep
 ln -sf /tmp/dep tools/
 
-curl -kL -o libmdk-dep.zip https://nightly.link/wang-bin/devpkgs/workflows/build/main/libmdk-dep.zip
+curl -kL -o libmdk-dep.zip https://nightly.link/wang-bin/devpkgs/workflows/${DEVPKGS_WORKFLOW:=build}/main/libmdk-dep.zip
 7z x -y libmdk-dep.zip -o/tmp
 7z x -y /tmp/dep-av.7z -o/tmp
 cp -avf /tmp/dep-av/* /tmp/dep/

@@ -357,6 +357,7 @@ jobs:
       PKG_CONFIG_PATH_MFX: '/tmp/dep/ClangCL/lib/pkgconfig'
       AMF_DIR: "/tmp/dep/include"
       CONFIG_SUFFIX: -${{ matrix.config }}
+      DEVPKGS_WORKFLOW: no-lto
     strategy:
       fail-fast: false
       matrix:
@@ -408,6 +409,7 @@ jobs:
       WINDOWSSDKDIR: '/tmp/winsdk'
       AMF_DIR: "/tmp/dep/include"
       CONFIG_SUFFIX: -${{ matrix.config }}
+      DEVPKGS_WORKFLOW: no-lto
     strategy:
       fail-fast: false
       matrix:
