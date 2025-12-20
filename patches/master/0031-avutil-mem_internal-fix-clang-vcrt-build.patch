@@ -1,7 +1,7 @@
-From 6ecfb383f67c910a2781cfde9e50a9ee26d679e9 Mon Sep 17 00:00:00 2001
+From 6ac8867d2fec6d1ffc2e5290e14c386767ce1901 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 31 Dec 2024 18:49:16 +0800
-Subject: [PATCH 32/33] avutil/mem_internal: fix clang + vcrt build
+Subject: [PATCH 31/35] avutil/mem_internal: fix clang + vcrt build
 
 fix many sws link error if build with clang --target=x86_64-pc-windows-msvc + vcrt + winsdk, for example
 lld-link: error: undefined symbol: bFC
@@ -21,7 +21,7 @@ _Alignas crashes for msvc build.
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/libavutil/mem_internal.h b/libavutil/mem_internal.h
-index d58881d09c..16b1680df6 100644
+index 78adc4f407..db1afc1748 100644
 --- a/libavutil/mem_internal.h
 +++ b/libavutil/mem_internal.h
 @@ -24,7 +24,7 @@
@@ -40,8 +40,8 @@ index d58881d09c..16b1680df6 100644
 -#elif defined(_MSC_VER)
 +#elif defined(_MSC_VER) && !defined(__clang__)
      #define DECLARE_ALIGNED_T(n,t,v)    __declspec(align(n)) t v
-     #define DECLARE_ASM_ALIGNED(n,t,v)  __declspec(align(n)) t v
-     #define DECLARE_ASM_CONST(n,t,v)    __declspec(align(n)) static const t v
+     #define DECLARE_ASM_ALIGNED(n,t,v)  __declspec(align(n)) t av_used v
+     #define DECLARE_ASM_CONST(n,t,v)    __declspec(align(n)) static const t av_used v
 -- 
-2.39.5 (Apple Git-154)
+2.50.1 (Apple Git-155)
 

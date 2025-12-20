@@ -1,7 +1,7 @@
-From 2c52c126bf3a4aa95e53b98dee00f52653ae16b5 Mon Sep 17 00:00:00 2001
+From b256de1b013e9537babe8982fd521ae11a125c46 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 3 May 2022 00:03:18 +0800
-Subject: [PATCH 24/33] wolfSSL - new TLS backend patch
+Subject: [PATCH 24/35] wolfSSL - new TLS backend patch
 
 https://lists.ffmpeg.org/pipermail/ffmpeg-devel/2018-August/233802.html
 ---
@@ -14,10 +14,10 @@ https://lists.ffmpeg.org/pipermail/ffmpeg-devel/2018-August/233802.html
  create mode 100644 libavformat/tls_wolfssl.c
 
 diff --git a/configure b/configure
-index 71dfdf9974..9089cbb024 100755
+index 8294fb04e2..8ffea48829 100755
 --- a/configure
 +++ b/configure
-@@ -207,7 +207,7 @@ External library support:
+@@ -209,7 +209,7 @@ External library support:
    --enable-gmp             enable gmp, needed for rtmp(t)e support
                             if openssl or librtmp is not used [no]
    --enable-gnutls          enable gnutls, needed for https support
@@ -26,7 +26,7 @@ index 71dfdf9974..9089cbb024 100755
    --disable-iconv          disable iconv [autodetect]
    --enable-jni             enable JNI support [no]
    --enable-ladspa          enable LADSPA audio filtering [no]
-@@ -283,7 +283,7 @@ External library support:
+@@ -287,7 +287,7 @@ External library support:
    --enable-libtesseract    enable Tesseract, needed for ocr filter [no]
    --enable-libtheora       enable Theora encoding via libtheora [no]
    --enable-libtls          enable LibreSSL (via libtls), needed for https support
@@ -35,7 +35,7 @@ index 71dfdf9974..9089cbb024 100755
    --enable-libtorch        enable Torch as one DNN backend [no]
    --enable-libtwolame      enable MP2 encoding via libtwolame [no]
    --enable-libuavs3d       enable AVS3 decoding via libuavs3d [no]
-@@ -296,6 +296,8 @@ External library support:
+@@ -300,6 +300,8 @@ External library support:
    --enable-libvpx          enable VP8 and VP9 de/encoding via libvpx [no]
    --enable-libvvenc        enable H.266/VVC encoding via vvenc [no]
    --enable-libwebp         enable WebP encoding via libwebp [no]
@@ -44,7 +44,7 @@ index 71dfdf9974..9089cbb024 100755
    --enable-libx264         enable H.264 encoding via x264 [no]
    --enable-libx265         enable HEVC encoding via x265 [no]
    --enable-libxeve         enable EVC encoding via libxeve [no]
-@@ -317,7 +319,7 @@ External library support:
+@@ -323,7 +325,7 @@ External library support:
    --disable-lzma           disable lzma [autodetect]
    --enable-decklink        enable Blackmagic DeckLink I/O support [no]
    --enable-mbedtls         enable mbedTLS, needed for https support
@@ -53,7 +53,7 @@ index 71dfdf9974..9089cbb024 100755
    --enable-mediacodec      enable Android MediaCodec support [no]
    --enable-mediafoundation enable encoding via MediaFoundation [auto]
    --disable-metal          disable Apple Metal framework [autodetect]
-@@ -327,7 +329,7 @@ External library support:
+@@ -333,7 +335,7 @@ External library support:
    --enable-opencl          enable OpenCL processing [no]
    --enable-opengl          enable OpenGL rendering [no]
    --enable-openssl         enable openssl, needed for https support
@@ -62,7 +62,7 @@ index 71dfdf9974..9089cbb024 100755
    --enable-pocketsphinx    enable PocketSphinx, needed for asr filter [no]
    --disable-sndio          disable sndio support [autodetect]
    --disable-schannel       disable SChannel SSP, needed for TLS support on
-@@ -2013,6 +2015,7 @@ EXTERNAL_LIBRARY_LIST="
+@@ -2052,6 +2054,7 @@ EXTERNAL_LIBRARY_LIST="
      vapoursynth
      vulkan_static
      whisper
@@ -70,7 +70,7 @@ index 71dfdf9974..9089cbb024 100755
  "
  
  HWACCEL_AUTODETECT_LIBRARY_LIST="
-@@ -3885,13 +3888,13 @@ rtmpte_protocol_suggest="zlib"
+@@ -3954,13 +3957,13 @@ rtmpte_protocol_suggest="zlib"
  rtmpts_protocol_select="ffrtmphttp_protocol https_protocol"
  rtmpts_protocol_suggest="zlib"
  rtp_protocol_select="udp_protocol"
@@ -87,7 +87,7 @@ index 71dfdf9974..9089cbb024 100755
  tls_protocol_select="tcp_protocol"
  # TODO: Support libtls, mbedtls, and gnutls.
  dtls_protocol_deps_any="openssl schannel"
-@@ -3917,7 +3920,7 @@ libsmbclient_protocol_deps="libsmbclient gplv3"
+@@ -3986,7 +3989,7 @@ libsmbclient_protocol_deps="libsmbclient gplv3"
  libsrt_protocol_deps="libsrt"
  libsrt_protocol_select="network"
  libssh_protocol_deps="libssh"
@@ -96,7 +96,7 @@ index 71dfdf9974..9089cbb024 100755
  libzmq_protocol_deps="libzmq"
  libzmq_protocol_select="network"
  
-@@ -7040,6 +7043,7 @@ enabled decklink          && { require_headers DeckLinkAPI.h &&
+@@ -7144,6 +7147,7 @@ enabled decklink          && { require_headers DeckLinkAPI.h &&
  enabled frei0r            && require_headers "frei0r.h"
  enabled gmp               && require gmp gmp.h mpz_export -lgmp
  enabled gnutls            && require_pkg_config gnutls gnutls gnutls/gnutls.h gnutls_global_init
@@ -105,10 +105,10 @@ index 71dfdf9974..9089cbb024 100755
  enabled ladspa            && require_headers "ladspa.h dlfcn.h"
  enabled lcms2             && require_pkg_config lcms2 "lcms2 >= 2.13" lcms2.h cmsCreateContext
 diff --git a/libavformat/Makefile b/libavformat/Makefile
-index ab5551a735..e83ce4a37b 100644
+index 5fd3f7252a..6238d5e16e 100644
 --- a/libavformat/Makefile
 +++ b/libavformat/Makefile
-@@ -715,6 +715,7 @@ TLS-OBJS-$(CONFIG_GNUTLS)                += tls_gnutls.o
+@@ -720,6 +720,7 @@ TLS-OBJS-$(CONFIG_GNUTLS)                += tls_gnutls.o
  TLS-OBJS-$(CONFIG_LIBTLS)                += tls_libtls.o
  TLS-OBJS-$(CONFIG_MBEDTLS)               += tls_mbedtls.o
  TLS-OBJS-$(CONFIG_OPENSSL)               += tls_openssl.o
@@ -141,10 +141,10 @@ index a7026ac09b..0357585465 100644
  }
  
 diff --git a/libavformat/tls.h b/libavformat/tls.h
-index 4d4999aa7c..584abbcc3f 100644
+index 6c5f7bc15f..d52916fa8c 100644
 --- a/libavformat/tls.h
 +++ b/libavformat/tls.h
-@@ -124,4 +124,7 @@ void ff_gnutls_deinit(void);
+@@ -113,4 +113,7 @@ void ff_gnutls_deinit(void);
  int ff_openssl_init(void);
  void ff_openssl_deinit(void);
  
@@ -404,5 +404,5 @@ index 0000000000..23255c0f1b
 +    .priv_data_class = &tls_class,
 +};
 -- 
-2.39.5 (Apple Git-154)
+2.50.1 (Apple Git-155)
 

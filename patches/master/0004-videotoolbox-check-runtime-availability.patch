@@ -1,7 +1,7 @@
-From 22c1b1ba1c025c045217f50849e424fb0fd6ab21 Mon Sep 17 00:00:00 2001
+From 2eb41623141029771fe0370ba19ec8de0e575df2 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:35:28 +0800
-Subject: [PATCH 04/33] videotoolbox: check runtime availability
+Subject: [PATCH 04/35] videotoolbox: check runtime availability
 
 fix warnings/errors for new compiler (since xcode9) if targeting
 macOS<10.8
@@ -10,7 +10,7 @@ macOS<10.8
  1 file changed, 13 insertions(+), 6 deletions(-)
 
 diff --git a/libavcodec/videotoolbox.c b/libavcodec/videotoolbox.c
-index ccba249140..746fc41249 100644
+index 2cd22cba1a..c3191cb3f6 100644
 --- a/libavcodec/videotoolbox.c
 +++ b/libavcodec/videotoolbox.c
 @@ -41,6 +41,10 @@
@@ -72,5 +72,5 @@ index ccba249140..746fc41249 100644
                                            decoder_spec,              // videoDecoderSpecification
                                            buf_attr,                  // destinationImageBufferAttributes
 -- 
-2.39.5 (Apple Git-154)
+2.50.1 (Apple Git-155)
 

@@ -1,17 +1,17 @@
-From e10a8b92942be9d89ac949b27d0ef23023f5ba64 Mon Sep 17 00:00:00 2001
+From cfa196df72626dd02055fce83c6e8064f43f6abc Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 5 Jun 2020 14:05:42 +0800
-Subject: [PATCH 16/33] nvenc: check runtime 9.1 function ptrs before use
+Subject: [PATCH 16/35] nvenc: check runtime 9.1 function ptrs before use
 
 ---
  libavcodec/nvenc.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/libavcodec/nvenc.c b/libavcodec/nvenc.c
-index d11d82021a..58ae050720 100644
+index 858c79250a..f1645ba83e 100644
 --- a/libavcodec/nvenc.c
 +++ b/libavcodec/nvenc.c
-@@ -180,7 +180,7 @@ static int nvenc_print_error(AVCodecContext *avctx, NVENCSTATUS err,
+@@ -188,7 +188,7 @@ static int nvenc_print_error(AVCodecContext *avctx, NVENCSTATUS err,
      NvencContext *ctx = avctx->priv_data;
      NV_ENCODE_API_FUNCTION_LIST *p_nvenc = &ctx->nvenc_dload_funcs.nvenc_funcs;
  
@@ -20,7 +20,7 @@ index d11d82021a..58ae050720 100644
          details = p_nvenc->nvEncGetLastErrorString(ctx->nvencoder);
  #endif
  
-@@ -1920,7 +1920,7 @@ static av_cold int nvenc_setup_encoder(AVCodecContext *avctx)
+@@ -1985,7 +1985,7 @@ static av_cold int nvenc_setup_encoder(AVCodecContext *avctx)
      }
  
  #ifdef NVENC_HAVE_CUSTREAM_PTR
@@ -30,5 +30,5 @@ index d11d82021a..58ae050720 100644
          if (nv_status != NV_ENC_SUCCESS) {
              nvenc_pop_context(avctx);
 -- 
-2.39.5 (Apple Git-154)
+2.50.1 (Apple Git-155)
 

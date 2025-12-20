@@ -1,7 +1,7 @@
-From 5b8b5ba2aba5090d12e8fb96975c3d506ef980e5 Mon Sep 17 00:00:00 2001
+From c688615b7ec6e462a77e93b0a911ef444c045a33 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 9 Feb 2023 18:08:11 +0800
-Subject: [PATCH 25/33] avformat/mpegts: index only keyframes to ensure
+Subject: [PATCH 25/35] avformat/mpegts: index only keyframes to ensure
  accurate seeks
 
 https://patchwork.ffmpeg.org/project/ffmpeg/patch/20190507032623.80375-1-ffmpeg@tmm1.net/
@@ -10,10 +10,10 @@ https://patchwork.ffmpeg.org/project/ffmpeg/patch/20190507032623.80375-1-ffmpeg@
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/libavformat/mpegts.c b/libavformat/mpegts.c
-index deb69a0548..de346e3196 100644
+index 7c19abaf76..c36112c13a 100644
 --- a/libavformat/mpegts.c
 +++ b/libavformat/mpegts.c
-@@ -3385,7 +3385,7 @@ static int64_t mpegts_get_dts(AVFormatContext *s, int stream_index,
+@@ -3497,7 +3497,7 @@ static int64_t mpegts_get_dts(AVFormatContext *s, int stream_index,
              av_packet_free(&pkt);
              return AV_NOPTS_VALUE;
          }
@@ -23,5 +23,5 @@ index deb69a0548..de346e3196 100644
              av_add_index_entry(s->streams[pkt->stream_index], pkt->pos, pkt->dts, 0, 0, AVINDEX_KEYFRAME /* FIXME keyframe? */);
              if (pkt->stream_index == stream_index && pkt->pos >= *ppos) {
 -- 
-2.39.5 (Apple Git-154)
+2.50.1 (Apple Git-155)
 

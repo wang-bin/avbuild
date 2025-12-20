@@ -1,7 +1,7 @@
-From f3fa718b710bda41240c0093c3501761a38bfb25 Mon Sep 17 00:00:00 2001
+From f9182cfad56ce4a95c25619c50b07bb5c6437d17 Mon Sep 17 00:00:00 2001
 From: wangbin <wbsecg1@gmail.com>
 Date: Tue, 23 Sep 2025 19:06:23 +0800
-Subject: [PATCH 37/37] apple: fix build for low target version
+Subject: [PATCH 36/36] apple: fix build for low target version
 
 ---
  libavdevice/avfoundation.m          |  2 +-
@@ -13,7 +13,7 @@ diff --git a/libavdevice/avfoundation.m b/libavdevice/avfoundation.m
 index ebec1ac4f2..abf37e0403 100644
 --- a/libavdevice/avfoundation.m
 +++ b/libavdevice/avfoundation.m
-@@ -206,7 +206,7 @@ static void unlock_frames(AVFContext* ctx)
+@@ -206,7 +206,7 @@ - (void)observeValueForKeyPath:(NSString *)keyPath
      if (context == _context) {
  #if !TARGET_OS_IPHONE && __MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
          AVCaptureDeviceTransportControlsPlaybackMode mode =
@@ -78,5 +78,5 @@ index f52fc97db2..ebfdead534 100644
  
      if (!(outArray = CFArrayCreateMutableCopy(kCFAllocatorDefault, 0, certArray))) {
 -- 
-2.51.0
+2.50.1 (Apple Git-155)
 

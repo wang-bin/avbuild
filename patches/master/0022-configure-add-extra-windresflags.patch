@@ -1,7 +1,7 @@
-From f7b102e431f6e5a2b93f4dadef7a7ff1496de334 Mon Sep 17 00:00:00 2001
+From 23601b1f1bab8b7382d1cab05d66e97e01ef716a Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 13 Mar 2022 14:38:23 +0800
-Subject: [PATCH 22/33] configure: add --extra-windresflags
+Subject: [PATCH 22/35] configure: add --extra-windresflags
 
 llvm windres requires more preprocess flags and target flags
 ---
@@ -10,10 +10,10 @@ llvm windres requires more preprocess flags and target flags
  2 files changed, 11 insertions(+), 1 deletion(-)
 
 diff --git a/configure b/configure
-index 1f7c63a7e8..5526ba59c8 100755
+index f82a169fe6..3854b84f16 100755
 --- a/configure
 +++ b/configure
-@@ -418,6 +418,7 @@ Toolchain options:
+@@ -426,6 +426,7 @@ Toolchain options:
    --extra-ldflags=ELDFLAGS add ELDFLAGS to LDFLAGS [$LDFLAGS]
    --extra-ldexeflags=ELDFLAGS add ELDFLAGS to LDEXEFLAGS [$LDEXEFLAGS]
    --extra-ldsoflags=ELDFLAGS add ELDFLAGS to LDSOFLAGS [$LDSOFLAGS]
@@ -21,7 +21,7 @@ index 1f7c63a7e8..5526ba59c8 100755
    --extra-libs=ELIBS       add ELIBS [$ELIBS]
    --extra-version=STRING   version string suffix []
    --optflags=OPTFLAGS      override optimization-related compiler flags
-@@ -1007,6 +1008,10 @@ add_host_ldflags(){
+@@ -1020,6 +1021,10 @@ add_host_ldflags(){
      append host_ldflags $($host_ldflags_filter "$@")
  }
  
@@ -32,7 +32,7 @@ index 1f7c63a7e8..5526ba59c8 100755
  add_compat(){
      append compat_objs $1
      shift
-@@ -4418,6 +4423,9 @@ for opt do
+@@ -4536,6 +4541,9 @@ for opt do
          --extra-libs=*)
              add_extralibs $optval
          ;;
@@ -42,7 +42,7 @@ index 1f7c63a7e8..5526ba59c8 100755
          --disable-devices)
              disable $INDEV_LIST $OUTDEV_LIST
          ;;
-@@ -5247,6 +5255,7 @@ add_cflags $extra_cflags
+@@ -5406,6 +5414,7 @@ add_cflags $extra_cflags
  add_cxxflags $extra_cxxflags
  add_objcflags $extra_objcflags
  add_asflags $extra_cflags
@@ -50,7 +50,7 @@ index 1f7c63a7e8..5526ba59c8 100755
  
  if test -n "$sysroot"; then
      case "$cc_type" in
-@@ -8207,6 +8216,7 @@ DOXYGEN=$doxygen
+@@ -8431,6 +8440,7 @@ DOXYGEN=$doxygen
  LDFLAGS=$LDFLAGS
  LDEXEFLAGS=$LDEXEFLAGS
  LDSOFLAGS=$LDSOFLAGS
@@ -59,10 +59,10 @@ index 1f7c63a7e8..5526ba59c8 100755
  ASMSTRIPFLAGS=$ASMSTRIPFLAGS
  X86ASMFLAGS=$X86ASMFLAGS
 diff --git a/ffbuild/common.mak b/ffbuild/common.mak
-index 1ac3c31c1e..38d45bd488 100644
+index 89c0c413e1..6f3ad4ed29 100644
 --- a/ffbuild/common.mak
 +++ b/ffbuild/common.mak
-@@ -104,7 +104,7 @@ COMPILE_LASX = $(call COMPILE,CC,LASXFLAGS)
+@@ -113,7 +113,7 @@ COMPILE_LASX = $(call COMPILE,CC,LASXFLAGS)
  	-$(if $(ASMSTRIPFLAGS), $(STRIP) $(ASMSTRIPFLAGS) $@)
  
  %.o: %.rc
@@ -72,5 +72,5 @@ index 1ac3c31c1e..38d45bd488 100644
  %.i: %.c
  	$(CC) $(CCFLAGS) $(CC_E) $<
 -- 
-2.39.5 (Apple Git-154)
+2.50.1 (Apple Git-155)
 

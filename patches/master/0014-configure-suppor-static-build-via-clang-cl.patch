@@ -1,19 +1,19 @@
-From 00e14cdd691ed886d88ad1db7dc987741c834dad Mon Sep 17 00:00:00 2001
+From e95c81fbb872154c952e831cbbd8f9921e6787a1 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 14 Apr 2019 11:42:42 +0800
-Subject: [PATCH 14/33] configure: suppor static build via clang-cl
+Subject: [PATCH 14/35] configure: suppor static build via clang-cl
 
 ---
  configure | 10 +++++++++-
  1 file changed, 9 insertions(+), 1 deletion(-)
 
 diff --git a/configure b/configure
-index 42e05bf975..751d60d90f 100755
+index aaa00c1a61..a8115c1950 100755
 --- a/configure
 +++ b/configure
-@@ -5944,7 +5944,15 @@ case $target_os in
-         SLIB_INSTALL_EXTRA_LIB='$(SLIBNAME_WITH_MAJOR:$(SLIBSUF)=.def)'
-         SHFLAGS='-dll -def:$$(@:$(SLIBSUF)=.def) -implib:$(SUBDIR)$(SLIBNAME:$(SLIBSUF)=.lib)'
+@@ -6111,7 +6111,15 @@ case $target_os in
+             SHFLAGS='-dll -def:$$(@:$(SLIBSUF)=.def) -implib:$(SUBDIR)$(SLIBNAME:$(SLIBSUF)=.lib)'
+         fi
          enabled x86_64 && objformat="win64" || objformat="win32"
 -        ranlib=:
 +        # ranlib is required by llvm toolchain, clang-cl is detected as msvc
@@ -29,5 +29,5 @@ index 42e05bf975..751d60d90f 100755
          ;;
      cygwin*)
 -- 
-2.39.5 (Apple Git-154)
+2.50.1 (Apple Git-155)
 

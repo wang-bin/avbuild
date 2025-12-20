@@ -1,7 +1,7 @@
-From 40c223fa8c5ec8bfcdd4785bdb52dac1b81bf40d Mon Sep 17 00:00:00 2001
+From 13d29b5309ef6b3a80873f92a677e900c6ef1c84 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 1 Jul 2022 16:03:06 +0800
-Subject: [PATCH 23/33] add h264-max-bit-depth to disable rarely used depths
+Subject: [PATCH 23/35] add h264-max-bit-depth to disable rarely used depths
 
 ---
  configure                            |  6 ++++++
@@ -16,10 +16,10 @@ Subject: [PATCH 23/33] add h264-max-bit-depth to disable rarely used depths
  9 files changed, 77 insertions(+), 1 deletion(-)
 
 diff --git a/configure b/configure
-index 5526ba59c8..749aa8b6f7 100755
+index 3854b84f16..8294fb04e2 100755
 --- a/configure
 +++ b/configure
-@@ -441,6 +441,7 @@ Advanced options (experts only):
+@@ -449,6 +449,7 @@ Advanced options (experts only):
                              crashes and arbitrary code execution, it may be faster, but
                              should only be used with trusted input)
    --sws-max-filter-size=N  the max filter size swscale uses [$sws_max_filter_size_default]
@@ -27,7 +27,7 @@ index 5526ba59c8..749aa8b6f7 100755
  
  Optimization options (experts only):
    --disable-asm            disable all assembly optimizations
-@@ -2718,6 +2719,7 @@ CMDLINE_SET="
+@@ -2769,6 +2770,7 @@ CMDLINE_SET="
      env
      extra_version
      gas
@@ -35,7 +35,7 @@ index 5526ba59c8..749aa8b6f7 100755
      host_cc
      host_cflags
      host_extralibs
-@@ -4199,6 +4201,9 @@ enable valgrind_backtrace
+@@ -4316,6 +4318,9 @@ enable valgrind_backtrace
  sws_max_filter_size_default=256
  set_default sws_max_filter_size
  
@@ -45,7 +45,7 @@ index 5526ba59c8..749aa8b6f7 100755
  # internal components are enabled by default
  enable $EXTRALIBS_LIST
  
-@@ -8310,6 +8315,7 @@ cat > $TMPH <<EOF
+@@ -8535,6 +8540,7 @@ cat > $TMPH <<EOF
  #define BUILDSUF "$build_suffix"
  #define SLIBSUF "$SLIBSUF"
  #define SWS_MAX_FILTER_SIZE $sws_max_filter_size
@@ -54,7 +54,7 @@ index 5526ba59c8..749aa8b6f7 100755
  
  test -n "$assert_level" &&
 diff --git a/libavcodec/h264chroma.c b/libavcodec/h264chroma.c
-index 1eeab7bc40..ccf679ef25 100644
+index 0d152de59d..1776a04f19 100644
 --- a/libavcodec/h264chroma.c
 +++ b/libavcodec/h264chroma.c
 @@ -24,9 +24,11 @@
@@ -69,7 +69,7 @@ index 1eeab7bc40..ccf679ef25 100644
  
  #define SET_CHROMA(depth)                                                   \
      c->put_h264_chroma_pixels_tab[0] = put_h264_chroma_mc8_ ## depth ## _c; \
-@@ -41,7 +43,9 @@
+@@ -39,7 +41,9 @@
  av_cold void ff_h264chroma_init(H264ChromaContext *c, int bit_depth)
  {
      if (bit_depth > 8 && bit_depth <= 16) {
@@ -80,7 +80,7 @@ index 1eeab7bc40..ccf679ef25 100644
          SET_CHROMA(8);
      }
 diff --git a/libavcodec/h264dsp.c b/libavcodec/h264dsp.c
-index 1ba936be1c..5c01f14ff8 100644
+index f4c5238372..b0b5885e89 100644
 --- a/libavcodec/h264dsp.c
 +++ b/libavcodec/h264dsp.c
 @@ -39,29 +39,39 @@
@@ -123,15 +123,15 @@ index 1ba936be1c..5c01f14ff8 100644
  
  av_cold void ff_h264dsp_init(H264DSPContext *c, const int bit_depth,
                               const int chroma_format_idc)
-@@ -74,7 +84,9 @@ av_cold void ff_h264dsp_init(H264DSPContext *c, const int bit_depth,
+@@ -79,7 +89,9 @@ av_cold void ff_h264dsp_init(H264DSPContext *c, const int bit_depth,
      c->h264_add_pixels8_clear = FUNC(ff_h264_add_pixels8, depth)
  
      if (bit_depth > 8 && bit_depth <= 16) {
 +#if (H264_MAX_BIT_DEPTH > 8)
-         ADDPX_DSP(16);
+         SET_PIXSIZE_FUNCS(16);
 +#endif
      } else {
-         ADDPX_DSP(8);
+         SET_PIXSIZE_FUNCS(8);
      }
 @@ -133,18 +145,26 @@ av_cold void ff_h264dsp_init(H264DSPContext *c, const int bit_depth,
      c->h264_loop_filter_strength= NULL;
@@ -192,7 +192,7 @@ index 6a771affe1..e871496ea4 100644
  #undef BIT_DEPTH
 +#endif
 diff --git a/libavcodec/h264pred.c b/libavcodec/h264pred.c
-index 25f9995a0b..33c5cf8a88 100644
+index fbd8d2b91d..aa19394277 100644
 --- a/libavcodec/h264pred.c
 +++ b/libavcodec/h264pred.c
 @@ -37,21 +37,29 @@
@@ -253,10 +253,10 @@ index 25f9995a0b..33c5cf8a88 100644
              av_assert0(bit_depth<=8);
              H264_PRED(8)
 diff --git a/libavcodec/h264qpel.c b/libavcodec/h264qpel.c
-index faca1e8953..72b669bacf 100644
+index c64d35b73d..d9546bc64d 100644
 --- a/libavcodec/h264qpel.c
 +++ b/libavcodec/h264qpel.c
-@@ -27,23 +27,32 @@
+@@ -28,23 +28,32 @@
  #include "h264qpel_template.c"
  #undef BIT_DEPTH
  
@@ -336,10 +336,10 @@ index aa9bc721f0..0de899ca4b 100644
      }
  }
 diff --git a/libavcodec/x86/h264chroma_init.c b/libavcodec/x86/h264chroma_init.c
-index 34934b6ad0..c0d6e13886 100644
+index 6eb52746ad..5a94edbfc9 100644
 --- a/libavcodec/x86/h264chroma_init.c
 +++ b/libavcodec/x86/h264chroma_init.c
-@@ -79,7 +79,7 @@ av_cold void ff_h264chroma_init_x86(H264ChromaContext *c, int bit_depth)
+@@ -62,7 +62,7 @@ av_cold void ff_h264chroma_init_x86(H264ChromaContext *c, int bit_depth)
          c->avg_h264_chroma_pixels_tab[2] = ff_avg_h264_chroma_mc2_mmxext;
          c->put_h264_chroma_pixels_tab[2] = ff_put_h264_chroma_mc2_mmxext;
      }
@@ -348,17 +348,17 @@ index 34934b6ad0..c0d6e13886 100644
      if (EXTERNAL_MMXEXT(cpu_flags) && bit_depth > 8 && bit_depth <= 10) {
          c->put_h264_chroma_pixels_tab[2] = ff_put_h264_chroma_mc2_10_mmxext;
          c->avg_h264_chroma_pixels_tab[2] = ff_avg_h264_chroma_mc2_10_mmxext;
-@@ -105,4 +105,5 @@ av_cold void ff_h264chroma_init_x86(H264ChromaContext *c, int bit_depth)
+@@ -88,4 +88,5 @@ av_cold void ff_h264chroma_init_x86(H264ChromaContext *c, int bit_depth)
          c->put_h264_chroma_pixels_tab[0] = ff_put_h264_chroma_mc8_10_avx;
          c->avg_h264_chroma_pixels_tab[0] = ff_avg_h264_chroma_mc8_10_avx;
      }
 +#endif /* H264_MAX_BIT_DEPTH > 8 */
  }
 diff --git a/libavcodec/x86/h264dsp_init.c b/libavcodec/x86/h264dsp_init.c
-index dc8fc4f720..39999bd2d2 100644
+index 66c2f36908..3d6fc6286b 100644
 --- a/libavcodec/x86/h264dsp_init.c
 +++ b/libavcodec/x86/h264dsp_init.c
-@@ -275,6 +275,7 @@ av_cold void ff_h264dsp_init_x86(H264DSPContext *c, const int bit_depth,
+@@ -274,6 +274,7 @@ av_cold void ff_h264dsp_init_x86(H264DSPContext *c, const int bit_depth,
              c->h264_idct_dc_add     = ff_h264_idct_dc_add_8_avx;
          }
      } else if (bit_depth == 10) {
@@ -366,14 +366,13 @@ index dc8fc4f720..39999bd2d2 100644
          if (EXTERNAL_MMXEXT(cpu_flags)) {
  #if ARCH_X86_32 && !HAVE_ALIGNED_STACK
              c->h264_v_loop_filter_luma         = ff_deblock_v_luma_10_mmxext;
-@@ -362,6 +363,7 @@ av_cold void ff_h264dsp_init_x86(H264DSPContext *c, const int bit_depth,
+@@ -361,5 +362,6 @@ av_cold void ff_h264dsp_init_x86(H264DSPContext *c, const int bit_depth,
              c->h264_h_loop_filter_luma_intra   = ff_deblock_h_luma_intra_10_avx;
  #endif /* HAVE_ALIGNED_STACK */
          }
 +#endif /* H264_MAX_BIT_DEPTH >= 10 */
      }
- #endif
  }
 -- 
-2.39.5 (Apple Git-154)
+2.50.1 (Apple Git-155)
 

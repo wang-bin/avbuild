@@ -1,7 +1,7 @@
-From 65663aa311d2854ad61aae3aa23060beebb4f37a Mon Sep 17 00:00:00 2001
+From 11d90d37632c9e6626b26ef625da1dcff23645b0 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sat, 11 Dec 2021 18:08:43 +0800
-Subject: [PATCH 19/33] msvc: fix long argument list error on windows
+Subject: [PATCH 19/35] msvc: fix long argument list error on windows
 
 ---
  compat/windows/makedef |  4 +++-
@@ -9,16 +9,16 @@ Subject: [PATCH 19/33] msvc: fix long argument list error on windows
  2 files changed, 11 insertions(+), 4 deletions(-)
 
 diff --git a/compat/windows/makedef b/compat/windows/makedef
-index add8222d13..cc1cdb2056 100755
+index af42f08fd5..81326d6b39 100755
 --- a/compat/windows/makedef
 +++ b/compat/windows/makedef
-@@ -48,7 +48,9 @@ trap 'rm -f -- $libname' EXIT
- if [ -n "$AR" ]; then
-     $AR rcs ${libname} $@ >/dev/null
- else
--    lib.exe -out:${libname} $@ >/dev/null
+@@ -54,7 +54,9 @@ else
+         machine_flag="-machine:arm64ec"
+         ;;
+     esac
+-    lib.exe ${machine_flag} -out:${libname} $@ >/dev/null
 +    echo $@ >objs${libname}.txt
-+    lib.exe -out:${libname} @objs${libname}.txt >/dev/null
++    lib.exe ${machine_flag} -out:${libname} @objs${libname}.txt >/dev/null
 +    rm objs${libname}.txt
  fi
  if [ $? != 0 ]; then
@@ -46,5 +46,5 @@ index 6cab090071..d3202520cf 100755
 +rm -f $cmdlist
 +exit $ret
 -- 
-2.39.5 (Apple Git-154)
+2.50.1 (Apple Git-155)
 

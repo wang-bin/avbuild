@@ -1,7 +1,7 @@
-From bc4508e473618bc30ae5ee352890042db27e0b6d Mon Sep 17 00:00:00 2001
+From d5903777de5f28a31103025c17f2a94504d055c5 Mon Sep 17 00:00:00 2001
 From: wangbin <wbsecg1@gmail.com>
 Date: Fri, 5 Sep 2025 23:11:42 +0800
-Subject: [PATCH 36/36] hls: allow playlist w/o extension
+Subject: [PATCH 35/35] hls: allow playlist w/o extension
 
 there's no option for `read_probe()`, so let's return a lower score.
 fix https://github.com/wang-bin/fvp/issues/218
@@ -23,5 +23,5 @@ index 755de377e9..77cc7badba 100644
          if (mime_x)
              av_log(NULL, AV_LOG_WARNING, "mime type is not rfc8216 compliant\n");
 -- 
-2.39.5 (Apple Git-154)
+2.50.1 (Apple Git-155)
 

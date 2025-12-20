@@ -1,17 +1,17 @@
-From 1ddf91c288ce793c635a0c8ae60af272b0728e7b Mon Sep 17 00:00:00 2001
+From 6859ae422f87769677403129997fef31e45f3850 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:52:35 +0800
-Subject: [PATCH 05/33] mediacodec: check whether cropping is set before use
+Subject: [PATCH 05/35] mediacodec: check whether cropping is set before use
 
 ---
  libavcodec/mediacodecdec_common.c | 13 +++++++++----
  1 file changed, 9 insertions(+), 4 deletions(-)
 
 diff --git a/libavcodec/mediacodecdec_common.c b/libavcodec/mediacodecdec_common.c
-index ae336ab835..4b87a644b4 100644
+index 9b91c8edf5..37ad9cb4d7 100644
 --- a/libavcodec/mediacodecdec_common.c
 +++ b/libavcodec/mediacodecdec_common.c
-@@ -590,10 +590,15 @@ static int mediacodec_dec_parse_video_format(AVCodecContext *avctx, MediaCodecDe
+@@ -596,10 +596,15 @@ static int mediacodec_dec_parse_video_format(AVCodecContext *avctx, MediaCodecDe
      }
  
      /* Optional fields */
@@ -32,5 +32,5 @@ index ae336ab835..4b87a644b4 100644
      // Try "crop" for NDK
      // MediaTek SOC return some default value like Rect(0, 0, 318, 238)
 -- 
-2.39.5 (Apple Git-154)
+2.50.1 (Apple Git-155)
 

@@ -1,7 +1,7 @@
-From 614030cbe2e67cc1d8a9bd6c4b9bb69b09bf0277 Mon Sep 17 00:00:00 2001
+From 559594c20ce395b9a2efc477597378d043d8442e Mon Sep 17 00:00:00 2001
 From: wangbin <wbsecg1@gmail.com>
 Date: Wed, 27 Aug 2025 11:16:40 +0800
-Subject: [PATCH 35/35] nvenc: support all versions in 1 build
+Subject: [PATCH 34/35] nvenc: support all versions in 1 build
 
 some options have version dependent values, e.g. rc and preset
 ---
@@ -21,10 +21,10 @@ some options have version dependent values, e.g. rc and preset
  create mode 100644 libavcodec/nvenc_dispatch.c
 
 diff --git a/libavcodec/Makefile b/libavcodec/Makefile
-index 3d036de4b6..a049c9fa31 100644
+index 28ad85afb4..b0082f1518 100644
 --- a/libavcodec/Makefile
 +++ b/libavcodec/Makefile
-@@ -274,6 +274,7 @@ OBJS-$(CONFIG_AV1_CUVID_DECODER)       += cuviddec.o
+@@ -277,6 +277,7 @@ OBJS-$(CONFIG_AV1_D3D12VA_ENCODER)     += d3d12va_encode_av1.o av1_levels.o
  OBJS-$(CONFIG_AV1_MEDIACODEC_DECODER)  += mediacodecdec.o
  OBJS-$(CONFIG_AV1_MEDIACODEC_ENCODER)  += mediacodecenc.o
  OBJS-$(CONFIG_AV1_NVENC_ENCODER)       += nvenc_av1.o nvenc.o
@@ -33,12 +33,12 @@ index 3d036de4b6..a049c9fa31 100644
  OBJS-$(CONFIG_AV1_VAAPI_ENCODER)       += vaapi_encode_av1.o av1_levels.o
  OBJS-$(CONFIG_AV1_VULKAN_ENCODER)      += vulkan_encode.o vulkan_encode_av1.o \
 diff --git a/libavcodec/nvenc.c b/libavcodec/nvenc.c
-index e5593908ec..f3cf0c9b18 100644
+index 619a4ddd9c..333e428441 100644
 --- a/libavcodec/nvenc.c
 +++ b/libavcodec/nvenc.c
-@@ -45,6 +45,10 @@
+@@ -44,6 +44,10 @@
+ #include "encode.h"
  #include "internal.h"
- #include "packet_internal.h"
  
 +#undef CONFIG_AV1_NVENC_ENCODER
 +#define CONFIG_AV1_NVENC_ENCODER (NVENCAPI_MAJOR_VERSION >= 12)
@@ -47,7 +47,7 @@ index e5593908ec..f3cf0c9b18 100644
  #define CHECK_CU(x) FF_CUDA_CHECK_DL(avctx, dl_fn->cuda_dl, x)
  
  #define NVENC_CAP 0x30
-@@ -57,6 +61,7 @@
+@@ -56,6 +60,7 @@
  #define IS_CBR(rc) (rc == NV_ENC_PARAMS_RC_CBR)
  #endif
  
@@ -55,7 +55,7 @@ index e5593908ec..f3cf0c9b18 100644
  const enum AVPixelFormat ff_nvenc_pix_fmts[] = {
      AV_PIX_FMT_YUV420P,
      AV_PIX_FMT_NV12,
-@@ -95,6 +100,7 @@ const AVCodecHWConfigInternal *const ff_nvenc_hw_configs[] = {
+@@ -94,6 +99,7 @@ const AVCodecHWConfigInternal *const ff_nvenc_hw_configs[] = {
  #endif
      NULL,
  };
@@ -63,7 +63,7 @@ index e5593908ec..f3cf0c9b18 100644
  
  #define IS_10BIT(pix_fmt)  (pix_fmt == AV_PIX_FMT_P010         || \
                              pix_fmt == AV_PIX_FMT_P016         || \
-@@ -420,14 +426,16 @@ static av_cold int nvenc_load_libraries(AVCodecContext *avctx)
+@@ -429,14 +435,16 @@ static av_cold int nvenc_load_libraries(AVCodecContext *avctx)
      func_ver = struct_ver_rt(ctx, 2);
      av_log(avctx, AV_LOG_INFO, "Loaded Nvenc version %u.%u, max: %u.%u, build api: %u.%u. config_ver: %u\n", ctx->apiver_rt & 0xff, (ctx->apiver_rt >> 24) & 0xff, nvenc_max_major, nvenc_max_minor, NVENCAPI_MAJOR_VERSION, NVENCAPI_MINOR_VERSION, config_ver);
  
@@ -81,7 +81,7 @@ index e5593908ec..f3cf0c9b18 100644
      dl_fn->nvenc_funcs.version = func_ver;
  
      err = dl_fn->nvenc_dl->NvEncodeAPICreateInstance(&dl_fn->nvenc_funcs);
-@@ -2226,7 +2234,8 @@ static av_cold int nvenc_setup_extradata(AVCodecContext *avctx)
+@@ -2235,7 +2243,8 @@ static av_cold int nvenc_setup_extradata(AVCodecContext *avctx)
      return 0;
  }
  
@@ -91,7 +91,7 @@ index e5593908ec..f3cf0c9b18 100644
  {
      NvencContext *ctx               = avctx->priv_data;
      NvencDynLoadFunctions *dl_fn = &ctx->nvenc_dload_funcs;
-@@ -2314,7 +2323,8 @@ av_cold int ff_nvenc_encode_close(AVCodecContext *avctx)
+@@ -2323,7 +2332,8 @@ av_cold int ff_nvenc_encode_close(AVCodecContext *avctx)
      return 0;
  }
  
@@ -101,7 +101,7 @@ index e5593908ec..f3cf0c9b18 100644
  {
      NvencContext *ctx = avctx->priv_data;
      int ret;
-@@ -3355,7 +3365,8 @@ static int nvenc_send_frame(AVCodecContext *avctx, const AVFrame *frame)
+@@ -3364,7 +3374,8 @@ static int nvenc_send_frame(AVCodecContext *avctx, const AVFrame *frame)
      return 0;
  }
  
@@ -111,7 +111,7 @@ index e5593908ec..f3cf0c9b18 100644
  {
      NvencSurface *tmp_out_surf;
      int res, res2;
-@@ -3406,7 +3417,8 @@ int ff_nvenc_receive_packet(AVCodecContext *avctx, AVPacket *pkt)
+@@ -3415,7 +3426,8 @@ int ff_nvenc_receive_packet(AVCodecContext *avctx, AVPacket *pkt)
      return 0;
  }
  
@@ -502,5 +502,5 @@ index 0000000000..9143753dce
 +}
 \ No newline at end of file
 -- 
-2.51.0
+2.50.1 (Apple Git-155)
 

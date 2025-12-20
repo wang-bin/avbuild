@@ -1,7 +1,7 @@
-From db2ed4a9ee4b169e5a289fb3d481a4a47b4dbbc4 Mon Sep 17 00:00:00 2001
+From d6fe93078b7dc04a83c34eab10ba9464b712895a Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 30 Mar 2025 12:33:12 +0800
-Subject: [PATCH 33/33] add h265-bit-depths
+Subject: [PATCH 32/35] add h265-bit-depths
 
 9bit is rarely used, even not supported by x265
 ---
@@ -11,10 +11,10 @@ Subject: [PATCH 33/33] add h265-bit-depths
  3 files changed, 37 insertions(+)
 
 diff --git a/configure b/configure
-index 80cd130d07..80778fcccb 100755
+index 9a54c2649d..907a83e883 100755
 --- a/configure
 +++ b/configure
-@@ -444,6 +444,7 @@ Advanced options (experts only):
+@@ -452,6 +452,7 @@ Advanced options (experts only):
                              should only be used with trusted input)
    --sws-max-filter-size=N  the max filter size swscale uses [$sws_max_filter_size_default]
    --h264-max-bit-depth=N   the max h264 decoding bit depth [$h264_max_bit_depth_default]
@@ -22,7 +22,7 @@ index 80cd130d07..80778fcccb 100755
  
  Optimization options (experts only):
    --disable-asm            disable all assembly optimizations
-@@ -2723,6 +2724,7 @@ CMDLINE_SET="
+@@ -2774,6 +2775,7 @@ CMDLINE_SET="
      extra_version
      gas
      h264_max_bit_depth
@@ -30,7 +30,7 @@ index 80cd130d07..80778fcccb 100755
      host_cc
      host_cflags
      host_extralibs
-@@ -4207,6 +4209,9 @@ set_default sws_max_filter_size
+@@ -4324,6 +4326,9 @@ set_default sws_max_filter_size
  h264_max_bit_depth_default=10
  set_default h264_max_bit_depth
  
@@ -40,7 +40,7 @@ index 80cd130d07..80778fcccb 100755
  # internal components are enabled by default
  enable $EXTRALIBS_LIST
  
-@@ -8324,6 +8329,10 @@ cat > $TMPH <<EOF
+@@ -8548,6 +8553,10 @@ cat > $TMPH <<EOF
  #define H264_MAX_BIT_DEPTH $h264_max_bit_depth
  EOF
  
@@ -52,7 +52,7 @@ index 80cd130d07..80778fcccb 100755
      echo "#define ASSERT_LEVEL $assert_level" >>$TMPH
  
 diff --git a/libavcodec/hevc/dsp.c b/libavcodec/hevc/dsp.c
-index a154fab2bf..380bdc77df 100644
+index 5ae779f9f7..e6bc0e918c 100644
 --- a/libavcodec/hevc/dsp.c
 +++ b/libavcodec/hevc/dsp.c
 @@ -109,21 +109,29 @@ DECLARE_ALIGNED(16, const int8_t, ff_hevc_qpel_filters)[4][16] = {
@@ -164,5 +164,5 @@ index 8d588382fa..78d3e12155 100644
          HEVC_PRED(8);
          break;
 -- 
-2.39.5 (Apple Git-154)
+2.50.1 (Apple Git-155)
 

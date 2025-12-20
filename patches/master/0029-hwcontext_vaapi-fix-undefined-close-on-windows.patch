@@ -1,17 +1,17 @@
-From 195c794fd32d622c72e8625f9e2007d2b138c9db Mon Sep 17 00:00:00 2001
+From fe54778834fc89955c89bd80cb60d7e59facd04b Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 19 Nov 2024 19:43:02 +0800
-Subject: [PATCH 30/33] hwcontext_vaapi: fix undefined close() on windows
+Subject: [PATCH 29/35] hwcontext_vaapi: fix undefined close() on windows
 
 ---
  libavutil/hwcontext_vaapi.c | 2 ++
  1 file changed, 2 insertions(+)
 
 diff --git a/libavutil/hwcontext_vaapi.c b/libavutil/hwcontext_vaapi.c
-index 95aa38d9d2..95fbba514c 100644
+index 98130f9fb1..b04bf243ca 100644
 --- a/libavutil/hwcontext_vaapi.c
 +++ b/libavutil/hwcontext_vaapi.c
-@@ -1643,8 +1643,10 @@ static void vaapi_device_free(AVHWDeviceContext *ctx)
+@@ -1661,8 +1661,10 @@ static void vaapi_device_free(AVHWDeviceContext *ctx)
          XCloseDisplay(priv->x11_display);
  #endif
  
@@ -23,5 +23,5 @@ index 95aa38d9d2..95fbba514c 100644
      av_freep(&priv);
  }
 -- 
-2.39.5 (Apple Git-154)
+2.50.1 (Apple Git-155)
 

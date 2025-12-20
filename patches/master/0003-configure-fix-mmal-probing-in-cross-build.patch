@@ -1,20 +1,20 @@
-From 57433b618168d012014caff5e035c03b480d34f8 Mon Sep 17 00:00:00 2001
+From 9eff418a95a1026973729304ac791c237126350c Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:22:25 +0800
-Subject: [PATCH 03/33] configure: fix mmal probing in cross build
+Subject: [PATCH 03/35] configure: fix mmal probing in cross build
 
 ---
  configure | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/configure b/configure
-index 3730b0524c..05e8a892b2 100755
+index 86a20445cf..ece868b8a8 100755
 --- a/configure
 +++ b/configure
-@@ -7139,11 +7139,11 @@ enabled mbedtls           && { check_pkg_config mbedtls mbedtls mbedtls/x509_crt
-                                check_lib mbedtls mbedtls/ssl.h mbedtls_ssl_init -lmbedtls -lmbedx509 -lmbedcrypto ||
+@@ -7334,11 +7334,11 @@ enabled mbedtls           && { check_pkg_config mbedtls mbedtls mbedtls/x509_crt
                                 die "ERROR: mbedTLS not found"; }
- enabled mediacodec        && { enabled jni || die "ERROR: mediacodec requires --enable-jni"; }
+ enabled mediacodec        && { enabled jni || die "ERROR: mediacodec requires --enable-jni"; } &&
+                                add_compat android/binder.o
 -enabled mmal              && { check_lib mmal interface/mmal/mmal.h mmal_port_connect -lmmal_core -lmmal_util -lmmal_vc_client -lbcm_host ||
 +enabled mmal              && { check_lib mmal interface/mmal/mmal.h mmal_port_connect -lmmal_core -lmmal_util -lmmal_vc_client -lbcm_host -lvcos -lpthread ||
                                 { ! enabled cross_compile &&
@@ -24,7 +24,7 @@ index 3730b0524c..05e8a892b2 100755
 +                                 check_lib mmal interface/mmal/mmal.h mmal_port_connect -lmmal_core -lmmal_util -lmmal_vc_client -lbcm_host -lvcos -lpthread; } ||
                                 die "ERROR: mmal not found" &&
                                 check_func_headers interface/mmal/mmal.h "MMAL_PARAMETER_VIDEO_MAX_NUM_CALLBACKS"; }
- enabled openal            && { check_pkg_config openal "openal >= 1.1" "AL/al.h" alGetError ||
+ enabled ohcodec           && { check_lib ohcodec "multimedia/player_framework/native_avcodec_videodecoder.h multimedia/player_framework/native_avcodec_videoencoder.h" \
 -- 
-2.39.5 (Apple Git-154)
+2.50.1 (Apple Git-155)
 
