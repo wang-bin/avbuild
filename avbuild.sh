@@ -983,7 +983,7 @@ setup_android_env() {
   local FFARCH=$ANDROID_ARCH
   local API_LEVEL=${2#android}
   local NDK_VER=`grep Pkg.Revision $NDK_ROOT/source.properties |cut -d ' ' -f 3 |cut -d '.' -f 1`
-  [ -z "$API_LEVEL" ] && {
+    [ -z "$API_LEVEL" ] && {
     API_LEVEL=14
     [ $NDK_VER -gt 17 ] && API_LEVEL=16
     [ $NDK_VER -gt 23 ] && API_LEVEL=19
@@ -1141,7 +1141,7 @@ use armv6t2 or -mthumb-interwork: https://gcc.gnu.org/onlinedocs/gcc-4.5.3/gcc/A
   PATHS=$ANDROID_LLVM_DIR/bin
   [ -n "$ANDROID_GCC_DIR" ] && PATHS="$ANDROID_GCC_DIR/bin:$PATHS"
   cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
-export PATH=$PATHS:$PATH
+export PATH="$PATHS:$PATH"
 export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/android/${ANDROID_ARCH}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/android_${ANDROID_ARCH}/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
   LIBWOLFSSL="${THIS_DIR}/tools/dep/android/${ANDROID_ARCH}/lib/libwolfssl.a"
@@ -1246,7 +1246,8 @@ setup_apple_env() {
   FEATURE_OPT+=" --disable-parser=apv"
   enable_opt videotoolbox libxml2
   disable_opt avdevice
-  disable_opt vulkan
+  [[ "$os" != macos* ]] && disable_opt vulkan
+  [[ "$os" == macos* ]] && $USE_VK && EXTRA_CFLAGS+=" -I\$THIS_DIR/tools/Vulkan-Headers/include"
   EXTRA_CFLAGS+=" -I=/usr/include/libxml2"
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
   LIB_OPT=--enable-shared
@@ -1338,8 +1339,8 @@ setup_macos_env(){
   [[ "$MACOS_ARCH" == arm64* ]] && version_compare $MACOS_VER "<" 11.0 && MACOS_VER=11.0
   disable_opt xlib libxcb # installed by github action macos-11
   enable_opt videotoolbox vda libxml2
-  disable_opt vulkan # Unable to init compute pipeline: VK_ERROR_INITIALIZATION_FAILED
   EXTRA_CFLAGS+=" -I=/usr/include/libxml2"
+  $USE_VK && EXTRA_CFLAGS+=" -I\$THIS_DIR/tools/Vulkan-Headers/include"
   version_compare $MACOS_VER "<" 10.7 && disable_opt lzma avdevice #avfoundation is not supported on 10.6
   grep -q install-name-dir $FFSRC/configure && TOOLCHAIN_OPT+=" --install_name_dir=@rpath"
   if $FFGIT; then
@@ -1377,7 +1378,7 @@ setup_macos_env(){
   # 10.6: ld: warning: target OS does not support re-exporting symbol _av_gettime from libavutil/libavutil.dylib
   EXTRA_CFLAGS+=" $ARCH_FLAG -mmacosx-version-min=$MACOS_VER"
   EXTRA_LDFLAGS+=" $ARCH_FLAG $LFLAG_VERSION_MIN$MACOS_VER ${LFLAG_PRE}-dead_strip $rpath_flags"
-  INSTALL_DIR=sdk-macOS${MACOS_VER}${MACOS_ARCH}-${USE_TOOLCHAIN##*/}
+  INSTALL_DIR=sdk-macOS${MACOS_VER}-${MACOS_ARCH}
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
 export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/macOS/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/macOS/lib/pkgconfig:$PKG_CONFIG_PATH
@@ -1988,6 +1989,7 @@ make_universal()
     cp -avf ${dirs[0]}/lib/pkgconfig $OUT_DIR/lib/
     for d in ${dirs[@]}; do
       cat $d/config.txt >>$OUT_DIR/config.txt
+      cp $d/config.log $OUT_DIR/config-${d##*-}.log
     done
   # TODO: create tbd
     cp -af "$FFSRC/Changelog" $OUT_DIR
