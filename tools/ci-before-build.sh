@@ -1,6 +1,7 @@
 #!/bin/bash
 NDK_HOST=linux
 TARGET_OS=${TARGET_OS/rockchip/linux}
+AMF_VER=${AMF_VER:=1.5.0}
 
 export XZ_OPT="--threads=`getconf _NPROCESSORS_ONLN` -9e" # -9e. -8/9 will disable mt?
   ln -sf config{${CONFIG_SUFFIX},}.sh;
@@ -20,7 +21,8 @@ if [ `which dpkg` ]; then
     pkgs+=" llvm-${LLVM_VER}-tools clang-${LLVM_VER} clang-tools-${LLVM_VER} clang-tidy-${LLVM_VER} lld-${LLVM_VER} libc++-${LLVM_VER}-dev libclang-rt-${LLVM_VER}-dev"
     pkgs+=" sshpass p7zip-full" # clang-tools: clang-cl
     if [ "$TARGET_OS" == "linux" ]; then
-        pkgs+=" libstdc++-11-dev libxv-dev libva-dev libvdpau-dev zlib1g-dev" # link libbz2.so.1.0 on debian, but libbz2.so.1 on fedora
+# shaderc on ubuntu24.04 does not support vulkan1.4, use glslang instead
+        pkgs+=" libstdc++-11-dev libxv-dev libva-dev libvdpau-dev zlib1g-dev glslang-tools" # link libbz2.so.1.0 on debian, but libbz2.so.1 on fedora
         if [ "$COMPILER" == "gcc" ]; then
             pkgs+=" gcc"
         fi
@@ -33,7 +35,7 @@ if [ `which dpkg` ]; then
     fi
     sudo apt install -y $pkgs
 elif [ `which brew` ]; then
-    pkgs+=" hudochenkov/sshpass/sshpass llvm" # gnu-tar pkg-config perl xz p7zip"
+    pkgs+=" hudochenkov/sshpass/sshpass llvm shaderc" # gnu-tar pkg-config perl xz p7zip"
     brew install $pkgs
     NDK_HOST=darwin
 fi
@@ -50,6 +52,11 @@ curl -kL -o libmdk-dep.zip https://nightly.link/wang-bin/devpkgs/workflows/${DEV
 cp -avf /tmp/dep-av/* /tmp/dep/
 ln -sfv arm64-v8a /tmp/dep/ohos/arm64
 ls -l tools/dep/ohos/arm64/
+
+wget https://github.com/GPUOpen-LibrariesAndSDKs/AMF/releases/download/v$AMF_VER/AMF-headers-v$AMF_VER.tar.gz -O AMF-headers.tar.gz
+tar xf AMF-headers.tar.gz -C /tmp/dep/include --strip-components=1
+grep AMF_VERSION tools/dep/include/AMF/core/Version.h
+sed -n '40,50p' tools/dep/include/AMF/components/DisplayCapture.h
 
 if [[ "$SYSROOT_CACHE_HIT" != "true" ]]; then
   if [[ "$TARGET_OS" == "win"* || "$TARGET_OS" == "uwp"* ]]; then
@@ -74,7 +81,7 @@ fi
 ANDROID_NDK=$ANDROID_NDK_LATEST_HOME
 if [ "$TARGET_OS" == "android" -a ! -d "$ANDROID_NDK_LATEST_HOME" ]; then
     ANDROID_NDK=/tmp/android-ndk
-    wget https://dl.google.com/android/repository/android-ndk-${NDK_VERSION:-r24}-${NDK_HOST}-x86_64.zip -O ndk.zip
+    wget https://dl.google.com/android/repository/android-ndk-${NDK_VERSION:-r29}-${NDK_HOST}-x86_64.zip -O ndk.zip
     7z x ndk.zip -o/tmp &>/dev/null
     mv /tmp/android-ndk-${NDK_VERSION:-r24} $ANDROID_NDK
 fi

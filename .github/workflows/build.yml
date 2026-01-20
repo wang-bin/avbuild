@@ -11,11 +11,12 @@ env:
 #  GITHUB_ENV: https://docs.github.com/en/actions/learn-github-actions/environment-variables#about-environment-variables
   FF_VERSION: ${{ vars.FF_VER }} # TODO: latest release if triggered by schedule
   LLVM_VER: ${{ vars.LLVM_VER }}
-  LLVM_VER_DEFAULT: 20
+  LLVM_VER_DEFAULT: 22
   NINJA_STATUS: '[%f/%t %e %r]'
   SF_PW_MAPPED: ${{ secrets.SF_PW }}
   SF_USER_MAPPED: ${{ secrets.SF_USER }}
   VC_LTL_VER: ${{ vars.VC_LTL_VER }}
+  AMF_VER: ${{ vars.AMF_VER }}
 
 jobs:
   Apple:
@@ -177,7 +178,6 @@ jobs:
     - uses: msys2/setup-msys2@v2
       with:
         release: false # disable installation cache, so exe path in avbuild.sh is correct
-        msystem: MSYS
         update: true
         install: >-
           make
@@ -186,17 +186,23 @@ jobs:
           pkg-config
           nasm
           yasm
+          mingw-w64-x86_64-glslang
     - name: Install dev packages
-      shell: msys2 {0}
+      shell: bash
       run: |
-        wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7z
+        curl -kL -o dep.7z https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download
+        7z x -y dep.7z -otools
+        curl -kL -o libmdk-dep.zip https://nightly.link/wang-bin/devpkgs/workflows/${DEVPKGS_WORKFLOW:=build}/main/libmdk-dep.zip
+        7z x -y libmdk-dep.zip
+        7z x -y dep-av.7z -otools
+        curl -kL -o AMF-headers.tar.gz https://github.com/GPUOpen-LibrariesAndSDKs/AMF/releases/download/v$AMF_VER/AMF-headers-v$AMF_VER.tar.gz
+        tar xf AMF-headers.tar.gz -C tools/dep/include --strip-components=1
     - name: Configure and Build
       shell: cmd
       env:
         USER_OPT: --enable-libshaderc
         if: ${{ matrix.target != 'uwp' }}
       run: |
-        7z x -y dep.7z -otools
         set PKG_CONFIG_PATH_MFX=%CD%\tools\dep\VS2022\lib\pkgconfig
         set MSYS2_DIR=C:\msys64
         set HOME=%CD%
@@ -253,7 +259,6 @@ jobs:
     - uses: msys2/setup-msys2@v2
       with:
         release: false # disable installation cache, so exe path in avbuild.sh is correct
-        msystem: MSYS
         update: true
         install: >-
           make
@@ -262,14 +267,22 @@ jobs:
           pkg-config
           nasm
           yasm
+          mingw-w64-x86_64-glslang
     - name: Install dev packages
-      shell: msys2 {0}
+      shell: bash
       run: |
-        wget https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download -O dep.7z
+        curl -kL -o dep.7z https://sourceforge.net/projects/avbuild/files/dep/dep.7z/download
+        7z x -y dep.7z -otools
+        curl -kL -o libmdk-dep.zip https://nightly.link/wang-bin/devpkgs/workflows/${DEVPKGS_WORKFLOW:=build}/main/libmdk-dep.zip
+        7z x -y libmdk-dep.zip
+        7z x -y dep-av.7z -otools
+        curl -kL -o AMF-headers.tar.gz https://github.com/GPUOpen-LibrariesAndSDKs/AMF/releases/download/v$AMF_VER/AMF-headers-v$AMF_VER.tar.gz
+        tar xf AMF-headers.tar.gz -C tools/dep/include --strip-components=1
+        grep AMF_VERSION tools/dep/include/AMF/core/Version.h
+        sed -n '40,50p' tools/dep/include/AMF/components/DisplayCapture.h
     - name: Configure and Build
       shell: cmd
       run: |
-        7z x -y dep.7z -otools
         set VC_LTL_DIR=%CD%\VC-LTL
         set PKG_CONFIG_PATH_MFX=%CD%\tools\dep\VS2022LTL\lib\pkgconfig
         set MSYS2_DIR=C:\msys64
