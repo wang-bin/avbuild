@@ -1,4 +1,4 @@
-# A script to create libffmpeg single shared and partially linked library. Author: 'wbsecg1 at gmail.com' 2019-2024. MIT license
+# A script to create libffmpeg single shared and partially linked library. Author: 'wbsecg1 at gmail.com' 2019-2026. MIT license
 BUILD_DIR=$1
 INSTALL_DIR=$2
 THIS_DIR="$(cd "$(dirname ${BASH_SOURCE[0]})";pwd -P)"
@@ -53,6 +53,7 @@ DUP_OBJS=(libswscale/log2_tab.o libswresample/log2_tab.o libavcodec/log2_tab.o l
   libavformat/jpegxl_parse.o  # what if jpegxl parser is disabled? remove 1 if both libavcodec and libavformat has jpegxl_parse.o
   libavformat/ffjni.o
   libavformat/bitstream.o
+  libavformat/opus_frame_duration_tab.o # 8.x
   libavutil/avutilres.o
   libavcodec/avcodecres.o
   libavcodec/half2float.o   # half2float.c is in libavutil, but not built into libavutil, always built in swscale
