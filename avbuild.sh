@@ -610,6 +610,7 @@ echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG
   $IS_CLANG_CL && {
     if [ -d "$VC_LTL_LIB" ]; then
       EXTRA_CFLAGS+=" -MT"
+      PKG_CONFIG_ROOT_SUFFIX=-ltl # TODO: dir/MT
     else
 	  EXTRA_CFLAGS+=" -MD"
 	  EXTRA_LDFLAGS+=" -NODEFAULTLIB:libcmt"
@@ -630,7 +631,7 @@ export LIB="$VC_LTL_LIB;$VCDIR_LIB;$WindowsSdkDir/Lib/$WindowsSDKVersion/ucrt/${
 export AR=$LLVM_AR
 export NM=$LLVM_NM
 #export V=1 # FFmpeg BUG: AR is overriden in common.mak and becomes an invalid command in makedef(@printf works in makefiles but not sh scripts)
-export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/windows/${MACHINE/86_/}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/windows-desktop/${MACHINE/86_/}/lib/pkgconfig:${THIS_DIR}/tools/dep/windows/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/windows-desktop/lib/pkgconfig:$PKG_CONFIG_PATH
+export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/windows${PKG_CONFIG_ROOT_SUFFIX}/${MACHINE/86_/}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/windows-desktop/${MACHINE/86_/}/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/windows-desktop/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
 # [ expr1 ] && ... at end returns error if expr1 is false
 }
@@ -647,6 +648,7 @@ setup_vc_env() {
   # dylink crt
   if [ -d "$VC_LTL_DIR/TargetPlatform" ]; then
     EXTRA_CFLAGS+=" -MT"
+    PKG_CONFIG_ROOT_SUFFIX=-ltl # TODO: dir/MT
   else
     EXTRA_CFLAGS+=" -MD"
     EXTRA_LDFLAGS+=" -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
@@ -662,6 +664,7 @@ setup_vc_env() {
 
   [ -n "$PKG_CONFIG_PATH_MFX" ] && PKG_CONFIG_PATH_MFX_UNIX=$(to_unix_path "$PKG_CONFIG_PATH_MFX")
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] || PKG_CONFIG_PATH_MFX_UNIX=${PKG_CONFIG_PATH_MFX_UNIX/\/lib\/pkgconfig/$Platform\/lib\/pkgconfig}
+  echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX PKG_CONFIG_PATH=$PKG_CONFIG_PATH
   PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
   [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
   FAMILY=
@@ -731,7 +734,7 @@ setup_vc_env() {
   [ -n "$LIBPATH_arch" ] && echo "export LIBPATH=$LIBPATH_arch" >>"$BDIR/.env.sh"
   [ -n "$INCLUDE_arch" ] && echo "export INCLUDE=$INCLUDE_arch" >>"$BDIR/.env.sh"
   cat >> "$BDIR/.env.sh" <<EOF
-export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/windows/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/windows-desktop/lib/pkgconfig:$PKG_CONFIG_PATH
+export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/windows${PKG_CONFIG_ROOT_SUFFIX}/$platform/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/windows-desktop/$platform/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/windows-desktop/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
 }
 

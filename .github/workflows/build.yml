@@ -11,7 +11,7 @@ env:
 #  GITHUB_ENV: https://docs.github.com/en/actions/learn-github-actions/environment-variables#about-environment-variables
   FF_VERSION: ${{ vars.FF_VER }} # TODO: latest release if triggered by schedule
   LLVM_VER: ${{ vars.LLVM_VER }}
-  LLVM_VER_DEFAULT: 22
+  LLVM_VER_DEFAULT: 23
   NINJA_STATUS: '[%f/%t %e %r]'
   SF_PW_MAPPED: ${{ secrets.SF_PW }}
   SF_USER_MAPPED: ${{ secrets.SF_USER }}
@@ -151,8 +151,8 @@ jobs:
         path: ffmpeg-*.tar.xz
 
 
-  VS2022:
-    runs-on: windows-2022
+  VS2026:
+    runs-on: windows-2025-vs2026
     env:
       TARGET_OS: ${{ matrix.target }}
       CONFIG_SUFFIX: -${{ matrix.config }}
@@ -195,36 +195,38 @@ jobs:
         curl -kL -o libmdk-dep.zip https://nightly.link/wang-bin/devpkgs/workflows/${DEVPKGS_WORKFLOW:=build}/main/libmdk-dep.zip
         7z x -y libmdk-dep.zip
         7z x -y dep-av.7z -otools
+        cp -af tools/dep-av/* tools/dep/
         curl -kL -o AMF-headers.tar.gz https://github.com/GPUOpen-LibrariesAndSDKs/AMF/releases/download/v$AMF_VER/AMF-headers-v$AMF_VER.tar.gz
         tar xf AMF-headers.tar.gz -C tools/dep/include --strip-components=1
+        pwd
+        find tools/dep*/windows*
     - name: Configure and Build
       shell: cmd
       env:
         USER_OPT: --enable-libshaderc
         if: ${{ matrix.target != 'uwp' }}
       run: |
-        set PKG_CONFIG_PATH_MFX=%CD%\tools\dep\VS2022\lib\pkgconfig
         set MSYS2_DIR=C:\msys64
         set HOME=%CD%
         set FFSRC=%CD%\ffmpeg-%FF_VERSION%
         set BUILD_NOW=true
-        tools\vcbuild.bat VS2022 %TARGET_OS%10 all
+        tools\vcbuild.bat VS2026 %TARGET_OS%10 all
     - name: Make SDK
       shell: cmd
       run: |
-        set SDK_NAME=ffmpeg-%FF_VERSION%-%TARGET_OS%-vs2022%CONFIG_SUFFIX%
+        set SDK_NAME=ffmpeg-%FF_VERSION%-%TARGET_OS%-vs2026%CONFIG_SUFFIX%
         move sdk* %SDK_NAME%
         7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off -xr!*.pdb %SDK_NAME%.7z %SDK_NAME%
         7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off %SDK_NAME%-pdb.7z -ir!%SDK_NAME%\*.pdb
     - name: Archieve SDK
       uses: actions/upload-artifact@v4
       with:
-        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-VS2022${{ matrix.config }}
+        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-VS2026${{ matrix.config }}
         path: ffmpeg-*.7z
 
 
-  VS2022LTL:
-    runs-on: windows-2022
+  VS2026LTL:
+    runs-on: windows-2025-vs2026
     env:
       TARGET_OS: ${{ matrix.target }}
       CONFIG_SUFFIX: -${{ matrix.config }}
@@ -276,32 +278,35 @@ jobs:
         curl -kL -o libmdk-dep.zip https://nightly.link/wang-bin/devpkgs/workflows/${DEVPKGS_WORKFLOW:=build}/main/libmdk-dep.zip
         7z x -y libmdk-dep.zip
         7z x -y dep-av.7z -otools
+        cp -af tools/dep-av/* tools/dep/
         curl -kL -o AMF-headers.tar.gz https://github.com/GPUOpen-LibrariesAndSDKs/AMF/releases/download/v$AMF_VER/AMF-headers-v$AMF_VER.tar.gz
         tar xf AMF-headers.tar.gz -C tools/dep/include --strip-components=1
         grep AMF_VERSION tools/dep/include/AMF/core/Version.h
         sed -n '40,50p' tools/dep/include/AMF/components/DisplayCapture.h
+        pwd
+        find tools/dep*/windows*
     - name: Configure and Build
       shell: cmd
       run: |
         set VC_LTL_DIR=%CD%\VC-LTL
-        set PKG_CONFIG_PATH_MFX=%CD%\tools\dep\VS2022LTL\lib\pkgconfig
+        set PKG_CONFIG_PATH_MFX=%CD%\tools\dep\windows-ltl\lib\pkgconfig # TODO: windows/MT
         set MSYS2_DIR=C:\msys64
         set HOME=%CD%
         set FFSRC=%CD%\ffmpeg-%FF_VERSION%
         set BUILD_NOW=true
         set USER_OPT=--enable-libshaderc
-        tools\vcbuild.bat VS2022 %TARGET_OS%10 all
+        tools\vcbuild.bat VS2026 %TARGET_OS%10 all
     - name: Make SDK
       shell: cmd
       run: |
-        set SDK_NAME=ffmpeg-%FF_VERSION%-%TARGET_OS%-vs2022ltl%CONFIG_SUFFIX%
+        set SDK_NAME=ffmpeg-%FF_VERSION%-%TARGET_OS%-vs2026ltl%CONFIG_SUFFIX%
         move sdk* %SDK_NAME%
         7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off -xr!*.pdb %SDK_NAME%.7z %SDK_NAME%
         7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off %SDK_NAME%-pdb.7z -ir!%SDK_NAME%\*.pdb
     - name: Archieve SDK
       uses: actions/upload-artifact@v4
       with:
-        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-VS2022ltl${{ matrix.config }}
+        name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-VS2026ltl${{ matrix.config }}
         path: ffmpeg-*.7z
 
 
@@ -754,28 +759,28 @@ jobs:
 
   Upload:
     runs-on: ubuntu-latest
-    needs: [VS2022, VS2022LTL]
+    needs: [VS2026, VS2026LTL]
     steps:
-    - name: Download vs2022 desktop
+    - name: Download vs2026 desktop
       uses: actions/download-artifact@v4
       with:
-        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2022default
-    - name: Download vs2022 desktop lite
+        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2026default
+    - name: Download vs2026 desktop lite
       uses: actions/download-artifact@v4
       with:
-        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2022lite
-    - name: Download vs2022 LTL desktop lite
+        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2026lite
+    - name: Download vs2026 LTL desktop lite
       uses: actions/download-artifact@v4
       with:
-        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2022ltllite
-    - name: Download vs2022 LTL desktop
+        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2026ltllite
+    - name: Download vs2026 LTL desktop
       uses: actions/download-artifact@v4
       with:
-        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2022ltldefault
-    - name: Download vs2022 uwp lite
+        name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2026ltldefault
+    - name: Download vs2026 uwp lite
       uses: actions/download-artifact@v4
       with:
-        name: ffmpeg-${{ env.FF_VERSION }}-uwp-VS2022lite
+        name: ffmpeg-${{ env.FF_VERSION }}-uwp-VS2026lite
     - name: Upload to SourceForge
       if: (github.event_name != 'pull_request')
       shell: bash

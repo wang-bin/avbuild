@@ -218,15 +218,20 @@ set LIB=
 set LIBPATH=
 set INCLUDE=
 
-call "%VCVARSALL_BAT%" x86_arm %EXTRA_ARGS%
-set PATH_arm=%PATH%
-set LIBPATH_arm=%LIBPATH%
-set LIB_arm=%LIB%
-set INCLUDE_arm=%INCLUDE%
-set PATH=%PATH_CLEAN%
-set LIB=
-set LIBPATH=
-set INCLUDE=
+:: arm32 is not available in vs2026
+:: if %VSVER% LSS 180 (
+::     call "%VCVARSALL_BAT%" x86_arm %EXTRA_ARGS%
+::     set PATH_arm=%PATH%
+::     set LIBPATH_arm=%LIBPATH%
+::     set LIB_arm=%LIB%
+::     set INCLUDE_arm=%INCLUDE%
+::     set PATH=%PATH_CLEAN%
+::     set LIB=
+::     set LIBPATH=
+::     set INCLUDE=
+:: ) else (
+::     echo "Skipping x86_arm setup for VS2026+"
+:: )
 
 :: default is x86, no env reset
 call "%VCVARSALL_BAT%" x86 %EXTRA_ARGS%
