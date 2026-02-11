@@ -98,13 +98,13 @@ if [ -f ffmpeg-${FF_VERSION}/configure ]; then
   cd -
 elif [ -n "$FF_COMMIT" ]; then
   echo "no ffmpeg src. clone and checkout $FF_COMMIT"
-  git clone -b ${FF_BRANCH} ${FFREPO:-https://git.ffmpeg.org/ffmpeg.git} ffmpeg-${FF_VERSION}
+  git clone -b ${FF_BRANCH} ${FFREPO:-https://code.ffmpeg.org/FFmpeg/FFmpeg.git} ffmpeg-${FF_VERSION}
   cd ffmpeg-${FF_VERSION}
   git checkout $FF_COMMIT
   cd -
 else
   echo "no ffmpeg src. clone"
-  git clone -b ${FF_BRANCH} --depth 1 --no-tags ${FFREPO:-https://git.ffmpeg.org/ffmpeg.git} ffmpeg-${FF_VERSION}
+  git clone -b ${FF_BRANCH} --depth 1 --no-tags ${FFREPO:-https://code.ffmpeg.org/FFmpeg/FFmpeg.git} ffmpeg-${FF_VERSION}
 fi
 
 if [ -n "${CONFIG_SUFFIX}" ]; then

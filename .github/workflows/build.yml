@@ -173,7 +173,7 @@ jobs:
       run: |
         set FF_BRANCH=%FF_VERSION%
         if not [%FF_BRANCH%]==[master] set FF_BRANCH=release/%FF_VERSION%
-        git clone -b %FF_BRANCH% --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-%FF_VERSION%
+        git clone -b %FF_BRANCH% --depth 1 --no-tags https://code.ffmpeg.org/FFmpeg/FFmpeg.git ffmpeg-%FF_VERSION%
         if not [%CONFIG_SUFFIX%]==[-default] copy /y config%CONFIG_SUFFIX%.sh config.sh
     - uses: msys2/setup-msys2@v2
       with:
@@ -256,7 +256,7 @@ jobs:
       run: |
         set FF_BRANCH=%FF_VERSION%
         if not [%FF_BRANCH%]==[master] set FF_BRANCH=release/%FF_VERSION%
-        git clone -b %FF_BRANCH% --depth 1 --no-tags https://git.ffmpeg.org/ffmpeg.git ffmpeg-%FF_VERSION%
+        git clone -b %FF_BRANCH% --depth 1 --no-tags https://code.ffmpeg.org/FFmpeg/FFmpeg.git ffmpeg-%FF_VERSION%
         if not [%CONFIG_SUFFIX%]==[-default] copy /y config%CONFIG_SUFFIX%.sh config.sh
     - uses: msys2/setup-msys2@v2
       with:
