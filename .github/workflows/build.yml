@@ -206,6 +206,7 @@ jobs:
         USER_OPT: --enable-libshaderc
         if: ${{ matrix.target != 'uwp' }}
       run: |
+        set PKG_CONFIG_PATH_MFX=%CD%\tools\dep\windows\lib\pkgconfig
         set MSYS2_DIR=C:\msys64
         set HOME=%CD%
         set FFSRC=%CD%\ffmpeg-%FF_VERSION%
@@ -289,7 +290,7 @@ jobs:
       shell: cmd
       run: |
         set VC_LTL_DIR=%CD%\VC-LTL
-        set PKG_CONFIG_PATH_MFX=%CD%\tools\dep\windows-ltl\lib\pkgconfig # TODO: windows/MT
+        set PKG_CONFIG_PATH_MFX=%CD%\tools\dep\windows-ltl\lib\pkgconfig
         set MSYS2_DIR=C:\msys64
         set HOME=%CD%
         set FFSRC=%CD%\ffmpeg-%FF_VERSION%

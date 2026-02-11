@@ -140,6 +140,7 @@ jobs:
       shell: cmd
       run: |
         set MSYS2_DIR=C:\msys64
+        set PKG_CONFIG_PATH_MFX=%CD%\tools\dep\windows\lib\pkgconfig
         set HOME=%CD%
         set FFSRC=%CD%\ffmpeg-%FF_VERSION%
         set BUILD_NOW=true

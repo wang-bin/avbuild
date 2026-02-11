@@ -236,6 +236,17 @@ disable_opt() {
 }
 
 enable_libmfx(){
+  # pkgconf: check_func_headers() includes lflags "mfx.lib" which can not be in -c. fallbck to header and lib check.
+  [ -n "$PKG_CONFIG_PATH_MFX" ] && PKG_CONFIG_PATH_MFX_UNIX=$(to_unix_path "$PKG_CONFIG_PATH_MFX")
+  [ -f "$PKG_CONFIG_PATH_MFX_UNIX/vpl.pc" -o -f "$PKG_CONFIG_PATH_MFX_UNIX/libmfx.pc" ] || {
+    local PKG_CONFIG_PATH_MFX_UNIX_ARCH=${PKG_CONFIG_PATH_MFX_UNIX/\/lib\/pkgconfig/$1\/lib\/pkgconfig}
+    [ -f "$PKG_CONFIG_PATH_MFX_UNIX_ARCH/vpl.pc" -o -f "$PKG_CONFIG_PATH_MFX_UNIX_ARCH/libmfx.pc" ] || PKG_CONFIG_PATH_MFX_UNIX_ARCH=${PKG_CONFIG_PATH_MFX_UNIX/\/lib\/pkgconfig/\/$1\/lib\/pkgconfig}
+    PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX_ARCH
+  }
+  echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX PKG_CONFIG_PATH=$PKG_CONFIG_PATH
+  PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
+  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
+  echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
   pkg-config --libs vpl && enable_opt libvpl || {
     pkg-config --libs libmfx && enable_opt libmfx
   }
@@ -568,19 +579,13 @@ setup_win_clang(){
   EXTRA_LDFLAGS+=' -DEBUG -OPT:REF -SUBSYSTEM:CONSOLE -DEFAULTLIB:msvcrt'
   EXTRALIBS+=" oldnames.lib" # fdopen, tempnam, close used in file_open.c
   INSTALL_DIR="sdk-$2-$Platform-clang"
-  # pkgconf: check_func_headers() includes lflags "mfx.lib" which can not be in -c. fallbck to header and lib check.
-  [ -n "$PKG_CONFIG_PATH_MFX" ] && PKG_CONFIG_PATH_MFX_UNIX=`to_unix_path "$PKG_CONFIG_PATH_MFX"`
-  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] || PKG_CONFIG_PATH_MFX_UNIX=${PKG_CONFIG_PATH_MFX_UNIX/\/lib\/pkgconfig/$Platform\/lib\/pkgconfig}
-  PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
-  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
-echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX PKG_CONFIG_PATH=$PKG_CONFIG_PATH
   $IS_STORE || {
     [ -d "$AMF_DIR" -a "${platform:0:3}" != "arm" ] && EXTRA_CFLAGS+=" -I$AMF_DIR"
     [ -d "$SDL2_DIR" -a "${platform:0:3}" != "arm" ] && {
         EXTRA_CFLAGS+=" -I$SDL2_DIR/include"
         EXTRA_LDFLAGS+=" -L$SDL2_DIR/lib/${platform}"
     }
-    enable_libmfx
+    enable_libmfx $platform
   }
 
   [ -f "$WindowsSdkDir/Include/$WindowsSDKVersion/um/WINDOWS.H" ] || { # case sensitive file system
@@ -662,11 +667,6 @@ setup_vc_env() {
   local platform=$(tolower $Platform)
   echo "VS version: $VS_VER, platform: $Platform" # Platform is from vsvarsall.bat
 
-  [ -n "$PKG_CONFIG_PATH_MFX" ] && PKG_CONFIG_PATH_MFX_UNIX=$(to_unix_path "$PKG_CONFIG_PATH_MFX")
-  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] || PKG_CONFIG_PATH_MFX_UNIX=${PKG_CONFIG_PATH_MFX_UNIX/\/lib\/pkgconfig/$Platform\/lib\/pkgconfig}
-  echo PKG_CONFIG_PATH_MFX_UNIX=$PKG_CONFIG_PATH_MFX_UNIX PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX PKG_CONFIG_PATH=$PKG_CONFIG_PATH
-  PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
-  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
   FAMILY=
   local HAS_CUDA=true
   [ "${platform:0:3}" = "arm" ] && HAS_CUDA=false
@@ -740,7 +740,7 @@ EOF
 
 setup_vc_desktop_env() {
 # http://ffmpeg.org/platform.html#Microsoft-Visual-C_002b_002b-or-Intel-C_002b_002b-Compiler-for-Windows
-  [ -z "$WSL_DISTRO_NAME" ] && [[ "$platform" != arm* ]] && enable_libmfx # msys2: -I -libpath path starts with X:/. wsl: -libpath:X:/ is ignored
+  [ -z "$WSL_DISTRO_NAME" ] && [[ "$platform" != arm* ]] && enable_libmfx $platform # msys2: -I -libpath path starts with X:/. wsl: -libpath:X:/ is ignored
   [ -d "$AMF_DIR" -a "${platform:0:3}" != "arm" ] && EXTRA_CFLAGS+=" -I$AMF_DIR"
   [ -d "$SDL2_DIR" -a "${platform:0:3}" != "arm" ] && {
     EXTRA_CFLAGS+=" -I$SDL2_DIR/include"
@@ -877,14 +877,10 @@ setup_mingw_env() {
       TOOLCHAIN_OPT+=" --enable-cross-compile --cross-prefix=${arch}-w64-mingw32- --target-os=mingw$BIT --arch=$arch --pkg-config=pkg-config"
     }
   }
-  [ -n "$PKG_CONFIG_PATH_MFX" ] && PKG_CONFIG_PATH_MFX_UNIX=$(to_unix_path "$PKG_CONFIG_PATH_MFX")
-  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] || PKG_CONFIG_PATH_MFX_UNIX=${PKG_CONFIG_PATH_MFX_UNIX/\/lib\/pkgconfig/$BIT\/lib\/pkgconfig}
-  PKG_CONFIG_PATH_MFX=$PKG_CONFIG_PATH_MFX_UNIX
-  [ -d "$PKG_CONFIG_PATH_MFX_UNIX" ] && PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH_MFX_UNIX"
 
   [ -d "$AMF_DIR" ] && EXTRA_CFLAGS+=" -I$AMF_DIR"
   $USE_VK && EXTRA_CFLAGS+=" -I\$THIS_DIR/tools/Vulkan-Headers/include"
-  enable_libmfx
+  enable_libmfx $arch
   enable_opt dxva2
   #enable_opt mediafoundation # MFCreateAlignedMemoryBuffer
   disable_opt iconv
@@ -1570,7 +1566,7 @@ setup_linux_env() {
   ARCH=$(linux_arch $ARCH)
   [[ "$ARCH" == amd64  || "$ARCH" == x*6* ]] && {
     [ -d "$AMF_DIR" ] && EXTRA_CFLAGS+=" -I$AMF_DIR"
-    enable_libmfx
+    enable_libmfx $ARCH
   }
   if [ -n "$SYSROOT" ]; then
     CROSS_PREFIX=$(linux_gnu_triple $ARCH)-
