@@ -909,6 +909,7 @@ setup_ohos_env() {
   disable_opt vulkan
   enable_opt ohcodec
   sed -i $sed_bak 's/^check_cc v4l2_m2m/enabled v4l2_m2m \&\& check_cc v4l2_m2m/' "$FFSRC/configure"
+  local os=$2
   local OHOS_ARCH=${1:=arm}
   TRIPLE_ARCH=$OHOS_ARCH
   local FFARCH=$OHOS_ARCH
@@ -930,7 +931,7 @@ setup_ohos_env() {
         enable_lto=false
     OHOS_ARCH=armv7
   fi
-  OHOS_HEADER_TRIPLE=${TRIPLE_ARCH}-linux-ohos
+  OHOS_HEADER_TRIPLE=${TRIPLE_ARCH}-linux-$os
   local CROSS_PREFIX=${TRIPLE_ARCH}-unknown-linux-ohos-
   CLANG_FLAGS+=" --target=${OHOS_HEADER_TRIPLE} -D__MUSL__ --sysroot=$OHOS_NDK/sysroot"
   #[ -z "$API_SUFFIX" ] && include_with_sysroot_compat /usr/include/$OHOS_HEADER_TRIPLE # TODO: not required if api level is set in --target=
@@ -952,7 +953,7 @@ setup_ohos_env() {
     $LD_IS_LLD || EXTRA_LDFLAGS+=" $LFLAGS_CLANG $CLANG_FLAGS" # -Qunused-arguments is added by ffmpeg configure
 
   TOOLCHAIN_OPT+=" --extra-ldexeflags=\"-Wl,--gc-sections -Wl,-z,nocopyreloc -pie -fPIE $EXE_FLAGS\""
-  INSTALL_DIR=sdk-ohos-${1:-${OHOS_ARCH}}
+  INSTALL_DIR=sdk-$os-${1:-${OHOS_ARCH}}
   $IS_CLANG && INSTALL_DIR="${INSTALL_DIR}-clang" || INSTALL_DIR="${INSTALL_DIR}-gcc"
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   PATHS=$OHOS_NDK/llvm/bin

@@ -670,7 +670,7 @@ jobs:
         export OHOS_NDK=$OHOS_NDK_HOME/native
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export USER_OPT="--enable-wolfssl"
-        ./avbuild.sh ${TARGET_OS} "arm64"
+        ./avbuild.sh ${TARGET_OS}12 "arm64"
     - name: Make SDK
       shell: bash
       run: ./tools/ci-after-build.sh
