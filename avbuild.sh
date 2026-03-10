@@ -54,11 +54,9 @@ test -f $AMF_DIR/AMF/core/Version.h || unset AMF_DIR
 
 # version_compare v1 "op" v2, e.g. version_compare 10.6 "<" 10.7
 version_compare(){
-  local v1_major=`echo $1 |cut -d '.' -f 1`
-  local v1_minor=`echo $1 |cut -d '.' -f 2`
-  local v2_major=`echo $3 |cut -d '.' -f 1`
-  local v2_minor=`echo $3 |cut -d '.' -f 2`
-  eval return $((1-$(($(($((v1_major*100))+$v1_minor))${2}$(($((v2_major*100))+$v2_minor))))))
+  local v1=$((${1%%.*}*100 + ${1##*.}))
+  local v2=$((${3%%.*}*100 + ${3##*.}))
+  eval "(( $v1 $2 $v2 ))"
 }
 
 echo FFSRC=$FFSRC
@@ -135,12 +133,13 @@ done
 }
 cd -
 
+# bash4: ${var^^}
 toupper(){
-    echo "$@" | tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ
+  echo "$@" | tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ
 }
-
+# bash4: ${var,,}
 tolower(){
-    echo "$@" | tr ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz
+  echo "$@" | tr ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz
 }
 
 trim(){
@@ -151,21 +150,13 @@ trim(){
 }
 # why eval $v=$(trim_compress "\$$v") will have a leading white space (used in trim_vars)?
 trim2(){
-  trim "$@" |tr -s ' '
+  trim "$@" | tr -s ' '
 }
 
-host_is() {
-  uname |grep -iq $1 && return 0 || return 1
-}
-target_is() {
-  test "$TAGET_FLAG" = "$1" && return 0 || return 1
-}
-target_arch_is() {
-  test "$TAGET_ARCH_FLAG" = "$1" && return 0 || return 1
-}
-is_libav() {
-  test -f "$FFSRC_TOOLS/avconv.c" && return 0 || return 1
-}
+host_is() { uname | grep -iq "$1"; }
+target_is() { [[ "$TAGET_FLAG" == "$1" ]]; }
+target_arch_is() { [[ "$TAGET_ARCH_FLAG" == "$1" ]]; }
+is_libav() { [[ -f "$FFSRC_TOOLS/avconv.c" ]]; }
 
 BUILD_TOOLS=gcc
 host_is MinGW32 && BUILD_TOOLS=mingw-w64-i686-gcc
@@ -177,61 +168,52 @@ host_is MinGW || host_is MSYS && {
 
 android_arch(){
   # emulate hash in bash3
-  local armv5=armeabi   # ${!armv5} is armeabi<=armeabi<=armv5
-  local armv7=armeabi-v7a
-  local arm64=arm64-v8a
+  local armv5=armeabi armv7=armeabi-v7a arm64=arm64-v8a # ${!armv5} is armeabi<=armeabi<=armv5
   # indirect reference
   arch=${!1}
-  echo ${arch:=$1}
-  return 0
-  arch=`eval 'echo ${'$1'}'`
-  echo ${arch:=$1}
+  echo "${arch:=$1}"
 }
 
 linux_arch(){
-  if [[ "$ARCH" == *ar*64 ]]; then
-    echo arm64
-  elif [[ "$ARCH" == *64 ]]; then
-    echo amd64
-  elif [[ "$ARCH" == *86 ]]; then
-    echo i386
-  elif [[ "$ARCH" == armel ]]; then
-    echo armel
-  elif [[ "$ARCH" == arm* ]]; then
-    echo armhf
-  fi
+  case "$ARCH" in
+    *ar*64) echo arm64 ;;
+    armel)  echo armel ;;
+    arm*)   echo armhf ;;
+    x*64|amd64)    echo amd64 ;;
+    *86)    echo i386 ;;
+  esac
 }
 
 linux_gnu_triple(){
-  if [[ "$ARCH" == *ar*64 ]]; then
-    echo aarch64-linux-gnu
-  elif [[ "$ARCH" == *64 ]]; then
-    echo x86_64-linux-gnu
-  elif [[ "$ARCH" == *86 ]]; then
-    echo i386-linux-gnu
-  elif [[ "$ARCH" == arm* ]]; then
-    echo arm-linux-gnueabihf
-  fi
+  case "$ARCH" in
+    *ar*64) echo aarch64-linux-gnu ;;
+    arm*)   echo arm-linux-gnueabihf ;;
+    x*64|amd64)    echo x86_64-linux-gnu ;;
+    *86)    echo i386-linux-gnu ;;
+  esac
+}
+
+configure_has() {
+  grep -q "$1" "$FFSRC/configure"
 }
 
 enable_cuda_llvm() {
-  grep -q "\-\-nvcc=" $FFSRC/configure && TOOLCHAIN_OPT+=" --nvcc=$USE_TOOLCHAIN"
+  configure_has "\-\-nvcc=" && TOOLCHAIN_OPT+=" --nvcc=$USE_TOOLCHAIN"
 }
 
 #ffmpeg 1.2 autodetect dxva, vaapi, vdpau. manually enable vda before 2.3
 enable_opt() {
   # grep -m1
-  for OPT in $@; do
-    grep -q "\-\-enable\-$OPT" $FFSRC/configure && FEATURE_OPT="--enable-$OPT $FEATURE_OPT" # prepend to support override
+  for OPT in "$@"; do
+    configure_has "\-\-enable\-$OPT" && FEATURE_OPT+=" --enable-$OPT"
   done
 }
 
 disable_opt() {
   # grep -m1
-  for OPT in $@; do
-    grep -qE "\-\-disable\-${OPT}|\-\-enable\-${OPT}.*\[autodetect\]" $FFSRC/configure && {
-        echo $FEATURE_OPT |grep -q "disable-$OPT"  || FEATURE_OPT="--disable-$OPT $FEATURE_OPT" # prepend to support override
-    }
+  for OPT in "$@"; do
+    grep -qE "\-\-disable\-${OPT}|\-\-enable\-${OPT}.*\[autodetect\]" "$FFSRC/configure" && \
+      [[ ! "$FEATURE_OPT" =~ "disable-$OPT" ]] && FEATURE_OPT="--disable-$OPT $FEATURE_OPT"
   done
 }
 
@@ -324,24 +306,23 @@ use_clang() {
 }
 
 probe_cc() {
-  local cc=$1
-  local flags=$2
-  $cc -v 2>&1 |grep -q clang && IS_CLANG=true
-  $cc -v 2>&1 |grep -q "Apple " && IS_APPLE_CLANG=true
-  $cc -v 2>/dev/null |grep msvc &>/dev/null && IS_CLANG_CL=true # /openmp:llvm ....
+  local cc=$1 cc_version
+  cc_version=$($cc -v 2>&1)
+  [[ "$cc_version" =~ "clang" ]] && IS_CLANG=true
+  [[ "$cc_version" =~ "Apple" ]] && IS_APPLE_CLANG=true
+  [[ "$cc_version" =~ "msvc" ]] && IS_CLANG_CL=true
+
   if $IS_CLANG_CL; then
     IS_CLANG=true
     HAVE_LLD=true
   elif $IS_CLANG; then
     LLD=$($cc -print-prog-name=lld)
-    # check file existence?
-    $LLD -flavor gnu -v >/dev/null && HAVE_LLD=true
-    $HAVE_LLD || {
+    $LLD -flavor gnu -v &>/dev/null && HAVE_LLD=true || {
       LLD=$($cc -print-prog-name=ld.lld)
-      $LLD -flavor gnu -v >/dev/null && HAVE_LLD=true
+      $LLD -flavor gnu -v &>/dev/null && HAVE_LLD=true
     }
   fi
-  $IS_APPLE_CLANG && [ -f /usr/local/opt/llvm/bin/lld ] && HAVE_LLD=true
+  $IS_APPLE_CLANG && [ -f /usr/local/opt/llvm/bin/lld -o -f /opt/homebrew/bin/lld ] && HAVE_LLD=true
   echo "compiler is clang: $IS_CLANG, apple clang: $IS_APPLE_CLANG, cl: $IS_CLANG_CL, have lld: $HAVE_LLD"
 }
 
@@ -352,12 +333,14 @@ setup_cc() {
 }
 
 to_unix_path() {
-  which wslpath &>/dev/null && { #preppend /mnt/ to the first path only. and always preppend /mnt/x before absolute path
-    wslpath -u "$1" | sed 's,\;,\;/mnt\/,g;s,:,,g'
-    exit 0
-  }
-  which cygpath &>/dev/null && cygpath -u "$1" && exit 0
-  echo "$1"
+  #preppend /mnt/ to the first path only. and always preppend /mnt/x before absolute path
+  if command -v wslpath &>/dev/null; then
+    wslpath -u "$1" | sed 's,;,;/mnt/,g;s,:,,g'
+  elif command -v cygpath &>/dev/null; then
+    cygpath -u "$1"
+  else
+    echo "$1"
+  fi
 }
 
 use_llvm_binutils() {
@@ -437,8 +420,7 @@ check_cross_build() {
 
 setup_win(){
   WIN_VER_SET=false
-  local os=$2
-  local XP_VER=5.1
+  local os=$2 XP_VER=5.1
   [[ $1 == *64 ]] && XP_VER=5.2
   os=${os/xp/${XP_VER}}
   echo os:$os
@@ -450,13 +432,15 @@ setup_win(){
   local os_ver=${os##$os_name}
   local os_major=${os_ver%%.*}
   local os_minor=${os_ver##*.}
-  echo "$os_ver" |grep -q '\.' || os_minor=0
-  [ -n "$os_major" ] && {
+  [[ "$os_ver" =~ \. ]] || os_minor=0
+  if [ -n "$os_major" ]; then
     WIN_VER_SET=true
     WIN_VER_LD=${os_major}.0$os_minor
-  } || os_major=6
-  WIN_VER=`printf "0x%02X%02X" $os_major $os_minor`
-  echo WIN_VER_SET: $WIN_VER_SET  WIN_VER:$WIN_VER
+  else
+    os_major=6
+  fi
+  WIN_VER=$(printf "0x%02X%02X" $os_major $os_minor)
+  echo "WIN_VER_SET: $WIN_VER_SET  WIN_VER:$WIN_VER"
   local win_cc=clang
   cl.exe
   which cl.exe &>/dev/null && {
@@ -522,8 +506,7 @@ setup_win_clang(){
   local HAS_CUDA=true
   local os=$2
   [[ "$os"  == win*store || "$os" == win*phone || "${os:0:3}" == uwp || "${os:0:5}" == winrt ]] && IS_STORE=true
-  local WINPHONE=false
-  [[ "$os" == win*phone ]] && WINPHONE=true
+  [[ "$os" == win*phone ]] && local WINPHONE=true || local WINPHONE=false
   : ${Platform:=$arch}
   platform=$(tolower $Platform)
   MACHINE=$Platform
