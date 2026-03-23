@@ -54,6 +54,7 @@ DUP_OBJS=(libswscale/log2_tab.o libswresample/log2_tab.o libavcodec/log2_tab.o l
   libavformat/ffjni.o
   libavformat/bitstream.o
   libavformat/opus_frame_duration_tab.o # 8.x
+  libavformat/h2645_parse.o libavformat/lcevctab.o # 8.1
   libavutil/avutilres.o
   libavcodec/avcodecres.o
   libavcodec/half2float.o   # half2float.c is in libavutil, but not built into libavutil, always built in swscale
