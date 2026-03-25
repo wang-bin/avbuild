@@ -56,7 +56,7 @@ jobs:
           - config: lite
             target: visionOSSimulator
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Setup Xcode
       run: sudo xcode-select -s /Applications/Xcode_${{ vars.XCODE }}.app
     - name: Create Build Environment
@@ -77,7 +77,7 @@ jobs:
       shell: bash
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
@@ -88,7 +88,7 @@ jobs:
     env:
       TARGET_OS: 'wasm'
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Create Build Environment
       shell: bash
       env:
@@ -104,7 +104,7 @@ jobs:
       shell: bash
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}
         path: ffmpeg-*.tar.xz
@@ -121,7 +121,7 @@ jobs:
       matrix:
         config: [lite]
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: 'Restore sysroot cache'
       id: sysroot-cache
       uses: actions/cache@v4
@@ -145,7 +145,7 @@ jobs:
       shell: bash
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
@@ -165,7 +165,7 @@ jobs:
           - config: default
             target: uwp
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         submodules: 'recursive'
     - name: Create Build Environment
@@ -220,7 +220,7 @@ jobs:
         7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off -xr!*.pdb %SDK_NAME%.7z %SDK_NAME%
         7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off %SDK_NAME%-pdb.7z -ir!%SDK_NAME%\*.pdb
     - name: Archieve SDK
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-VS2026${{ matrix.config }}
         path: ffmpeg-*.7z
@@ -237,7 +237,7 @@ jobs:
         config: [lite,default]
         target: [windows-desktop]
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         submodules: 'recursive'
     - name: 'Restore dep cache'
@@ -305,7 +305,7 @@ jobs:
         7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off -xr!*.pdb %SDK_NAME%.7z %SDK_NAME%
         7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off %SDK_NAME%-pdb.7z -ir!%SDK_NAME%\*.pdb
     - name: Archieve SDK
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-VS2026ltl${{ matrix.config }}
         path: ffmpeg-*.7z
@@ -324,7 +324,7 @@ jobs:
       AMF_DIR: "/tmp/dep/include"
       CONFIG_SUFFIX: '-lavfilters'
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       if: ${{ env.FF_VERSION == 'master' }}
       with:
         submodules: 'recursive'
@@ -360,7 +360,7 @@ jobs:
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
       if: ${{ env.FF_VERSION == 'master' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-lavfilters
         path: ffmpeg-*.tar.xz
@@ -383,7 +383,7 @@ jobs:
         config: [lite]
         target: [windows-desktop]
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         submodules: 'recursive'
     - name: 'Restore sysroot cache'
@@ -413,7 +413,7 @@ jobs:
       shell: bash
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
@@ -434,7 +434,7 @@ jobs:
       matrix:
         config: [lite]
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         submodules: 'recursive'
     - name: 'Restore sysroot cache'
@@ -463,7 +463,7 @@ jobs:
       shell: bash
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}-vcrt120
         path: ffmpeg-*.tar.xz
@@ -482,7 +482,7 @@ jobs:
       matrix:
         config: [lite]
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         submodules: 'recursive'
     - name: Create Build Environment
@@ -499,7 +499,7 @@ jobs:
       shell: bash
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
@@ -517,7 +517,7 @@ jobs:
       matrix:
         config: [default,lite,lite-lto]
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         submodules: 'recursive'
     - name: 'Restore sysroot cache'
@@ -544,7 +544,7 @@ jobs:
       shell: bash
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
@@ -564,7 +564,7 @@ jobs:
       matrix:
         config: [lite]
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         submodules: 'recursive'
     - name: 'Restore sysroot cache'
@@ -591,7 +591,7 @@ jobs:
       shell: bash
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
@@ -606,7 +606,7 @@ jobs:
       matrix:
         config: [lite,lite-lto]
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: 'Restore sysroot cache'
       id: sysroot-cache
       uses: actions/cache@v4
@@ -639,13 +639,13 @@ jobs:
       shell: bash
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
 
   ohos:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     env:
       TARGET_OS: ohos
       CONFIG_SUFFIX: -${{ matrix.config }}
@@ -654,20 +654,20 @@ jobs:
       matrix:
         config: [lite,lite-lto]
     steps:
-    - uses: actions/checkout@v5
-    - name: Setup HarmonyOS CLI tools
-      uses: ErBWs/setup-ohos@v1
+    - uses: actions/checkout@v6
+    - name: Setup OpenHarmony SDK
+      id: setup-ohos-sdk
+      uses: openharmony-rs/setup-ohos-sdk@v1.0.0
       with:
-        version: latest
+        version: ${{ vars.OH_SDK_VERSION }}
         cache: true
-    - run: hvigorw -v
     - name: Create Build Environment
       shell: bash
       run: ./tools/ci-before-build.sh
     - name: Configure and Build
       shell: bash
       run: |
-        export OHOS_NDK=$OHOS_NDK_HOME/native
+        export OHOS_NDK=$OHOS_SDK_NATIVE
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export USER_OPT="--enable-wolfssl"
         ./avbuild.sh ${TARGET_OS}12 "arm64"
@@ -675,7 +675,7 @@ jobs:
       shell: bash
       run: ./tools/ci-after-build.sh
     - name: Archieve SDK
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-${{ env.TARGET_OS }}-${{ matrix.config }}
         path: ffmpeg-*.tar.xz
@@ -686,35 +686,35 @@ jobs:
     needs: [Apple]
     steps:
     - name: Download iOS
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-iOS-lite-lto
     - name: Download iOSSimulator
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-iOSSimulator-lite-lto
     - name: Download tvOS
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-tvOS-lite-lto
     - name: Download tvOSSimulator
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-tvOSSimulator-lite-lto
     - name: Download visionOS
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-visionOS-lite-lto
     - name: Download visionOSSimulator
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-visionOSSimulator-lite-lto
     - name: Download macOS
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-macOS-lite-lto
     - name: Download macCatalyst
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-macCatalyst-lite-lto
     - name: Gen FFmpeg.framework
@@ -746,7 +746,7 @@ jobs:
         cd out
         gtar Jcvf ../FFmpeg.xcframework-${{ env.FF_VERSION }}-lite.tar.xz *
     - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: FFmpeg.xcframework-${{ env.FF_VERSION }}-lite
         path: FFmpeg.xcframework-${{ env.FF_VERSION }}-lite.tar.xz
@@ -763,23 +763,23 @@ jobs:
     needs: [VS2026, VS2026LTL]
     steps:
     - name: Download vs2026 desktop
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2026default
     - name: Download vs2026 desktop lite
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2026lite
     - name: Download vs2026 LTL desktop lite
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2026ltllite
     - name: Download vs2026 LTL desktop
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-windows-desktop-VS2026ltldefault
     - name: Download vs2026 uwp lite
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: ffmpeg-${{ env.FF_VERSION }}-uwp-VS2026lite
     - name: Upload to SourceForge
