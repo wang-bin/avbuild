@@ -21,7 +21,7 @@ env:
 jobs:
   Apple:
     # See: https://docs.github.com/en/actions/configuring-and-managing-workflows/configuring-a-workflow#configuring-a-build-matrix
-    runs-on: macos-latest
+    runs-on: macos-26
     env:
       TARGET_OS: ${{ matrix.target }}
       CONFIG_SUFFIX: -${{ matrix.config }}
@@ -84,7 +84,7 @@ jobs:
 
   Wasm:
     if: false
-    runs-on: macos-latest
+    runs-on: macos-26
     env:
       TARGET_OS: 'wasm'
     steps:
@@ -597,7 +597,7 @@ jobs:
         path: ffmpeg-*.tar.xz
 
   Android:
-    runs-on: macos-latest
+    runs-on: macos-26
     env:
       TARGET_OS: android
       CONFIG_SUFFIX: -${{ matrix.config }}
@@ -645,7 +645,7 @@ jobs:
         path: ffmpeg-*.tar.xz
 
   ohos:
-    runs-on: macos-latest
+    runs-on: macos-26
     env:
       TARGET_OS: ohos
       CONFIG_SUFFIX: -${{ matrix.config }}
@@ -682,7 +682,7 @@ jobs:
 
 
   FFmpeg-xcframework:
-    runs-on: macos-latest
+    runs-on: macos-26
     needs: [Apple]
     steps:
     - name: Download iOS
