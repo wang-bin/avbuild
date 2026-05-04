@@ -1215,9 +1215,6 @@ setup_ios_env() {
   cat>>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
 export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/iOS$Simulator/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/iOS$Simulator/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
-  LIBWOLFSSL="${THIS_DIR}/tools/dep/iOS$Simulator/lib/libwolfssl.a"
-  cp -avf "$LIBWOLFSSL" $THIS_DIR/build_$INSTALL_DIR/libwolfssl.a
-  [ -f "$LIBWOLFSSL" ] && lipo -thin $IOS_ARCH "$LIBWOLFSSL" -output $THIS_DIR/build_$INSTALL_DIR/libwolfssl.a
 }
 
 setup_apple_env() {
@@ -1294,9 +1291,6 @@ setup_apple_env() {
   cat>>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
 export PKG_CONFIG_PATH=${THIS_DIR}/tools/dep/$OS$Simulator/lib/pkgconfig:${THIS_DIR}/tools/dep_gpl/$OS$Simulator/lib/pkgconfig:$PKG_CONFIG_PATH
 EOF
-  LIBWOLFSSL="${THIS_DIR}/tools/dep/$OS$Simulator/lib/libwolfssl.a"
-  cp -avf "$LIBWOLFSSL" $THIS_DIR/build_$INSTALL_DIR/libwolfssl.a
-  [ -f "$LIBWOLFSSL" ] && lipo -thin $OS_ARCH "$LIBWOLFSSL" -output $THIS_DIR/build_$INSTALL_DIR/libwolfssl.a
 }
 
 setup_macos_env(){
