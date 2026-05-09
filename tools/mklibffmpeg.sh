@@ -89,7 +89,10 @@ if [ -f "$BUILD_DIR/libavutil/half2float.o" -a -f "$BUILD_DIR/libswscale/half2fl
     DUP_OBJS+=(libswscale/half2float.o libavcodec/float2half.o)
 fi
 grep -q ffjni.c libavformat/file.d 2>/dev/null && DUP_OBJS+=(libavcodec/ffjni.o)
-OBJS=`find compat lib* -name "*.o" |grep -vE "$(join '|' ${DUP_OBJS[@]})"`
+printf -v excludes '%s'"|" "${DUP_OBJS[@]}"
+excludes=${excludes%|}
+excludes=$(echo "$excludes"  |sed 's,\.,\\.,g') # libavfilter/vulkan.o will exclude libavfilter/vulkan/*.o, so need to escape dot
+OBJS=`find compat lib* -name "*.o" |grep -vE "${excludes}"`
 # appveyor PATH value is very large, xargs gets error "environment is too large for exec", so use echo
 OBJS=$(echo -n $OBJS)
 MAJOR_GUESS=`cat libavutil/libavutil.version |grep MAJOR |cut -d '=' -f 2`
