@@ -1,29 +1,30 @@
-From c2f35c19acf7b42e527856fa82d9fd34360a1ce5 Mon Sep 17 00:00:00 2001
+From b3e7a31c7ae19e405de3bb167e6fb9254b0883d2 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 11 Jan 2022 16:17:56 +0800
-Subject: [PATCH 20/35] configure: rewrite flags from pkg-config for msvc in
+Subject: [PATCH 20/36] configure: rewrite flags from pkg-config for msvc in
  msys
 
 cflags and libs from pkg-config is unix path, e.g. /c/msys64, but msvc
 requires mixed form, e.g. c:/msys64
 ---
- configure | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ configure | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/configure b/configure
-index a8115c1950..60bd33175b 100755
+index 37b19eb587..b86bfb9611 100755
 --- a/configure
 +++ b/configure
-@@ -5031,7 +5031,8 @@ msvc_common_flags(){
+@@ -5215,8 +5215,8 @@ msvc_common_flags(){
              -libpath:*|-LIBPATH:*)echo $flag ;;
              -l*)                  echo ${flag#-l}.lib ;;
              -LARGEADDRESSAWARE)   echo $flag ;;
--            -L*) [ "$_flags_type" = "link" ] && echo -libpath:${flag#-L} ;;
-+            -L*) [ "$_flags_type" = "link" ] && ([ -n "$MSYSTEM" ] && (echo $flag |sed 's,-L\/\([a-zA-Z]\)\(\/.*\),-libpath:\1:\2,' -) || echo -libpath:${flag#-L}) ;;
-+            -I*)                  [ -n "$MSYSTEM" ] && (echo $flag |sed 's,-L\/\([a-zA-Z]\)\(\/.*\),-I\1:\2,' -) || echo $flag ;;
+-            -L*) [ "$_flags_type" != "link" ] || echo -libpath:${flag#-L} ;;
+-            -I*) [ "$_flags_type" = "link" ] || echo $flag ;;
++            -L*) [ "$_flags_type" != "link" ] || ([ -n "$MSYSTEM" ] && (echo $flag |sed 's,-L\/\([a-zA-Z]\)\(\/.*\),-libpath:\1:\2,' -) || echo -libpath:${flag#-L}) ;;
++            -I*) [ "$_flags_type" = "link" ] || ([ -n "$MSYSTEM" ] && (echo $flag |sed 's,-I\/\([a-zA-Z]\)\(\/.*\),-I\1:\2,' -) || echo $flag) ;;
              -Wl,*)                ;;
              *)                    echo $flag ;;
          esac
 -- 
-2.50.1 (Apple Git-155)
+2.53.0
 
