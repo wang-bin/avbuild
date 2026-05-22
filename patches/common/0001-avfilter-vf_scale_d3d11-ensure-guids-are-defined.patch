@@ -1,0 +1,25 @@
+From 26a11777ee2b7fd8d6ed616eb3db1968b11ca8aa Mon Sep 17 00:00:00 2001
+From: wangbin <wbsecg1@gmail.com>
+Date: Fri, 22 May 2026 13:30:45 +0800
+Subject: [PATCH] avfilter/vf_scale_d3d11: ensure guids are defined
+
+fix vf_scale_d3d11.o : error LNK2001: unresolved external symbol IID_ID3D11VideoContext
+---
+ libavfilter/vf_scale_d3d11.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/libavfilter/vf_scale_d3d11.c b/libavfilter/vf_scale_d3d11.c
+index c301f4a0c9..549aba547d 100644
+--- a/libavfilter/vf_scale_d3d11.c
++++ b/libavfilter/vf_scale_d3d11.c
+@@ -25,6 +25,7 @@
+ #include "libavutil/pixdesc.h"
+ #include "compat/w32dlfcn.h"
+ 
++#include <initguid.h>
+ #include "libavutil/hwcontext.h"
+ #include "libavutil/hwcontext_d3d11va.h"
+ 
+-- 
+2.53.0
+
