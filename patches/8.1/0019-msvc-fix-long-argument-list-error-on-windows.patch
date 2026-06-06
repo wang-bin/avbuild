@@ -1,0 +1,50 @@
+From 40c3b1e1410e3692db0178351fd0cf56135ac0e2 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Sat, 11 Dec 2021 18:08:43 +0800
+Subject: [PATCH 19/36] msvc: fix long argument list error on windows
+
+---
+ compat/windows/makedef |  4 +++-
+ compat/windows/mslink  | 11 ++++++++---
+ 2 files changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/compat/windows/makedef b/compat/windows/makedef
+index af42f08fd5..81326d6b39 100755
+--- a/compat/windows/makedef
++++ b/compat/windows/makedef
+@@ -54,7 +54,9 @@ else
+         machine_flag="-machine:arm64ec"
+         ;;
+     esac
+-    lib.exe ${machine_flag} -out:${libname} $@ >/dev/null
++    echo $@ >objs${libname}.txt
++    lib.exe ${machine_flag} -out:${libname} @objs${libname}.txt >/dev/null
++    rm objs${libname}.txt
+ fi
+ if [ $? != 0 ]; then
+     echo "Could not create temporary library." >&2
+diff --git a/compat/windows/mslink b/compat/windows/mslink
+index 6cab090071..d3202520cf 100755
+--- a/compat/windows/mslink
++++ b/compat/windows/mslink
+@@ -1,9 +1,14 @@
+ #!/bin/sh
+ 
++cmdlist=$(echo "$@"|md5sum |cut -d " " -f 1).txt # including all arguments
++echo $@>$cmdlist
++
+ LINK_EXE_PATH=$(dirname "$(command -v cl)")/link
+ if [ -x "$LINK_EXE_PATH" ]; then
+-    "$LINK_EXE_PATH" $@
++    "$LINK_EXE_PATH" @$cmdlist
+ else
+-    link.exe $@
++    link.exe @$cmdlist
+ fi
+-exit $?
++ret=$?
++rm -f $cmdlist
++exit $ret
+-- 
+2.50.1 (Apple Git-155)
+
