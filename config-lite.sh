@@ -13,7 +13,7 @@ DEMUX_OPT_MOBILE="--enable-demuxer=*sub*,sup,*ac3,*ac,*avs*,*[mj]peg*,*vc*,*web*
 ENC_OPT_MOBILE="--enable-encoder=*_at,aac,gif,h26[3-4]*,av1*,hevc*,mjpeg*,*png,opus,pcm*,prores*,rawvideo,spdif,speedhq,*png,vp[8-9]*,wrapped_avframe"
 MUX_OPT_MOBILE="--enable-muxer=mjpeg,fifo,flv,gif,hls,h264,hevc,image2,mov,mp4,mpegts,matroska,null,pcm*,rawvideo,rt*,spdif,*pipe,*segment,webm,wav"
 PROT_OPT_MOBILE="--enable-protocol=cache,concat*,crypto*,data,fd,*file,ftp,h*,i*,pipe,rt*,s*,t*,u*"
-FILTER_OPT_MOBILE="--enable-filter=*null*,afade,*fifo,*format,*resample,aeval,atempo,pan,crop,eq*,framerate,hw*,loudnorm,scale*,volume,yadif*,*movie,overlay,*_vulkan,_*vaapi,*_qsv,*_d3d*,*_vt"
+FILTER_OPT_MOBILE="--enable-filter=*null*,afade,*fifo,*format,*resample,aeval,atempo,pan,crop,eq*,framerate,hw*,loudnorm,scale*,volume,yadif*,*movie,overlay,*_vulkan,_*vaapi,*_qsv,*_d3d*,*_vt,tonemap* --disable-filter=[^h]*_cuda"
 PROT_OPT="${PROT_OPT_MOBILE}"
 DEC_OPT="${DEC_OPT_MOBILE},ffv*"                # vvc*
 DEMUX_OPT="${DEMUX_OPT_MOBILE},mlv,nsv,nut"     # vvc
