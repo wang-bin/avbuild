@@ -10,7 +10,7 @@ if not exist %MSYS2_DIR% set MSYS2_DIR=C:\msys64
 set CC_ARG=%1%
 set OS_ARG=%2%
 set ARCH_ARG=%3%
-set MSYSTEM=MSYS
+set MSYSTEM=MINGW64
 if /i [%CC_ARG%] == [gcc] (
 :: MSYSTEM MUST use upper case
   if /i [%OS_ARG%] == [mingw] set MSYSTEM=MINGW%ARCH_ARG%

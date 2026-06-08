@@ -52,6 +52,7 @@ export PATH=$PWD/tools/gas-preprocessor:$PATH
 : ${AMF_DIR:="$PWD/tools/dep/include"}
 test -f $AMF_DIR/AMF/core/Version.h || unset AMF_DIR
 
+which glslang
 # version_compare v1 "op" v2, e.g. version_compare 10.6 "<" 10.7
 version_compare(){
   local v1=$((${1%%.*}*100 + ${1##*.}))
@@ -65,6 +66,7 @@ echo FFSRC=$FFSRC
   cd $FFSRC
   export PATH=$PWD:$PATH # convert win path to unix path
   export PATH_EXTRA="$PWD:$PATH_EXTRA"
+  echo "PATH_EXTRA: $PATH_EXTRA"
   cd -
   echo "PATH: $PATH"
 } || {
@@ -711,7 +713,8 @@ setup_vc_env() {
   # msvc exes are used by script, so must be converted to posix paths
     PATH_arch=$(to_unix_path "$PATH_arch" |sed 's/\([a-zA-Z]\):/\/\1/g;s/\;/:/g;s/(/\\\(/g;s/)/\\\)/g;s/ /\\ /g')
   # PATH_arch is set before bash environment, so must manually add bash paths
-    echo "export PATH=$PATH_EXTRA:/usr/local/bin:/usr/bin:/bin:/opt/bin:$PATH_arch" >"$BDIR/.env.sh"
+  # add /mingw64/bin for glslang
+    echo "export PATH=$PATH_EXTRA:/mingw64/bin:/usr/local/bin:/usr/bin:/bin:/opt/bin:$PATH_arch" >"$BDIR/.env.sh"
   }
   [ -n "$LIB_arch" ] && echo "export LIB=$LIB_arch" >>"$BDIR/.env.sh"
   [ -n "$LIBPATH_arch" ] && echo "export LIBPATH=$LIBPATH_arch" >>"$BDIR/.env.sh"
@@ -1695,6 +1698,7 @@ config1(){
   [ -d "$BDIR" ] || BDIR=$THIS_DIR/build_$INSTALL_DIR
   mkdir -p $BDIR
   cd $BDIR
+  echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
   echo $CONFIGURE |tee config-new.txt
   echo $FFVERSION_FULL >>config-new.txt
   local reconf=true
@@ -1814,8 +1818,8 @@ EOF
   if [ -f bin/avutil.lib ]; then
     mv bin/*.lib lib
   fi
-  find lib -name "*.dylib" -type f -exec dsymutil {} \;
-  find lib -name "*.dylib" -type f -exec strip -u -r {} \; # will strip exported symbols, llvm-strip can reduce size more
+  #find lib -name "*.dylib" -type f -exec dsymutil {} \;
+  #find lib -name "*.dylib" -type f -exec strip -u -r {} \; # will strip exported symbols, llvm-strip can reduce size more
 }
 
 build_all(){

@@ -187,6 +187,11 @@ jobs:
           nasm
           yasm
           mingw-w64-x86_64-glslang
+    - name: Run glslang
+      shell: msys2 {0}
+      run: |
+        which glslang
+        glslang --version
     - name: Install dev packages
       shell: bash
       run: |
