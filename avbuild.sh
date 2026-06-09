@@ -711,7 +711,8 @@ setup_vc_env() {
   # msvc exes are used by script, so must be converted to posix paths
     PATH_arch=$(to_unix_path "$PATH_arch" |sed 's/\([a-zA-Z]\):/\/\1/g;s/\;/:/g;s/(/\\\(/g;s/)/\\\)/g;s/ /\\ /g')
   # PATH_arch is set before bash environment, so must manually add bash paths
-    echo "export PATH=$PATH_EXTRA:/usr/local/bin:/usr/bin:/bin:/opt/bin:$PATH_arch" >"$BDIR/.env.sh"
+  # add /mingw64/bin for glslang. /c/mingw64/bin is in PATH_arch but not recognized
+    echo "export PATH=$PATH_EXTRA:/mingw64/bin:/usr/local/bin:/usr/bin:/bin:/opt/bin:$PATH_arch" >"$BDIR/.env.sh"
   }
   [ -n "$LIB_arch" ] && echo "export LIB=$LIB_arch" >>"$BDIR/.env.sh"
   [ -n "$LIBPATH_arch" ] && echo "export LIBPATH=$LIBPATH_arch" >>"$BDIR/.env.sh"
