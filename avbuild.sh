@@ -643,7 +643,9 @@ setup_vc_env() {
     EXTRA_LDFLAGS+=" -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
   fi
   # TODO: disable Zi for arm(C1033)
-  EXTRA_CFLAGS+=" -Zi -FS -guard:cf" # /Zi: https://scc.ustc.edu.cn/zlsc/tc4600/intel/2017.0.098/compiler_f/common/core/GUID-CA811CC8-A2C1-4DFF-AC39-DF7E1EEAF30E.html
+  EXTRA_CFLAGS+=" -FS -guard:cf"
+  # FIXME: -Zi: failed when building ffv1_enc_*.comp.spv.c. libavcodec/vulkan/ffv1_enc_setup.comp.spv.c: fatal error C1033: cannot open program database 'D:\a\avbuild\avbuild\build_sdk-vc-x64-clvs2026\vc140.pdb'
+  # EXTRA_CFLAGS+=" -Zi" # /Zi: https://scc.ustc.edu.cn/zlsc/tc4600/intel/2017.0.098/compiler_f/common/core/GUID-CA811CC8-A2C1-4DFF-AC39-DF7E1EEAF30E.html
   EXTRA_LDFLAGS+=" -DEBUG -guard:cf -OPT:REF -SUBSYSTEM:CONSOLE"
   TOOLCHAIN_OPT+=" --toolchain=msvc"
   VS_VER=${VisualStudioVersion:0:2}
