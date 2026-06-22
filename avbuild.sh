@@ -110,8 +110,9 @@ PATCH_BRANCH=master
 [ $FFMAJOR -lt 5 ] && PATCH_BRANCH=4.4
 [ $FFMAJOR -eq 5 ] && PATCH_BRANCH=5.1
 [ $FFMAJOR -eq 6 ] && PATCH_BRANCH=6.$FFMINOR
-[ $FFMAJOR -eq 7 ] && {
-    $FFGIT || PATCH_BRANCH=7.$FFMINOR
+[ $FFMAJOR -eq 7 ] && PATCH_BRANCH=7.$FFMINOR
+[ $FFMAJOR -eq 8 ] && {
+    $FFGIT || PATCH_BRANCH=8.$FFMINOR
 }
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR  git: $FFGIT. patch set version: $PATCH_BRANCH"
 USE_VK=$FFGIT
@@ -641,6 +642,7 @@ setup_vc_env() {
     EXTRA_CFLAGS+=" -MD"
     EXTRA_LDFLAGS+=" -NODEFAULTLIB:libcmt" #-NODEFAULTLIB:libcmt -winmd?
   fi
+  # TODO: disable Zi for arm(C1033)
   EXTRA_CFLAGS+=" -Zi -FS -guard:cf" # /Zi: https://scc.ustc.edu.cn/zlsc/tc4600/intel/2017.0.098/compiler_f/common/core/GUID-CA811CC8-A2C1-4DFF-AC39-DF7E1EEAF30E.html
   EXTRA_LDFLAGS+=" -DEBUG -guard:cf -OPT:REF -SUBSYSTEM:CONSOLE"
   TOOLCHAIN_OPT+=" --toolchain=msvc"
