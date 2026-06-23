@@ -518,8 +518,10 @@ setup_win_clang(){
   # FIXME: clang armv7 does not support as_fpu_directive, and the alternative '@ .fpu neon' is not supported by --target=arm-pc-windows-msvc does not support
     arch=$platform
     #  --as='clang -target aarch64-win32-gnu' --cc='clang -target aarch64-win32-msvc' : https://fate.libav.org/aarch64-win32-clang-6.0/20190219163918
-    [ -z "${platform/*64*/}" ] ||  MACHINE=arm
-    HAS_CUDA=false
+    [ -z "${platform/*64*/}" ] ||  {
+      MACHINE=arm
+      HAS_CUDA=false
+    }
     LTL_Platform=$(toupper $MACHINE)
   elif [ -z "${Platform/*64/}" ]; then
     arch=x86_64
@@ -656,7 +658,7 @@ setup_vc_env() {
 
   FAMILY=
   local HAS_CUDA=true
-  [ "${platform:0:3}" = "arm" ] && HAS_CUDA=false
+  [ "${platform:0:3}" = "arm" ] && [ -n "${Platform/*64/}" ] && HAS_CUDA=false
   if ${WINRT:-false}; then
     [ -z "$osver" ] && osver=winrt
     setup_vc_winrt_env $arch
