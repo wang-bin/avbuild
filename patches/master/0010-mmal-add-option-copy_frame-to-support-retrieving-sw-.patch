@@ -1,4 +1,4 @@
-From d0204fc2f63198788de5318e18da4d96a2148a2b Mon Sep 17 00:00:00 2001
+From eab19d85ac7dde26475c0ea3ec5a4c37cf8f0556 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 17 Nov 2017 14:54:23 +0800
 Subject: [PATCH 10/35] mmal: add option copy_frame to support retrieving sw
@@ -79,5 +79,5 @@ index 338fd33c9f..8d81d3ada7 100644
  };
  
 -- 
-2.50.1 (Apple Git-155)
+2.53.0
 

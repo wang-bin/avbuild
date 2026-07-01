@@ -1,7 +1,7 @@
-From d6fe93078b7dc04a83c34eab10ba9464b712895a Mon Sep 17 00:00:00 2001
+From a43c3ac13759de5f4f338008b10549de1a6ea191 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 30 Mar 2025 12:33:12 +0800
-Subject: [PATCH 32/35] add h265-bit-depths
+Subject: [PATCH 31/35] add h265-bit-depths
 
 9bit is rarely used, even not supported by x265
 ---
@@ -11,10 +11,10 @@ Subject: [PATCH 32/35] add h265-bit-depths
  3 files changed, 37 insertions(+)
 
 diff --git a/configure b/configure
-index 9a54c2649d..907a83e883 100755
+index 261fc2f7db..428015630e 100755
 --- a/configure
 +++ b/configure
-@@ -452,6 +452,7 @@ Advanced options (experts only):
+@@ -454,6 +454,7 @@ Advanced options (experts only):
                              should only be used with trusted input)
    --sws-max-filter-size=N  the max filter size swscale uses [$sws_max_filter_size_default]
    --h264-max-bit-depth=N   the max h264 decoding bit depth [$h264_max_bit_depth_default]
@@ -22,7 +22,7 @@ index 9a54c2649d..907a83e883 100755
  
  Optimization options (experts only):
    --disable-asm            disable all assembly optimizations
-@@ -2774,6 +2775,7 @@ CMDLINE_SET="
+@@ -2920,6 +2921,7 @@ CMDLINE_SET="
      extra_version
      gas
      h264_max_bit_depth
@@ -30,7 +30,7 @@ index 9a54c2649d..907a83e883 100755
      host_cc
      host_cflags
      host_extralibs
-@@ -4324,6 +4326,9 @@ set_default sws_max_filter_size
+@@ -4496,6 +4498,9 @@ set_default sws_max_filter_size
  h264_max_bit_depth_default=10
  set_default h264_max_bit_depth
  
@@ -40,7 +40,7 @@ index 9a54c2649d..907a83e883 100755
  # internal components are enabled by default
  enable $EXTRALIBS_LIST
  
-@@ -8548,6 +8553,10 @@ cat > $TMPH <<EOF
+@@ -8846,6 +8851,10 @@ cat > $TMPH <<EOF
  #define H264_MAX_BIT_DEPTH $h264_max_bit_depth
  EOF
  
@@ -108,7 +108,7 @@ index 5ae779f9f7..e6bc0e918c 100644
          HEVC_DSP(8);
          break;
 diff --git a/libavcodec/hevc/pred.c b/libavcodec/hevc/pred.c
-index 8d588382fa..78d3e12155 100644
+index 037cbc413f..386a755f3e 100644
 --- a/libavcodec/hevc/pred.c
 +++ b/libavcodec/hevc/pred.c
 @@ -24,21 +24,29 @@
@@ -117,32 +117,32 @@ index 8d588382fa..78d3e12155 100644
  
 +#if (H265_BIT_DEPTH_8 + 0)
  #define BIT_DEPTH 8
- #include "pred_template.c"
+ #include "libavcodec/hevc/pred_template.c"
  #undef BIT_DEPTH
 +#endif
  
 +#if (H265_BIT_DEPTH_9 + 0)
  #define BIT_DEPTH 9
- #include "pred_template.c"
+ #include "libavcodec/hevc/pred_template.c"
  #undef BIT_DEPTH
 +#endif
  
 +#if (H265_BIT_DEPTH_10 + 0)
  #define BIT_DEPTH 10
- #include "pred_template.c"
+ #include "libavcodec/hevc/pred_template.c"
  #undef BIT_DEPTH
 +#endif
  
 +#if (H265_BIT_DEPTH_12 + 0)
  #define BIT_DEPTH 12
- #include "pred_template.c"
+ #include "libavcodec/hevc/pred_template.c"
  #undef BIT_DEPTH
 +#endif
  
  void ff_hevc_pred_init(HEVCPredContext *hpc, int bit_depth)
  {
-@@ -61,15 +69,21 @@ void ff_hevc_pred_init(HEVCPredContext *hpc, int bit_depth)
-     hpc->pred_angular[3] = FUNC(pred_angular_3, depth);
+@@ -65,15 +73,21 @@ void ff_hevc_pred_init(HEVCPredContext *hpc, int bit_depth)
+     hpc->ref_filter_strong  = FUNC(ref_filter_strong, depth);
  
      switch (bit_depth) {
 +#if (H265_BIT_DEPTH_9 + 0)
@@ -164,5 +164,5 @@ index 8d588382fa..78d3e12155 100644
          HEVC_PRED(8);
          break;
 -- 
-2.50.1 (Apple Git-155)
+2.53.0
 

@@ -1,7 +1,7 @@
-From 559594c20ce395b9a2efc477597378d043d8442e Mon Sep 17 00:00:00 2001
+From b5d6e963cff741d617822d0cd7f68dfb2996cc99 Mon Sep 17 00:00:00 2001
 From: wangbin <wbsecg1@gmail.com>
 Date: Wed, 27 Aug 2025 11:16:40 +0800
-Subject: [PATCH 34/35] nvenc: support all versions in 1 build
+Subject: [PATCH 33/35] nvenc: support all versions in 1 build
 
 some options have version dependent values, e.g. rc and preset
 ---
@@ -11,32 +11,30 @@ some options have version dependent values, e.g. rc and preset
  libavcodec/nvenc_111.c      |  27 +++++
  libavcodec/nvenc_120.c      |  27 +++++
  libavcodec/nvenc_121.c      |  27 +++++
- libavcodec/nvenc_91.c       |  27 +++++
- libavcodec/nvenc_dispatch.c | 214 ++++++++++++++++++++++++++++++++++++
- 8 files changed, 343 insertions(+), 7 deletions(-)
+ libavcodec/nvenc_dispatch.c | 195 ++++++++++++++++++++++++++++++++++++
+ 7 files changed, 297 insertions(+), 7 deletions(-)
  create mode 100644 libavcodec/nvenc_111.c
  create mode 100644 libavcodec/nvenc_120.c
  create mode 100644 libavcodec/nvenc_121.c
- create mode 100644 libavcodec/nvenc_91.c
  create mode 100644 libavcodec/nvenc_dispatch.c
 
 diff --git a/libavcodec/Makefile b/libavcodec/Makefile
-index 28ad85afb4..b0082f1518 100644
+index 95ba308504..693c01fb5f 100644
 --- a/libavcodec/Makefile
 +++ b/libavcodec/Makefile
-@@ -277,6 +277,7 @@ OBJS-$(CONFIG_AV1_D3D12VA_ENCODER)     += d3d12va_encode_av1.o av1_levels.o
+@@ -278,6 +278,7 @@ OBJS-$(CONFIG_AV1_D3D12VA_ENCODER)     += d3d12va_encode_av1.o av1_levels.o
  OBJS-$(CONFIG_AV1_MEDIACODEC_DECODER)  += mediacodecdec.o
  OBJS-$(CONFIG_AV1_MEDIACODEC_ENCODER)  += mediacodecenc.o
  OBJS-$(CONFIG_AV1_NVENC_ENCODER)       += nvenc_av1.o nvenc.o
-+OBJS-$(CONFIG_AV1_NVENC_ENCODER)       += nvenc_dispatch.o nvenc_91.o nvenc_111.o nvenc_120.o nvenc_121.o
++OBJS-$(CONFIG_AV1_NVENC_ENCODER)       += nvenc_dispatch.o nvenc_111.o nvenc_120.o nvenc_121.o
  OBJS-$(CONFIG_AV1_QSV_ENCODER)         += qsvenc_av1.o
  OBJS-$(CONFIG_AV1_VAAPI_ENCODER)       += vaapi_encode_av1.o av1_levels.o
  OBJS-$(CONFIG_AV1_VULKAN_ENCODER)      += vulkan_encode.o vulkan_encode_av1.o \
 diff --git a/libavcodec/nvenc.c b/libavcodec/nvenc.c
-index 619a4ddd9c..333e428441 100644
+index 3a5deee060..2a41794edd 100644
 --- a/libavcodec/nvenc.c
 +++ b/libavcodec/nvenc.c
-@@ -44,6 +44,10 @@
+@@ -44,12 +44,17 @@
  #include "encode.h"
  #include "internal.h"
  
@@ -47,23 +45,22 @@ index 619a4ddd9c..333e428441 100644
  #define CHECK_CU(x) FF_CUDA_CHECK_DL(avctx, dl_fn->cuda_dl, x)
  
  #define NVENC_CAP 0x30
-@@ -56,6 +60,7 @@
+ 
  #define IS_CBR(rc) (rc == NV_ENC_PARAMS_RC_CBR)
- #endif
  
 +#ifndef FF_NVENC_DUP
  const enum AVPixelFormat ff_nvenc_pix_fmts[] = {
      AV_PIX_FMT_YUV420P,
      AV_PIX_FMT_NV12,
-@@ -94,6 +99,7 @@ const AVCodecHWConfigInternal *const ff_nvenc_hw_configs[] = {
+@@ -91,6 +96,7 @@ const AVCodecHWConfigInternal *const ff_nvenc_hw_configs[] = {
  #endif
      NULL,
  };
 +#endif // FF_NVENC_DUP
  
  #define IS_10BIT(pix_fmt)  (pix_fmt == AV_PIX_FMT_P010         || \
-                             pix_fmt == AV_PIX_FMT_P016         || \
-@@ -429,14 +435,16 @@ static av_cold int nvenc_load_libraries(AVCodecContext *avctx)
+                             pix_fmt == AV_PIX_FMT_P012         || \
+@@ -361,14 +367,16 @@ static av_cold int nvenc_load_libraries(AVCodecContext *avctx)
      func_ver = struct_ver_rt(ctx, 2);
      av_log(avctx, AV_LOG_INFO, "Loaded Nvenc version %u.%u, max: %u.%u, build api: %u.%u. config_ver: %u\n", ctx->apiver_rt & 0xff, (ctx->apiver_rt >> 24) & 0xff, nvenc_max_major, nvenc_max_minor, NVENCAPI_MAJOR_VERSION, NVENCAPI_MINOR_VERSION, config_ver);
  
@@ -81,7 +78,7 @@ index 619a4ddd9c..333e428441 100644
      dl_fn->nvenc_funcs.version = func_ver;
  
      err = dl_fn->nvenc_dl->NvEncodeAPICreateInstance(&dl_fn->nvenc_funcs);
-@@ -2235,7 +2243,8 @@ static av_cold int nvenc_setup_extradata(AVCodecContext *avctx)
+@@ -2074,7 +2082,8 @@ static av_cold int nvenc_setup_extradata(AVCodecContext *avctx)
      return 0;
  }
  
@@ -91,7 +88,7 @@ index 619a4ddd9c..333e428441 100644
  {
      NvencContext *ctx               = avctx->priv_data;
      NvencDynLoadFunctions *dl_fn = &ctx->nvenc_dload_funcs;
-@@ -2323,7 +2332,8 @@ av_cold int ff_nvenc_encode_close(AVCodecContext *avctx)
+@@ -2162,7 +2171,8 @@ av_cold int ff_nvenc_encode_close(AVCodecContext *avctx)
      return 0;
  }
  
@@ -101,7 +98,7 @@ index 619a4ddd9c..333e428441 100644
  {
      NvencContext *ctx = avctx->priv_data;
      int ret;
-@@ -3364,7 +3374,8 @@ static int nvenc_send_frame(AVCodecContext *avctx, const AVFrame *frame)
+@@ -3209,7 +3219,8 @@ static int nvenc_send_frame(AVCodecContext *avctx, const AVFrame *frame)
      return 0;
  }
  
@@ -111,7 +108,7 @@ index 619a4ddd9c..333e428441 100644
  {
      NvencSurface *tmp_out_surf;
      int res, res2;
-@@ -3415,7 +3426,8 @@ int ff_nvenc_receive_packet(AVCodecContext *avctx, AVPacket *pkt)
+@@ -3260,7 +3271,8 @@ int ff_nvenc_receive_packet(AVCodecContext *avctx, AVPacket *pkt)
      return 0;
  }
  
@@ -122,10 +119,10 @@ index 619a4ddd9c..333e428441 100644
      NvencContext *ctx = avctx->priv_data;
  
 diff --git a/libavcodec/nvenc.h b/libavcodec/nvenc.h
-index 886fcb95c6..b57937f67b 100644
+index 9cc188bacb..09a757802b 100644
 --- a/libavcodec/nvenc.h
 +++ b/libavcodec/nvenc.h
-@@ -217,8 +217,6 @@ typedef struct NvencContext
+@@ -174,8 +174,6 @@ typedef struct NvencContext
  
      NvencDynLoadFunctions nvenc_dload_funcs;
  
@@ -134,7 +131,7 @@ index 886fcb95c6..b57937f67b 100644
      CUcontext cu_context;
      CUcontext cu_context_internal;
      CUstream cu_stream;
-@@ -324,6 +322,9 @@ typedef struct NvencContext
+@@ -279,6 +277,9 @@ typedef struct NvencContext
      int cbr_padding;
      int multiview, multiview_supported;
      int display_sei_sent;
@@ -246,46 +243,12 @@ index 0000000000..4f622b536f
 +#include "nvenc.c"
 +#endif
 \ No newline at end of file
-diff --git a/libavcodec/nvenc_91.c b/libavcodec/nvenc_91.c
-new file mode 100644
-index 0000000000..b25faef45e
---- /dev/null
-+++ b/libavcodec/nvenc_91.c
-@@ -0,0 +1,27 @@
-+/*
-+ * H.264/HEVC/AV1 hardware encoding using nvidia nvenc
-+ * Copyright (c) 2025 Wang Bin <wbsecg1 at gmail.com>
-+ *
-+ * This file is part of FFmpeg.
-+ *
-+ * FFmpeg is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU Lesser General Public
-+ * License as published by the Free Software Foundation; either
-+ * version 2.1 of the License, or (at your option) any later version.
-+ *
-+ * FFmpeg is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * Lesser General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU Lesser General Public
-+ * License along with FFmpeg; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
-+ */
-+
-+// include a desired version of nvEncodeAPI.h first, so nvEncodeAPI.h included in nvenc.h will be ignored
-+#define FF_NVENC_DUP 1
-+#if __has_include(<nv-codec-headers-9.1/include/ffnvcodec/nvEncodeAPI.h>)
-+#include <nv-codec-headers-9.1/include/ffnvcodec/nvEncodeAPI.h>
-+#include "nvenc.c"
-+#endif
-\ No newline at end of file
 diff --git a/libavcodec/nvenc_dispatch.c b/libavcodec/nvenc_dispatch.c
 new file mode 100644
-index 0000000000..9143753dce
+index 0000000000..050aad4186
 --- /dev/null
 +++ b/libavcodec/nvenc_dispatch.c
-@@ -0,0 +1,214 @@
+@@ -0,0 +1,195 @@
 +/*
 + * H.264/HEVC/AV1 hardware encoding using nvidia nvenc
 + * Copyright (c) 2025 Wang Bin <wbsecg1 at gmail.com>
@@ -324,10 +287,10 @@ index 0000000000..9143753dce
 + for version < 10.0 is required.
 + TODO: This dispatch file(at least version suffix) and other versioned nvenc_*.c should be generated by a script.
 +*/
-+int ff_nvenc_encode_init130(AVCodecContext *avctx);
-+int ff_nvenc_encode_close130(AVCodecContext *avctx);
-+int ff_nvenc_receive_packet130(AVCodecContext *avctx, AVPacket *pkt);
-+void ff_nvenc_encode_flush130(AVCodecContext *avctx);
++int ff_nvenc_encode_init131(AVCodecContext *avctx);
++int ff_nvenc_encode_close131(AVCodecContext *avctx);
++int ff_nvenc_receive_packet131(AVCodecContext *avctx, AVPacket *pkt);
++void ff_nvenc_encode_flush131(AVCodecContext *avctx);
 +
 +int ff_nvenc_encode_init121(AVCodecContext *avctx);
 +int ff_nvenc_encode_close121(AVCodecContext *avctx);
@@ -343,11 +306,6 @@ index 0000000000..9143753dce
 +int ff_nvenc_encode_close111(AVCodecContext *avctx);
 +int ff_nvenc_receive_packet111(AVCodecContext *avctx, AVPacket *pkt);
 +void ff_nvenc_encode_flush111(AVCodecContext *avctx);
-+
-+int ff_nvenc_encode_init91(AVCodecContext *avctx);
-+int ff_nvenc_encode_close91(AVCodecContext *avctx);
-+int ff_nvenc_receive_packet91(AVCodecContext *avctx, AVPacket *pkt);
-+void ff_nvenc_encode_flush91(AVCodecContext *avctx);
 +
 +#if !__has_include(<nv-codec-headers-12.1/include/ffnvcodec/nvEncodeAPI.h>)
 +av_cold int ff_nvenc_encode_init121(AVCodecContext *avctx) { return AVERROR_EXTERNAL; }
@@ -370,13 +328,6 @@ index 0000000000..9143753dce
 +av_cold void ff_nvenc_encode_flush111(AVCodecContext *avctx) {}
 +#endif
 +
-+#if !__has_include(<nv-codec-headers-9.1/include/ffnvcodec/nvEncodeAPI.h>)
-+av_cold int ff_nvenc_encode_init91(AVCodecContext *avctx) { return AVERROR_EXTERNAL; }
-+av_cold int ff_nvenc_encode_close91(AVCodecContext *avctx) { return AVERROR_EXTERNAL; }
-+int ff_nvenc_receive_packet91(AVCodecContext *avctx, AVPacket *pkt) { return AVERROR_EXTERNAL; }
-+av_cold void ff_nvenc_encode_flush91(AVCodecContext *avctx) {}
-+#endif
-+
 +static const char* nvenc_driver_requirement(float api)
 +{
 +    const struct {
@@ -384,7 +335,8 @@ index 0000000000..9143753dce
 +        const char* win;
 +        const  char* linux;
 +    } requirements[] = {
-+        {13.1f, "(unknown)", "(unknown)"},
++        {13.2f, "(unknown)", "(unknown)"},
++        {13.1f, "610.00", "610.00"},
 +        {13.0f, "570.0", "570.0"},
 +        {12.2f, "551.76", "550.54.14"},
 +        {12.1f, "531.61", "530.41.03"},
@@ -449,58 +401,50 @@ index 0000000000..9143753dce
 +    nvenc_load_api(avctx); // don't return error, a future version may be supported
 +    NvencContext *ctx = avctx->priv_data;
 +    if (ctx->apiver_req >= 12.2f)
-+        return ff_nvenc_encode_init130(avctx);
++        return ff_nvenc_encode_init131(avctx);
 +    if (ctx->apiver_req >= 12.1f)
 +        return ff_nvenc_encode_init121(avctx);
 +    if (ctx->apiver_req >= 12.0f)
 +        return ff_nvenc_encode_init120(avctx);
-+    if (ctx->apiver_req >= 10.0f) // preset changes
-+        return ff_nvenc_encode_init111(avctx);
-+    return ff_nvenc_encode_init91(avctx);
++    return ff_nvenc_encode_init111(avctx);
 +}
 +
 +av_cold int ff_nvenc_encode_close(AVCodecContext *avctx)
 +{
 +    NvencContext *ctx = avctx->priv_data;
 +    if (ctx->apiver_req >= 12.2f)
-+        return ff_nvenc_encode_close130(avctx);
++        return ff_nvenc_encode_close131(avctx);
 +    if (ctx->apiver_req >= 12.1f)
 +        return ff_nvenc_encode_close121(avctx);
 +    if (ctx->apiver_req >= 12.0f)
 +        return ff_nvenc_encode_close120(avctx);
-+    if (ctx->apiver_req >= 10.0f) // preset changes
-+        return ff_nvenc_encode_close111(avctx);
-+    return ff_nvenc_encode_close91(avctx);
++    return ff_nvenc_encode_close111(avctx);
 +}
 +
 +int ff_nvenc_receive_packet(AVCodecContext *avctx, AVPacket *pkt)
 +{
 +    NvencContext *ctx = avctx->priv_data;
 +    if (ctx->apiver_req >= 12.2f)
-+        return ff_nvenc_receive_packet130(avctx, pkt);
++        return ff_nvenc_receive_packet131(avctx, pkt);
 +    if (ctx->apiver_req >= 12.1f)
 +        return ff_nvenc_receive_packet121(avctx, pkt);
 +    if (ctx->apiver_req >= 12.0f)
 +        return ff_nvenc_receive_packet120(avctx, pkt);
-+    if (ctx->apiver_req >= 10.0f) // preset changes
-+        return ff_nvenc_receive_packet111(avctx, pkt);
-+    return ff_nvenc_receive_packet91(avctx, pkt);
++    return ff_nvenc_receive_packet111(avctx, pkt);
 +}
 +
 +av_cold void ff_nvenc_encode_flush(AVCodecContext *avctx)
 +{
 +    NvencContext *ctx = avctx->priv_data;
 +    if (ctx->apiver_req >= 12.2f)
-+        return ff_nvenc_encode_flush130(avctx);
++        return ff_nvenc_encode_flush131(avctx);
 +    if (ctx->apiver_req >= 12.1f)
 +        return ff_nvenc_encode_flush121(avctx);
 +    if (ctx->apiver_req >= 12.0f)
 +        return ff_nvenc_encode_flush120(avctx);
-+    if (ctx->apiver_req >= 10.0f) // preset changes
-+        return ff_nvenc_encode_flush111(avctx);
-+    ff_nvenc_encode_flush91(avctx);
++    return ff_nvenc_encode_flush111(avctx);
 +}
 \ No newline at end of file
 -- 
-2.50.1 (Apple Git-155)
+2.53.0
 

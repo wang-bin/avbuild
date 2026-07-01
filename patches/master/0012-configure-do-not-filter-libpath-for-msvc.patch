@@ -1,14 +1,14 @@
-From 2ea8c56cf573c2990f7f5acf54aaff7fa6d6e057 Mon Sep 17 00:00:00 2001
+From dfe07fc1c45c9197ae47cea55800c7c95ef3154a Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 30 Mar 2018 10:46:43 +0800
-Subject: [PATCH 12/36] configure: do not filter -libpath for msvc
+Subject: [PATCH 12/35] configure: do not filter -libpath for msvc
 
 ---
  configure | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/configure b/configure
-index be1447aafb..511bf0bd11 100755
+index 748b641c3c..8fb554461d 100755
 --- a/configure
 +++ b/configure
 @@ -5212,6 +5212,7 @@ msvc_common_flags(){

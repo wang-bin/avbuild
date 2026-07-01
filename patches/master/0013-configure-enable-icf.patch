@@ -1,26 +1,27 @@
-From e0bab3b77ec033c174aa7d1c2a486eed8fe14c2e Mon Sep 17 00:00:00 2001
+From 24169a28255e41d7e034ebec3c551712b375744e Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 11 Sep 2018 23:16:49 +0800
 Subject: [PATCH 13/35] configure: enable icf
 
 ---
- configure | 3 +++
- 1 file changed, 3 insertions(+)
+ configure | 4 ++++
+ 1 file changed, 4 insertions(+)
 
 diff --git a/configure b/configure
-index 6ce252f84f..aaa00c1a61 100755
+index 8fb554461d..8ada8bb0c6 100755
 --- a/configure
 +++ b/configure
-@@ -7835,6 +7835,9 @@ test_cc -mno-red-zone <<EOF && noredzone_flags="-mno-red-zone"
- int x;
- EOF
+@@ -8114,6 +8114,10 @@ fi
+ 
+ enabled ftrapv && check_cflags -ftrapv
  
 +check_ldflags --icf=safe || check_ldflags -Wl,--icf=safe || { # ld or clang7 + lld
 +    check_cflags -faddrsig && (check_ldflags --icf=all || check_ldflags -Wl,--icf=all)
 +}
- 
++
  if enabled icc; then
      # Just warnings, no remarks
+     check_allcflags -w1
 -- 
-2.50.1 (Apple Git-155)
+2.53.0
 

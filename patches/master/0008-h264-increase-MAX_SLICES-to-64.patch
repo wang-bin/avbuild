@@ -1,4 +1,4 @@
-From e47731c7db49a55a47f46404179cd0e897f10fa8 Mon Sep 17 00:00:00 2001
+From 877f520ac4bcf07b2dbf9c9a57d4c03dadc65521 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 13 Nov 2017 12:23:10 +0800
 Subject: [PATCH 08/35] h264: increase MAX_SLICES to 64
@@ -23,5 +23,5 @@ index 74fd09dfaa..d749c5a13d 100644
  #ifdef ALLOW_INTERLACE
  #define MB_MBAFF(h)    (h)->mb_mbaff
 -- 
-2.50.1 (Apple Git-155)
+2.53.0
 

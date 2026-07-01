@@ -1,4 +1,4 @@
-From e91449ae2e7830ba34b75fba5e10dbedfdecb2ee Mon Sep 17 00:00:00 2001
+From 75757994fee9021b10d411330993bb9c08a180f8 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 9 Nov 2017 14:56:53 +0800
 Subject: [PATCH 06/35] avcodec: add AV_HWACCEL_FLAG_ALLOW_SOFTWARE
@@ -11,10 +11,10 @@ the performance may be better than ffmpeg sw decoder.
  2 files changed, 5 insertions(+)
 
 diff --git a/libavcodec/avcodec.h b/libavcodec/avcodec.h
-index 1a8f77af82..35c945ca2f 100644
+index 6bce0d388d..b47a4f99a4 100644
 --- a/libavcodec/avcodec.h
 +++ b/libavcodec/avcodec.h
-@@ -2036,6 +2036,10 @@ typedef struct AVHWAccel {
+@@ -2033,6 +2033,10 @@ typedef struct AVHWAccel {
   */
  #define AV_HWACCEL_FLAG_UNSAFE_OUTPUT (1 << 3)
  
@@ -26,10 +26,10 @@ index 1a8f77af82..35c945ca2f 100644
   * @}
   */
 diff --git a/libavcodec/options_table.h b/libavcodec/options_table.h
-index 8567451919..e21e9a5980 100644
+index a16fc84df4..667564d97b 100644
 --- a/libavcodec/options_table.h
 +++ b/libavcodec/options_table.h
-@@ -399,6 +399,7 @@ static const AVOption avcodec_options[] = {
+@@ -404,6 +404,7 @@ static const AVOption avcodec_options[] = {
  {"allow_high_depth", "allow to output YUV pixel formats with a different chroma sampling than 4:2:0 and/or other than 8 bits per component", 0, AV_OPT_TYPE_CONST, {.i64 = AV_HWACCEL_FLAG_ALLOW_HIGH_DEPTH }, INT_MIN, INT_MAX, V | D, .unit = "hwaccel_flags"},
  {"allow_profile_mismatch", "attempt to decode anyway if HW accelerated decoder's supported profiles do not exactly match the stream", 0, AV_OPT_TYPE_CONST, {.i64 = AV_HWACCEL_FLAG_ALLOW_PROFILE_MISMATCH }, INT_MIN, INT_MAX, V | D, .unit = "hwaccel_flags"},
  {"unsafe_output", "allow potentially unsafe hwaccel frame output that might require special care to process successfully", 0, AV_OPT_TYPE_CONST, {.i64 = AV_HWACCEL_FLAG_UNSAFE_OUTPUT }, INT_MIN, INT_MAX, V | D, .unit = "hwaccel_flags"},
@@ -38,5 +38,5 @@ index 8567451919..e21e9a5980 100644
  {"discard_damaged_percentage", "Percentage of damaged samples to discard a frame", OFFSET(discard_damaged_percentage), AV_OPT_TYPE_INT, {.i64 = 95 }, 0, 100, V|D },
  {"side_data_prefer_packet", "Comma-separated list of side data types for which user-supplied (container) data is preferred over coded bytestream",
 -- 
-2.50.1 (Apple Git-155)
+2.53.0
 

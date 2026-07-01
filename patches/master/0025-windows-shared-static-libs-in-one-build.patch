@@ -1,19 +1,18 @@
-From b4e3f50750e3ce1a06c38438dae62029450adb5e Mon Sep 17 00:00:00 2001
+From 06cfcf74238e1adae3a3f12f1233fcb523f86858 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 15 Oct 2023 13:22:34 +0800
-Subject: [PATCH 26/35] windows: shared + static libs in one build
+Subject: [PATCH 25/35] windows: shared + static libs in one build
 
 av_export_avutil avpriv_vga16_font will result in LINK4217 warning when building ffmpeg.dll, and undefined dllimport avpriv_vga16_font error when linking exe
 ---
- configure                 | 9 +++++----
- libavutil/xga_font_data.h | 4 ++--
- 2 files changed, 7 insertions(+), 6 deletions(-)
+ configure | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
 diff --git a/configure b/configure
-index 8ffea48829..9a54c2649d 100755
+index 0d767e7dc4..261fc2f7db 100755
 --- a/configure
 +++ b/configure
-@@ -6106,9 +6106,12 @@ case $target_os in
+@@ -6298,9 +6298,12 @@ case $target_os in
          LIBSUF=".lib"
          if enabled shared; then
              # Cannot build both shared and static libs with MSVC or icl.
@@ -28,7 +27,7 @@ index 8ffea48829..9a54c2649d 100755
          test_cmd $windres --version && enable gnu_windres
          enabled x86_32 && check_ldflags -LARGEADDRESSAWARE
          add_cppflags -DWIN32_LEAN_AND_MEAN
-@@ -6133,8 +6136,6 @@ case $target_os in
+@@ -6325,8 +6328,6 @@ case $target_os in
          [ "$toolchain" = msvc ] && {
            ranlib=:
          } || {
@@ -37,21 +36,6 @@ index 8ffea48829..9a54c2649d 100755
            LD_LIB='%.lib'
            SLIB_CREATE_DEF_CMD='EXTERN_PREFIX="$(EXTERN_PREFIX)" AR="$(AR_CMD)" NM="$(NM_CMD)" $(SRC_PATH)/compat/windows/makedef $(SUBDIR)lib$(NAME).ver $(OBJS) > $$(@:$(SLIBSUF)=.def)'
          }
-diff --git a/libavutil/xga_font_data.h b/libavutil/xga_font_data.h
-index 90d3cec4ce..d57d28e590 100644
---- a/libavutil/xga_font_data.h
-+++ b/libavutil/xga_font_data.h
-@@ -31,8 +31,8 @@
- #include "version.h"
- 
- #if LIBAVUTIL_VERSION_MAJOR < 61
--extern av_export_avutil const uint8_t avpriv_cga_font[2048];
--extern av_export_avutil const uint8_t avpriv_vga16_font[4096];
-+extern const uint8_t avpriv_cga_font[2048];
-+extern const uint8_t avpriv_vga16_font[4096];
- #endif
- 
- const uint8_t *avpriv_cga_font_get(void);
 -- 
-2.50.1 (Apple Git-155)
+2.53.0
 

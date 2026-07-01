@@ -1,4 +1,4 @@
-From e95c81fbb872154c952e831cbbd8f9921e6787a1 Mon Sep 17 00:00:00 2001
+From bf02b99ccc0043c511755385989ca44a23a5f5e3 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 14 Apr 2019 11:42:42 +0800
 Subject: [PATCH 14/35] configure: suppor static build via clang-cl
@@ -8,10 +8,10 @@ Subject: [PATCH 14/35] configure: suppor static build via clang-cl
  1 file changed, 9 insertions(+), 1 deletion(-)
 
 diff --git a/configure b/configure
-index aaa00c1a61..a8115c1950 100755
+index 8ada8bb0c6..d6ecf854e8 100755
 --- a/configure
 +++ b/configure
-@@ -6111,7 +6111,15 @@ case $target_os in
+@@ -6304,7 +6304,15 @@ case $target_os in
              SHFLAGS='-dll -def:$$(@:$(SLIBSUF)=.def) -implib:$(SUBDIR)$(SLIBNAME:$(SLIBSUF)=.lib)'
          fi
          enabled x86_64 && objformat="win64" || objformat="win32"
@@ -29,5 +29,5 @@ index aaa00c1a61..a8115c1950 100755
          ;;
      cygwin*)
 -- 
-2.50.1 (Apple Git-155)
+2.53.0
 

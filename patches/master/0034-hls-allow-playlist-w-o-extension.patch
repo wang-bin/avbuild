@@ -1,7 +1,7 @@
-From d5903777de5f28a31103025c17f2a94504d055c5 Mon Sep 17 00:00:00 2001
+From c703d52b82ed7f9ec35c08c93f1cc414301f914d Mon Sep 17 00:00:00 2001
 From: wangbin <wbsecg1@gmail.com>
 Date: Fri, 5 Sep 2025 23:11:42 +0800
-Subject: [PATCH 35/35] hls: allow playlist w/o extension
+Subject: [PATCH 34/35] hls: allow playlist w/o extension
 
 there's no option for `read_probe()`, so let's return a lower score.
 fix https://github.com/wang-bin/fvp/issues/218
@@ -10,10 +10,10 @@ fix https://github.com/wang-bin/fvp/issues/218
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/libavformat/hls.c b/libavformat/hls.c
-index 755de377e9..77cc7badba 100644
+index 573af5790c..b50ffa3d8d 100644
 --- a/libavformat/hls.c
 +++ b/libavformat/hls.c
-@@ -2799,7 +2799,7 @@ static int hls_probe(const AVProbeData *p)
+@@ -3028,7 +3028,7 @@ static int hls_probe(const AVProbeData *p)
              !av_match_ext    (p->filename, "m3u8,m3u") &&
               ff_match_url_ext(p->filename, "m3u8,m3u") <= 0) {
              av_log(NULL, AV_LOG_ERROR, "Not detecting m3u8/hls with non standard extension and non standard mime type\n");
@@ -23,5 +23,5 @@ index 755de377e9..77cc7badba 100644
          if (mime_x)
              av_log(NULL, AV_LOG_WARNING, "mime type is not rfc8216 compliant\n");
 -- 
-2.50.1 (Apple Git-155)
+2.53.0
 

@@ -1,4 +1,4 @@
-From 1830a9389037332d7e7190ed40387912d5e9952c Mon Sep 17 00:00:00 2001
+From b0b9faced8f3c436023d77b2a2b93c8121901d16 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 9 Nov 2017 15:05:26 +0800
 Subject: [PATCH 07/35] videotoolbox: allow software implementation
@@ -9,26 +9,24 @@ ffmpeg sw decoder. the sum of program and vt service cpu usage is about
 50% lower than ffmpeg. decoding speed is faster sometimes(if opengl
 compatiblility attribute is disabled)
 ---
- libavcodec/videotoolbox.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ libavcodec/videotoolbox.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
 diff --git a/libavcodec/videotoolbox.c b/libavcodec/videotoolbox.c
-index c3191cb3f6..1fba0338d8 100644
+index 950a6550f0..ff64f7f774 100644
 --- a/libavcodec/videotoolbox.c
 +++ b/libavcodec/videotoolbox.c
-@@ -849,9 +849,9 @@ static CFDictionaryRef videotoolbox_decoder_config_create(CMVideoCodecType codec
+@@ -851,9 +851,7 @@ static CFDictionaryRef videotoolbox_decoder_config_create(CMVideoCodecType codec
                                                                     &kCFTypeDictionaryValueCallBacks);
  
      CFDictionarySetValue(config_info,
--                         codec_type == kCMVideoCodecType_HEVC ?
--                            kVTVideoDecoderSpecification_EnableHardwareAcceleratedVideoDecoder :
--                            kVTVideoDecoderSpecification_RequireHardwareAcceleratedVideoDecoder,
+-                        avctx->codec_id == AV_CODEC_ID_HEVC
+-                        || avctx->codec_id == AV_CODEC_ID_PRORES
+-                        || avctx->codec_id == AV_CODEC_ID_PRORES_RAW
 +                         (avctx->hwaccel_flags & AV_HWACCEL_FLAG_ALLOW_SOFTWARE)
-+                         ? kVTVideoDecoderSpecification_EnableHardwareAcceleratedVideoDecoder
-+                         : kVTVideoDecoderSpecification_RequireHardwareAcceleratedVideoDecoder,
-                          kCFBooleanTrue);
- 
-     avc_info = CFDictionaryCreateMutable(kCFAllocatorDefault,
+                             ?
+                             kVTVideoDecoderSpecification_EnableHardwareAcceleratedVideoDecoder :
+                             kVTVideoDecoderSpecification_RequireHardwareAcceleratedVideoDecoder,
 -- 
-2.50.1 (Apple Git-155)
+2.53.0
 

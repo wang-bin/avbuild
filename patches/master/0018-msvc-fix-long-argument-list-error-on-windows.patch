@@ -1,7 +1,7 @@
-From 11d90d37632c9e6626b26ef625da1dcff23645b0 Mon Sep 17 00:00:00 2001
+From 056222e059616d7db3f8dfe617b202f2658a4407 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sat, 11 Dec 2021 18:08:43 +0800
-Subject: [PATCH 19/35] msvc: fix long argument list error on windows
+Subject: [PATCH 18/35] msvc: fix long argument list error on windows
 
 ---
  compat/windows/makedef |  4 +++-
@@ -9,10 +9,10 @@ Subject: [PATCH 19/35] msvc: fix long argument list error on windows
  2 files changed, 11 insertions(+), 4 deletions(-)
 
 diff --git a/compat/windows/makedef b/compat/windows/makedef
-index af42f08fd5..81326d6b39 100755
+index c5755d6cca..b28cb356a8 100755
 --- a/compat/windows/makedef
 +++ b/compat/windows/makedef
-@@ -54,7 +54,9 @@ else
+@@ -59,7 +59,9 @@ else
          machine_flag="-machine:arm64ec"
          ;;
      esac
@@ -46,5 +46,5 @@ index 6cab090071..d3202520cf 100755
 +rm -f $cmdlist
 +exit $ret
 -- 
-2.50.1 (Apple Git-155)
+2.53.0
 
