@@ -41,6 +41,7 @@ function join { local IFS="$1"; shift; echo "$*"; }
 DUP_OBJS=(libswscale/log2_tab.o libswresample/log2_tab.o libavcodec/log2_tab.o libavformat/log2_tab.o libavfilter/log2_tab.o
   libavcodec/file_open.o libavformat/file_open.o libavdevice/file_open.o
   libavfilter/file_open.o
+  libavfilter/scale_filters.o
   libavformat/golomb_tab.o
   libavcodec/reverse.o libavdevice/reverse.o
   libavformat/to_upper4.o
