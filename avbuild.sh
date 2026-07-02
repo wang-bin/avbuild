@@ -470,6 +470,7 @@ setup_win(){
   else
     setup_vc_env $@
   fi
+  TOOLCHAIN_OPT+=" --disable-stripping"
   # FIXME: wslpath
   WinSdkDir=$(to_unix_path $WindowsSdkDir)
   dxva_h=$(find "$WinSdkDir/Include" -name dxva.h)
@@ -549,7 +550,7 @@ setup_win_clang(){
   # makedef: define env AR=llvm-ar, NM=llvm-nm
   # --windres=rc option is broken and not recognized
   TARGET_TRIPLE=${target_tripple_arch}-pc-windows-msvc # lto default vendor is empty, fix lld-link: warning: Linking two modules of different target triples
-  TARGET_OPT="--target=$TARGET_TRIPLE"
+  TARGET_OPT="--disable-stripping--target=$TARGET_TRIPLE"
   [ "$MACHINE" == arm ] && {
     ASM_OPT+=" --enable-thumb --enable-neon --cpu=armv7-a"
     # clang: FPU error. gas: vfp error
