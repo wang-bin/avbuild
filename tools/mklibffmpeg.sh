@@ -62,10 +62,12 @@ DUP_OBJS=(libswscale/log2_tab.o libswresample/log2_tab.o libavcodec/log2_tab.o l
   libavcodec/vulkan.o
   libavcodec/timecode_internal.o
   libavcodec/float_scalarproduct.o
+  libavcodec/x86/emms.o
   libavdevice/avdeviceres.o
   libavformat/avformatres.o
   libavfilter/avfilterres.o
   libavfilter/vulkan.o
+  libavfilter/x86/emms.o
   libavresample/avresample.o
   libswscale/swscaleres.o
   libswscale/vulkan/vulkan.o
@@ -73,6 +75,7 @@ DUP_OBJS=(libswscale/log2_tab.o libswresample/log2_tab.o libavcodec/log2_tab.o l
   libswscale/vulkan/vulkan_shaderc.o
   libswscale/framepool.o
   libswscale/aarch64/ops_asmgen.o # for host exe
+  libswscale/x86/emms.o
   libswresample/swresampleres.o
   libpostproc/postprocres.o
   )
