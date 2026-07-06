@@ -1,16 +1,16 @@
-From a2aeb68664f5f84d63954ed011466202e06b0a24 Mon Sep 17 00:00:00 2001
+From 5ecce37c62150cf460e39ddccb2f6a09e8c326c3 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 3 May 2022 00:03:18 +0800
 Subject: [PATCH 23/35] wolfSSL - new TLS backend patch
 
 https://lists.ffmpeg.org/pipermail/ffmpeg-devel/2018-August/233802.html
 ---
- configure                 |  20 ++--
+ configure                 |  20 +--
  libavformat/Makefile      |   1 +
  libavformat/network.c     |   6 +
  libavformat/tls.h         |   3 +
- libavformat/tls_wolfssl.c | 245 ++++++++++++++++++++++++++++++++++++++
- 5 files changed, 267 insertions(+), 8 deletions(-)
+ libavformat/tls_wolfssl.c | 253 ++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 275 insertions(+), 8 deletions(-)
  create mode 100644 libavformat/tls_wolfssl.c
 
 diff --git a/configure b/configure
@@ -157,10 +157,10 @@ index f2f4f8991f..de7fb6fdde 100644
   */
 diff --git a/libavformat/tls_wolfssl.c b/libavformat/tls_wolfssl.c
 new file mode 100644
-index 0000000000..23255c0f1b
+index 0000000000..b89f145f0b
 --- /dev/null
 +++ b/libavformat/tls_wolfssl.c
-@@ -0,0 +1,245 @@
+@@ -0,0 +1,253 @@
 +/*
 + * TLS/SSL Protocol
 + * Copyright (c) 2011 Martin Storsjo
@@ -296,6 +296,14 @@ index 0000000000..23255c0f1b
 +    if (c->ca_file) {
 +        if (!wolfSSL_CTX_load_verify_locations(p->ctx, c->ca_file, NULL))
 +	  av_log(h, AV_LOG_ERROR, "wolfSSL_CTX_load_verify_locations %s\n", wolfSSL_ERR_error_string(wolfSSL_get_error(p->ssl,0), error_buffer));
++    } else {
++#ifdef OPENSSL_EXTRA
++        if (!wolfSSL_CTX_set_default_verify_paths(p->ctx)) {
++            // Only log the failure but do not error out, as this is not fatal
++            av_log(h, AV_LOG_WARNING, "Failure setting default verify locations: %s\n",
++                wolfSSL_ERR_error_string(wolfSSL_get_error(p->ssl,0), error_buffer));
++        }
++#endif
 +    }
 +    if (c->cert_file && !wolfSSL_CTX_use_certificate_chain_file(p->ctx, c->cert_file)) {
 +        av_log(h, AV_LOG_ERROR, "Unable to load cert file %s: %s\n",

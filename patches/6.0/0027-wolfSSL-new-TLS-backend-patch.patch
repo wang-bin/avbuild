@@ -1,7 +1,7 @@
-From 99f6c2593b0fb83c73431dc20836b9080a7b6f0a Mon Sep 17 00:00:00 2001
+From 66d8314b20bac6098984dfa193d3f01699a8afb1 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 3 May 2022 00:03:18 +0800
-Subject: [PATCH 27/30] wolfSSL - new TLS backend patch
+Subject: [PATCH 27/32] wolfSSL - new TLS backend patch
 
 https://lists.ffmpeg.org/pipermail/ffmpeg-devel/2018-August/233802.html
 ---
@@ -9,8 +9,8 @@ https://lists.ffmpeg.org/pipermail/ffmpeg-devel/2018-August/233802.html
  libavformat/Makefile      |   1 +
  libavformat/network.c     |   6 +
  libavformat/tls.h         |   3 +
- libavformat/tls_wolfssl.c | 248 ++++++++++++++++++++++++++++++++++++++
- 5 files changed, 270 insertions(+), 8 deletions(-)
+ libavformat/tls_wolfssl.c | 256 ++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 278 insertions(+), 8 deletions(-)
  create mode 100644 libavformat/tls_wolfssl.c
 
 diff --git a/configure b/configure
@@ -156,10 +156,10 @@ index 6c6aa01a9a..0cfad1c82b 100644
  
 diff --git a/libavformat/tls_wolfssl.c b/libavformat/tls_wolfssl.c
 new file mode 100644
-index 0000000000..595fffe497
+index 0000000000..62c4327ab3
 --- /dev/null
 +++ b/libavformat/tls_wolfssl.c
-@@ -0,0 +1,248 @@
+@@ -0,0 +1,256 @@
 +/*
 + * TLS/SSL Protocol
 + * Copyright (c) 2011 Martin Storsjo
@@ -195,7 +195,7 @@ index 0000000000..595fffe497
 +#include "libavutil/opt.h"
 +#include "libavutil/parseutils.h"
 +
-+ 
++
 +
 +#include <wolfssl/options.h>
 +#include <wolfssl/ssl.h>
@@ -298,6 +298,14 @@ index 0000000000..595fffe497
 +    if (c->ca_file) {
 +        if (!wolfSSL_CTX_load_verify_locations(p->ctx, c->ca_file, NULL))
 +	  av_log(h, AV_LOG_ERROR, "wolfSSL_CTX_load_verify_locations %s\n", wolfSSL_ERR_error_string(wolfSSL_get_error(p->ssl,0), error_buffer));
++    } else {
++#ifdef OPENSSL_EXTRA
++        if (!wolfSSL_CTX_set_default_verify_paths(p->ctx)) {
++            // Only log the failure but do not error out, as this is not fatal
++            av_log(h, AV_LOG_WARNING, "Failure setting default verify locations: %s\n",
++                wolfSSL_ERR_error_string(wolfSSL_get_error(p->ssl,0), error_buffer));
++        }
++#endif
 +    }
 +    if (c->cert_file && !wolfSSL_CTX_use_certificate_chain_file(p->ctx, c->cert_file)) {
 +        av_log(h, AV_LOG_ERROR, "Unable to load cert file %s: %s\n",
@@ -312,33 +320,33 @@ index 0000000000..595fffe497
 +        goto fail;
 +    }
 +#endif
-+    
++
 +    wolfSSL_CTX_set_verify(p->ctx,
-+                           c->verify ? WOLFSSL_VERIFY_PEER | WOLFSSL_VERIFY_FAIL_IF_NO_PEER_CERT : 
++                           c->verify ? WOLFSSL_VERIFY_PEER | WOLFSSL_VERIFY_FAIL_IF_NO_PEER_CERT :
 +                                       WOLFSSL_VERIFY_NONE,
 +                           NULL);
-+    
++
 +#ifdef HAVE_SNI
 +    if (!c->listen && !c->numerichost && !wolfSSL_CTX_UseSNI(p->ctx, WOLFSSL_SNI_HOST_NAME, c->host,
 +                          (unsigned short)strlen(c->host))) {
-+        av_log(h, AV_LOG_ERROR, "failed to configure server name indication (SNI) %s: %ld -> %s\n",
++        av_log(h, AV_LOG_ERROR, "failed to configure server name indication (SNI) %s: %d -> %s\n",
 +	       c->host, wolfSSL_get_error(p->ssl,0), wolfSSL_ERR_error_string(wolfSSL_get_error(p->ssl,0), error_buffer));
 +    }
 +#endif
 +
 +    wolfSSL_CTX_SetIORecv(p->ctx, wolfssl_recv_callback);
 +    wolfSSL_CTX_SetIOSend(p->ctx, wolfssl_send_callback);
-+    
++
 +    p->ssl = wolfSSL_new(p->ctx);
 +    if (!p->ssl) {
 +      av_log(h, AV_LOG_ERROR, "%s\n", wolfSSL_ERR_error_string(wolfSSL_get_error(p->ssl,0), error_buffer));
 +        ret = AVERROR(EIO);
 +        goto fail;
 +    }
-+    
++
 +    wolfSSL_SetIOReadCtx(p->ssl, c->tcp);
-+    wolfSSL_SetIOWriteCtx(p->ssl, c->tcp); 
-+    
++    wolfSSL_SetIOWriteCtx(p->ssl, c->tcp);
++
 +    // Modified to compile with minimal wolfSSL library which only has client methods
 +    //ret = c->listen ? wolfSSL_accept(p->ssl) : wolfSSL_connect(p->ssl);
 +    ret = wolfSSL_connect(p->ssl);
@@ -350,7 +358,7 @@ index 0000000000..595fffe497
 +        ret = print_tls_error(h, ret, p->ssl);
 +        goto fail;
 +    }
-+    
++
 +    return 0;
 +fail:
 +    tls_close(h);
@@ -409,5 +417,5 @@ index 0000000000..595fffe497
 +    .priv_data_class = &tls_class,
 +};
 -- 
-2.39.3 (Apple Git-145)
+2.53.0
 

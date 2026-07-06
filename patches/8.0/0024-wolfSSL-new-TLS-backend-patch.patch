@@ -1,16 +1,16 @@
-From ed45aee22d54a03e29f7c480a0d96921a9e918d4 Mon Sep 17 00:00:00 2001
+From 84a40bd0a41ad4d29245ffade74ad50eae3eb657 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 3 May 2022 00:03:18 +0800
-Subject: [PATCH 24/33] wolfSSL - new TLS backend patch
+Subject: [PATCH 24/37] wolfSSL - new TLS backend patch
 
 https://lists.ffmpeg.org/pipermail/ffmpeg-devel/2018-August/233802.html
 ---
- configure                 |  20 ++--
+ configure                 |  20 +--
  libavformat/Makefile      |   1 +
  libavformat/network.c     |   6 +
  libavformat/tls.h         |   3 +
- libavformat/tls_wolfssl.c | 245 ++++++++++++++++++++++++++++++++++++++
- 5 files changed, 267 insertions(+), 8 deletions(-)
+ libavformat/tls_wolfssl.c | 251 ++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 273 insertions(+), 8 deletions(-)
  create mode 100644 libavformat/tls_wolfssl.c
 
 diff --git a/configure b/configure
@@ -154,10 +154,10 @@ index df384da604..18fc0dcf33 100644
  #endif /* AVFORMAT_TLS_H */
 diff --git a/libavformat/tls_wolfssl.c b/libavformat/tls_wolfssl.c
 new file mode 100644
-index 0000000000..23255c0f1b
+index 0000000000..d346c4505a
 --- /dev/null
 +++ b/libavformat/tls_wolfssl.c
-@@ -0,0 +1,245 @@
+@@ -0,0 +1,251 @@
 +/*
 + * TLS/SSL Protocol
 + * Copyright (c) 2011 Martin Storsjo
@@ -293,6 +293,12 @@ index 0000000000..23255c0f1b
 +    if (c->ca_file) {
 +        if (!wolfSSL_CTX_load_verify_locations(p->ctx, c->ca_file, NULL))
 +	  av_log(h, AV_LOG_ERROR, "wolfSSL_CTX_load_verify_locations %s\n", wolfSSL_ERR_error_string(wolfSSL_get_error(p->ssl,0), error_buffer));
++    } else {
++        if (!wolfSSL_CTX_set_default_verify_paths(p->ctx)) {
++            // Only log the failure but do not error out, as this is not fatal
++            av_log(h, AV_LOG_WARNING, "Failure setting default verify locations: %s\n",
++                wolfSSL_ERR_error_string(wolfSSL_get_error(p->ssl,0), error_buffer));
++        }
 +    }
 +    if (c->cert_file && !wolfSSL_CTX_use_certificate_chain_file(p->ctx, c->cert_file)) {
 +        av_log(h, AV_LOG_ERROR, "Unable to load cert file %s: %s\n",
@@ -404,5 +410,5 @@ index 0000000000..23255c0f1b
 +    .priv_data_class = &tls_class,
 +};
 -- 
-2.49.0
+2.53.0
 

@@ -1,20 +1,20 @@
-From edb8270ee1c6cfdd2b189f08b17be27bebb5ba47 Mon Sep 17 00:00:00 2001
+From 3ef00e79b8a02787ac3c700dd25cabc9cce50916 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 3 May 2022 00:03:18 +0800
-Subject: [PATCH 24/32] wolfSSL - new TLS backend patch
+Subject: [PATCH 24/33] wolfSSL - new TLS backend patch
 
 https://lists.ffmpeg.org/pipermail/ffmpeg-devel/2018-August/233802.html
 ---
- configure                 |  20 ++--
+ configure                 |  20 +--
  libavformat/Makefile      |   1 +
  libavformat/network.c     |   6 +
  libavformat/tls.h         |   3 +
- libavformat/tls_wolfssl.c | 245 ++++++++++++++++++++++++++++++++++++++
- 5 files changed, 267 insertions(+), 8 deletions(-)
+ libavformat/tls_wolfssl.c | 251 ++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 273 insertions(+), 8 deletions(-)
  create mode 100644 libavformat/tls_wolfssl.c
 
 diff --git a/configure b/configure
-index 7e5e54d457..23b60a2892 100755
+index 7869dce3bb..f2dab40298 100755
 --- a/configure
 +++ b/configure
 @@ -207,7 +207,7 @@ External library support:
@@ -62,7 +62,7 @@ index 7e5e54d457..23b60a2892 100755
    --enable-pocketsphinx    enable PocketSphinx, needed for asr filter [no]
    --disable-sndio          disable sndio support [autodetect]
    --disable-schannel       disable SChannel SSP, needed for TLS support on
-@@ -1983,6 +1985,7 @@ EXTERNAL_LIBRARY_LIST="
+@@ -1985,6 +1987,7 @@ EXTERNAL_LIBRARY_LIST="
      openssl
      pocketsphinx
      vapoursynth
@@ -70,7 +70,7 @@ index 7e5e54d457..23b60a2892 100755
  "
  
  HWACCEL_AUTODETECT_LIBRARY_LIST="
-@@ -3757,13 +3760,13 @@ rtmpte_protocol_suggest="zlib"
+@@ -3761,13 +3764,13 @@ rtmpte_protocol_suggest="zlib"
  rtmpts_protocol_select="ffrtmphttp_protocol https_protocol"
  rtmpts_protocol_suggest="zlib"
  rtp_protocol_select="udp_protocol"
@@ -87,7 +87,7 @@ index 7e5e54d457..23b60a2892 100755
  tls_protocol_select="tcp_protocol"
  udp_protocol_select="network"
  udplite_protocol_select="network"
-@@ -3786,7 +3789,7 @@ libsmbclient_protocol_deps="libsmbclient gplv3"
+@@ -3790,7 +3793,7 @@ libsmbclient_protocol_deps="libsmbclient gplv3"
  libsrt_protocol_deps="libsrt"
  libsrt_protocol_select="network"
  libssh_protocol_deps="libssh"
@@ -96,7 +96,7 @@ index 7e5e54d457..23b60a2892 100755
  libzmq_protocol_deps="libzmq"
  libzmq_protocol_select="network"
  
-@@ -6848,6 +6851,7 @@ enabled decklink          && { require_headers DeckLinkAPI.h &&
+@@ -6869,6 +6872,7 @@ enabled decklink          && { require_headers DeckLinkAPI.h &&
  enabled frei0r            && require_headers "frei0r.h"
  enabled gmp               && require gmp gmp.h mpz_export -lgmp
  enabled gnutls            && require_pkg_config gnutls gnutls gnutls/gnutls.h gnutls_global_init
@@ -156,10 +156,10 @@ index 6c6aa01a9a..0cfad1c82b 100644
  
 diff --git a/libavformat/tls_wolfssl.c b/libavformat/tls_wolfssl.c
 new file mode 100644
-index 0000000000..23255c0f1b
+index 0000000000..d346c4505a
 --- /dev/null
 +++ b/libavformat/tls_wolfssl.c
-@@ -0,0 +1,245 @@
+@@ -0,0 +1,251 @@
 +/*
 + * TLS/SSL Protocol
 + * Copyright (c) 2011 Martin Storsjo
@@ -295,6 +295,12 @@ index 0000000000..23255c0f1b
 +    if (c->ca_file) {
 +        if (!wolfSSL_CTX_load_verify_locations(p->ctx, c->ca_file, NULL))
 +	  av_log(h, AV_LOG_ERROR, "wolfSSL_CTX_load_verify_locations %s\n", wolfSSL_ERR_error_string(wolfSSL_get_error(p->ssl,0), error_buffer));
++    } else {
++        if (!wolfSSL_CTX_set_default_verify_paths(p->ctx)) {
++            // Only log the failure but do not error out, as this is not fatal
++            av_log(h, AV_LOG_WARNING, "Failure setting default verify locations: %s\n",
++                wolfSSL_ERR_error_string(wolfSSL_get_error(p->ssl,0), error_buffer));
++        }
 +    }
 +    if (c->cert_file && !wolfSSL_CTX_use_certificate_chain_file(p->ctx, c->cert_file)) {
 +        av_log(h, AV_LOG_ERROR, "Unable to load cert file %s: %s\n",
@@ -406,5 +412,5 @@ index 0000000000..23255c0f1b
 +    .priv_data_class = &tls_class,
 +};
 -- 
-2.39.5 (Apple Git-154)
+2.53.0
 
