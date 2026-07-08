@@ -1842,7 +1842,7 @@ build_all(){
         [[ "$os" == xr* || "$os" == vision* ]] && archs=(arm64) # no x86 simulator
       }
       [ "${os:0:7}" == "android" ] && archs=(armv7 arm64 x86 x86_64)
-      [ "${os:0:4}" == "android" ] && archs=(armv7 arm64 x86_64)
+      [ "${os:0:4}" == "ohos" ] && archs=(arm64 x86_64)
       [ "${os:0:3}" == "rpi" -o "${os:0:9}" == "raspberry" ] && archs=(armv6zk armv7-a)
       [[ "$os" == "sunxi" ]] && archs=(armv7)
       [ "${os:0:5}" == "mingw" ] && archs=(x86 x86_64)
@@ -1985,7 +1985,7 @@ make_universal()
     rm -rf ${dirs[@]}
   else
     local get_arch=echo
-    [ "$os" == "android" ] && get_arch=android_arch
+    [[ "$os" == android* || "$os" == ohos* ]] && get_arch=android_arch
     rm -rf sdk-$os-{gcc,clang,cl${VS_CL}}
     for d in ${dirs[@]}; do
       USE_TOOLCHAIN=${d##*-}
