@@ -617,6 +617,7 @@ jobs:
       shell: bash
       env:
         SYSROOT_CACHE_HIT: ${{ steps.sysroot-cache.outputs.cache-hit }}
+        DEVPKGS_WORKFLOW: no-lto # pkgconfig check dep undefined __tls_get_addr for armv7
       run: ./tools/ci-before-build.sh
     - name: Configure and Build 32bit
       shell: bash
