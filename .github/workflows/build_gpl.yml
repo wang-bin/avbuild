@@ -80,13 +80,12 @@ jobs:
     env:
       TARGET_OS: ${{ matrix.target }}
       CONFIG_SUFFIX: -gpl-${{ matrix.config }}
-      NVENC: ${{ matrix.nvenc }}
+      NVENC: ${{ vars.FF_VER != 'master' && vars.FF_VER < '9.0' && 'n13.0.19.0' || 'master' }}
     strategy:
       fail-fast: false
       matrix:
         config: [lite]
         target: [windows-desktop]
-        nvenc: [master]
     steps:
     - uses: actions/checkout@v5
       with:
@@ -130,11 +129,10 @@ jobs:
         grep AMF_VERSION tools/dep/include/AMF/core/Version.h
         sed -n '40,50p' tools/dep/include/AMF/components/DisplayCapture.h
     - name: 'Checkout nvenc'
-      if: ${{ matrix.nvenc != '' }}
       run: |
           cd tools/nv-codec-headers
           git fetch -t
-          git checkout ${{ matrix.nvenc }}
+          git checkout ${{ env.NVENC }}
           git --no-pager log -1
     - name: Configure and Build
       shell: cmd
@@ -171,14 +169,13 @@ jobs:
       PKG_CONFIG_PATH_MFX: '/tmp/dep/ClangCL/lib/pkgconfig'
       AMF_DIR: "/tmp/dep/include"
       CONFIG_SUFFIX: -gpl-${{ matrix.config }}
-      NVENC: ${{ matrix.nvenc }}
+      NVENC: ${{ vars.FF_VER != 'master' && vars.FF_VER < '9.0' && 'n13.0.19.0' || 'master' }}
       DEVPKGS_WORKFLOW: no-lto
     strategy:
       fail-fast: false
       matrix:
         config: [lite]
         target: [windows-desktop]
-        nvenc: [master]
     steps:
     - uses: actions/checkout@v5
       with:
@@ -204,11 +201,10 @@ jobs:
         7z x -y dep_gpl.7z -otools
         sed -i '/X264_API_IMPORTS/d' "ffmpeg-${FF_VERSION}/libavcodec/libx264.c" # we link against static libx264
     - name: 'Checkout nvenc'
-      if: ${{ matrix.nvenc != '' }}
       run: |
           cd tools/nv-codec-headers
           git fetch -t
-          git checkout ${{ matrix.nvenc }}
+          git checkout ${{ env.NVENC }}
           git --no-pager log -1
     - name: Configure and Build
       shell: bash
@@ -240,12 +236,11 @@ jobs:
       PKG_CONFIG_PATH_MFX: "/tmp/dep/linux/amd64/lib/pkgconfig"
       AMF_DIR: "/tmp/dep/include"
       CONFIG_SUFFIX: -gpl-${{ matrix.config }}
-      NVENC: ${{ matrix.nvenc }}
+      NVENC: ${{ vars.FF_VER != 'master' && vars.FF_VER < '9.0' && 'n13.0.19.0' || 'master' }}
     strategy:
       fail-fast: false
       matrix:
         config: [lite]
-        nvenc: [master]
     steps:
     - uses: actions/checkout@v5
       with:
@@ -268,11 +263,10 @@ jobs:
         wget https://sourceforge.net/projects/avbuild/files/dep/dep_gpl.7z/download -O dep_gpl.7z
         7z x -y dep_gpl.7z -otools
     - name: 'Checkout nvenc'
-      if: ${{ matrix.nvenc != '' }}
       run: |
           cd tools/nv-codec-headers
           git fetch -t
-          git checkout ${{ matrix.nvenc }}
+          git checkout ${{ env.NVENC }}
           git --no-pager log -1
     - name: Configure and Build
       shell: bash
@@ -379,7 +373,6 @@ jobs:
     - name: Configure and Build
       shell: bash
       run: |
-        find tools/dep/android/arm/lib
         export ANDROID_NDK=$ANDROID_NDK_LATEST_HOME
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export USER_OPT="--enable-wolfssl"
