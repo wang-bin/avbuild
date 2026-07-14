@@ -138,13 +138,14 @@ jobs:
           git --no-pager log -1
     - name: Configure and Build
       shell: cmd
+      env:
+        USER_OPT: ${{ vars.FF_VER != 'master' && vars.FF_VER < '9.0' && '--enable-libshaderc' || '' }}
       run: |
         set MSYS2_DIR=C:\msys64
         set PKG_CONFIG_PATH_MFX=%CD%\tools\dep\windows\lib\pkgconfig
         set HOME=%CD%
         set FFSRC=%CD%\ffmpeg-%FF_VERSION%
         set BUILD_NOW=true
-        set USER_OPT=--enable-libshaderc
         tools\vcbuild.bat VS2026 %TARGET_OS%10 x64
     - name: Make SDK
       shell: cmd
@@ -211,11 +212,12 @@ jobs:
           git --no-pager log -1
     - name: Configure and Build
       shell: bash
+      env:
+        USER_OPT: ${{ vars.FF_VER != 'master' && vars.FF_VER < '9.0' && '--enable-libshaderc' || '' }}
       run: |
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export WindowsSdkDir=${WINDOWSSDKDIR}
         export WindowsSDKVersion=$(cat ${WINDOWSSDKDIR}/.version)
-        export USER_OPT="--enable-libshaderc"
         USE_TOOLCHAIN=clang-${LLVM_VER:-$LLVM_VER_DEFAULT} ./avbuild.sh $TARGET_OS "x64 arm64"
     - name: Make SDK
       shell: bash
@@ -274,10 +276,12 @@ jobs:
           git --no-pager log -1
     - name: Configure and Build
       shell: bash
+      env:
+        USER_OPT: ${{ vars.FF_VER != 'master' && vars.FF_VER < '9.0' && '--enable-libshaderc' || '' }}
       run: |
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export SYSROOT=/tmp/sysroot
-        export USER_OPT="--enable-wolfssl --enable-libshaderc --disable-bzlib"
+        export USER_OPT="$USER_OPT --enable-wolfssl --disable-bzlib"
         USE_TOOLCHAIN=clang-${LLVM_VER:-$LLVM_VER_DEFAULT} ./avbuild.sh linux "amd64 arm64"
     - name: Make SDK
       shell: bash
@@ -332,7 +336,7 @@ jobs:
       run: |
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
         export SYSROOT=/tmp/sysroot
-        export USER_OPT="--enable-libshaderc --disable-bzlib"
+        export USER_OPT="--disable-bzlib"
         USE_TOOLCHAIN=clang-${LLVM_VER:-$LLVM_VER_DEFAULT} ./avbuild.sh rockchip "arm64"
     - name: Make SDK
       shell: bash
@@ -375,8 +379,10 @@ jobs:
     - name: Configure and Build
       shell: bash
       run: |
+        find tools/dep/android/arm/lib
         export ANDROID_NDK=$ANDROID_NDK_LATEST_HOME
         export FFSRC=$PWD/ffmpeg-${FF_VERSION}
+        export USER_OPT="--enable-wolfssl"
         ./avbuild.sh ${TARGET_OS}24 arm64
     - name: Make SDK
       shell: bash
