@@ -291,7 +291,8 @@ jobs:
 
 
   Rockchip:
-    if: ${{ vars.FF_VER == 'master' }}
+    if: false
+    #if: ${{ vars.FF_VER == 'master' }}
     runs-on: ubuntu-latest
     env:
       FFREPO: 'https://github.com/nyanmisaka/ffmpeg-rockchip'
