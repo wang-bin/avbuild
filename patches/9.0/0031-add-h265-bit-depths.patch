@@ -1,4 +1,4 @@
-From a43c3ac13759de5f4f338008b10549de1a6ea191 Mon Sep 17 00:00:00 2001
+From 94b1b00fe44234ed88cc5c20704dc2f1e01c0252 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 30 Mar 2025 12:33:12 +0800
 Subject: [PATCH 31/35] add h265-bit-depths
@@ -11,10 +11,10 @@ Subject: [PATCH 31/35] add h265-bit-depths
  3 files changed, 37 insertions(+)
 
 diff --git a/configure b/configure
-index 261fc2f7db..428015630e 100755
+index 95f7ead5a7..6afe5399d5 100755
 --- a/configure
 +++ b/configure
-@@ -454,6 +454,7 @@ Advanced options (experts only):
+@@ -452,6 +452,7 @@ Advanced options (experts only):
                              should only be used with trusted input)
    --sws-max-filter-size=N  the max filter size swscale uses [$sws_max_filter_size_default]
    --h264-max-bit-depth=N   the max h264 decoding bit depth [$h264_max_bit_depth_default]
@@ -22,7 +22,7 @@ index 261fc2f7db..428015630e 100755
  
  Optimization options (experts only):
    --disable-asm            disable all assembly optimizations
-@@ -2920,6 +2921,7 @@ CMDLINE_SET="
+@@ -2916,6 +2917,7 @@ CMDLINE_SET="
      extra_version
      gas
      h264_max_bit_depth
@@ -30,7 +30,7 @@ index 261fc2f7db..428015630e 100755
      host_cc
      host_cflags
      host_extralibs
-@@ -4496,6 +4498,9 @@ set_default sws_max_filter_size
+@@ -4492,6 +4494,9 @@ set_default sws_max_filter_size
  h264_max_bit_depth_default=10
  set_default h264_max_bit_depth
  
@@ -40,7 +40,7 @@ index 261fc2f7db..428015630e 100755
  # internal components are enabled by default
  enable $EXTRALIBS_LIST
  
-@@ -8846,6 +8851,10 @@ cat > $TMPH <<EOF
+@@ -8818,6 +8823,10 @@ cat > $TMPH <<EOF
  #define H264_MAX_BIT_DEPTH $h264_max_bit_depth
  EOF
  

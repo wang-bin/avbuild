@@ -1,7 +1,7 @@
-From f45b6052eba56d4933cfd7fbfe9c4b0b72b650d8 Mon Sep 17 00:00:00 2001
+From 3773c1bcc6f900e8dadd4817a4fb905b5ee47687 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 15 Oct 2023 13:22:34 +0800
-Subject: [PATCH 25/34] windows: shared + static libs in one build
+Subject: [PATCH 25/35] windows: shared + static libs in one build
 
 av_export_avutil avpriv_vga16_font will result in LINK4217 warning when building ffmpeg.dll, and undefined dllimport avpriv_vga16_font error when linking exe
 ---
@@ -9,10 +9,10 @@ av_export_avutil avpriv_vga16_font will result in LINK4217 warning when building
  1 file changed, 5 insertions(+), 4 deletions(-)
 
 diff --git a/configure b/configure
-index 5742ff57f7..c598b9f71c 100755
+index 9710692394..95f7ead5a7 100755
 --- a/configure
 +++ b/configure
-@@ -6290,9 +6290,12 @@ case $target_os in
+@@ -6294,9 +6294,12 @@ case $target_os in
          LIBSUF=".lib"
          if enabled shared; then
              # Cannot build both shared and static libs with MSVC or icl.
@@ -27,7 +27,7 @@ index 5742ff57f7..c598b9f71c 100755
          test_cmd $windres --version && enable gnu_windres
          enabled x86_32 && check_ldflags -LARGEADDRESSAWARE
          add_cppflags -DWIN32_LEAN_AND_MEAN
-@@ -6317,8 +6320,6 @@ case $target_os in
+@@ -6321,8 +6324,6 @@ case $target_os in
          [ "$toolchain" = msvc ] && {
            ranlib=:
          } || {

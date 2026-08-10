@@ -1,7 +1,7 @@
-From 4f7f4499641f0075595ce2da554a0f88ae14644f Mon Sep 17 00:00:00 2001
+From 44dfbf3b825f0964f98b1ff43ee5109c790075fd Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Mon, 13 Nov 2017 12:23:10 +0800
-Subject: [PATCH 08/34] h264: increase MAX_SLICES to 64
+Subject: [PATCH 08/35] h264: increase MAX_SLICES to 64
 
 lavfilters is 256. 64 can fix corrupt decoded frames
 https://github.com/wang-bin/QtAV/issues/923

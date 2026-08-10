@@ -1,7 +1,7 @@
-From 84b8a3825d3a772206aa1ade167e40fb66f21c32 Mon Sep 17 00:00:00 2001
+From fdfee60052443dddb09ac17355399145f932f426 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 15 Dec 2017 11:34:06 +0800
-Subject: [PATCH 11/34] videotoolbox: remove opengl compatibility attribute
+Subject: [PATCH 11/35] videotoolbox: remove opengl compatibility attribute
 
 1. a cvpixelbuffer backed by iosurface can always be converted to an opengl texture, using CGLTexImageIOSurface2D for macOS, and undocumented api texImageIOSurface(which is internally used by public api CVOpenGLESTextureCacheCreateTextureFromImage) for iOS4.0+.
 2. enabling the attribute can slow down decoding speed a lot. I tested many video clips on my macbook air. for example: ffmpeg -ss 00:00:00 -t 00:03:00 -hwaccel videotoolbox -an -i big_buck_bunny_1080p_h264.mov -f null ->/dev/null, result with the attribute

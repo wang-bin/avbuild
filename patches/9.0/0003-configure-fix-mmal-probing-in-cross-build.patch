@@ -1,17 +1,17 @@
-From b8f9b9efdad3efba2ca0e0be0e1d4799e5d6d51b Mon Sep 17 00:00:00 2001
+From 0d9bc90eae950948b79e91849d671e301fca707a Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:22:25 +0800
-Subject: [PATCH 03/34] configure: fix mmal probing in cross build
+Subject: [PATCH 03/35] configure: fix mmal probing in cross build
 
 ---
  configure | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/configure b/configure
-index f2896b81c7..6ba13f6d91 100755
+index 374bd5c151..435f3866f1 100755
 --- a/configure
 +++ b/configure
-@@ -7496,11 +7496,11 @@ enabled mbedtls           && { check_pkg_config mbedtls mbedtls mbedtls/x509_crt
+@@ -7517,11 +7517,11 @@ enabled mbedtls           && { check_pkg_config mbedtls mbedtls mbedtls/x509_crt
                                 die "ERROR: mbedTLS not found"; }
  enabled mediacodec        && { enabled jni || die "ERROR: mediacodec requires --enable-jni"; } &&
                                 add_compat android/binder.o

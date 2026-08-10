@@ -1,4 +1,4 @@
-From ffaace3683b1ba541a46f035db0ead64c1f1f87c Mon Sep 17 00:00:00 2001
+From f46ca8a35ef579ef451e2f38ae26ff8a561b48f5 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 19 Nov 2024 19:43:02 +0800
 Subject: [PATCH 28/35] hwcontext_vaapi: fix undefined close() on windows

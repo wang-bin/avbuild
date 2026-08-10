@@ -1,7 +1,7 @@
-From 8f4039aaa2df921e88f5c97618bcd48fb9049acc Mon Sep 17 00:00:00 2001
+From 920abc4d975287494fc3bb47e7e27427cd99b0f3 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:19:07 +0800
-Subject: [PATCH 02/34] mmal: enable 0-copy for egl interop
+Subject: [PATCH 02/35] mmal: enable 0-copy for egl interop
 
 ---
  libavcodec/mmaldec.c | 5 ++++-

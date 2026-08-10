@@ -1,7 +1,7 @@
-From e9517b80d45028dd9c24ed0ac96eb7772fbf8511 Mon Sep 17 00:00:00 2001
+From 2e30ea226763c08635069496cdb3162536d39086 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 11 Jan 2022 16:17:56 +0800
-Subject: [PATCH 19/34] configure: rewrite flags from pkg-config for msvc in
+Subject: [PATCH 19/35] configure: rewrite flags from pkg-config for msvc in
  msys
 
 cflags and libs from pkg-config is unix path, e.g. /c/msys64, but msvc
@@ -11,10 +11,10 @@ requires mixed form, e.g. c:/msys64
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/configure b/configure
-index 9092433354..7711a2bea5 100755
+index 09567bb4d0..b17a093e75 100755
 --- a/configure
 +++ b/configure
-@@ -5207,8 +5207,8 @@ msvc_common_flags(){
+@@ -5211,8 +5211,8 @@ msvc_common_flags(){
              -libpath:*|-LIBPATH:*)echo $flag ;;
              -l*)                  echo ${flag#-l}.lib ;;
              -LARGEADDRESSAWARE)   echo $flag ;;

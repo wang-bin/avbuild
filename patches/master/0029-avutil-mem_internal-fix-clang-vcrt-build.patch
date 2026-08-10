@@ -1,7 +1,7 @@
-From d347c72cca2da07664e6e0cf75501226385f2320 Mon Sep 17 00:00:00 2001
+From 4a7c3f54f0f9dfd4a7c0353044d3bc68c95a8f5b Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 31 Dec 2024 18:49:16 +0800
-Subject: [PATCH 30/35] avutil/mem_internal: fix clang + vcrt build
+Subject: [PATCH 29/34] avutil/mem_internal: fix clang + vcrt build
 
 fix many sws link error if build with clang --target=x86_64-pc-windows-msvc + vcrt + winsdk, for example
 lld-link: error: undefined symbol: bFC

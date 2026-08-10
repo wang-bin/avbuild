@@ -1,7 +1,7 @@
-From 101d9ec8641d9d41ca717c5b3625e19e8f9af801 Mon Sep 17 00:00:00 2001
+From d637d10014e2a56484f3540a5244273973890c93 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:35:28 +0800
-Subject: [PATCH 04/34] videotoolbox: check runtime availability
+Subject: [PATCH 04/35] videotoolbox: check runtime availability
 
 fix warnings/errors for new compiler (since xcode9) if targeting
 macOS<10.8

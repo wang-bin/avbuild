@@ -1,17 +1,17 @@
-From 409d1de73a4d042b2aab3eb6bd7c7b938a652272 Mon Sep 17 00:00:00 2001
+From 463bb53dce61ee7fa893eaf96fe21f061e88e482 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 11 Sep 2018 23:16:49 +0800
-Subject: [PATCH 13/34] configure: enable icf
+Subject: [PATCH 13/35] configure: enable icf
 
 ---
  configure | 4 ++++
  1 file changed, 4 insertions(+)
 
 diff --git a/configure b/configure
-index 6231c653da..da65c8715a 100755
+index ebf2b53ff0..11e8135687 100755
 --- a/configure
 +++ b/configure
-@@ -8065,6 +8065,10 @@ fi
+@@ -8086,6 +8086,10 @@ fi
  
  enabled ftrapv && check_cflags -ftrapv
  

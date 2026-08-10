@@ -1,17 +1,17 @@
-From 558d36afc7da1d13b3c94251670430b663e6e129 Mon Sep 17 00:00:00 2001
+From 670f57989437c2529221b650e9a7414250ad506f Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 13 Mar 2022 11:15:15 +0800
-Subject: [PATCH 20/34] win: enable windres for small and msvc
+Subject: [PATCH 20/35] win: enable windres for small and msvc
 
 ---
  configure | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/configure b/configure
-index 7711a2bea5..556e40d9ed 100755
+index b17a093e75..95cc23a372 100755
 --- a/configure
 +++ b/configure
-@@ -6226,7 +6226,7 @@ case $target_os in
+@@ -6230,7 +6230,7 @@ case $target_os in
              # Cannot build both shared and static libs when using dllimport.
              disable static
          fi
@@ -20,7 +20,7 @@ index 7711a2bea5..556e40d9ed 100755
          enabled x86_32 && check_ldflags -Wl,--large-address-aware
          add_cppflags -DWIN32_LEAN_AND_MEAN
          shlibdir_default="$bindir_default"
-@@ -6276,7 +6276,7 @@ case $target_os in
+@@ -6280,7 +6280,7 @@ case $target_os in
              disable static
              LIBSUF="-static.lib"
          fi

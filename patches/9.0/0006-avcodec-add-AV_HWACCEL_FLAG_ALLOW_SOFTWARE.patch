@@ -1,7 +1,7 @@
-From b4be24e6aa794164d45b099016a23b82449ec921 Mon Sep 17 00:00:00 2001
+From ca4919b0d95a239bba2c7b50b5b31f3e0df072cd Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 9 Nov 2017 14:56:53 +0800
-Subject: [PATCH 06/34] avcodec: add AV_HWACCEL_FLAG_ALLOW_SOFTWARE
+Subject: [PATCH 06/35] avcodec: add AV_HWACCEL_FLAG_ALLOW_SOFTWARE
 
 a hw decoder may have software or hybrid implementation, for example videotoolbox hevc.
 the performance may be better than ffmpeg sw decoder.

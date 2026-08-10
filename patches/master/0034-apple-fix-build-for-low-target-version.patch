@@ -1,7 +1,7 @@
-From c1ee5d8999e782a8683abd0769091a9bb0c1639d Mon Sep 17 00:00:00 2001
+From 992706f4199754073478e68be29508e4d3e06938 Mon Sep 17 00:00:00 2001
 From: wangbin <wbsecg1@gmail.com>
 Date: Tue, 23 Sep 2025 19:06:23 +0800
-Subject: [PATCH 35/35] apple: fix build for low target version
+Subject: [PATCH 34/34] apple: fix build for low target version
 
 ---
  libavdevice/avfoundation.m          |  2 +-
@@ -10,10 +10,10 @@ Subject: [PATCH 35/35] apple: fix build for low target version
  3 files changed, 26 insertions(+), 7 deletions(-)
 
 diff --git a/libavdevice/avfoundation.m b/libavdevice/avfoundation.m
-index ebec1ac4f2..abf37e0403 100644
+index 4516388dd4..0bf97688ff 100644
 --- a/libavdevice/avfoundation.m
 +++ b/libavdevice/avfoundation.m
-@@ -206,7 +206,7 @@ static void unlock_frames(AVFContext* ctx)
+@@ -224,7 +224,7 @@ static void unlock_frames(AVFContext* ctx)
      if (context == _context) {
  #if !TARGET_OS_IPHONE && __MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
          AVCaptureDeviceTransportControlsPlaybackMode mode =

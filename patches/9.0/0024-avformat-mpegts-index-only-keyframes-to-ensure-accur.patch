@@ -1,7 +1,7 @@
-From 6fd44ba2f9b33c4750eb7a4d89ef42a570ed4f97 Mon Sep 17 00:00:00 2001
+From 69ec47c9f8cfd824bbf03e2598305e71cec9910e Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 9 Feb 2023 18:08:11 +0800
-Subject: [PATCH 24/34] avformat/mpegts: index only keyframes to ensure
+Subject: [PATCH 24/35] avformat/mpegts: index only keyframes to ensure
  accurate seeks
 
 https://patchwork.ffmpeg.org/project/ffmpeg/patch/20190507032623.80375-1-ffmpeg@tmm1.net/
