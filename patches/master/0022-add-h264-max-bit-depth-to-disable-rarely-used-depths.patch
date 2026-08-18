@@ -1,4 +1,4 @@
-From 41c96bb329cb928c6acafbac90be7577ebef47b8 Mon Sep 17 00:00:00 2001
+From fe7a2c3fa301d066cacec6b639cfd3e713ec52c5 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 1 Jul 2022 16:03:06 +0800
 Subject: [PATCH 22/34] add h264-max-bit-depth to disable rarely used depths
@@ -255,7 +255,7 @@ index 5de0d6f846..e551866139 100644
              av_assert0(bit_depth<=8);
              H264_PRED(8)
 diff --git a/libavcodec/h264qpel.c b/libavcodec/h264qpel.c
-index c64d35b73d..d9546bc64d 100644
+index cf49c35f33..073bf32bcb 100644
 --- a/libavcodec/h264qpel.c
 +++ b/libavcodec/h264qpel.c
 @@ -28,23 +28,32 @@
@@ -291,28 +291,28 @@ index c64d35b73d..d9546bc64d 100644
  
  
  av_cold void ff_h264qpel_init(H264QpelContext *c, int bit_depth)
-@@ -82,18 +91,26 @@ av_cold void ff_h264qpel_init(H264QpelContext *c, int bit_depth)
+@@ -88,18 +97,26 @@ av_cold void ff_h264qpel_init(H264QpelContext *c, int bit_depth)
      default:
-         SET_QPEL(8);
+         SET_QPEL(dspfunc2, 8);
          break;
 +#if H264_MAX_BIT_DEPTH >= 9
      case 9:
-         SET_QPEL(9);
+         SET_QPEL(dspfunc2, 9);
          break;
 +#endif
 +#if H264_MAX_BIT_DEPTH >= 10
      case 10:
-         SET_QPEL(10);
+         SET_QPEL(dspfunc2, 10);
          break;
 +#endif
 +#if H264_MAX_BIT_DEPTH >= 12
      case 12:
-         SET_QPEL(12);
+         SET_QPEL(dspfunc2, 12);
          break;
 +#endif
 +#if H264_MAX_BIT_DEPTH >= 14
      case 14:
-         SET_QPEL(14);
+         SET_QPEL(dspfunc2, 14);
          break;
 +#endif
      }
@@ -357,7 +357,7 @@ index 6eb52746ad..5a94edbfc9 100644
 +#endif /* H264_MAX_BIT_DEPTH > 8 */
  }
 diff --git a/libavcodec/x86/h264dsp_init.c b/libavcodec/x86/h264dsp_init.c
-index f617078d15..0c102d4dc1 100644
+index d853219fb1..807b304de2 100644
 --- a/libavcodec/x86/h264dsp_init.c
 +++ b/libavcodec/x86/h264dsp_init.c
 @@ -268,6 +268,7 @@ av_cold void ff_h264dsp_init_x86(H264DSPContext *c, const int bit_depth,
