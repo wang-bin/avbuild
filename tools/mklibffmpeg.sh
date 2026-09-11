@@ -78,6 +78,7 @@ DUP_OBJS=(libswscale/log2_tab.o libswresample/log2_tab.o libavcodec/log2_tab.o l
   libswscale/aarch64/ops_static.o # for host exe
   libswscale/x86/emms.o
   libswresample/swresampleres.o
+  libswresample/reverse.o
   libpostproc/postprocres.o
   )
 if [ -f "$BUILD_DIR/libavcodec/vulkan_shaderc.o" -a -f "$BUILD_DIR/libavfilter/vulkan_shaderc.o" ]; then
