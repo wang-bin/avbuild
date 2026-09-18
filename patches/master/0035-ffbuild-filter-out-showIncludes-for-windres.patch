@@ -1,0 +1,26 @@
+From 60115770e7135b4eda84210a04e622ff6f2c9d0e Mon Sep 17 00:00:00 2001
+From: wangbin <wbsecg1@gmail.com>
+Date: Fri, 18 Sep 2026 09:34:09 +0800
+Subject: [PATCH 35/35] ffbuild: filter out -showIncludes for windres
+
+fix clang: error: unknown argument: '-showIncludes'
+---
+ ffbuild/common.mak | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ffbuild/common.mak b/ffbuild/common.mak
+index 87f1e47b31..5aa08a19c2 100644
+--- a/ffbuild/common.mak
++++ b/ffbuild/common.mak
+@@ -105,7 +105,7 @@ COMPILE_LASX = $(call COMPILE,CC,LASXFLAGS)
+ 	-$(if $(ASMSTRIPFLAGS), $(STRIP) $(ASMSTRIPFLAGS) $@)
+ 
+ %.o: %.rc
+-	$(WINDRES) $(WINDRESFLAGS) $(IFLAGS) $(foreach ARG,$(CC_DEPFLAGS),--preprocessor-arg "$(ARG)") -o $@ $<
++	$(WINDRES) $(WINDRESFLAGS) $(IFLAGS) $(foreach ARG,$(filter-out -showIncludes,$(CC_DEPFLAGS)),--preprocessor-arg "$(ARG)") -o $@ $<
+ 
+ %.i: %.c | $(MSCL)
+ 	$(CC) $(CCFLAGS) $(CC_E) $<
+-- 
+2.53.0
+

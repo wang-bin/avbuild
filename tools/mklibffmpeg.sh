@@ -140,7 +140,7 @@ SHFLAGS_R       = $(filter-out -shared -Wl% $$%, $(SHFLAGS)) # mingw -Wl,--disab
 vpath %.rc   $(SRC_PATH)
 
 %.o: %.rc
-	$(WINDRES) $(WINDRESFLAGS) $(IFLAGS) $(foreach ARG,$(CC_DEPFLAGS),--preprocessor-arg "$(ARG)") -o $@ $<
+	$(WINDRES) $(WINDRESFLAGS) $(IFLAGS) $(foreach ARG,$(filter-out -showIncludes,$(CC_DEPFLAGS)),--preprocessor-arg "$(ARG)") -o $@ $<
 
 # Windows resource file
 SLIBOBJS-$(HAVE_GNU_WINDRES)                 += lib$(NAME)res.o

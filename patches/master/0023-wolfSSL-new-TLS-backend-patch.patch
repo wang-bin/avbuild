@@ -1,7 +1,7 @@
-From 2aade94329eb4b30831c05b0cc468286e4a5b4b5 Mon Sep 17 00:00:00 2001
+From d152c28e9bcf7d63b704ea3c28affd85af889f8f Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 3 May 2022 00:03:18 +0800
-Subject: [PATCH 23/34] wolfSSL - new TLS backend patch
+Subject: [PATCH 23/35] wolfSSL - new TLS backend patch
 
 https://lists.ffmpeg.org/pipermail/ffmpeg-devel/2018-August/233802.html
 ---
@@ -14,7 +14,7 @@ https://lists.ffmpeg.org/pipermail/ffmpeg-devel/2018-August/233802.html
  create mode 100644 libavformat/tls_wolfssl.c
 
 diff --git a/configure b/configure
-index d47f5a716b..5742ff57f7 100755
+index ca2fc39412..88f1a3e3af 100755
 --- a/configure
 +++ b/configure
 @@ -210,7 +210,7 @@ External library support:
@@ -26,7 +26,7 @@ index d47f5a716b..5742ff57f7 100755
    --disable-iconv          disable iconv [autodetect]
    --enable-jni             enable JNI support [no]
    --enable-ladspa          enable LADSPA audio filtering [no]
-@@ -287,7 +287,7 @@ External library support:
+@@ -288,7 +288,7 @@ External library support:
    --enable-libtesseract    enable Tesseract, needed for ocr filter [no]
    --enable-libtheora       enable Theora encoding via libtheora [no]
    --enable-libtls          enable LibreSSL (via libtls), needed for https support
@@ -35,7 +35,7 @@ index d47f5a716b..5742ff57f7 100755
    --enable-libtorch        enable Torch as one DNN backend [no]
    --enable-libtwolame      enable MP2 encoding via libtwolame [no]
    --enable-libuavs3d       enable AVS3 decoding via libuavs3d [no]
-@@ -300,6 +300,8 @@ External library support:
+@@ -301,6 +301,8 @@ External library support:
    --enable-libvpx          enable VP8 and VP9 de/encoding via libvpx [no]
    --enable-libvvenc        enable H.266/VVC encoding via vvenc [no]
    --enable-libwebp         enable WebP encoding via libwebp [no]
@@ -44,7 +44,7 @@ index d47f5a716b..5742ff57f7 100755
    --enable-libx264         enable H.264 encoding via x264 [no]
    --enable-libx265         enable HEVC encoding via x265 [no]
    --enable-libxeve         enable EVC encoding via libxeve [no]
-@@ -324,7 +326,7 @@ External library support:
+@@ -325,7 +327,7 @@ External library support:
    --disable-lzma           disable lzma [autodetect]
    --enable-decklink        enable Blackmagic DeckLink I/O support [no]
    --enable-mbedtls         enable mbedTLS, needed for https support
@@ -53,7 +53,7 @@ index d47f5a716b..5742ff57f7 100755
    --enable-mediacodec      enable Android MediaCodec support [no]
    --enable-mediafoundation enable encoding via MediaFoundation [auto]
    --disable-metal          disable Apple Metal framework [autodetect]
-@@ -334,7 +336,7 @@ External library support:
+@@ -335,7 +337,7 @@ External library support:
    --enable-opencl          enable OpenCL processing [no]
    --enable-opengl          enable OpenGL rendering [no]
    --enable-openssl         enable openssl, needed for https support
@@ -62,7 +62,7 @@ index d47f5a716b..5742ff57f7 100755
    --enable-pocketsphinx    enable PocketSphinx, needed for asr filter [no]
    --disable-sndio          disable sndio support [autodetect]
    --disable-schannel       disable SChannel SSP, needed for TLS support on
-@@ -2137,6 +2139,7 @@ EXTERNAL_LIBRARY_LIST="
+@@ -2152,6 +2154,7 @@ EXTERNAL_LIBRARY_LIST="
      vapoursynth
      vulkan_static
      whisper
@@ -70,7 +70,7 @@ index d47f5a716b..5742ff57f7 100755
  "
  
  HWACCEL_AUTODETECT_LIBRARY_LIST="
-@@ -4105,14 +4108,14 @@ rtmpte_protocol_suggest="zlib"
+@@ -4091,15 +4094,15 @@ rtmpte_protocol_suggest="zlib"
  rtmpts_protocol_select="ffrtmphttp_protocol https_protocol"
  rtmpts_protocol_suggest="zlib"
  rtp_protocol_select="udp_protocol"
@@ -80,7 +80,8 @@ index d47f5a716b..5742ff57f7 100755
  sctp_protocol_select="network"
 -securetransport_conflict="openssl gnutls libtls mbedtls"
 +securetransport_conflict="openssl gnutls libtls mbedtls wolfssl"
- shared_protocol_deps="mmap stdatomic unistd_h"
+ shared_protocol_deps="mmap unistd_h"
+ shared_protocol_deps_any="stdatomic atomics_native"
  srtp_protocol_select="rtp_protocol srtp"
  tcp_protocol_select="network"
 -tls_protocol_deps_any="gnutls openssl schannel securetransport libtls mbedtls"
@@ -88,7 +89,7 @@ index d47f5a716b..5742ff57f7 100755
  tls_protocol_select="tcp_protocol"
  # TODO: Support libtls.
  dtls_protocol_deps_any="openssl schannel gnutls mbedtls"
-@@ -4140,7 +4143,7 @@ libsmbclient_protocol_deps="libsmbclient gplv3"
+@@ -4127,7 +4130,7 @@ libsmbclient_protocol_deps="libsmbclient gplv3"
  libsrt_protocol_deps="libsrt"
  libsrt_protocol_select="network"
  libssh_protocol_deps="libssh"
@@ -97,7 +98,7 @@ index d47f5a716b..5742ff57f7 100755
  libzmq_protocol_deps="libzmq"
  libzmq_protocol_select="network"
  
-@@ -7318,6 +7321,7 @@ enabled decklink          && { require_headers DeckLinkAPI.h &&
+@@ -7211,6 +7214,7 @@ enabled decklink          && { require_headers DeckLinkAPI.h &&
  enabled frei0r            && require_headers "frei0r.h"
  enabled gmp               && require gmp gmp.h mpz_export -lgmp
  enabled gnutls            && require_pkg_config gnutls gnutls gnutls/gnutls.h gnutls_global_init
@@ -106,10 +107,10 @@ index d47f5a716b..5742ff57f7 100755
  enabled ladspa            && require_headers "ladspa.h dlfcn.h"
  enabled lcms2             && require_pkg_config lcms2 "lcms2 >= 2.13" lcms2.h cmsCreateContext
 diff --git a/libavformat/Makefile b/libavformat/Makefile
-index 45084227a6..d3e85adf57 100644
+index 3176be8a71..da50b20343 100644
 --- a/libavformat/Makefile
 +++ b/libavformat/Makefile
-@@ -725,6 +725,7 @@ TLS-OBJS-$(CONFIG_GNUTLS)                += tls_gnutls.o
+@@ -729,6 +729,7 @@ TLS-OBJS-$(CONFIG_GNUTLS)                += tls_gnutls.o
  TLS-OBJS-$(CONFIG_LIBTLS)                += tls_libtls.o
  TLS-OBJS-$(CONFIG_MBEDTLS)               += tls_mbedtls.o
  TLS-OBJS-$(CONFIG_OPENSSL)               += tls_openssl.o
