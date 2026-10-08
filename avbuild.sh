@@ -1823,8 +1823,8 @@ EOF
   if [ -f bin/avutil.lib ]; then
     mv bin/*.lib lib
   fi
-  find lib -name "*.dylib" -type f -exec dsymutil {} \;
-  find lib -name "*.dylib" -type f -exec strip -u -r {} \; # will strip exported symbols, llvm-strip can reduce size more
+  find lib -type d -name "*.dSYM" -prune -o -type f -name "*.dylib" -exec dsymutil {} \;
+  find lib -type d -name "*.dSYM" -prune -o -type f -name "*.dylib" -exec strip -u -r {} \; # will strip exported symbols, llvm-strip can reduce size more
 }
 
 build_all(){
