@@ -1,7 +1,7 @@
-From 101d9ec8641d9d41ca717c5b3625e19e8f9af801 Mon Sep 17 00:00:00 2001
+From 2c82a9ddf441902f9282aa8d506e0c9dfb6807d6 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:35:28 +0800
-Subject: [PATCH 04/34] videotoolbox: check runtime availability
+Subject: [PATCH 04/35] videotoolbox: check runtime availability
 
 fix warnings/errors for new compiler (since xcode9) if targeting
 macOS<10.8
@@ -72,5 +72,5 @@ index 8df8a3214c..950a6550f0 100644
                                            decoder_spec,              // videoDecoderSpecification
                                            buf_attr,                  // destinationImageBufferAttributes
 -- 
-2.53.0
+2.54.0 (Apple Git-157)
 

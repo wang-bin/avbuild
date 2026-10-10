@@ -1,14 +1,14 @@
-From 3eb5dd9a3b20334f464efffe8faf4a2adc5c940f Mon Sep 17 00:00:00 2001
+From bb84d2f77319041631be6d132a5caa9115669e89 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 3 Jul 2020 14:09:54 +0800
-Subject: [PATCH 16/34] nvenc: check sdk 10.0 ptrs at runtime
+Subject: [PATCH 16/35] nvenc: check sdk 10.0 ptrs at runtime
 
 ---
  libavcodec/nvenc.c | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/libavcodec/nvenc.c b/libavcodec/nvenc.c
-index 0f885c7f90..bfcbc37f7e 100644
+index 53230a88b0..e12f3fbbe7 100644
 --- a/libavcodec/nvenc.c
 +++ b/libavcodec/nvenc.c
 @@ -1737,6 +1737,7 @@ static av_cold int nvenc_setup_encoder(AVCodecContext *avctx)
@@ -20,5 +20,5 @@ index 0f885c7f90..bfcbc37f7e 100644
          ctx->init_encode_params.encodeGUID,
          ctx->init_encode_params.presetGUID,
 -- 
-2.53.0
+2.54.0 (Apple Git-157)
 

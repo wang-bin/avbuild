@@ -1,4 +1,4 @@
-From d152c28e9bcf7d63b704ea3c28affd85af889f8f Mon Sep 17 00:00:00 2001
+From 43769d35f1559c27939b16a7ed595a430bf57c1e Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Tue, 3 May 2022 00:03:18 +0800
 Subject: [PATCH 23/35] wolfSSL - new TLS backend patch
@@ -14,7 +14,7 @@ https://lists.ffmpeg.org/pipermail/ffmpeg-devel/2018-August/233802.html
  create mode 100644 libavformat/tls_wolfssl.c
 
 diff --git a/configure b/configure
-index ca2fc39412..88f1a3e3af 100755
+index 237643872a..a1f99e35d2 100755
 --- a/configure
 +++ b/configure
 @@ -210,7 +210,7 @@ External library support:
@@ -62,7 +62,7 @@ index ca2fc39412..88f1a3e3af 100755
    --enable-pocketsphinx    enable PocketSphinx, needed for asr filter [no]
    --disable-sndio          disable sndio support [autodetect]
    --disable-schannel       disable SChannel SSP, needed for TLS support on
-@@ -2152,6 +2154,7 @@ EXTERNAL_LIBRARY_LIST="
+@@ -2153,6 +2155,7 @@ EXTERNAL_LIBRARY_LIST="
      vapoursynth
      vulkan_static
      whisper
@@ -70,7 +70,7 @@ index ca2fc39412..88f1a3e3af 100755
  "
  
  HWACCEL_AUTODETECT_LIBRARY_LIST="
-@@ -4091,15 +4094,15 @@ rtmpte_protocol_suggest="zlib"
+@@ -4089,14 +4092,14 @@ rtmpte_protocol_suggest="zlib"
  rtmpts_protocol_select="ffrtmphttp_protocol https_protocol"
  rtmpts_protocol_suggest="zlib"
  rtp_protocol_select="udp_protocol"
@@ -80,8 +80,7 @@ index ca2fc39412..88f1a3e3af 100755
  sctp_protocol_select="network"
 -securetransport_conflict="openssl gnutls libtls mbedtls"
 +securetransport_conflict="openssl gnutls libtls mbedtls wolfssl"
- shared_protocol_deps="mmap unistd_h"
- shared_protocol_deps_any="stdatomic atomics_native"
+ shared_protocol_deps="atomics_native"
  srtp_protocol_select="rtp_protocol srtp"
  tcp_protocol_select="network"
 -tls_protocol_deps_any="gnutls openssl schannel securetransport libtls mbedtls"
@@ -89,7 +88,7 @@ index ca2fc39412..88f1a3e3af 100755
  tls_protocol_select="tcp_protocol"
  # TODO: Support libtls.
  dtls_protocol_deps_any="openssl schannel gnutls mbedtls"
-@@ -4127,7 +4130,7 @@ libsmbclient_protocol_deps="libsmbclient gplv3"
+@@ -4124,7 +4127,7 @@ libsmbclient_protocol_deps="libsmbclient gplv3"
  libsrt_protocol_deps="libsrt"
  libsrt_protocol_select="network"
  libssh_protocol_deps="libssh"
@@ -98,7 +97,7 @@ index ca2fc39412..88f1a3e3af 100755
  libzmq_protocol_deps="libzmq"
  libzmq_protocol_select="network"
  
-@@ -7211,6 +7214,7 @@ enabled decklink          && { require_headers DeckLinkAPI.h &&
+@@ -7225,6 +7228,7 @@ enabled decklink          && { { test_cxxflags_cc "" DeckLinkAPI.h 1 || die "ERR
  enabled frei0r            && require_headers "frei0r.h"
  enabled gmp               && require gmp gmp.h mpz_export -lgmp
  enabled gnutls            && require_pkg_config gnutls gnutls gnutls/gnutls.h gnutls_global_init
@@ -107,10 +106,10 @@ index ca2fc39412..88f1a3e3af 100755
  enabled ladspa            && require_headers "ladspa.h dlfcn.h"
  enabled lcms2             && require_pkg_config lcms2 "lcms2 >= 2.13" lcms2.h cmsCreateContext
 diff --git a/libavformat/Makefile b/libavformat/Makefile
-index 3176be8a71..da50b20343 100644
+index 302df282cd..7f3712ccdd 100644
 --- a/libavformat/Makefile
 +++ b/libavformat/Makefile
-@@ -729,6 +729,7 @@ TLS-OBJS-$(CONFIG_GNUTLS)                += tls_gnutls.o
+@@ -731,6 +731,7 @@ TLS-OBJS-$(CONFIG_GNUTLS)                += tls_gnutls.o
  TLS-OBJS-$(CONFIG_LIBTLS)                += tls_libtls.o
  TLS-OBJS-$(CONFIG_MBEDTLS)               += tls_mbedtls.o
  TLS-OBJS-$(CONFIG_OPENSSL)               += tls_openssl.o
@@ -416,5 +415,5 @@ index 0000000000..b89f145f0b
 +    .priv_data_class = &tls_class,
 +};
 -- 
-2.53.0
+2.54.0 (Apple Git-157)
 

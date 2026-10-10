@@ -1,7 +1,7 @@
-From 992706f4199754073478e68be29508e4d3e06938 Mon Sep 17 00:00:00 2001
+From 59cd2de19c2353bef89af329cc964c2705dafeb7 Mon Sep 17 00:00:00 2001
 From: wangbin <wbsecg1@gmail.com>
 Date: Tue, 23 Sep 2025 19:06:23 +0800
-Subject: [PATCH 34/34] apple: fix build for low target version
+Subject: [PATCH 34/35] apple: fix build for low target version
 
 ---
  libavdevice/avfoundation.m          |  2 +-
@@ -10,10 +10,10 @@ Subject: [PATCH 34/34] apple: fix build for low target version
  3 files changed, 26 insertions(+), 7 deletions(-)
 
 diff --git a/libavdevice/avfoundation.m b/libavdevice/avfoundation.m
-index 4516388dd4..0bf97688ff 100644
+index 8b7e728279..e808bd70ba 100644
 --- a/libavdevice/avfoundation.m
 +++ b/libavdevice/avfoundation.m
-@@ -224,7 +224,7 @@ static void unlock_frames(AVFContext* ctx)
+@@ -225,7 +225,7 @@ - (void)observeValueForKeyPath:(NSString *)keyPath
      if (context == _context) {
  #if !TARGET_OS_IPHONE && __MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
          AVCaptureDeviceTransportControlsPlaybackMode mode =
@@ -23,10 +23,10 @@ index 4516388dd4..0bf97688ff 100644
          if (mode != _context->observed_mode) {
              if (mode == AVCaptureDeviceTransportControlsNotPlayingMode) {
 diff --git a/libavfilter/vf_yadif_videotoolbox.m b/libavfilter/vf_yadif_videotoolbox.m
-index f8eb0c6bfa..0678633100 100644
+index 9f09947cc2..799b3ad678 100644
 --- a/libavfilter/vf_yadif_videotoolbox.m
 +++ b/libavfilter/vf_yadif_videotoolbox.m
-@@ -248,9 +248,14 @@ static av_cold int do_init(AVFilterContext *ctx) API_AVAILABLE(macos(10.11), ios
+@@ -253,9 +253,14 @@ static av_cold int do_init(AVFilterContext *ctx) API_AVAILABLE(macos(10.11), ios
          goto fail;
      }
  
@@ -43,10 +43,10 @@ index f8eb0c6bfa..0678633100 100644
          av_log(ctx, AV_LOG_ERROR, "Failed to create Metal buffer for parameters\n");
          goto fail;
 diff --git a/libavformat/tls_securetransport.c b/libavformat/tls_securetransport.c
-index f52fc97db2..ebfdead534 100644
+index 01965439e9..b5bb38b736 100644
 --- a/libavformat/tls_securetransport.c
 +++ b/libavformat/tls_securetransport.c
-@@ -165,11 +165,25 @@ static int load_cert(URLContext *h)
+@@ -166,11 +166,25 @@ static int load_cert(URLContext *h)
      if ((ret = import_pem(h, c->tls_shared.key_file, &keyArray)) < 0)
          goto end;
  
@@ -78,5 +78,5 @@ index f52fc97db2..ebfdead534 100644
  
      if (!(outArray = CFArrayCreateMutableCopy(kCFAllocatorDefault, 0, certArray))) {
 -- 
-2.53.0
+2.54.0 (Apple Git-157)
 

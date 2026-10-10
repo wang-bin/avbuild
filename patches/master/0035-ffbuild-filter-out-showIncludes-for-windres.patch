@@ -1,4 +1,4 @@
-From 60115770e7135b4eda84210a04e622ff6f2c9d0e Mon Sep 17 00:00:00 2001
+From 758e26efa1b9acb84c0d50f4b9ad947df373a057 Mon Sep 17 00:00:00 2001
 From: wangbin <wbsecg1@gmail.com>
 Date: Fri, 18 Sep 2026 09:34:09 +0800
 Subject: [PATCH 35/35] ffbuild: filter out -showIncludes for windres
@@ -22,5 +22,5 @@ index 87f1e47b31..5aa08a19c2 100644
  %.i: %.c | $(MSCL)
  	$(CC) $(CCFLAGS) $(CC_E) $<
 -- 
-2.53.0
+2.54.0 (Apple Git-157)
 

@@ -1,17 +1,17 @@
-From b8f9b9efdad3efba2ca0e0be0e1d4799e5d6d51b Mon Sep 17 00:00:00 2001
+From 5a5787f0a4869ac78b0b1d15679f1ebc74bbeeb8 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Sun, 29 Oct 2017 23:22:25 +0800
-Subject: [PATCH 03/34] configure: fix mmal probing in cross build
+Subject: [PATCH 03/35] configure: fix mmal probing in cross build
 
 ---
  configure | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/configure b/configure
-index f2896b81c7..6ba13f6d91 100755
+index f542d4e0d6..fd58d72cac 100755
 --- a/configure
 +++ b/configure
-@@ -7496,11 +7496,11 @@ enabled mbedtls           && { check_pkg_config mbedtls mbedtls mbedtls/x509_crt
+@@ -7415,11 +7415,11 @@ enabled mbedtls           && { check_pkg_config mbedtls mbedtls mbedtls/x509_crt
                                 die "ERROR: mbedTLS not found"; }
  enabled mediacodec        && { enabled jni || die "ERROR: mediacodec requires --enable-jni"; } &&
                                 add_compat android/binder.o
@@ -26,5 +26,5 @@ index f2896b81c7..6ba13f6d91 100755
                                 check_func_headers interface/mmal/mmal.h "MMAL_PARAMETER_VIDEO_MAX_NUM_CALLBACKS"; }
  enabled ohcodec           && { check_lib ohcodec "multimedia/player_framework/native_avcodec_videodecoder.h multimedia/player_framework/native_avcodec_videoencoder.h" \
 -- 
-2.53.0
+2.54.0 (Apple Git-157)
 

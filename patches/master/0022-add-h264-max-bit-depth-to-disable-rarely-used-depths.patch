@@ -1,7 +1,7 @@
-From fe7a2c3fa301d066cacec6b639cfd3e713ec52c5 Mon Sep 17 00:00:00 2001
+From e1284a16375869eb2f5c23dc50bd08f9a14f09e0 Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Fri, 1 Jul 2022 16:03:06 +0800
-Subject: [PATCH 22/34] add h264-max-bit-depth to disable rarely used depths
+Subject: [PATCH 22/35] add h264-max-bit-depth to disable rarely used depths
 
 ---
  configure                            |  6 ++++++
@@ -16,10 +16,10 @@ Subject: [PATCH 22/34] add h264-max-bit-depth to disable rarely used depths
  9 files changed, 77 insertions(+), 1 deletion(-)
 
 diff --git a/configure b/configure
-index 0dd7539f1d..d47f5a716b 100755
+index 40fdc27ea2..237643872a 100755
 --- a/configure
 +++ b/configure
-@@ -450,6 +450,7 @@ Advanced options (experts only):
+@@ -451,6 +451,7 @@ Advanced options (experts only):
                              crashes and arbitrary code execution, it may be faster, but
                              should only be used with trusted input)
    --sws-max-filter-size=N  the max filter size swscale uses [$sws_max_filter_size_default]
@@ -27,7 +27,7 @@ index 0dd7539f1d..d47f5a716b 100755
  
  Optimization options (experts only):
    --disable-asm            disable all assembly optimizations
-@@ -2884,6 +2885,7 @@ CMDLINE_SET="
+@@ -2862,6 +2863,7 @@ CMDLINE_SET="
      env
      extra_version
      gas
@@ -35,7 +35,7 @@ index 0dd7539f1d..d47f5a716b 100755
      host_cc
      host_cflags
      host_extralibs
-@@ -4480,6 +4482,9 @@ enable valgrind_backtrace
+@@ -4464,6 +4466,9 @@ enable valgrind_backtrace
  sws_max_filter_size_default=256
  set_default sws_max_filter_size
  
@@ -45,7 +45,7 @@ index 0dd7539f1d..d47f5a716b 100755
  # internal components are enabled by default
  enable $EXTRALIBS_LIST
  
-@@ -8779,6 +8784,7 @@ cat > $TMPH <<EOF
+@@ -8646,6 +8651,7 @@ cat > $TMPH <<EOF
  #define BUILDSUF "$build_suffix"
  #define SLIBSUF "$SLIBSUF"
  #define SWS_MAX_FILTER_SIZE $sws_max_filter_size
@@ -357,10 +357,10 @@ index 6eb52746ad..5a94edbfc9 100644
 +#endif /* H264_MAX_BIT_DEPTH > 8 */
  }
 diff --git a/libavcodec/x86/h264dsp_init.c b/libavcodec/x86/h264dsp_init.c
-index d853219fb1..807b304de2 100644
+index 654316c2af..97c92a52fe 100644
 --- a/libavcodec/x86/h264dsp_init.c
 +++ b/libavcodec/x86/h264dsp_init.c
-@@ -268,6 +268,7 @@ av_cold void ff_h264dsp_init_x86(H264DSPContext *c, const int bit_depth,
+@@ -263,6 +263,7 @@ av_cold void ff_h264dsp_init_x86(H264DSPContext *c, const int bit_depth,
              c->idct_dc_add     = ff_h264_idct_dc_add_8_avx;
          }
      } else if (bit_depth == 10) {
@@ -368,7 +368,7 @@ index d853219fb1..807b304de2 100644
          if (EXTERNAL_MMXEXT(cpu_flags)) {
              c->idct_dc_add = ff_h264_idct_dc_add_10_mmxext;
          }
-@@ -345,5 +346,6 @@ av_cold void ff_h264dsp_init_x86(H264DSPContext *c, const int bit_depth,
+@@ -340,5 +341,6 @@ av_cold void ff_h264dsp_init_x86(H264DSPContext *c, const int bit_depth,
              c->v_loop_filter_luma_intra   = ff_deblock_v_luma_intra_10_avx;
              c->h_loop_filter_luma_intra   = ff_deblock_h_luma_intra_10_avx;
          }
@@ -376,5 +376,5 @@ index d853219fb1..807b304de2 100644
      }
  }
 -- 
-2.53.0
+2.54.0 (Apple Git-157)
 

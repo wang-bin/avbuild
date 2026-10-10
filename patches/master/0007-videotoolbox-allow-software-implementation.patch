@@ -1,7 +1,7 @@
-From e53bc88b77dba78daec4463ff8b25bcec79974af Mon Sep 17 00:00:00 2001
+From 03b9e4851e5045f494118f85b44643d9b616a4ba Mon Sep 17 00:00:00 2001
 From: wang-bin <wbsecg1@gmail.com>
 Date: Thu, 9 Nov 2017 15:05:26 +0800
-Subject: [PATCH 07/34] videotoolbox: allow software implementation
+Subject: [PATCH 07/35] videotoolbox: allow software implementation
 
 hevc is supported on macOS 10.12+ and iOS11+. sw implementaion is
 provided for old devices. vt sw decoder is more energy effecient than
@@ -28,5 +28,5 @@ index 950a6550f0..ff64f7f774 100644
                              kVTVideoDecoderSpecification_EnableHardwareAcceleratedVideoDecoder :
                              kVTVideoDecoderSpecification_RequireHardwareAcceleratedVideoDecoder,
 -- 
-2.53.0
+2.54.0 (Apple Git-157)
 
