@@ -382,6 +382,7 @@ jobs:
 
 
   Windows_clang:
+    if: false # link error can't reproduce locally: "lld-link: error: could not open 'LIBCMT.lib': No such file or directory"
     runs-on: ubuntu-latest
     env:
       TARGET_OS: ${{ matrix.target }}
@@ -443,6 +444,7 @@ jobs:
 
 
   VCRT120_clang:
+    if: false # link error can't reproduce locally: "lld-link: error: could not open 'LIBCMT.lib': No such file or directory"
     runs-on: ubuntu-latest
     env:
       TARGET_OS: windows-desktop
