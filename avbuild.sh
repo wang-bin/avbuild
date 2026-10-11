@@ -170,7 +170,7 @@ host_is MinGW || host_is MSYS && {
 
 android_arch(){
   # emulate hash in bash3
-  local armv5=armeabi armv7=armeabi-v7a arm64=arm64-v8a # ${!armv5} is armeabi<=armeabi<=armv5
+  local armv5=armeabi armv7=armeabi-v7a arm64=arm64-v8a x64=x86_64 # ${!armv5} is armeabi<=armeabi<=armv5
   # indirect reference
   arch=${!1}
   echo "${arch:=$1}"
@@ -550,7 +550,7 @@ setup_win_clang(){
   # makedef: define env AR=llvm-ar, NM=llvm-nm
   # --windres=rc option is broken and not recognized
   TARGET_TRIPLE=${target_tripple_arch}-pc-windows-msvc # lto default vendor is empty, fix lld-link: warning: Linking two modules of different target triples
-  TARGET_OPT="--disable-stripping--target=$TARGET_TRIPLE"
+  TARGET_OPT="--target=$TARGET_TRIPLE"
   [ "$MACHINE" == arm ] && {
     ASM_OPT+=" --enable-thumb --enable-neon --cpu=armv7-a"
     # clang: FPU error. gas: vfp error
