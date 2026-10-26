@@ -112,7 +112,7 @@ PATCH_BRANCH=master
 [ $FFMAJOR -eq 6 ] && PATCH_BRANCH=6.$FFMINOR
 [ $FFMAJOR -eq 7 ] && PATCH_BRANCH=7.$FFMINOR
 [ $FFMAJOR -eq 8 ] && PATCH_BRANCH=8.$FFMINOR
-[ $FFMAJOR -eq 9 ] && {
+[ $FFMAJOR -eq 9 ] && [ -d "$THIS_DIR/patches/9.$FFMINOR" ] && {
     $FFGIT || PATCH_BRANCH=9.$FFMINOR
 }
 echo "FFmpeg/Libav version: $FFMAJOR.$FFMINOR  git: $FFGIT. patch set version: $PATCH_BRANCH"
