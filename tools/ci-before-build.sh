@@ -14,7 +14,7 @@ fi
 if [ `which dpkg` ]; then
     #sudo apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main" # for rpi1
     #bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
-    wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+    wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
     source /etc/os-release
     sudo add-apt-repository -y "deb http://apt.llvm.org/${VERSION_CODENAME}/ llvm-toolchain-${VERSION_CODENAME} main"
     sudo apt update
