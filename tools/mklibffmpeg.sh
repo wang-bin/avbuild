@@ -94,6 +94,10 @@ if [ -f "$BUILD_DIR/libavutil/half2float.o" -a -f "$BUILD_DIR/libswscale/half2fl
 # ffmpeg > 7.1
     DUP_OBJS+=(libswscale/half2float.o libavcodec/float2half.o)
 fi
+if [ -f "$BUILD_DIR/libavutil/framepool.o" -a -f "$BUILD_DIR/libavfilter/framepool.o" ]; then
+# ffmpeg >= 9.1
+    DUP_OBJS+=(libavfilter/framepool.o)
+fi
 grep -q ffjni.c libavformat/file.d 2>/dev/null && DUP_OBJS+=(libavcodec/ffjni.o)
 printf -v excludes '%s'"|" "${DUP_OBJS[@]}"
 excludes=${excludes%|}
