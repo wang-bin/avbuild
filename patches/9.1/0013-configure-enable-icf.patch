@@ -1,0 +1,27 @@
+From 1aa119f1483753e8bc277b2f1d616ba8d83e38c0 Mon Sep 17 00:00:00 2001
+From: wang-bin <wbsecg1@gmail.com>
+Date: Tue, 11 Sep 2018 23:16:49 +0800
+Subject: [PATCH 13/35] configure: enable icf
+
+---
+ configure | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/configure b/configure
+index 4c71ced491..0bb6d427a9 100755
+--- a/configure
++++ b/configure
+@@ -7983,6 +7983,10 @@ fi
+ 
+ enabled ftrapv && check_allcflags -ftrapv
+ 
++check_ldflags --icf=safe || check_ldflags -Wl,--icf=safe || { # ld or clang7 + lld
++    check_cflags -faddrsig && (check_ldflags --icf=all || check_ldflags -Wl,--icf=all)
++}
++
+ if enabled icc; then
+     # Just warnings, no remarks
+     check_allcflags -w1
+-- 
+2.53.0
+
