@@ -144,13 +144,17 @@ jobs:
         set HOME=%CD%
         set FFSRC=%CD%\ffmpeg-%FF_VERSION%
         set BUILD_NOW=true
-        tools\vcbuild.bat VS2026 %TARGET_OS%10 x64
+        tools\vcbuild.bat VS2026 %TARGET_OS%10 x64,arm64
     - name: Make SDK
       shell: cmd
       run: |
         set SDK_NAME=ffmpeg-%FF_VERSION%-%TARGET_OS%-vs2026%CONFIG_SUFFIX%
         move sdk* %SDK_NAME%
-        xcopy /s /f /y tools\dep_gpl\${{ env.TARGET_OS }}\lib\* %SDK_NAME%\lib\
+        if errorlevel 1 exit /b 1
+        xcopy /s /f /y tools\dep_gpl\%TARGET_OS%\lib\* %SDK_NAME%\lib\x64\
+        if errorlevel 1 exit /b 1
+        xcopy /s /f /y tools\dep_gpl\%TARGET_OS%\arm64\lib\* %SDK_NAME%\lib\arm64\
+        if errorlevel 1 exit /b 1
         7z a -ssc -m0=lzma2 -mx=9 -ms=on -mf=off %SDK_NAME%.7z %SDK_NAME%
     - name: Archieve SDK
       uses: actions/upload-artifact@v4

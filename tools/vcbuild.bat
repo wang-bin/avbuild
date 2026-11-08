@@ -3,6 +3,7 @@
 
 :: vcbuild <msvc_ver|vs_ver|cl_ver> <desktop|phone|store> <version(5.1,6.1,6.2,10)/sdk_version(8.1,10.0.15063.0)> <arch>
 :: vcbuild <msvc_ver|vs_ver|cl_ver> <xp|vista|win7|win8,win8.1|win10|winphone8.1|winstore10> <arch>
+:: arch: x86, x64, arm, arm64, all, or a list (e.g. x64,arm64 or "x64 arm64")
 :: windows version affects compiler and linker flags (-D_WIN32_WINNT=)
 :: msvc_ver: vs2013, vs2015, vs2017; vs_ver: VS120, VS140; cl_ver: cl18, cl19
 :: prefer highest vs compiler from env
@@ -101,19 +102,75 @@ if not [%OS%] == [%OS:uwp=%] (
 set HOST_WSL=fase
 if not [%OS%] == [%OS:wsl=%] set HOST_WSL=true
 
-set ARCH=%3
-if [%ARCH%] == [] set /P ARCH="architecture (x86, x64, arm, arm64, all): "
+:: Arch: x86, x64, arm, arm64, all, or a list. CMD splits on comma, so also accept
+:: trailing args (x64,arm64 / x64 arm64) and quoted lists ("x64 arm64").
+:: Trailing "all" after a real arch is ignored (appveyor: vcbuild ... arm all).
+set ARCH_ARG=
+set ARCH_LIST=
+call :ParseArchArgs %3 %4 %5 %6 %7 %8 %9
+if errorlevel 1 exit /B 1
+if not "%ARCH_LIST%"=="" goto ArchArgsReady
+:: Keep input separate from the normalized parser output; parse outside ().
+set ARCH_INPUT=
+set /P ARCH_INPUT="architecture (x86, x64, arm, arm64, all, or list e.g. x64,arm64): "
+if not defined ARCH_INPUT exit /B 1
+call :ParseArchArgs %ARCH_INPUT%
+set ARCH_INPUT=
+if errorlevel 1 exit /B 1
+:ArchArgsReady
+if /i not "%ARCH_ARG%"=="all" if defined ARCH_LIST if "%ARCH_LIST:~0,1%"==" " set ARCH_LIST=%ARCH_LIST:~1%
+if /i not "%ARCH_ARG%"=="all" if defined ARCH_ARG if "%ARCH_ARG:~0,1%"==" " set ARCH_ARG=%ARCH_ARG:~1%
+set ARCH_COUNT=0
+for %%A in (%ARCH_LIST%) do set /a ARCH_COUNT+=1
+echo ARCH_ARG=%ARCH_ARG% ARCH_LIST=%ARCH_LIST% ARCH_COUNT=%ARCH_COUNT%
 
+:: Single-arch ARG/ARCH2 for legacy and single vcvarsall path
+set ARCH=%ARCH_LIST%
 set ARCH2=%ARCH%
 set ARG=x86_%ARCH%
-if "%ARCH%" == "x86" (
+if /i "%ARCH%" == "x86" (
   set ARCH2=
   set ARG=x86
 )
-if "%ARCH%" == "x64" (
+if /i "%ARCH%" == "x64" (
   set ARCH2=amd64
   set ARG=x86_amd64
 )
+goto AfterArchParse
+
+:ParseArchArgs
+if "%~1"=="" goto :eof
+if /i "%~1"=="all" (
+  if not "%ARCH_LIST%"=="" goto :eof
+  set ARCH_ARG=all
+  :: x86 last so it remains the active env; no ARM32 (matches prior disabled setup)
+  set ARCH_LIST=arm64 x64 x86
+  goto :eof
+)
+for %%A in (%~1) do (
+  call :AppendValidatedArch %%A
+  if errorlevel 1 exit /B 1
+)
+shift
+goto ParseArchArgs
+
+:AppendValidatedArch
+if /i "%~1"=="x86" goto AppendArchOk
+if /i "%~1"=="x64" goto AppendArchOk
+if /i "%~1"=="arm64" goto AppendArchOk
+if /i "%~1"=="arm" (
+  if %VSVER% LSS 180 goto AppendArchOk
+  echo ERROR: ARM32 is not supported for VS2026+
+  exit /B 1
+)
+echo ERROR: unknown architecture: %~1
+exit /B 1
+:AppendArchOk
+set ARCH_LIST=%ARCH_LIST% %~1
+if /i not "%ARCH_ARG%"=="all" set ARCH_ARG=%ARCH_ARG% %~1
+goto :eof
+
+:AfterArchParse
 
 if [%VSVER%] == [150] goto SetupVC150Env
 if [%VSVER%] == [160] goto SetupVC160Env
@@ -164,22 +221,62 @@ goto SetupVCEnv
 :SetupVCEnv
 if [%WINRT%] == [true] set EXTRA_ARGS=store
 :: TODO: sdk version, or pass all vcvarsall.bat parameters to support old windows target, onecore etc
-if not [%ARCH%] == [all] (
+if %ARCH_COUNT% LEQ 1 (
     call "%VCVARSALL_BAT%" %ARG% %EXTRA_ARGS%
+    if errorlevel 1 (
+      echo ERROR: vcvarsall.bat failed for %ARCH%
+      exit /B 1
+    )
     goto end
 )
 
-call "%VCVARSALL_BAT%" x86_arm64 %EXTRA_ARGS%
-set PATH_arm64=%PATH%
-set LIBPATH_arm64=%LIBPATH%
-set LIB_arm64=%LIB%
-set INCLUDE_arm64=%INCLUDE%
-set PATH=%PATH_CLEAN%
-set LIB=
-set LIBPATH=
-set INCLUDE=
+:: Multi-arch: set PATH_*/LIB_*/LIBPATH_*/INCLUDE_* for each requested arch
+:: TODO: vs2013 vcvarsall.bat does not set store env correctly
+:: after vcvarsall.bat, main paths are %VCINSTALLDIR%\Tools\MSVC\%VS_TOOLS_VERSION%\bin\HostX86\x86;%WindowsSdkVerBinPath%\x86;%WindowsSdkBinPath%
+:: args can be x64, x86_x64, amd64, x86_amd64, amd64_arm64, or simply %HOSTARCH%_x64
+:: Branch only sets vcvarsall arg + optional VC-LTL prefix; call/save must be outside () so %%VAR%% expands after vcvarsall.
+set ARCH_INDEX=0
+set ARCH_SETUP_ERR=0
+for %%A in (%ARCH_LIST%) do (
+  set /a ARCH_INDEX+=1
+  call :SetupArchEnv %%A
+  if errorlevel 1 set ARCH_SETUP_ERR=1
+)
+if "%ARCH_SETUP_ERR%"=="1" exit /B 1
+goto end
 
-goto SetMultiArch
+
+:SetupArchEnv
+:: %1 = arch (x86|x64|arm|arm64). Clears env after each arch except the last.
+set _a=%~1
+set VCVARS_ARCH=
+set ARCH_LTL=
+if /i "%_a%" == "x86" set VCVARS_ARCH=x86
+if /i "%_a%" == "x86" set ARCH_LTL=%VC_LTL_LIB%\Win32;
+if /i "%_a%" == "x64" set VCVARS_ARCH=x86_amd64
+if /i "%_a%" == "x64" set ARCH_LTL=%VC_LTL_LIB%\x64;
+if /i "%_a%" == "arm" set VCVARS_ARCH=x86_arm
+if /i "%_a%" == "arm64" set VCVARS_ARCH=x86_arm64
+if "%VCVARS_ARCH%"=="" (
+  echo ERROR: unknown architecture: %_a%
+  exit /B 1
+)
+call "%VCVARSALL_BAT%" %VCVARS_ARCH% %EXTRA_ARGS%
+if errorlevel 1 (
+  echo ERROR: vcvarsall.bat failed for %_a% ^(%VCVARS_ARCH%^)
+  exit /B 1
+)
+set PATH_%_a%=%PATH%
+set LIBPATH_%_a%=%LIBPATH%
+set LIB_%_a%=%ARCH_LTL%%LIB%
+set INCLUDE_%_a%=%INCLUDE%
+if not "%ARCH_INDEX%"=="%ARCH_COUNT%" (
+  set "PATH=%PATH_CLEAN%"
+  set LIB=
+  set LIBPATH=
+  set INCLUDE=
+)
+goto :eof
 
 
 :SetupVCEnvLegacy
@@ -202,45 +299,6 @@ if [%OS_VER%] == [10] (
 	set ARG=%ARG% store
 	goto SetEnv10SDK
 )
-
-
-:SetMultiArch
-:: TODO: vs2013 vcvarsall.bat does not set store env correctly
-:: after vcvarsall.bat, main paths are %VCINSTALLDIR%\Tools\MSVC\%VS_TOOLS_VERSION%\bin\HostX86\x86;%WindowsSdkVerBinPath%\x86;%WindowsSdkBinPath%
-:: args can be x64, x86_x64, amd64, x86_amd64, amd64_arm64, or simply %HOSTARCH%_x64
-call "%VCVARSALL_BAT%" x86_amd64 %EXTRA_ARGS%
-set PATH_x64=%PATH%
-set LIBPATH_x64=%LIBPATH%
-set LIB_x64=%VC_LTL_LIB%\x64;%LIB%
-set INCLUDE_x64=%INCLUDE%
-set PATH=%PATH_CLEAN%
-set LIB=
-set LIBPATH=
-set INCLUDE=
-
-:: arm32 is not available in vs2026
-:: if %VSVER% LSS 180 (
-::     call "%VCVARSALL_BAT%" x86_arm %EXTRA_ARGS%
-::     set PATH_arm=%PATH%
-::     set LIBPATH_arm=%LIBPATH%
-::     set LIB_arm=%LIB%
-::     set INCLUDE_arm=%INCLUDE%
-::     set PATH=%PATH_CLEAN%
-::     set LIB=
-::     set LIBPATH=
-::     set INCLUDE=
-:: ) else (
-::     echo "Skipping x86_arm setup for VS2026+"
-:: )
-
-:: default is x86, no env reset
-call "%VCVARSALL_BAT%" x86 %EXTRA_ARGS%
-set PATH_x86=%PATH%
-set LIBPATH_x86=%LIBPATH%
-set LIB_x86=%VC_LTL_LIB%\Win32;%LIB%
-set INCLUDE_x86=%INCLUDE%
-
-goto end
 
 
 :SetEnv81SDK
@@ -294,6 +352,6 @@ goto end
 @echo LIB=%LIB%
 @echo LIBPATH=%LIBPATH%
 @echo -------------------------------------------------------------------------------
-@echo -----Build environment is ready: %OS% %OS_VER% %ARCH2%. WinRT: %WINRT%-----
+@echo -----Build environment is ready: %OS% %OS_VER% %ARCH_LIST%. WinRT: %WINRT%-----
 
 if exist %~dp0user.bat call %~dp0user.bat

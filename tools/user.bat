@@ -32,7 +32,7 @@ set PWD=%~dp0..
 set TARGET_PARAM=
 if [%VC_BUILD%] == [true] set TARGET_PARAM=vc
 if [%WINRT%] == [true] set TARGET_PARAM=winstore
-if /i not [%ARCH%] == [all] set TARGET_PARAM=%TARGET_PARAM% %ARCH%
+if /i not "%ARCH_ARG%"=="all" set TARGET_PARAM=%TARGET_PARAM% "%ARCH_LIST%"
 @echo Now you can run:
 @echo export FFSRC=/path/to/ffmpeg
 @echo ./avbuild.sh #%TARGET_PARAM%
