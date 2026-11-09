@@ -1212,6 +1212,7 @@ setup_ios_env() {
   disable_opt programs
   EXTRA_CFLAGS+=" -arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver $BITCODE_FLAGS" # -fvisibility=hidden -fvisibility-inlines-hidden"
   EXTRA_LDFLAGS+=" -arch $IOS_ARCH -m${VER_OS}-version-min=$ios_ver $BITCODE_LFLAGS -Wl,-dead_strip" # -fvisibility=hidden -fvisibility-inlines-hidden"
+  EXTRALIBS+=" -weak-lhvf" # freetype
   if $FFGIT; then
     patch_clock_gettime=1
     [ -d $FFSRC/ffbuild ] && patch_clock_gettime=0 # since 3.3
@@ -1294,6 +1295,7 @@ setup_apple_env() {
 # if target_vendor is not apple(-v same except vendor): d: building for 'tvOS-simulator', but linking in object file built for 'tvOS'
   EXTRA_CFLAGS+=" -arch $OS_ARCH --target=apple-${target_os}${os_ver}${env_suffix} $BITCODE_FLAGS $EXTRA_FLAGS" # -fvisibility=hidden -fvisibility-inlines-hidden"
   EXTRA_LDFLAGS+=" -arch $OS_ARCH --target=apple-${target_os}${os_ver}${env_suffix} $BITCODE_LFLAGS $EXTRA_FLAGS -Wl,-dead_strip" # -fvisibility=hidden -fvisibility-inlines-hidden"
+  EXTRALIBS+=" -weak-lhvf" # freetype
   #INSTALL_DIR=sdk-${2/os/OS}-$OS_ARCH
   INSTALL_DIR=sdk-$OS$os_ver$Simulator-$OS_ARCH
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
@@ -1364,6 +1366,7 @@ setup_macos_env(){
   # 10.6: ld: warning: target OS does not support re-exporting symbol _av_gettime from libavutil/libavutil.dylib
   EXTRA_CFLAGS+=" $ARCH_FLAG -mmacosx-version-min=$MACOS_VER"
   EXTRA_LDFLAGS+=" $ARCH_FLAG $LFLAG_VERSION_MIN$MACOS_VER ${LFLAG_PRE}-dead_strip $rpath_flags"
+  EXTRALIBS+=" -weak-lhvf" # freetype
   INSTALL_DIR=sdk-macOS${MACOS_VER}-${MACOS_ARCH}
   mkdir -p $THIS_DIR/build_$INSTALL_DIR
   cat>$THIS_DIR/build_$INSTALL_DIR/.env.sh<<EOF
