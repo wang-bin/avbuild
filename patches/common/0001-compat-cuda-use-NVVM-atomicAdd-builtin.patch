@@ -1,0 +1,35 @@
+From 6fc10863768321415252ec60310cb785efccb287 Mon Sep 17 00:00:00 2001
+From: wangbin <wbsecg1@gmail.com>
+Date: Tue, 10 Nov 2026 23:31:45 +0800
+Subject: [PATCH] compat/cuda: use NVVM atomicAdd builtin
+
+The atomicAdd compatibility macro uses __atomic_fetch_add with
+__ATOMIC_SEQ_CST. Clang lowers the unscoped operation as system scope,
+which is unsupported before sm_60.
+
+Use Clang's generic NVVM atomic builtin through an inline device
+function to retain CUDA atomicAdd's device scope.
+
+Verified by compiling vf_thumbnail_cuda.cu with Clang 24 for sm_30.
+
+Co-authored-by: Codex <codex@openai.com>
+---
+ compat/cuda/cuda_runtime.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/compat/cuda/cuda_runtime.h b/compat/cuda/cuda_runtime.h
+index d08511f72a..bb9a7de3a4 100644
+--- a/compat/cuda/cuda_runtime.h
++++ b/compat/cuda/cuda_runtime.h
+@@ -34,7 +34,7 @@
+ #define min(a, b) ((a) < (b) ? (a) : (b))
+ #define abs(x) ((x) < 0 ? -(x) : (x))
+ 
+-#define atomicAdd(a, b) (__atomic_fetch_add(a, b, __ATOMIC_SEQ_CST))
++static inline __device__ int atomicAdd(int *address, int val) { return __nvvm_atom_add_gen_i(address, val); }
+ 
+ // Basic typedefs
+ typedef __device_builtin__ unsigned long long cudaTextureObject_t;
+-- 
+2.54.0 (Apple Git-157)
+
